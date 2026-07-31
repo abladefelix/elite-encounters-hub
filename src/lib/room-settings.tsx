@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -400,18 +401,20 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
+  // Mirror of state so writes happen outside the render phase.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   const commit = useCallback((updater: (current: StoredState) => StoredState) => {
-    setState((current) => {
-      const next = updater(current);
-      try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        // Notify listeners after this render commits, never during it.
-        queueMicrotask(() => window.dispatchEvent(new CustomEvent(ROOM_SETTINGS_EVENT)));
-      } catch {
-        /* storage unavailable */
-      }
-      return next;
-    });
+    const next = updater(stateRef.current);
+    stateRef.current = next;
+    setState(next);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent(ROOM_SETTINGS_EVENT));
+    } catch {
+      /* storage unavailable */
+    }
   }, []);
 
   const setPrivilege = useCallback<RoomSettingsContextValue["setPrivilege"]>(
