@@ -60,9 +60,10 @@ function RoomsPage() {
       <div className="mx-auto w-full max-w-6xl px-5 py-12">
         <h1 className="font-display text-3xl font-semibold sm:text-4xl">Membership rooms</h1>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-          Clients join a room through subscription; placement is still confirmed manually by our
-          team after vetting. Specialists are placed by experience, quality record and the type of
-          work they're cleared for.
+          Clients join a room through a paid subscription; placement is still confirmed manually
+          by our team after vetting. Specialists never pay to join — they're placed free of charge
+          by experience, quality record and the type of work they're cleared for, and earn from
+          each booking.
         </p>
 
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
@@ -84,6 +85,9 @@ function RoomsPage() {
               <p className="mt-5 font-display text-4xl font-semibold">
                 {money(room.priceMonthly)}
                 <span className="text-sm font-normal text-muted-foreground">/mo</span>
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Client membership · free for specialists
               </p>
               <p className="mt-2 text-sm text-muted-foreground">{room.tagline}</p>
 
@@ -122,6 +126,7 @@ function RoomsPage() {
             <h2 className="font-display text-xl font-semibold">Full comparison</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Every room includes manual vetting, on-platform payments and dispute handling.
+              Prices are client membership fees; specialists join at no cost.
             </p>
           </div>
           <div className="overflow-x-auto">
