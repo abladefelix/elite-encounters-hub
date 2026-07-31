@@ -167,7 +167,11 @@ function AdminBookings() {
                       {specialist ? <TierBadge tier={specialist.room} /> : null}
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-muted-foreground">
-                      {booking.scheduledFor}
+                      {new Date(booking.scheduledFor).toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                      })}
                     </TableCell>
                     <TableCell>
                       <Badge
