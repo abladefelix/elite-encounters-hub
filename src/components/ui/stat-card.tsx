@@ -21,13 +21,12 @@ export function StatCard({
   trend?: { value: number; label?: string };
   className?: string;
 }) {
-  const trendIcon = trend ? (trend.value > 0 ? TrendingUp : trend.value < 0 ? TrendingDown : Minus) : null;
-  const trendTone = trend
+  const TrendIcon = trend
     ? trend.value > 0
-      ? "success"
+      ? TrendingUp
       : trend.value < 0
-        ? "destructive"
-        : "soft"
+        ? TrendingDown
+        : Minus
     : null;
 
   return (
@@ -53,7 +52,7 @@ export function StatCard({
                     trend.value === 0 && "bg-muted text-muted-foreground",
                   )}
                 >
-                  {trendIcon && <trendIcon className="size-3" />}
+                  {TrendIcon && <TrendIcon className="size-3" />}
                   {Math.abs(trend.value)}%
                   {trend.label ? <span className="opacity-70">· {trend.label}</span> : null}
                 </span>
