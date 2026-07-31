@@ -405,7 +405,8 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
       const next = updater(current);
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        window.dispatchEvent(new CustomEvent(ROOM_SETTINGS_EVENT));
+        // Notify listeners after this render commits, never during it.
+        queueMicrotask(() => window.dispatchEvent(new CustomEvent(ROOM_SETTINGS_EVENT)));
       } catch {
         /* storage unavailable */
       }
