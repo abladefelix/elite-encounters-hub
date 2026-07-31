@@ -257,6 +257,10 @@
   box-shadow: var(--shadow-elevated);
 }
 
+@utility shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+
 @utility eyebrow {
   font-family: var(--font-display);
   font-size: 0.6875rem;
@@ -264,4 +268,53 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-muted-foreground);
+}
+
+/* Icon container — rounded square/squircle backdrop for Lucide icons. */
+@utility icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: calc(var(--radius) - 2px);
+  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+
+@utility icon-box-sm {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: calc(var(--radius) - 4px);
+}
+
+@utility icon-box-lg {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius);
+}
+
+@utility icon-box-soft {
+  background: var(--color-secondary);
+  color: var(--color-secondary-foreground);
+}
+
+@utility icon-box-accent {
+  background: color-mix(in oklab, var(--color-accent) 14%, transparent);
+  color: var(--color-accent);
+}
+
+@utility icon-box-warning {
+  background: color-mix(in oklab, var(--color-warning) 16%, transparent);
+  color: var(--color-warning);
+}
+
+@utility icon-box-destructive {
+  background: color-mix(in oklab, var(--color-destructive) 14%, transparent);
+  color: var(--color-destructive);
+}
+
+@utility icon-box-success {
+  background: color-mix(in oklab, var(--color-success) 14%, transparent);
+  color: var(--color-success);
 }

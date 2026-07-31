@@ -5,12 +5,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconContainer } from "@/components/ui/icon-container";
 import { TierBadge } from "@/components/tier-badge";
 import { initials, money, type Specialist } from "@/lib/types";
 
 export function SpecialistCard({ specialist }: { specialist: Specialist }) {
   return (
-    <Card className="flex flex-col gap-4 border-border/70 bg-panel p-5 transition-colors hover:border-primary/30">
+    <Card className="flex flex-col gap-4 border-border/70 bg-panel p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated">
       <div className="flex items-start gap-3">
         <div className="relative">
           <Avatar className="size-12 border border-border">
@@ -35,14 +36,14 @@ export function SpecialistCard({ specialist }: { specialist: Specialist }) {
           </p>
         </div>
 
-        <TierBadge tier={specialist.room} />
+        <TierBadge tier={specialist.room} showIcon />
       </div>
 
       <p className="text-sm leading-relaxed text-muted-foreground">{specialist.headline}</p>
 
       <div className="flex flex-wrap gap-1.5">
         {specialist.services.slice(0, 3).map((service) => (
-          <Badge key={service} variant="secondary" className="rounded-full font-normal">
+          <Badge key={service} variant="soft" className="rounded-full font-normal">
             {service}
           </Badge>
         ))}

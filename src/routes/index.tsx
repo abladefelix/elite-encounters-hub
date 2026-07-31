@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconContainer } from "@/components/ui/icon-container";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SpecialistCard } from "@/components/specialist-card";
@@ -125,8 +126,11 @@ function Home() {
               body: "One button turns the conversation into a booking with an itemised quote, held securely until the job is done.",
             },
           ].map((step) => (
-            <Card key={step.title} className="border-border/70 bg-panel p-5">
-              <step.icon className="size-5 text-primary" />
+            <Card
+              key={step.title}
+              className="border-border/70 bg-panel p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
+            >
+              <IconContainer icon={step.icon} tone="default" />
               <h3 className="mt-4 font-display text-base font-semibold">{step.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
             </Card>
@@ -204,10 +208,10 @@ function Home() {
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-5 pb-4">
-        <Card className="overflow-hidden border-primary/25 bg-hero p-8 sm:p-12">
+        <Card className="overflow-hidden border-primary/25 bg-hero p-8 sm:p-12 shadow-glow">
           <div className="flex flex-wrap items-center justify-between gap-8">
             <div className="max-w-lg">
-              <PhoneCall className="size-5 text-primary" />
+              <IconContainer icon={PhoneCall} tone="default" size="lg" />
               <h2 className="mt-4 font-display text-2xl font-semibold sm:text-3xl">
                 Walk them through the space before you book.
               </h2>
