@@ -17,6 +17,7 @@ import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
+import { Route as AdminEscrowRouteImport } from './routes/admin.escrow'
 import { Route as AdminRoomsRouteImport } from './routes/admin.rooms'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminVettingRouteImport } from './routes/admin.vetting'
@@ -63,6 +64,11 @@ const AdminBookingsRoute = AdminBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEscrowRoute = AdminEscrowRouteImport.update({
+  id: '/escrow',
+  path: '/escrow',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminRoomsRoute = AdminRoomsRouteImport.update({
   id: '/rooms',
   path: '/rooms',
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
   '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/escrow': typeof AdminEscrowRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/vetting': typeof AdminVettingRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
   '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/escrow': typeof AdminEscrowRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/vetting': typeof AdminVettingRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
   '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/escrow': typeof AdminEscrowRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/vetting': typeof AdminVettingRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/rooms'
     | '/admin/bookings'
+    | '/admin/escrow'
     | '/admin/rooms'
     | '/admin/users'
     | '/admin/vetting'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/rooms'
     | '/admin/bookings'
+    | '/admin/escrow'
     | '/admin/rooms'
     | '/admin/users'
     | '/admin/vetting'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/rooms'
     | '/admin/bookings'
+    | '/admin/escrow'
     | '/admin/rooms'
     | '/admin/users'
     | '/admin/vetting'
@@ -250,6 +262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBookingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/escrow': {
+      id: '/admin/escrow'
+      path: '/escrow'
+      fullPath: '/admin/escrow'
+      preLoaderRoute: typeof AdminEscrowRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/rooms': {
       id: '/admin/rooms'
       path: '/rooms'
@@ -290,6 +309,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminBookingsRoute: typeof AdminBookingsRoute
+  AdminEscrowRoute: typeof AdminEscrowRoute
   AdminRoomsRoute: typeof AdminRoomsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminVettingRoute: typeof AdminVettingRoute
@@ -298,6 +318,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminBookingsRoute: AdminBookingsRoute,
+  AdminEscrowRoute: AdminEscrowRoute,
   AdminRoomsRoute: AdminRoomsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminVettingRoute: AdminVettingRoute,

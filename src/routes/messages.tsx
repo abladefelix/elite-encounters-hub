@@ -5,11 +5,13 @@ import {
   Banknote,
   Check,
   CheckCheck,
+  Gift as GiftIcon,
   Image as ImageIcon,
   Lock,
   Paperclip,
   Phone,
   Plus,
+  ShieldAlert,
   Send,
   ShieldCheck,
   Video,
@@ -35,9 +37,16 @@ import {
   ServiceRequestDialog,
   type ServiceRequestDraft,
 } from "@/components/chat/service-request-dialog";
+import { GiftDialog, type GiftDraft } from "@/components/chat/gift-dialog";
 import { CURRENT_CLIENT_ID, currentClient, getSpecialist, threads } from "@/lib/mock-data";
 import { paystackChannel } from "@/lib/paystack";
 import { useRoomSettings } from "@/lib/room-settings";
+import {
+  ESCROW_STATE_LABEL,
+  relativeTime,
+  useEscrow,
+  type EscrowEntry,
+} from "@/lib/escrow";
 import { useChat, type LiveMessage } from "@/lib/use-chat";
 import { TIER_LABEL, initials, money } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -74,13 +83,21 @@ function MessagesPage() {
   const [draft, setDraft] = useState("");
   const [call, setCall] = useState<CallMode | null>(null);
   const [requestOpen, setRequestOpen] = useState(false);
+  const [giftOpen, setGiftOpen] = useState(false);
   const [showListOnMobile, setShowListOnMobile] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { canCall, can, platform } = useRoomSettings();
   const member = currentClient();
-  const { threadList, messages, typing, send, systemNote, bookingNote } =
+  const { threadList, messages, typing, send, systemNote, bookingNote, giftNote } =
     useChat(activeThreadId);
+  const {
+    settings: escrow,
+    open: openEscrow,
+    entries: escrowEntries,
+    confirmComplete,
+    raiseIssue,
+  } = useEscrow();
 
   const activeThread = threadList.find((thread) => thread.id === activeThreadId) ?? threadList[0]!;
   const specialist = getSpecialist(activeThread.specialistId)!;
@@ -121,17 +138,67 @@ function MessagesPage() {
   }
 
   function handleBooking(request: ServiceRequestDraft) {
+    const entry = openEscrow({
+      kind: "booking",
+      threadId: activeThread.id,
+      specialistId: specialist.id,
+      specialistName: specialist.name,
+      label: `${request.service} · ${request.hours}h`,
+      gross: request.total,
+      feePct: platform.platformFeePct,
+      reference: request.reference,
+    });
+
     bookingNote(
       activeThread.id,
       `${request.service} · ${request.hours}h · ${request.scheduledFor}${
         request.addons.length ? ` · Add-ons: ${request.addons.join(", ")}` : ""
-      } · ${money(request.total)} held via Paystack (${
+      } · ${money(request.total)} paid via Paystack (${
         paystackChannel(request.channel).label
       } · ${request.reference})`,
+      entry.id,
     );
-    toast.success(
-      `Paystack payment held — ${specialist.name.split(" ")[0]} has 12h to confirm`,
+    toast.success(`${money(request.total)} secured in Ashnight escrow`, {
+      description: escrow.escrowEnabled
+        ? escrow.requireClientConfirm
+          ? `${specialist.name.split(" ")[0]} is paid ${escrow.holdHours}h after you confirm the visit — unless you raise an issue.`
+          : `Deposits automatically ${escrow.holdHours}h from now if no issue is raised.`
+        : "Escrow is currently switched off, so the specialist is paid immediately.",
+    });
+  }
+
+  function handleGift(gift: GiftDraft) {
+    const entry = openEscrow({
+      kind: "tip",
+      threadId: activeThread.id,
+      specialistId: specialist.id,
+      specialistName: specialist.name,
+      label: `${gift.glyph} ${gift.giftLabel}`,
+      gross: gift.amount,
+      feePct: escrow.tipFeePct,
+      reference: gift.reference,
+    });
+
+    giftNote(
+      activeThread.id,
+      `${gift.glyph} ${gift.giftLabel} · ${money(gift.amount)} gift sent via Paystack (${
+        paystackChannel(gift.channel).label
+      } · ${gift.reference}) — ${specialist.name.split(" ")[0]} receives ${money(gift.net)}`,
+      entry.id,
     );
+    toast.success(`${gift.giftLabel} sent — ${money(gift.amount)}`, {
+      description: escrow.tipsEscrowed
+        ? `Held in escrow, deposits in ${escrow.holdHours}h.`
+        : `${money(gift.net)} on its way to ${specialist.name.split(" ")[0]}.`,
+    });
+  }
+
+  function openGift() {
+    if (!escrow.tipsEnabled) {
+      toast("Cash gifts are switched off by Ashnight right now.");
+      return;
+    }
+    setGiftOpen(true);
   }
 
   function openRequest() {
@@ -278,7 +345,18 @@ function MessagesPage() {
                 <ScrollArea className="flex-1">
                   <div className="space-y-4 p-4 sm:p-6">
                     {messages.map((message) => (
-                      <MessageRow key={message.id} message={message} name={specialist.name} />
+                      <MessageRow
+                        key={message.id}
+                        message={message}
+                        name={specialist.name}
+                        escrow={
+                          message.escrowId
+                            ? escrowEntries.find((entry) => entry.id === message.escrowId)
+                            : undefined
+                        }
+                        onConfirm={confirmComplete}
+                        onDispute={raiseIssue}
+                      />
                     ))}
                     {typing ? (
                       <div className="flex justify-start">
@@ -341,6 +419,28 @@ function MessagesPage() {
                         {platform.bookingsEnabled
                           ? "Request service & pay with Paystack"
                           : "Booking requests are paused"}
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Send a cash gift"
+                          onClick={openGift}
+                        >
+                          {escrow.tipsEnabled ? (
+                            <GiftIcon className="size-4" />
+                          ) : (
+                            <Lock className="size-4 opacity-60" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {escrow.tipsEnabled
+                          ? "Send a cash gift"
+                          : "Cash gifts are switched off"}
                       </TooltipContent>
                     </Tooltip>
                     <Button
@@ -411,6 +511,13 @@ function MessagesPage() {
           onConfirm={handleBooking}
         />
 
+        <GiftDialog
+          specialist={specialist}
+          open={giftOpen}
+          onOpenChange={setGiftOpen}
+          onConfirm={handleGift}
+        />
+
         {call ? (
           <CallOverlay
             specialist={specialist}
@@ -459,7 +566,19 @@ function CallControl({
   );
 }
 
-function MessageRow({ message, name }: { message: LiveMessage; name: string }) {
+function MessageRow({
+  message,
+  name,
+  escrow,
+  onConfirm,
+  onDispute,
+}: {
+  message: LiveMessage;
+  name: string;
+  escrow?: EscrowEntry | undefined;
+  onConfirm: (id: string) => void;
+  onDispute: (id: string, reason: string) => void;
+}) {
   if (message.kind === "system") {
     return (
       <p className="mx-auto flex max-w-md items-center gap-2 rounded-full border border-border bg-background/60 px-4 py-2 text-center text-xs text-muted-foreground">
@@ -470,20 +589,59 @@ function MessageRow({ message, name }: { message: LiveMessage; name: string }) {
   }
 
   const mine = message.authorId === CURRENT_CLIENT_ID;
+  const firstName = name.split(" ")[0];
+
+  if (message.kind === "gift") {
+    return (
+      <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
+        <div className="max-w-sm rounded-xl border border-accent/40 bg-accent/10 p-4">
+          <p className="eyebrow text-accent">Cash gift sent</p>
+          <p className="mt-2 text-sm leading-relaxed">{message.body}</p>
+          {escrow ? <EscrowStrip entry={escrow} /> : null}
+        </div>
+      </div>
+    );
+  }
 
   if (message.kind === "booking") {
     return (
       <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
         <div className="max-w-sm rounded-xl border border-primary/30 bg-primary/10 p-4">
-          <p className="eyebrow text-primary">Service requested · payment held</p>
+          <p className="eyebrow text-primary">Service requested · funds in escrow</p>
           <p className="mt-2 text-sm leading-relaxed">{message.body}</p>
-          <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <CheckCheck className="size-3.5" /> Awaiting confirmation from {name.split(" ")[0]}
-          </p>
+
+          {escrow ? (
+            <>
+              <EscrowStrip entry={escrow} />
+              {escrow.state === "held" || escrow.state === "clearing" ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {escrow.state === "held" ? (
+                    <Button size="sm" variant="brass" onClick={() => onConfirm(escrow.id)}>
+                      <CheckCheck className="size-3.5" /> Visit complete
+                    </Button>
+                  ) : null}
+                  <Button
+                    size="sm"
+                    variant="soft"
+                    onClick={() =>
+                      onDispute(escrow.id, "Member raised an issue from the chat thread.")
+                    }
+                  >
+                    <ShieldAlert className="size-3.5" /> Raise an issue
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <CheckCheck className="size-3.5" /> Awaiting confirmation from {firstName}
+            </p>
+          )}
         </div>
       </div>
     );
   }
+
 
   return (
     <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
@@ -516,6 +674,32 @@ function MessageRow({ message, name }: { message: LiveMessage; name: string }) {
           ) : null}
         </p>
       </div>
+    </div>
+  );
+}
+
+/** Live escrow status for a booking or gift, as the member sees it. */
+function EscrowStrip({ entry }: { entry: EscrowEntry }) {
+  const detail =
+    entry.state === "clearing"
+      ? `Auto-deposit ${relativeTime(entry.clearingAt)}`
+      : entry.state === "released"
+        ? `Deposited ${relativeTime(entry.releasedAt)}`
+        : entry.state === "disputed"
+          ? "Frozen while Ashnight reviews"
+          : entry.state === "refunded"
+            ? "Refunded to your payment method"
+            : "Waiting for you to confirm the visit";
+
+  return (
+    <div className="mt-3 rounded-lg border border-border/70 bg-background/60 p-2.5">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium">
+        <ShieldCheck className="size-3.5 shrink-0 text-accent" />
+        {ESCROW_STATE_LABEL[entry.state]}
+      </p>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        {detail} · {money(entry.net)} to the specialist · ref {entry.reference}
+      </p>
     </div>
   );
 }
