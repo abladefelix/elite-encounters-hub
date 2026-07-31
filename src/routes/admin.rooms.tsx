@@ -63,25 +63,11 @@ const ICONS: Partial<Record<string, LucideIcon>> = {
 
 function AdminRooms() {
   const distribution = roomDistribution();
-  const { policy, setPrivilege, resetPolicy } = useRoomSettings();
-
-  const [seats, setSeats] = useState<Record<Tier, number>>(
-    () =>
-      Object.fromEntries(rooms.map((room) => [room.id, room.seatsLeft])) as Record<
-        Tier,
-        number
-      >,
-  );
-  const [open, setOpen] = useState<Record<Tier, boolean>>(
-    () =>
-      Object.fromEntries(rooms.map((room) => [room.id, room.seatsLeft > 0])) as Record<
-        Tier,
-        boolean
-      >,
-  );
+  const { policy, profiles, platform, setPrivilege, setProfileField, setPlatformField, resetPolicy } =
+    useRoomSettings();
 
   function adjust(room: Tier, delta: number) {
-    setSeats((current) => ({ ...current, [room]: Math.max(0, (current[room] ?? 0) + delta) }));
+    setProfileField(room, "seatsLeft", Math.max(0, (profiles[room]?.seatsLeft ?? 0) + delta));
   }
 
   return (
@@ -93,9 +79,9 @@ function AdminRooms() {
             Room management
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Each subscription unlocks a different set of features. Everything you change here
-            applies instantly to every member in that room — chat, calls, booking limits and the
-            room's theme colour.
+            Everything about a room is editable here — name, tagline, membership price, visit fee
+            range, seats, intake, privileges, limits and theme colour. Changes apply instantly to
+            every member in that room.
           </p>
         </div>
         <Button
@@ -103,20 +89,73 @@ function AdminRooms() {
           size="sm"
           onClick={() => {
             resetPolicy();
-            toast("Room privileges reset to defaults");
+            toast("All room settings reset to defaults");
           }}
         >
           Reset to defaults
         </Button>
       </header>
 
+      <Card className="p-6">
+        <p className="eyebrow text-primary">Platform-wide controls</p>
+        <h2 className="mt-2 font-display text-lg font-semibold">Global settings</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          These override every room. Use them for maintenance windows or commission changes.
+        </p>
+        <Separator className="my-5" />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="space-y-3">
+            <NumberField
+              id="platform-fee"
+              label="Platform commission (%)"
+              suffix="Taken from every booking"
+              value={platform.platformFeePct}
+              min={0}
+              onChange={(value) =>
+                setPlatformField("platformFeePct", Math.min(50, Math.max(0, value)))
+              }
+            />
+          </div>
+          <div className="space-y-3">
+            <FeatureToggle
+              label="Booking requests"
+              hint="Members can request and pay for cleans."
+              checked={platform.bookingsEnabled}
+              onChange={(checked) => {
+                setPlatformField("bookingsEnabled", checked);
+                toast(checked ? "Booking requests enabled" : "Booking requests paused site-wide");
+              }}
+            />
+            <FeatureToggle
+              label="Calling (all rooms)"
+              hint="Master switch above per-room voice/video."
+              checked={platform.callsEnabled}
+              onChange={(checked) => {
+                setPlatformField("callsEnabled", checked);
+                toast(checked ? "Calling enabled" : "Calling disabled site-wide");
+              }}
+            />
+            <FeatureToggle
+              label="Member theme choice"
+              hint="Let members pick light, dark or system."
+              checked={platform.memberThemeChoice}
+              onChange={(checked) => {
+                setPlatformField("memberThemeChoice", checked);
+                toast(checked ? "Members can choose a theme" : "Member theme choice hidden");
+              }}
+            />
+          </div>
+        </div>
+      </Card>
+
       <div className="grid gap-4 lg:grid-cols-3">
         {rooms.map((room) => {
+          const profile = profiles[room.id];
           const stats = distribution.find(
             (item) => item.room === room.name.replace(" Room", ""),
           );
           const privileges = policy[room.id];
-          const filled = Math.max(0, 100 - Math.min(100, (seats[room.id] ?? 0) * 4));
+          const filled = Math.max(0, 100 - Math.min(100, profile.seatsLeft * 4));
           return (
             <Card
               key={room.id}
@@ -127,30 +166,68 @@ function AdminRooms() {
                 <div>
                   <div className="flex items-center gap-2">
                     <DoorOpen className="size-4" style={{ color: "var(--room-accent)" }} />
-                    <h2 className="font-display text-lg font-semibold">{room.name}</h2>
+                    <h2 className="font-display text-lg font-semibold">{profile.name}</h2>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{room.tagline}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{profile.tagline}</p>
                 </div>
                 <Badge
                   variant="outline"
                   className={
-                    open[room.id]
+                    profile.intakeOpen
                       ? "border-success/40 text-success"
                       : "border-border text-muted-foreground"
                   }
                 >
-                  {open[room.id] ? "Open" : "Closed"}
+                  {profile.intakeOpen ? "Open" : "Closed"}
                 </Badge>
               </div>
 
               <Separator className="my-5" />
 
-              <dl className="space-y-2.5 text-sm">
-                <Row label="Membership" value={`${money(room.priceMonthly)}/mo`} />
-                <Row
-                  label="Visit fees"
-                  value={`${money(room.visitFeeRange[0])}–${money(room.visitFeeRange[1])}`}
+              <div className="space-y-3">
+                <p className="eyebrow" style={{ color: "var(--room-accent)" }}>
+                  Room details
+                </p>
+                <TextField
+                  id={`${room.id}-name`}
+                  label="Room name"
+                  value={profile.name}
+                  onChange={(value) => setProfileField(room.id, "name", value)}
                 />
+                <TextField
+                  id={`${room.id}-tagline`}
+                  label="Tagline"
+                  value={profile.tagline}
+                  onChange={(value) => setProfileField(room.id, "tagline", value)}
+                />
+                <NumberField
+                  id={`${room.id}-price`}
+                  label="Membership (GH₵ / mo)"
+                  value={profile.priceMonthly}
+                  step={5}
+                  onChange={(value) =>
+                    setProfileField(room.id, "priceMonthly", Math.max(0, value))
+                  }
+                />
+                <NumberField
+                  id={`${room.id}-fee-min`}
+                  label="Visit fee min (GH₵)"
+                  value={profile.visitFeeMin}
+                  step={5}
+                  onChange={(value) => setProfileField(room.id, "visitFeeMin", Math.max(0, value))}
+                />
+                <NumberField
+                  id={`${room.id}-fee-max`}
+                  label="Visit fee max (GH₵)"
+                  value={profile.visitFeeMax}
+                  step={5}
+                  onChange={(value) => setProfileField(room.id, "visitFeeMax", Math.max(0, value))}
+                />
+              </div>
+
+              <Separator className="my-5" />
+
+              <dl className="space-y-2.5 text-sm">
                 <Row label="Specialists" value={String(stats?.specialists ?? 0)} />
                 <Row label="Members" value={String(stats?.clients ?? 0)} />
                 <Row label="Bookings" value={formatBookingLimit(privileges.bookingLimit)} />
@@ -160,7 +237,7 @@ function AdminRooms() {
               <div className="mt-5">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Occupancy</span>
-                  <span>{seats[room.id]} seats left</span>
+                  <span>{profile.seatsLeft} seats left</span>
                 </div>
                 <Progress value={filled} className="mt-2 h-1.5" />
               </div>
@@ -170,7 +247,7 @@ function AdminRooms() {
                   variant="secondary"
                   size="icon"
                   onClick={() => adjust(room.id, -1)}
-                  aria-label={`Remove a seat from ${room.name}`}
+                  aria-label={`Remove a seat from ${profile.name}`}
                 >
                   <Minus className="size-4" />
                 </Button>
@@ -178,30 +255,31 @@ function AdminRooms() {
                   variant="secondary"
                   size="icon"
                   onClick={() => adjust(room.id, 1)}
-                  aria-label={`Add a seat to ${room.name}`}
+                  aria-label={`Add a seat to ${profile.name}`}
                 >
                   <Plus className="size-4" />
                 </Button>
                 <div className="ml-auto flex items-center gap-2">
-                  {open[room.id] ? (
+                  {profile.intakeOpen ? (
                     <Unlock className="size-3.5 text-muted-foreground" />
                   ) : (
                     <Lock className="size-3.5 text-muted-foreground" />
                   )}
                   <Switch
-                    checked={open[room.id]}
+                    checked={profile.intakeOpen}
                     onCheckedChange={(checked) => {
-                      setOpen((current) => ({ ...current, [room.id]: checked }));
+                      setProfileField(room.id, "intakeOpen", checked);
                       toast(
                         checked
-                          ? `${room.name} intake opened`
-                          : `${room.name} intake closed — waitlist is now collecting`,
+                          ? `${profile.name} intake opened`
+                          : `${profile.name} intake closed — waitlist is now collecting`,
                       );
                     }}
-                    aria-label={`Toggle intake for ${room.name}`}
+                    aria-label={`Toggle intake for ${profile.name}`}
                   />
                 </div>
               </div>
+
 
               <Separator className="my-5" />
 
