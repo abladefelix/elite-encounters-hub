@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
@@ -29,6 +30,11 @@ const ApplyRoute = ApplyRouteImport.update({
 const HowItWorksRoute = HowItWorksRouteImport.update({
   id: '/how-it-works',
   path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoomsRoute = RoomsRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/apply': typeof ApplyRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/specialists/': typeof SpecialistsIndexRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/apply': typeof ApplyRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/specialists': typeof SpecialistsIndexRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/apply': typeof ApplyRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/specialists/': typeof SpecialistsIndexRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/apply'
     | '/how-it-works'
+    | '/messages'
     | '/rooms'
     | '/specialists/$specialistId'
     | '/specialists/'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/apply'
     | '/how-it-works'
+    | '/messages'
     | '/rooms'
     | '/specialists/$specialistId'
     | '/specialists'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/apply'
     | '/how-it-works'
+    | '/messages'
     | '/rooms'
     | '/specialists/$specialistId'
     | '/specialists/'
@@ -103,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApplyRoute: typeof ApplyRoute
   HowItWorksRoute: typeof HowItWorksRoute
+  MessagesRoute: typeof MessagesRoute
   RoomsRoute: typeof RoomsRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
@@ -129,6 +142,13 @@ declare module '@tanstack/react-router' {
       path: '/how-it-works'
       fullPath: '/how-it-works'
       preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rooms': {
@@ -159,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApplyRoute: ApplyRoute,
   HowItWorksRoute: HowItWorksRoute,
+  MessagesRoute: MessagesRoute,
   RoomsRoute: RoomsRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,
