@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
+  Banknote,
   Check,
   CheckCheck,
   Image as ImageIcon,
@@ -35,6 +36,7 @@ import {
   type ServiceRequestDraft,
 } from "@/components/chat/service-request-dialog";
 import { CURRENT_CLIENT_ID, currentClient, getSpecialist, threads } from "@/lib/mock-data";
+import { paystackChannel } from "@/lib/paystack";
 import { useRoomSettings } from "@/lib/room-settings";
 import { useChat, type LiveMessage } from "@/lib/use-chat";
 import { TIER_LABEL, initials, money } from "@/lib/types";
@@ -123,9 +125,21 @@ function MessagesPage() {
       activeThread.id,
       `${request.service} · ${request.hours}h · ${request.scheduledFor}${
         request.addons.length ? ` · Add-ons: ${request.addons.join(", ")}` : ""
-      } · ${money(request.total)} held`,
+      } · ${money(request.total)} held via Paystack (${
+        paystackChannel(request.channel).label
+      } · ${request.reference})`,
     );
-    toast.success(`Payment held — ${specialist.name.split(" ")[0]} has 12h to confirm`);
+    toast.success(
+      `Paystack payment held — ${specialist.name.split(" ")[0]} has 12h to confirm`,
+    );
+  }
+
+  function openRequest() {
+    if (!platform.bookingsEnabled) {
+      toast("Booking requests are paused by Ashnight right now.");
+      return;
+    }
+    setRequestOpen(true);
   }
 
   return (
@@ -287,13 +301,7 @@ function MessagesPage() {
                   <Button
                     variant="brass"
                     className="w-full"
-                    onClick={() => {
-                      if (!platform.bookingsEnabled) {
-                        toast("Booking requests are paused by Ashnight right now.");
-                        return;
-                      }
-                      setRequestOpen(true);
-                    }}
+                    onClick={openRequest}
                   >
                     {platform.bookingsEnabled ? (
                       <>
@@ -313,6 +321,28 @@ function MessagesPage() {
                       submit();
                     }}
                   >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="soft"
+                          size="icon"
+                          aria-label="Request service & pay with Paystack"
+                          onClick={openRequest}
+                        >
+                          {platform.bookingsEnabled ? (
+                            <Banknote className="size-4" />
+                          ) : (
+                            <Lock className="size-4 opacity-60" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {platform.bookingsEnabled
+                          ? "Request service & pay with Paystack"
+                          : "Booking requests are paused"}
+                      </TooltipContent>
+                    </Tooltip>
                     <Button
                       type="button"
                       variant="ghost"

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CalendarClock, CreditCard, Lock, ShieldCheck } from "lucide-react";
+import { CalendarClock, Lock, ShieldCheck, Smartphone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +25,12 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { ADDON_CATALOG, SERVICE_CATALOG } from "@/lib/mock-data";
 import { useRoomSettings } from "@/lib/room-settings";
+import {
+  DEFAULT_PAYSTACK_CHANNEL,
+  PAYSTACK_CHANNELS,
+  paystackReference,
+  type PaystackChannel,
+} from "@/lib/paystack";
 import { bookingTotal, money, type Specialist } from "@/lib/types";
 
 export interface ServiceRequestDraft {
@@ -34,6 +40,10 @@ export interface ServiceRequestDraft {
   scheduledFor: string;
   notes: string;
   total: number;
+  /** Paystack channel the client chose to pay with. */
+  channel: PaystackChannel;
+  /** Paystack transaction reference for this request. */
+  reference: string;
 }
 
 type Step = "scope" | "review";
@@ -63,6 +73,7 @@ export function ServiceRequestDialog({
   const [date, setDate] = useState("");
   const [time, setTime] = useState("09:00");
   const [notes, setNotes] = useState("");
+  const [channel, setChannel] = useState<PaystackChannel>(DEFAULT_PAYSTACK_CHANNEL);
 
   const service = SERVICE_CATALOG.find((item) => item.id === serviceId)!;
 
@@ -93,6 +104,8 @@ export function ServiceRequestDialog({
       scheduledFor: date ? `${date} at ${time}` : `Next available slot, ${time}`,
       notes,
       total: quote.total,
+      channel,
+      reference: paystackReference(),
     });
     reset();
     onOpenChange(false);
@@ -267,12 +280,29 @@ export function ServiceRequestDialog({
             </div>
 
             <div className="space-y-3">
-              <Label htmlFor="card">Payment method</Label>
-              <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-3.5">
-                <CreditCard className="size-4 text-primary" />
-                <span className="text-sm">Visa ending 4242</span>
-                <span className="ml-auto text-xs text-muted-foreground">Default</span>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="paystack-channel">Payment method</Label>
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  Secured by Paystack
+                </span>
               </div>
+              <Select value={channel} onValueChange={(value) => setChannel(value as PaystackChannel)}>
+                <SelectTrigger id="paystack-channel" className="h-auto py-2.5">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYSTACK_CHANNELS.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label} — {option.hint}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="flex items-start gap-2 text-xs text-muted-foreground">
+                <Smartphone className="mt-0.5 size-3.5 shrink-0 text-primary" />
+                You'll approve the {money(quote.total)} charge in Paystack's secure checkout, in
+                Ghana cedis.
+              </p>
               <p className="flex items-start gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-accent" />
                 Held securely and released to {specialist.name.split(" ")[0]} only after you mark
@@ -296,7 +326,7 @@ export function ServiceRequestDialog({
             </Button>
           ) : (
             <Button variant="brass" onClick={confirm}>
-              <Lock className="size-4" /> Pay {money(quote.total)}
+              <Lock className="size-4" /> Pay {money(quote.total)} with Paystack
             </Button>
           )}
         </DialogFooter>
