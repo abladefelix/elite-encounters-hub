@@ -31,7 +31,13 @@ export const PAYSTACK_CHANNELS: PaystackChannelOption[] = [
 export const DEFAULT_PAYSTACK_CHANNEL: PaystackChannel = "mobile_money";
 
 export function paystackChannel(id: PaystackChannel): PaystackChannelOption {
-  return PAYSTACK_CHANNELS.find((channel) => channel.id === id) ?? PAYSTACK_CHANNELS[0];
+  return (
+    PAYSTACK_CHANNELS.find((channel) => channel.id === id) ?? {
+      id: DEFAULT_PAYSTACK_CHANNEL,
+      label: "Mobile money",
+      hint: "MTN MoMo, Telecel Cash, AirtelTigo Money",
+    }
+  );
 }
 
 /** Human-readable reference shown on receipts and in the admin ledger. */
