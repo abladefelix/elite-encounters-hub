@@ -218,7 +218,7 @@ function clampNumber(value: unknown, fallback: number, min = 0) {
 }
 
 
-function sanitize(value: unknown): RoomPolicyMap {
+function sanitizePolicy(value: unknown): RoomPolicyMap {
   const next: RoomPolicyMap = {
     basic: { ...DEFAULT_ROOM_POLICY.basic },
     premium: { ...DEFAULT_ROOM_POLICY.premium },
@@ -260,31 +260,100 @@ function sanitize(value: unknown): RoomPolicyMap {
   return next;
 }
 
+function sanitizeProfiles(value: unknown): RoomProfileMap {
+  const next: RoomProfileMap = {
+    basic: { ...DEFAULT_ROOM_PROFILES.basic },
+    premium: { ...DEFAULT_ROOM_PROFILES.premium },
+    ultimate: { ...DEFAULT_ROOM_PROFILES.ultimate },
+  };
+  if (!value || typeof value !== "object") return next;
+
+  for (const tier of TIERS) {
+    const entry = (value as Record<string, unknown>)[tier];
+    if (!entry || typeof entry !== "object") continue;
+    const record = entry as Record<string, unknown>;
+    const target = next[tier];
+
+    if (typeof record["name"] === "string" && record["name"].trim()) {
+      target.name = record["name"] as string;
+    }
+    if (typeof record["tagline"] === "string") target.tagline = record["tagline"] as string;
+    target.priceMonthly = clampNumber(record["priceMonthly"], target.priceMonthly);
+    target.visitFeeMin = clampNumber(record["visitFeeMin"], target.visitFeeMin);
+    target.visitFeeMax = clampNumber(record["visitFeeMax"], target.visitFeeMax);
+    target.seatsLeft = clampNumber(record["seatsLeft"], target.seatsLeft);
+    if (typeof record["intakeOpen"] === "boolean") {
+      target.intakeOpen = record["intakeOpen"] as boolean;
+    }
+  }
+  return next;
+}
+
+function sanitizePlatform(value: unknown): PlatformSettings {
+  const next = { ...DEFAULT_PLATFORM_SETTINGS };
+  if (!value || typeof value !== "object") return next;
+  const record = value as Record<string, unknown>;
+  next.platformFeePct = Math.min(50, clampNumber(record["platformFeePct"], next.platformFeePct));
+  for (const key of ["bookingsEnabled", "callsEnabled", "memberThemeChoice"] as const) {
+    if (typeof record[key] === "boolean") next[key] = record[key] as boolean;
+  }
+  return next;
+}
+
+function sanitizeState(value: unknown): StoredState {
+  const record = (value ?? {}) as Record<string, unknown>;
+  // v2 stored the policy map at the root; keep those settings working.
+  const policySource = record["policy"] ?? record;
+  return {
+    policy: sanitizePolicy(policySource),
+    profiles: sanitizeProfiles(record["profiles"]),
+    platform: sanitizePlatform(record["platform"]),
+  };
+}
+
+const DEFAULT_STATE: StoredState = {
+  policy: DEFAULT_ROOM_POLICY,
+  profiles: DEFAULT_ROOM_PROFILES,
+  platform: DEFAULT_PLATFORM_SETTINGS,
+};
+
 /* ----------------------------------------------------------------- context */
 
 interface RoomSettingsContextValue {
   policy: RoomPolicyMap;
+  profiles: RoomProfileMap;
+  platform: PlatformSettings;
   setPrivilege: <K extends keyof RoomPrivileges>(
     room: Tier,
     key: K,
     value: RoomPrivileges[K],
   ) => void;
+  setProfileField: <K extends keyof RoomProfile>(
+    room: Tier,
+    key: K,
+    value: RoomProfile[K],
+  ) => void;
+  setPlatformField: <K extends keyof PlatformSettings>(
+    key: K,
+    value: PlatformSettings[K],
+  ) => void;
   canCall: (room: Tier, feature: "audio" | "video") => boolean;
   can: (room: Tier, feature: BooleanPrivilege) => boolean;
   accentOf: (room: Tier) => RoomAccentId;
+  profileOf: (room: Tier) => RoomProfile;
   resetPolicy: () => void;
 }
 
 const RoomSettingsContext = createContext<RoomSettingsContextValue | null>(null);
 
 export function RoomSettingsProvider({ children }: { children: ReactNode }) {
-  const [policy, setPolicy] = useState<RoomPolicyMap>(DEFAULT_ROOM_POLICY);
+  const [state, setState] = useState<StoredState>(DEFAULT_STATE);
 
   // Read after hydration so server and first client render match.
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setPolicy(sanitize(JSON.parse(raw)));
+      if (raw) setState(sanitizeState(JSON.parse(raw)));
     } catch {
       /* ignore malformed storage */
     }
@@ -292,7 +361,7 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
     function onStorage(event: StorageEvent) {
       if (event.key !== STORAGE_KEY) return;
       try {
-        setPolicy(event.newValue ? sanitize(JSON.parse(event.newValue)) : DEFAULT_ROOM_POLICY);
+        setState(event.newValue ? sanitizeState(JSON.parse(event.newValue)) : DEFAULT_STATE);
       } catch {
         /* ignore */
       }
@@ -301,49 +370,72 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const persist = useCallback((next: RoomPolicyMap) => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      /* storage unavailable */
-    }
+  const commit = useCallback((updater: (current: StoredState) => StoredState) => {
+    setState((current) => {
+      const next = updater(current);
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* storage unavailable */
+      }
+      return next;
+    });
   }, []);
 
   const setPrivilege = useCallback<RoomSettingsContextValue["setPrivilege"]>(
     (room, key, value) => {
-      setPolicy((current) => {
-        const next: RoomPolicyMap = {
-          ...current,
-          [room]: { ...current[room], [key]: value },
-        };
-        persist(next);
-        return next;
-      });
+      commit((current) => ({
+        ...current,
+        policy: { ...current.policy, [room]: { ...current.policy[room], [key]: value } },
+      }));
     },
-    [persist],
+    [commit],
+  );
+
+  const setProfileField = useCallback<RoomSettingsContextValue["setProfileField"]>(
+    (room, key, value) => {
+      commit((current) => ({
+        ...current,
+        profiles: { ...current.profiles, [room]: { ...current.profiles[room], [key]: value } },
+      }));
+    },
+    [commit],
+  );
+
+  const setPlatformField = useCallback<RoomSettingsContextValue["setPlatformField"]>(
+    (key, value) => {
+      commit((current) => ({ ...current, platform: { ...current.platform, [key]: value } }));
+    },
+    [commit],
   );
 
   const resetPolicy = useCallback(() => {
-    setPolicy(DEFAULT_ROOM_POLICY);
-    persist(DEFAULT_ROOM_POLICY);
-  }, [persist]);
+    commit(() => DEFAULT_STATE);
+  }, [commit]);
 
   const value = useMemo<RoomSettingsContextValue>(
     () => ({
-      policy,
+      policy: state.policy,
+      profiles: state.profiles,
+      platform: state.platform,
       setPrivilege,
-      canCall: (room, feature) => policy[room]?.[feature] ?? false,
-      can: (room, feature) => policy[room]?.[feature] ?? false,
-      accentOf: (room) => policy[room]?.accent ?? "brass",
+      setProfileField,
+      setPlatformField,
+      canCall: (room, feature) =>
+        state.platform.callsEnabled && (state.policy[room]?.[feature] ?? false),
+      can: (room, feature) => state.policy[room]?.[feature] ?? false,
+      accentOf: (room) => state.policy[room]?.accent ?? "brass",
+      profileOf: (room) => state.profiles[room] ?? DEFAULT_ROOM_PROFILES[room],
       resetPolicy,
     }),
-    [policy, setPrivilege, resetPolicy],
+    [state, setPrivilege, setProfileField, setPlatformField, resetPolicy],
   );
 
   return (
     <RoomSettingsContext.Provider value={value}>{children}</RoomSettingsContext.Provider>
   );
 }
+
 
 export function useRoomSettings() {
   const context = useContext(RoomSettingsContext);
