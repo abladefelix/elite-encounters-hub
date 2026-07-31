@@ -26,6 +26,7 @@ import {
   PRIVILEGE_GROUPS,
   ROOM_ACCENTS,
   ROOM_ACCENT_IDS,
+  DEFAULT_THEME_OPTIONS,
   formatBookingLimit,
   formatLeadTime,
   roomAccentStyle,
@@ -115,6 +116,32 @@ function AdminRooms() {
                 setPlatformField("platformFeePct", Math.min(50, Math.max(0, value)))
               }
             />
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Default theme
+                <span className="block text-[11px] opacity-70">
+                  Applied to everyone who hasn't picked their own
+                </span>
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {DEFAULT_THEME_OPTIONS.map((option) => (
+                  <Button
+                    key={option.id}
+                    type="button"
+                    size="sm"
+                    variant={platform.defaultTheme === option.id ? "brass" : "secondary"}
+                    aria-pressed={platform.defaultTheme === option.id}
+                    title={option.hint}
+                    onClick={() => {
+                      setPlatformField("defaultTheme", option.id);
+                      toast(`Default theme set to ${option.label}`);
+                    }}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="space-y-3">
             <FeatureToggle
