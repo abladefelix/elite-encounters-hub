@@ -11,7 +11,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconContainer } from "@/components/ui/icon-container";
 import { Progress } from "@/components/ui/progress";
+import { StatCard } from "@/components/ui/stat-card";
 import { TierBadge } from "@/components/tier-badge";
 import {
   adminMetrics,
@@ -71,41 +73,49 @@ function AdminOverview() {
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat
+        <StatCard
           label="Monthly recurring revenue"
           value={money(metrics.mrr)}
           hint={`${metrics.activeSubs} active memberships`}
           icon={TrendingUp}
+          tone="default"
+          trend={{ value: 12.4, label: "MoM" }}
         />
-        <Stat
+        <StatCard
           label="Booking volume (GMV)"
           value={money(metrics.gmv)}
           hint={`${metrics.takeRate}% platform take rate`}
           icon={ArrowUpRight}
+          tone="success"
+          trend={{ value: 18.6, label: "MoM" }}
         />
-        <Stat
+        <StatCard
           label="Vetted specialists"
           value={String(metrics.specialists)}
           hint="Across three rooms"
           icon={Users}
+          tone="accent"
         />
-        <Stat
+        <StatCard
           label="Needs attention"
           value={String(metrics.pendingVetting + metrics.openDisputes)}
           hint={`${metrics.pendingVetting} in vetting · ${metrics.openDisputes} disputes`}
           icon={AlertTriangle}
-          alert
+          tone="warning"
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-6 lg:col-span-2">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-display text-base font-semibold">Bookings &amp; GMV</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Last six months</p>
+            <div className="flex items-center gap-2">
+              <IconContainer icon={TrendingUp} tone="default" size="sm" />
+              <div>
+                <h2 className="font-display text-base font-semibold">Bookings &amp; GMV</h2>
+                <p className="text-xs text-muted-foreground">Last six months</p>
+              </div>
             </div>
-            <Badge variant="secondary" className="text-[10px]">
+            <Badge variant="soft" className="text-[10px]">
               +18.6% MoM
             </Badge>
           </div>
@@ -131,7 +141,7 @@ function AdminOverview() {
 
         <Card className="p-6">
           <div className="flex items-center gap-2">
-            <DoorOpen className="size-4 text-primary" />
+            <IconContainer icon={DoorOpen} tone="accent" size="sm" />
             <h2 className="font-display text-base font-semibold">Room balance</h2>
           </div>
           <div className="mt-6 space-y-5">
@@ -162,7 +172,7 @@ function AdminOverview() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <BadgeCheck className="size-4 text-primary" />
+              <IconContainer icon={BadgeCheck} tone="success" size="sm" />
               <h2 className="font-display text-base font-semibold">Vetting queue</h2>
             </div>
             <Button asChild variant="ghost" size="sm">
@@ -178,7 +188,7 @@ function AdminOverview() {
                     {applicant.role} · {applicant.city}
                   </p>
                 </div>
-                <TierBadge tier={applicant.suggestedRoom} />
+                <TierBadge tier={applicant.suggestedRoom} showIcon />
               </li>
             ))}
           </ul>
@@ -214,30 +224,5 @@ function AdminOverview() {
         </Card>
       </div>
     </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  hint,
-  icon: Icon,
-  alert,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  icon: typeof Users;
-  alert?: boolean;
-}) {
-  return (
-    <Card className="p-5">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-        <Icon className={alert ? "size-4 text-warning" : "size-4 text-primary"} />
-      </div>
-      <p className="mt-4 font-display text-2xl font-semibold tracking-tight">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-    </Card>
   );
 }
