@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { rooms } from "./mock-data";
 import type { Tier } from "./types";
 
 /**
@@ -150,11 +151,72 @@ export const PRIVILEGE_GROUPS: {
 
 export const TIERS: Tier[] = ["basic", "premium", "ultimate"];
 
-const STORAGE_KEY = "ashnight-room-policy-v2";
+/* ------------------------------------------------------ editable room profile */
+
+/** Commercial + identity fields an admin may edit per room. */
+export interface RoomProfile {
+  name: string;
+  tagline: string;
+  priceMonthly: number;
+  visitFeeMin: number;
+  visitFeeMax: number;
+  seatsLeft: number;
+  intakeOpen: boolean;
+}
+
+export type RoomProfileMap = Record<Tier, RoomProfile>;
+
+function profileFromMock(tier: Tier): RoomProfile {
+  const room = rooms.find((item) => item.id === tier);
+  return {
+    name: room?.name ?? tier,
+    tagline: room?.tagline ?? "",
+    priceMonthly: room?.priceMonthly ?? 0,
+    visitFeeMin: room?.visitFeeRange[0] ?? 0,
+    visitFeeMax: room?.visitFeeRange[1] ?? 0,
+    seatsLeft: room?.seatsLeft ?? 0,
+    intakeOpen: (room?.seatsLeft ?? 0) > 0,
+  };
+}
+
+export const DEFAULT_ROOM_PROFILES: RoomProfileMap = {
+  basic: profileFromMock("basic"),
+  premium: profileFromMock("premium"),
+  ultimate: profileFromMock("ultimate"),
+};
+
+/* -------------------------------------------------- platform-wide admin knobs */
+
+export interface PlatformSettings {
+  /** Commission taken from every booking, in percent. */
+  platformFeePct: number;
+  /** Allow members to request bookings at all. */
+  bookingsEnabled: boolean;
+  /** Global kill switch for calling, on top of per-room privileges. */
+  callsEnabled: boolean;
+  /** Members may pick their own light/dark theme. */
+  memberThemeChoice: boolean;
+}
+
+export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
+  platformFeePct: 12,
+  bookingsEnabled: true,
+  callsEnabled: true,
+  memberThemeChoice: true,
+};
+
+const STORAGE_KEY = "ashnight-room-policy-v3";
+
+interface StoredState {
+  policy: RoomPolicyMap;
+  profiles: RoomProfileMap;
+  platform: PlatformSettings;
+}
 
 function clampNumber(value: unknown, fallback: number, min = 0) {
   return typeof value === "number" && Number.isFinite(value) ? Math.max(min, value) : fallback;
 }
+
 
 function sanitize(value: unknown): RoomPolicyMap {
   const next: RoomPolicyMap = {
