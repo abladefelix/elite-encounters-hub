@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { DoorOpen, Lock, Minus, Plus, Unlock } from "lucide-react";
+import { DoorOpen, Lock, Minus, Phone, Plus, Unlock, Video } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { rooms, roomDistribution } from "@/lib/mock-data";
+import { useRoomSettings } from "@/lib/room-settings";
+
 import { money, type Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/admin/rooms")({
