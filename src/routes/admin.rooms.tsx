@@ -213,3 +213,25 @@ function Row({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function FeatureToggle({
+  icon,
+  label,
+  checked,
+  onChange,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/40 px-3 py-2">
+      <span className="flex items-center gap-2 text-sm">
+        <span className="text-muted-foreground">{icon}</span>
+        {label}
+      </span>
+      <Switch checked={checked} onCheckedChange={onChange} aria-label={label} />
+    </div>
+  );
+}
