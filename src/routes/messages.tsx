@@ -566,7 +566,19 @@ function CallControl({
   );
 }
 
-function MessageRow({ message, name }: { message: LiveMessage; name: string }) {
+function MessageRow({
+  message,
+  name,
+  escrow,
+  onConfirm,
+  onDispute,
+}: {
+  message: LiveMessage;
+  name: string;
+  escrow?: EscrowEntry | undefined;
+  onConfirm: (id: string) => void;
+  onDispute: (id: string, reason: string) => void;
+}) {
   if (message.kind === "system") {
     return (
       <p className="mx-auto flex max-w-md items-center gap-2 rounded-full border border-border bg-background/60 px-4 py-2 text-center text-xs text-muted-foreground">
@@ -577,20 +589,59 @@ function MessageRow({ message, name }: { message: LiveMessage; name: string }) {
   }
 
   const mine = message.authorId === CURRENT_CLIENT_ID;
+  const firstName = name.split(" ")[0];
+
+  if (message.kind === "gift") {
+    return (
+      <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
+        <div className="max-w-sm rounded-xl border border-accent/40 bg-accent/10 p-4">
+          <p className="eyebrow text-accent">Cash gift sent</p>
+          <p className="mt-2 text-sm leading-relaxed">{message.body}</p>
+          {escrow ? <EscrowStrip entry={escrow} /> : null}
+        </div>
+      </div>
+    );
+  }
 
   if (message.kind === "booking") {
     return (
       <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
         <div className="max-w-sm rounded-xl border border-primary/30 bg-primary/10 p-4">
-          <p className="eyebrow text-primary">Service requested · payment held</p>
+          <p className="eyebrow text-primary">Service requested · funds in escrow</p>
           <p className="mt-2 text-sm leading-relaxed">{message.body}</p>
-          <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <CheckCheck className="size-3.5" /> Awaiting confirmation from {name.split(" ")[0]}
-          </p>
+
+          {escrow ? (
+            <>
+              <EscrowStrip entry={escrow} />
+              {escrow.state === "held" || escrow.state === "clearing" ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {escrow.state === "held" ? (
+                    <Button size="sm" variant="brass" onClick={() => onConfirm(escrow.id)}>
+                      <CheckCheck className="size-3.5" /> Visit complete
+                    </Button>
+                  ) : null}
+                  <Button
+                    size="sm"
+                    variant="soft"
+                    onClick={() =>
+                      onDispute(escrow.id, "Member raised an issue from the chat thread.")
+                    }
+                  >
+                    <ShieldAlert className="size-3.5" /> Raise an issue
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <CheckCheck className="size-3.5" /> Awaiting confirmation from {firstName}
+            </p>
+          )}
         </div>
       </div>
     );
   }
+
 
   return (
     <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
