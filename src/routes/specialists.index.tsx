@@ -17,7 +17,7 @@ import { SpecialistCard } from "@/components/specialist-card";
 import { specialists } from "@/lib/mock-data";
 import type { Tier } from "@/lib/types";
 
-export const Route = createFileRoute("/specialists")({
+export const Route = createFileRoute("/specialists/")({
   head: () => ({
     meta: [
       { title: "Browse Vetted Cleaning Specialists — Ashnight" },
