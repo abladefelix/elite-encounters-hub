@@ -112,7 +112,7 @@ function Home() {
             {
               icon: BadgeCheck,
               title: "Room placement",
-              body: "Specialists are placed into Basic, Premium or Ultimate by experience and quality. Clients enter by subscription.",
+              body: "Specialists are placed into Basic, Premium or Ultimate by experience and quality — free of charge. Clients enter by paid subscription.",
             },
             {
               icon: MessageSquare,

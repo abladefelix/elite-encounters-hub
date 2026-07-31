@@ -29,7 +29,7 @@ const CLIENT_STEPS = [
   {
     icon: CreditCard,
     title: "Subscribe to a room",
-    body: "Choose Basic, Premium or Ultimate. Your room decides which specialists you can book and how fast you can schedule.",
+    body: "Clients choose a paid room — Basic, Premium or Ultimate. Your room decides which specialists you can book and how fast you can schedule.",
   },
   {
     icon: MessageSquare,
@@ -121,6 +121,11 @@ function HowItWorks() {
         </div>
 
         <h2 className="eyebrow mt-16">For specialists — the vetting pipeline</h2>
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+          Specialists never pay to join Ashnight. There's no membership fee and no application
+          charge — you're placed in a room after vetting and earn from every booking, minus the
+          platform fee.
+        </p>
         <Card className="mt-6 border-border/70 bg-surface p-6 sm:p-8">
           <ol className="space-y-6">
             {SPECIALIST_STEPS.map((step, index) => (
