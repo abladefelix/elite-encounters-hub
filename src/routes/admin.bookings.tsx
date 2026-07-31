@@ -66,7 +66,7 @@ function AdminBookings() {
   );
 
   const held = seedBookings
-    .filter((booking) => booking.status === "paid" || booking.status === "confirmed")
+    .filter((booking) => booking.status === "paid" || booking.status === "accepted")
     .reduce((sum, booking) => sum + bookingTotal(booking).total, 0);
   const fees = seedBookings
     .filter((booking) => booking.status === "completed")
