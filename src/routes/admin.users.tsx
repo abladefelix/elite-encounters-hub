@@ -214,7 +214,7 @@ function RowMenu({ name, onMove }: { name: string; onMove: (tier: Tier) => void 
         <DropdownMenuItem onClick={() => onMove("ultimate")}>Ultimate</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          variant="destructive"
+          className="text-destructive focus:text-destructive"
           onClick={() => toast(`${name} suspended pending review`)}
         >
           <Ban className="size-4" /> Suspend account
