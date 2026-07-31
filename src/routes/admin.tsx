@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { adminMetrics } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -75,6 +76,10 @@ function AdminLayout() {
             >
               <LifeBuoy className="size-4" /> Trust &amp; safety
             </a>
+            <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2">
+              <span className="text-xs text-muted-foreground">Appearance</span>
+              <ThemeToggle className="size-8" />
+            </div>
             <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3">
               <Avatar className="size-8 border border-border">
                 <AvatarFallback className="bg-surface-strong text-[11px]">AD</AvatarFallback>
@@ -109,6 +114,9 @@ function AdminLayout() {
                 </Link>
               );
             })}
+            <div className="ml-auto shrink-0 pl-2">
+              <ThemeToggle className="size-8" />
+            </div>
           </div>
 
           <div className="px-5 py-8 sm:px-8">
