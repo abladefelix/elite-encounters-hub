@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { DoorOpen, Lock, Minus, Plus, Unlock } from "lucide-react";
+import { DoorOpen, Lock, Minus, Phone, Plus, Unlock, Video } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { rooms, roomDistribution } from "@/lib/mock-data";
+import { useRoomSettings } from "@/lib/room-settings";
+
 import { money, type Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/admin/rooms")({
@@ -34,6 +36,8 @@ export const Route = createFileRoute("/admin/rooms")({
 
 function AdminRooms() {
   const distribution = roomDistribution();
+  const { callPolicy, setCallFeature } = useRoomSettings();
+
   const [seats, setSeats] = useState<Record<Tier, number>>(
     () =>
       Object.fromEntries(rooms.map((room) => [room.id, room.seatsLeft])) as Record<
@@ -152,6 +156,42 @@ function AdminRooms() {
                 </div>
               </div>
 
+              <Separator className="my-5" />
+
+              <div className="space-y-3">
+                <p className="eyebrow text-primary">Call features</p>
+                <FeatureToggle
+                  icon={<Phone className="size-3.5" />}
+                  label="Voice calls"
+                  checked={callPolicy[room.id].audio}
+                  onChange={(checked) => {
+                    setCallFeature(room.id, "audio", checked);
+                    toast(
+                      checked
+                        ? `Voice calls enabled for ${room.name}`
+                        : `Voice calls disabled for ${room.name}`,
+                    );
+                  }}
+                />
+                <FeatureToggle
+                  icon={<Video className="size-3.5" />}
+                  label="Video calls"
+                  checked={callPolicy[room.id].video}
+                  onChange={(checked) => {
+                    setCallFeature(room.id, "video", checked);
+                    toast(
+                      checked
+                        ? `Video calls enabled for ${room.name}`
+                        : `Video calls disabled for ${room.name}`,
+                    );
+                  }}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Applies instantly to every member in this room. Chat and booking stay
+                  available either way.
+                </p>
+              </div>
+
               <ul className="mt-6 space-y-1.5 text-xs text-muted-foreground">
                 {room.perks.slice(0, 4).map((perk) => (
                   <li key={perk}>· {perk}</li>
@@ -170,6 +210,28 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-3">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="font-medium">{value}</dd>
+    </div>
+  );
+}
+
+function FeatureToggle({
+  icon,
+  label,
+  checked,
+  onChange,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/40 px-3 py-2">
+      <span className="flex items-center gap-2 text-sm">
+        <span className="text-muted-foreground">{icon}</span>
+        {label}
+      </span>
+      <Switch checked={checked} onCheckedChange={onChange} aria-label={label} />
     </div>
   );
 }
