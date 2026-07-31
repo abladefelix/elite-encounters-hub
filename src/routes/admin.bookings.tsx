@@ -47,7 +47,7 @@ export const Route = createFileRoute("/admin/bookings")({
 
 const STATUS_STYLE: Record<BookingStatus, string> = {
   requested: "border-border text-muted-foreground",
-  confirmed: "border-primary/40 text-primary",
+  accepted: "border-primary/40 text-primary",
   paid: "border-accent/40 text-accent",
   completed: "border-success/40 text-success",
   cancelled: "border-border text-muted-foreground",
