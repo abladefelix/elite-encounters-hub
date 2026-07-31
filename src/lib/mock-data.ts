@@ -63,7 +63,7 @@ export const rooms: Room[] = [
       "Same-day dispatch window",
       "Dedicated account manager",
       "Recurring schedules & key handling",
-      "Damage protection up to $5,000",
+      "Damage protection up to GH₵5,000",
     ],
     visitFeeRange: [85, 140],
     specialistCount: 19,

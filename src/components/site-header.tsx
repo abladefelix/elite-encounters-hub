@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { currentClient } from "@/lib/mock-data";
 import { initials } from "@/lib/types";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV = [
   { to: "/specialists", label: "Specialists" },
@@ -41,6 +42,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
             <Link to="/admin">Admin</Link>
           </Button>
@@ -73,6 +75,10 @@ export function SiteHeader() {
                   </Link>
                 ))}
               </nav>
+              <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2.5">
+                <span className="text-sm text-muted-foreground">Appearance</span>
+                <ThemeToggle />
+              </div>
             </SheetContent>
           </Sheet>
         </div>

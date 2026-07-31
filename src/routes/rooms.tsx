@@ -28,7 +28,7 @@ const COMPARISON = [
   { feature: "Recurring schedules", basic: false, premium: true, ultimate: true },
   { feature: "Key handling", basic: false, premium: false, ultimate: true },
   { feature: "Dedicated account manager", basic: false, premium: false, ultimate: true },
-  { feature: "Damage protection", basic: "—", premium: "$1,000", ultimate: "$5,000" },
+  { feature: "Damage protection", basic: "—", premium: "GH₵1,000", ultimate: "GH₵5,000" },
   { feature: "Support response", basic: "48h", premium: "4h", ultimate: "1h" },
 ];
 
