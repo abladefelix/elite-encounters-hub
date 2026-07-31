@@ -135,12 +135,12 @@ function ApplyPage() {
                     {
                       value: "client",
                       title: "A client",
-                      body: "I need cleaning for my home or business.",
+                      body: "I need cleaning for my home or business. Paid membership.",
                     },
                     {
                       value: "specialist",
                       title: "A specialist",
-                      body: "I provide cleaning services and want work.",
+                      body: "I provide cleaning services and want work. Free to join.",
                     },
                   ].map((option) => (
                     <Label
@@ -184,13 +184,17 @@ function ApplyPage() {
                   <SelectContent>
                     {rooms.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
-                        {item.name} — {money(item.priceMonthly)}/mo
+                        {item.name}
+                        {role === "client" ? ` — ${money(item.priceMonthly)}/mo` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Final placement is decided manually after vetting.
+                  {role === "client"
+                    ? " Membership is billed monthly once you're placed."
+                    : " Specialists never pay to join — you're paid per booking, minus the platform fee."}
                 </p>
               </div>
 
@@ -232,7 +236,8 @@ function ApplyPage() {
               "We review your application by hand — usually within two business days.",
               "You'll get a link to verify a government ID.",
               "Specialists complete a background check, reference calls and a short video interview.",
-              "Clients confirm a subscription, then we place the account in a room.",
+              "Clients confirm a paid subscription, then we place the account in a room.",
+              "Specialists pay nothing to join — you earn per booking, minus the platform fee.",
               "Once you're in, chat, calls, bookings and payments all open up.",
             ].map((step, index) => (
               <li key={step} className="flex gap-3">
