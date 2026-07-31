@@ -18,6 +18,8 @@ import {
 
 export type Theme = "dark" | "light" | "system";
 
+import { ROOM_SETTINGS_EVENT, readDefaultTheme } from "@/lib/room-settings";
+
 const STORAGE_KEY = "ashnight-theme";
 
 interface ThemeContextValue {
@@ -41,15 +43,28 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Read the stored preference after hydration to avoid SSR mismatches.
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (stored === "dark" || stored === "light" || stored === "system") {
-      setThemeState(stored);
-    }
+    const hasChoice = stored === "dark" || stored === "light" || stored === "system";
+    // No personal choice yet → follow the default the admin picked.
+    setThemeState(hasChoice ? stored : readDefaultTheme());
     setSystemPref(systemTheme());
 
     const media = window.matchMedia("(prefers-color-scheme: light)");
     const onChange = () => setSystemPref(systemTheme());
     media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
+
+    // Track the admin default for anyone who never picked a theme themselves.
+    function onSettings() {
+      if (window.localStorage.getItem(STORAGE_KEY)) return;
+      setThemeState(readDefaultTheme());
+    }
+    window.addEventListener(ROOM_SETTINGS_EVENT, onSettings);
+    window.addEventListener("storage", onSettings);
+
+    return () => {
+      media.removeEventListener("change", onChange);
+      window.removeEventListener(ROOM_SETTINGS_EVENT, onSettings);
+      window.removeEventListener("storage", onSettings);
+    };
   }, []);
 
   const resolvedTheme = theme === "system" ? systemPref : theme;

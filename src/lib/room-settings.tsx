@@ -196,16 +196,31 @@ export interface PlatformSettings {
   callsEnabled: boolean;
   /** Members may pick their own light/dark theme. */
   memberThemeChoice: boolean;
+  /** Theme every visitor gets before (or instead of) choosing their own. */
+  defaultTheme: DefaultTheme;
 }
+
+export type DefaultTheme = "dark" | "light" | "system";
+
+export const DEFAULT_THEME_OPTIONS: { id: DefaultTheme; label: string; hint: string }[] = [
+  { id: "dark", label: "Dark", hint: "Midnight ink — the signature look." },
+  { id: "light", label: "Light", hint: "Brass on paper." },
+  { id: "system", label: "System", hint: "Follow the visitor's device." },
+];
 
 export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   platformFeePct: 12,
   bookingsEnabled: true,
   callsEnabled: true,
   memberThemeChoice: true,
+  defaultTheme: "dark",
 };
 
-const STORAGE_KEY = "ashnight-room-policy-v3";
+export const ROOM_SETTINGS_STORAGE_KEY = "ashnight-room-policy-v3";
+const STORAGE_KEY = ROOM_SETTINGS_STORAGE_KEY;
+
+/** Event fired in the current tab whenever admin settings are written. */
+export const ROOM_SETTINGS_EVENT = "ashnight-room-settings-change";
 
 interface StoredState {
   policy: RoomPolicyMap;
@@ -297,7 +312,22 @@ function sanitizePlatform(value: unknown): PlatformSettings {
   for (const key of ["bookingsEnabled", "callsEnabled", "memberThemeChoice"] as const) {
     if (typeof record[key] === "boolean") next[key] = record[key] as boolean;
   }
+  const theme = record["defaultTheme"];
+  if (theme === "dark" || theme === "light" || theme === "system") {
+    next.defaultTheme = theme;
+  }
   return next;
+}
+
+/** Read the admin-chosen default theme without needing the React context. */
+export function readDefaultTheme(): DefaultTheme {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return DEFAULT_PLATFORM_SETTINGS.defaultTheme;
+    return sanitizePlatform((JSON.parse(raw) as Record<string, unknown>)["platform"]).defaultTheme;
+  } catch {
+    return DEFAULT_PLATFORM_SETTINGS.defaultTheme;
+  }
 }
 
 function sanitizeState(value: unknown): StoredState {
@@ -375,6 +405,7 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
       const next = updater(current);
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent(ROOM_SETTINGS_EVENT));
       } catch {
         /* storage unavailable */
       }
