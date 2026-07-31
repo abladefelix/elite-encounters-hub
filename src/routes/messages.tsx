@@ -677,3 +677,29 @@ function MessageRow({
     </div>
   );
 }
+
+/** Live escrow status for a booking or gift, as the member sees it. */
+function EscrowStrip({ entry }: { entry: EscrowEntry }) {
+  const detail =
+    entry.state === "clearing"
+      ? `Auto-deposit ${relativeTime(entry.clearingAt)}`
+      : entry.state === "released"
+        ? `Deposited ${relativeTime(entry.releasedAt)}`
+        : entry.state === "disputed"
+          ? "Frozen while Ashnight reviews"
+          : entry.state === "refunded"
+            ? "Refunded to your payment method"
+            : "Waiting for you to confirm the visit";
+
+  return (
+    <div className="mt-3 rounded-lg border border-border/70 bg-background/60 p-2.5">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium">
+        <ShieldCheck className="size-3.5 shrink-0 text-accent" />
+        {ESCROW_STATE_LABEL[entry.state]}
+      </p>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        {detail} · {money(entry.net)} to the specialist · ref {entry.reference}
+      </p>
+    </div>
+  );
+}
