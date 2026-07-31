@@ -41,7 +41,8 @@ import {
   type EscrowSettings,
   type EscrowState,
 } from "@/lib/escrow";
-import { money } from "@/lib/types";
+import { TIERS, useRoomSettings } from "@/lib/room-settings";
+import { money, type Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/admin/escrow")({
   head: () => ({
@@ -84,6 +85,13 @@ function AdminEscrow() {
     resolveDispute,
     clearLedger,
   } = useEscrow();
+  const {
+    gifts,
+    profiles,
+    setGiftField,
+    setRoomGiftField,
+    toggleRoomGift,
+  } = useRoomSettings();
   const [filter, setFilter] = useState<EscrowState | "all">("all");
 
   const rows = useMemo(
@@ -229,6 +237,121 @@ function AdminEscrow() {
               onChange={(value) => setSetting("maxTip", value)}
             />
           </div>
+        </div>
+      </Card>
+
+
+      {/* --------------------------------------------------- gift catalogue */}
+      <Card className="p-6">
+        <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
+          <Gift className="size-4 text-primary" /> Gift catalogue &amp; room access
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Set what each gift is worth in cedis, and decide which rooms may send it. Members only
+          ever see the gifts their room unlocks.
+        </p>
+
+        <Separator className="my-5" />
+
+        <div className="space-y-3">
+          {gifts.catalog.map((gift) => (
+            <div
+              key={gift.id}
+              className="grid gap-4 rounded-xl border border-border bg-panel p-4 lg:grid-cols-[1fr_auto]"
+            >
+              <div className="grid gap-3 sm:grid-cols-[auto_1fr_9rem]">
+                <span className="self-center text-2xl leading-none" aria-hidden>
+                  {gift.glyph}
+                </span>
+                <div>
+                  <Label htmlFor={`gift-label-${gift.id}`} className="text-xs">
+                    Gift name
+                  </Label>
+                  <Input
+                    id={`gift-label-${gift.id}`}
+                    className="mt-1.5"
+                    value={gift.label}
+                    onChange={(event) => setGiftField(gift.id, "label", event.target.value)}
+                  />
+                  <Input
+                    aria-label={`${gift.label} description`}
+                    className="mt-2 text-xs"
+                    value={gift.hint}
+                    placeholder="What this gift says"
+                    onChange={(event) => setGiftField(gift.id, "hint", event.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`gift-value-${gift.id}`} className="text-xs">
+                    Cash value (GHS)
+                  </Label>
+                  <Input
+                    id={`gift-value-${gift.id}`}
+                    type="number"
+                    min={1}
+                    className="mt-1.5"
+                    value={gift.value}
+                    onChange={(event) =>
+                      setGiftField(gift.id, "value", Math.max(1, Number(event.target.value) || 1))
+                    }
+                  />
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    Specialist keeps {money(gift.value - (gift.value * settings.tipFeePct) / 100)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col justify-between gap-3 lg:items-end">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Switch
+                    checked={gift.enabled}
+                    onCheckedChange={(value) => {
+                      setGiftField(gift.id, "enabled", value);
+                      toast(`${gift.label} ${value ? "enabled" : "removed from every room"}`);
+                    }}
+                    aria-label={`${gift.label} enabled`}
+                  />
+                  {gift.enabled ? "Live" : "Off"}
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {TIERS.map((tier) => {
+                    const on = gifts.rooms[tier].giftIds.includes(gift.id);
+                    return (
+                      <Button
+                        key={tier}
+                        type="button"
+                        size="sm"
+                        variant={on ? "brass" : "outline"}
+                        className="h-7 px-2.5 text-[11px]"
+                        onClick={() => toggleRoomGift(tier, gift.id)}
+                      >
+                        {profiles[tier].name}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Separator className="my-6" />
+
+        <h3 className="font-display text-sm font-semibold">Per-room gifting rules</h3>
+        <div className="mt-3 grid gap-4 lg:grid-cols-3">
+          {TIERS.map((tier) => (
+            <RoomGiftCard
+              key={tier}
+              tier={tier}
+              name={profiles[tier].name}
+              rules={gifts.rooms[tier]}
+              count={
+                gifts.catalog.filter((gift) => gift.enabled && gifts.rooms[tier].giftIds.includes(gift.id))
+                  .length
+              }
+              onChange={setRoomGiftField}
+            />
+          ))}
         </div>
       </Card>
 
@@ -464,3 +587,83 @@ function NumberField({
 }
 
 export type { EscrowSettings };
+
+/** Room-level gifting rules: on/off, custom amounts and the cedi range. */
+function RoomGiftCard({
+  tier,
+  name,
+  rules,
+  count,
+  onChange,
+}: {
+  tier: Tier;
+  name: string;
+  rules: { enabled: boolean; allowCustom: boolean; minGift: number; maxGift: number };
+  count: number;
+  onChange: <K extends "enabled" | "allowCustom" | "minGift" | "maxGift">(
+    room: Tier,
+    key: K,
+    value: { enabled: boolean; allowCustom: boolean; minGift: number; maxGift: number }[K],
+  ) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-panel p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="font-display text-sm font-semibold">{name}</p>
+          <p className="text-xs text-muted-foreground">{count} gifts available</p>
+        </div>
+        <Switch
+          checked={rules.enabled}
+          onCheckedChange={(value) => {
+            onChange(tier, "enabled", value);
+            toast(`Gifting ${value ? "enabled" : "disabled"} for ${name}`);
+          }}
+          aria-label={`Gifting enabled for ${name}`}
+        />
+      </div>
+
+      <label className="mt-4 flex items-center justify-between gap-2 text-xs">
+        <span className="text-muted-foreground">Custom amounts</span>
+        <Switch
+          checked={rules.allowCustom}
+          onCheckedChange={(value) => onChange(tier, "allowCustom", value)}
+          aria-label={`Custom gift amounts for ${name}`}
+        />
+      </label>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div>
+          <Label htmlFor={`gift-min-${tier}`} className="text-xs">
+            Min (GHS)
+          </Label>
+          <Input
+            id={`gift-min-${tier}`}
+            type="number"
+            min={1}
+            className="mt-1.5"
+            value={rules.minGift}
+            onChange={(event) =>
+              onChange(tier, "minGift", Math.max(1, Number(event.target.value) || 1))
+            }
+          />
+        </div>
+        <div>
+          <Label htmlFor={`gift-max-${tier}`} className="text-xs">
+            Max (GHS)
+          </Label>
+          <Input
+            id={`gift-max-${tier}`}
+            type="number"
+            min={rules.minGift}
+            className="mt-1.5"
+            value={rules.maxGift}
+            onChange={(event) =>
+              onChange(tier, "maxGift", Math.max(rules.minGift, Number(event.target.value) || 1))
+            }
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
