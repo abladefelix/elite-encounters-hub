@@ -248,6 +248,48 @@ interface StoredState {
   profiles: RoomProfileMap;
   platform: PlatformSettings;
   gifts: GiftSettings;
+  moderation: ModerationSettings;
+}
+
+function sanitizeModeration(value: unknown): ModerationSettings {
+  const next: ModerationSettings = {
+    ...DEFAULT_MODERATION_SETTINGS,
+    flaggedWords: [...DEFAULT_MODERATION_SETTINGS.flaggedWords],
+    contactExemptRooms: { ...DEFAULT_MODERATION_SETTINGS.contactExemptRooms },
+  };
+  if (!value || typeof value !== "object") return next;
+  const record = value as Record<string, unknown>;
+
+  for (const key of [
+    "enabled",
+    "blockContactSharing",
+    "flaggedWordsEnabled",
+    "notifyMember",
+    "logHits",
+  ] as const) {
+    if (typeof record[key] === "boolean") next[key] = record[key] as boolean;
+  }
+
+  for (const key of ["contactAction", "flaggedWordsAction"] as const) {
+    const action = record[key];
+    if (action === "warn" || action === "mask" || action === "block") next[key] = action;
+  }
+
+  if (Array.isArray(record["flaggedWords"])) {
+    next.flaggedWords = (record["flaggedWords"] as unknown[])
+      .filter((word): word is string => typeof word === "string")
+      .map((word) => word.trim())
+      .filter(Boolean);
+  }
+
+  const exempt = record["contactExemptRooms"];
+  if (exempt && typeof exempt === "object") {
+    for (const tier of TIERS) {
+      const flag = (exempt as Record<string, unknown>)[tier];
+      if (typeof flag === "boolean") next.contactExemptRooms[tier] = flag;
+    }
+  }
+  return next;
 }
 
 function clampNumber(value: unknown, fallback: number, min = 0) {
