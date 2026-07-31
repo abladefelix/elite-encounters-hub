@@ -133,11 +133,7 @@ export function ServiceRequestDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {SERVICE_CATALOG.filter((item) =>
-                    specialist.services.some((offered: string) =>
-                      offered.toLowerCase().includes(item.label.split(" ")[0].toLowerCase()),
-                    ) || true,
-                  ).map((item) => (
+                  {SERVICE_CATALOG.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
                       {item.label} · ~{item.baseHours}h
                     </SelectItem>
