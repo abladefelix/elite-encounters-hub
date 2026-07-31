@@ -4,6 +4,7 @@ import { Check, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconContainer } from "@/components/ui/icon-container";
 import {
   Table,
   TableBody,
@@ -150,14 +151,14 @@ function RoomsPage() {
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">{profile.tagline}</p>
 
-                <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1.5">
+                <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/50 px-2 py-0.5">
                     <Users className="size-3.5" /> {room.specialistCount} specialists
                   </span>
-                  <span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/50 px-2 py-0.5">
                     Visit fees {money(profile.visitFeeMin)}–{money(profile.visitFeeMax)}
                   </span>
-                  <span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/50 px-2 py-0.5">
                     {profile.intakeOpen ? `${profile.seatsLeft} seats open` : "Intake closed"}
                   </span>
                 </div>
