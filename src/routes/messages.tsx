@@ -75,7 +75,7 @@ function MessagesPage() {
   const [showListOnMobile, setShowListOnMobile] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { canCall } = useRoomSettings();
+  const { canCall, can } = useRoomSettings();
   const member = currentClient();
   const { threadList, messages, typing, send, systemNote, bookingNote } =
     useChat(activeThreadId);
@@ -85,6 +85,9 @@ function MessagesPage() {
 
   const audioAllowed = canCall(member.room, "audio");
   const videoAllowed = canCall(member.room, "video");
+  const photosAllowed = can(member.room, "photoSharing");
+  const filesAllowed = can(member.room, "fileSharing");
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
