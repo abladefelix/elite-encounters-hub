@@ -41,6 +41,7 @@ import { GiftDialog, type GiftDraft } from "@/components/chat/gift-dialog";
 import { CURRENT_CLIENT_ID, currentClient, getSpecialist, threads } from "@/lib/mock-data";
 import { paystackChannel } from "@/lib/paystack";
 import { useRoomSettings } from "@/lib/room-settings";
+import { logModerationHit, moderateMessage } from "@/lib/moderation";
 import {
   ESCROW_STATE_LABEL,
   relativeTime,
@@ -87,7 +88,7 @@ function MessagesPage() {
   const [showListOnMobile, setShowListOnMobile] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { canCall, can, platform, giftsFor } = useRoomSettings();
+  const { canCall, can, platform, giftsFor, moderation } = useRoomSettings();
   const member = currentClient();
   const { threadList, messages, typing, send, systemNote, bookingNote, giftNote } =
     useChat(activeThreadId);
@@ -117,7 +118,50 @@ function MessagesPage() {
   function submit() {
     const body = draft.trim();
     if (!body) return;
-    send(activeThread.id, body);
+
+    const verdict = moderateMessage(body, moderation, member.room);
+
+    if (verdict.findings.length && moderation.logHits) {
+      logModerationHit({
+        threadId: activeThread.id,
+        threadLabel: specialist.name,
+        room: member.room,
+        authorId: CURRENT_CLIENT_ID,
+        excerpt: body.slice(0, 180),
+        kinds: [...new Set(verdict.findings.map((finding) => finding.kind))],
+        matches: verdict.findings.map((finding) => finding.match),
+        action: verdict.action,
+      });
+    }
+
+    if (verdict.action === "block") {
+      toast.error("Message not sent — house rules", {
+        description: verdict.contact.length
+          ? "Ashnight keeps contact details on-platform so every visit stays inside escrow."
+          : `Blocked for ${verdict.reason ?? "flagged wording"}.`,
+      });
+      if (moderation.notifyMember) {
+        systemNote(
+          activeThread.id,
+          `A message was blocked by Ashnight moderation — ${verdict.reason ?? "house rules"}.`,
+        );
+      }
+      return;
+    }
+
+    if (verdict.action === "mask") {
+      toast("Some text was redacted", {
+        description: verdict.contact.length
+          ? "Phone numbers, emails and links are hidden — keep the deal in-thread."
+          : `Redacted ${verdict.reason ?? "flagged wording"}.`,
+      });
+    } else if (verdict.findings.length) {
+      toast.warning("Heads up — this was flagged for review", {
+        description: `Ashnight trust & safety was notified about ${verdict.reason ?? "this message"}.`,
+      });
+    }
+
+    send(activeThread.id, verdict.body);
     setDraft("");
   }
 
