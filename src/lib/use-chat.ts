@@ -196,7 +196,7 @@ export function useChat(activeThreadId: string) {
   );
 
   const bookingNote = useCallback(
-    (threadId: string, body: string) => {
+    (threadId: string, body: string, escrowId?: string) => {
       append(threadId, {
         id: `b-${Date.now()}`,
         threadId,
@@ -205,10 +205,28 @@ export function useChat(activeThreadId: string) {
         at: new Date().toISOString(),
         kind: "booking",
         delivery: "sent",
+        ...(escrowId ? { escrowId } : {}),
       });
     },
     [append],
   );
+
+  const giftNote = useCallback(
+    (threadId: string, body: string, escrowId?: string) => {
+      append(threadId, {
+        id: `g-${Date.now()}`,
+        threadId,
+        authorId: CURRENT_CLIENT_ID,
+        body,
+        at: new Date().toISOString(),
+        kind: "gift",
+        delivery: "sent",
+        ...(escrowId ? { escrowId } : {}),
+      });
+    },
+    [append],
+  );
+
 
   const threadList = useMemo(
     () =>
