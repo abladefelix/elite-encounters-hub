@@ -133,9 +133,9 @@ export function initials(name: string) {
 }
 
 export function money(amount: number) {
-  return amount.toLocaleString("en-US", {
+  return amount.toLocaleString("en-GH", {
     style: "currency",
-    currency: "USD",
+    currency: "GHS",
     maximumFractionDigits: 0,
   });
 }
