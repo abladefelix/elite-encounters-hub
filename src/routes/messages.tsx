@@ -75,7 +75,7 @@ function MessagesPage() {
   const [showListOnMobile, setShowListOnMobile] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { canCall, can } = useRoomSettings();
+  const { canCall, can, platform } = useRoomSettings();
   const member = currentClient();
   const { threadList, messages, typing, send, systemNote, bookingNote } =
     useChat(activeThreadId);
@@ -287,9 +287,23 @@ function MessagesPage() {
                   <Button
                     variant="brass"
                     className="w-full"
-                    onClick={() => setRequestOpen(true)}
+                    onClick={() => {
+                      if (!platform.bookingsEnabled) {
+                        toast("Booking requests are paused by Ashnight right now.");
+                        return;
+                      }
+                      setRequestOpen(true);
+                    }}
                   >
-                    <Plus className="size-4" /> Request service & pay
+                    {platform.bookingsEnabled ? (
+                      <>
+                        <Plus className="size-4" /> Request service & pay
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="size-4" /> Booking requests paused
+                      </>
+                    )}
                   </Button>
 
                   <form

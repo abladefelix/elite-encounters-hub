@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { currentClient } from "@/lib/mock-data";
 import { initials } from "@/lib/types";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useRoomSettings } from "@/lib/room-settings";
 
 const NAV = [
   { to: "/specialists", label: "Specialists" },
@@ -17,6 +18,9 @@ const NAV = [
 
 export function SiteHeader() {
   const me = currentClient();
+  const { platform } = useRoomSettings();
+
+
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
@@ -42,7 +46,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <ThemeToggle />
+          {platform.memberThemeChoice ? <ThemeToggle /> : null}
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
             <Link to="/admin">Admin</Link>
           </Button>
@@ -75,10 +79,12 @@ export function SiteHeader() {
                   </Link>
                 ))}
               </nav>
-              <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2.5">
-                <span className="text-sm text-muted-foreground">Appearance</span>
-                <ThemeToggle />
-              </div>
+              {platform.memberThemeChoice ? (
+                <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2.5">
+                  <span className="text-sm text-muted-foreground">Appearance</span>
+                  <ThemeToggle />
+                </div>
+              ) : null}
             </SheetContent>
           </Sheet>
         </div>
