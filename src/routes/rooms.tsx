@@ -95,7 +95,7 @@ function comparisonRows(policy: RoomPolicyMap) {
 }
 
 function RoomsPage() {
-  const { policy } = useRoomSettings();
+  const { policy, profiles } = useRoomSettings();
   const rows = comparisonRows(policy);
 
   return (
@@ -114,6 +114,7 @@ function RoomsPage() {
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
           {rooms.map((room) => {
             const privileges = policy[room.id];
+            const profile = profiles[room.id];
             return (
               <Card
                 key={room.id}
@@ -141,22 +142,24 @@ function RoomsPage() {
                 </div>
 
                 <p className="mt-5 font-display text-4xl font-semibold">
-                  {money(room.priceMonthly)}
+                  {money(profile.priceMonthly)}
                   <span className="text-sm font-normal text-muted-foreground">/mo</span>
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Client membership · free for specialists
                 </p>
-                <p className="mt-2 text-sm text-muted-foreground">{room.tagline}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{profile.tagline}</p>
 
                 <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <Users className="size-3.5" /> {room.specialistCount} specialists
                   </span>
                   <span>
-                    Visit fees {money(room.visitFeeRange[0])}–{money(room.visitFeeRange[1])}
+                    Visit fees {money(profile.visitFeeMin)}–{money(profile.visitFeeMax)}
                   </span>
-                  <span>{room.seatsLeft} seats open</span>
+                  <span>
+                    {profile.intakeOpen ? `${profile.seatsLeft} seats open` : "Intake closed"}
+                  </span>
                 </div>
 
                 <ul className="mt-6 space-y-2.5 text-sm">
@@ -176,7 +179,10 @@ function RoomsPage() {
                   variant={room.id === "premium" ? "brass" : "soft"}
                   className="mt-7 w-full"
                 >
-                  <Link to="/apply">Apply for {room.name.replace(" Room", "")}</Link>
+                  <Link to="/apply">
+                    {profile.intakeOpen ? "Apply for" : "Join waitlist for"}{" "}
+                    {profile.name.replace(" Room", "")}
+                  </Link>
                 </Button>
               </Card>
             );

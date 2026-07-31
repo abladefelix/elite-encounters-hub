@@ -24,9 +24,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { ADDON_CATALOG, SERVICE_CATALOG } from "@/lib/mock-data";
+import { useRoomSettings } from "@/lib/room-settings";
 import { bookingTotal, money, type Specialist } from "@/lib/types";
-
-const PLATFORM_FEE_PCT = 12;
 
 export interface ServiceRequestDraft {
   service: string;
@@ -55,6 +54,8 @@ export function ServiceRequestDialog({
   onOpenChange: (open: boolean) => void;
   onConfirm: (draft: ServiceRequestDraft) => void;
 }) {
+  const { platform } = useRoomSettings();
+  const feePct = platform.platformFeePct;
   const [step, setStep] = useState<Step>("scope");
   const [serviceId, setServiceId] = useState<string>(SERVICE_CATALOG[1].id);
   const [hours, setHours] = useState<number>(SERVICE_CATALOG[1].baseHours);
@@ -69,14 +70,14 @@ export function ServiceRequestDialog({
     const { subtotal, fee } = bookingTotal({
       hours,
       rate: specialist.hourlyRate,
-      platformFeePct: PLATFORM_FEE_PCT,
+      platformFeePct: feePct,
     });
     const addonsTotal = ADDON_CATALOG.filter((addon) => addons.includes(addon.id)).reduce(
       (sum, addon) => sum + addon.price,
       0,
     );
     return { subtotal, fee, addonsTotal, total: subtotal + fee + addonsTotal };
-  }, [hours, addons, specialist.hourlyRate]);
+  }, [hours, addons, specialist.hourlyRate, feePct]);
 
   function reset() {
     setStep("scope");
@@ -256,7 +257,7 @@ export function ServiceRequestDialog({
                     value={money(quote.addonsTotal)}
                   />
                 ) : null}
-                <Line label={`Platform fee (${PLATFORM_FEE_PCT}%)`} value={money(quote.fee)} />
+                <Line label={`Platform fee (${feePct}%)`} value={money(quote.fee)} />
                 <Separator className="my-3" />
                 <div className="flex items-center justify-between font-display text-base font-semibold">
                   <span>Total held</span>
