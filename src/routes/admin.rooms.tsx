@@ -300,7 +300,7 @@ function AdminRooms() {
                         onChange={(checked) => {
                           setPrivilege(room.id, item.key, checked);
                           toast(
-                            `${item.label} ${checked ? "enabled" : "disabled"} for ${room.name}`,
+                            `${item.label} ${checked ? "enabled" : "disabled"} for ${profile.name}`,
                           );
                         }}
                       />
@@ -361,7 +361,7 @@ function AdminRooms() {
                       active={privileges.accent === accent}
                       onSelect={() => {
                         setPrivilege(room.id, "accent", accent);
-                        toast(`${room.name} theme set to ${ROOM_ACCENTS[accent].label}`);
+                        toast(`${profile.name} theme set to ${ROOM_ACCENTS[accent].label}`);
                       }}
                     />
                   ))}
@@ -410,6 +410,32 @@ function FeatureToggle({
         </div>
       </div>
       <Switch checked={checked} onCheckedChange={onChange} aria-label={label} />
+    </div>
+  );
+}
+
+function TextField({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-xs font-normal text-muted-foreground">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-8"
+      />
     </div>
   );
 }
