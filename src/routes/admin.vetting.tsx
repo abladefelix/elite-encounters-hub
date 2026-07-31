@@ -36,7 +36,7 @@ export const Route = createFileRoute("/admin/vetting")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: VettingQueue;
+  component: VettingQueue,
 });
 
 const FILTERS: { value: VettingStatus | "all"; label: string }[] = [
