@@ -15,6 +15,7 @@ import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as RoomsRouteImport } from './routes/rooms'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
 
@@ -48,6 +49,11 @@ const RoomsRoute = RoomsRouteImport.update({
   path: '/rooms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const SpecialistsIndexRoute = SpecialistsIndexRouteImport.update({
   id: '/specialists/',
   path: '/specialists/',
@@ -61,33 +67,35 @@ const SpecialistsSpecialistIdRoute = SpecialistsSpecialistIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/apply': typeof ApplyRoute
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/apply': typeof ApplyRoute
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
+  '/admin': typeof AdminIndexRoute
   '/specialists': typeof SpecialistsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/apply': typeof ApplyRoute
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
 }
 export interface FileRouteTypes {
@@ -100,16 +108,17 @@ export interface FileRouteTypes {
     | '/messages'
     | '/rooms'
     | '/specialists/$specialistId'
+    | '/admin/'
     | '/specialists/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/apply'
     | '/how-it-works'
     | '/messages'
     | '/rooms'
     | '/specialists/$specialistId'
+    | '/admin'
     | '/specialists'
   id:
     | '__root__'
@@ -120,12 +129,13 @@ export interface FileRouteTypes {
     | '/messages'
     | '/rooms'
     | '/specialists/$specialistId'
+    | '/admin/'
     | '/specialists/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   ApplyRoute: typeof ApplyRoute
   HowItWorksRoute: typeof HowItWorksRoute
   MessagesRoute: typeof MessagesRoute
@@ -178,6 +188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RoomsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/specialists/': {
       id: '/specialists/'
       path: '/specialists'
@@ -195,9 +212,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   ApplyRoute: ApplyRoute,
   HowItWorksRoute: HowItWorksRoute,
   MessagesRoute: MessagesRoute,
