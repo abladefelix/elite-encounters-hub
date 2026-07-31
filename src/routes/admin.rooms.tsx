@@ -36,6 +36,8 @@ export const Route = createFileRoute("/admin/rooms")({
 
 function AdminRooms() {
   const distribution = roomDistribution();
+  const { callPolicy, setCallFeature } = useRoomSettings();
+
   const [seats, setSeats] = useState<Record<Tier, number>>(
     () =>
       Object.fromEntries(rooms.map((room) => [room.id, room.seatsLeft])) as Record<
