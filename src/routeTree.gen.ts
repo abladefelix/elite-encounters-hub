@@ -16,6 +16,7 @@ import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminVettingRouteImport } from './routes/admin.vetting'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
 
@@ -54,6 +55,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminVettingRoute = AdminVettingRouteImport.update({
+  id: '/vetting',
+  path: '/vetting',
+  getParentRoute: () => AdminRoute,
+} as any)
 const SpecialistsIndexRoute = SpecialistsIndexRouteImport.update({
   id: '/specialists/',
   path: '/specialists/',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
+  '/admin/vetting': typeof AdminVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/admin/': typeof AdminIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
+  '/admin/vetting': typeof AdminVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/admin': typeof AdminIndexRoute
   '/specialists': typeof SpecialistsIndexRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
   '/rooms': typeof RoomsRoute
+  '/admin/vetting': typeof AdminVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/admin/': typeof AdminIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/messages'
     | '/rooms'
+    | '/admin/vetting'
     | '/specialists/$specialistId'
     | '/admin/'
     | '/specialists/'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/messages'
     | '/rooms'
+    | '/admin/vetting'
     | '/specialists/$specialistId'
     | '/admin'
     | '/specialists'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/messages'
     | '/rooms'
+    | '/admin/vetting'
     | '/specialists/$specialistId'
     | '/admin/'
     | '/specialists/'
@@ -195,6 +207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/vetting': {
+      id: '/admin/vetting'
+      path: '/vetting'
+      fullPath: '/admin/vetting'
+      preLoaderRoute: typeof AdminVettingRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/specialists/': {
       id: '/specialists/'
       path: '/specialists'
@@ -213,10 +232,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminVettingRoute: typeof AdminVettingRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminVettingRoute: AdminVettingRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
