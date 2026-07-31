@@ -19,7 +19,7 @@ const STORAGE_KEY = "ashnight-chat-log";
 export type DeliveryState = "sending" | "sent" | "read";
 
 export interface LiveMessage extends ChatMessage {
-  delivery?: DeliveryState;
+  delivery?: DeliveryState | undefined;
 }
 
 type Log = Record<string, LiveMessage[]>;
@@ -28,10 +28,11 @@ function seedLog(): Log {
   return Object.fromEntries(
     threads.map((thread) => [
       thread.id,
-      getThreadMessages(thread.id).map((message) => ({
-        ...message,
-        delivery: message.authorId === CURRENT_CLIENT_ID ? ("read" as DeliveryState) : undefined,
-      })),
+      getThreadMessages(thread.id).map<LiveMessage>((message) =>
+        message.authorId === CURRENT_CLIENT_ID
+          ? { ...message, delivery: "read" }
+          : { ...message },
+      ),
     ]),
   );
 }
