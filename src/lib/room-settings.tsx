@@ -10,6 +10,13 @@ import {
   type ReactNode,
 } from "react";
 
+import {
+  DEFAULT_GIFT_CATALOG,
+  DEFAULT_ROOM_GIFT_RULES,
+  type Gift,
+  type RoomGiftRules,
+  type RoomGiftRulesMap,
+} from "./gifts";
 import { rooms } from "./mock-data";
 import type { Tier } from "./types";
 
@@ -217,7 +224,20 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   defaultTheme: "dark",
 };
 
-export const ROOM_SETTINGS_STORAGE_KEY = "ashnight-room-policy-v3";
+/* ------------------------------------------------------------------- gifts */
+
+/** Admin-owned gift catalogue plus which rooms may send which gift. */
+export interface GiftSettings {
+  catalog: Gift[];
+  rooms: RoomGiftRulesMap;
+}
+
+export const DEFAULT_GIFT_SETTINGS: GiftSettings = {
+  catalog: DEFAULT_GIFT_CATALOG,
+  rooms: DEFAULT_ROOM_GIFT_RULES,
+};
+
+export const ROOM_SETTINGS_STORAGE_KEY = "ashnight-room-policy-v4";
 const STORAGE_KEY = ROOM_SETTINGS_STORAGE_KEY;
 
 /** Event fired in the current tab whenever admin settings are written. */
@@ -227,6 +247,7 @@ interface StoredState {
   policy: RoomPolicyMap;
   profiles: RoomProfileMap;
   platform: PlatformSettings;
+  gifts: GiftSettings;
 }
 
 function clampNumber(value: unknown, fallback: number, min = 0) {
@@ -320,6 +341,65 @@ function sanitizePlatform(value: unknown): PlatformSettings {
   return next;
 }
 
+function sanitizeGifts(value: unknown): GiftSettings {
+  const catalog: Gift[] = DEFAULT_GIFT_CATALOG.map((gift) => ({ ...gift }));
+  const roomsRules: RoomGiftRulesMap = {
+    basic: { ...DEFAULT_ROOM_GIFT_RULES.basic, giftIds: [...DEFAULT_ROOM_GIFT_RULES.basic.giftIds] },
+    premium: {
+      ...DEFAULT_ROOM_GIFT_RULES.premium,
+      giftIds: [...DEFAULT_ROOM_GIFT_RULES.premium.giftIds],
+    },
+    ultimate: {
+      ...DEFAULT_ROOM_GIFT_RULES.ultimate,
+      giftIds: [...DEFAULT_ROOM_GIFT_RULES.ultimate.giftIds],
+    },
+  };
+  const next: GiftSettings = { catalog, rooms: roomsRules };
+  if (!value || typeof value !== "object") return next;
+  const record = value as Record<string, unknown>;
+
+  const storedCatalog = record["catalog"];
+  if (Array.isArray(storedCatalog)) {
+    for (const raw of storedCatalog) {
+      if (!raw || typeof raw !== "object") continue;
+      const entry = raw as Record<string, unknown>;
+      const target = catalog.find((gift) => gift.id === entry["id"]);
+      if (!target) continue;
+      if (typeof entry["label"] === "string" && entry["label"].trim()) {
+        target.label = entry["label"] as string;
+      }
+      if (typeof entry["glyph"] === "string" && entry["glyph"].trim()) {
+        target.glyph = entry["glyph"] as string;
+      }
+      if (typeof entry["hint"] === "string") target.hint = entry["hint"] as string;
+      target.value = clampNumber(entry["value"], target.value, 1);
+      if (typeof entry["enabled"] === "boolean") target.enabled = entry["enabled"] as boolean;
+    }
+  }
+
+  const storedRooms = record["rooms"];
+  if (storedRooms && typeof storedRooms === "object") {
+    for (const tier of TIERS) {
+      const raw = (storedRooms as Record<string, unknown>)[tier];
+      if (!raw || typeof raw !== "object") continue;
+      const entry = raw as Record<string, unknown>;
+      const target = roomsRules[tier];
+      if (typeof entry["enabled"] === "boolean") target.enabled = entry["enabled"] as boolean;
+      if (typeof entry["allowCustom"] === "boolean") {
+        target.allowCustom = entry["allowCustom"] as boolean;
+      }
+      target.minGift = clampNumber(entry["minGift"], target.minGift, 1);
+      target.maxGift = clampNumber(entry["maxGift"], target.maxGift, target.minGift);
+      if (Array.isArray(entry["giftIds"])) {
+        target.giftIds = (entry["giftIds"] as unknown[]).filter(
+          (id): id is string => typeof id === "string" && catalog.some((gift) => gift.id === id),
+        );
+      }
+    }
+  }
+  return next;
+}
+
 /** Read the admin-chosen default theme without needing the React context. */
 export function readDefaultTheme(): DefaultTheme {
   try {
@@ -339,6 +419,7 @@ function sanitizeState(value: unknown): StoredState {
     policy: sanitizePolicy(policySource),
     profiles: sanitizeProfiles(record["profiles"]),
     platform: sanitizePlatform(record["platform"]),
+    gifts: sanitizeGifts(record["gifts"]),
   };
 }
 
@@ -346,6 +427,7 @@ const DEFAULT_STATE: StoredState = {
   policy: DEFAULT_ROOM_POLICY,
   profiles: DEFAULT_ROOM_PROFILES,
   platform: DEFAULT_PLATFORM_SETTINGS,
+  gifts: DEFAULT_GIFT_SETTINGS,
 };
 
 /* ----------------------------------------------------------------- context */
@@ -354,6 +436,7 @@ interface RoomSettingsContextValue {
   policy: RoomPolicyMap;
   profiles: RoomProfileMap;
   platform: PlatformSettings;
+  gifts: GiftSettings;
   setPrivilege: <K extends keyof RoomPrivileges>(
     room: Tier,
     key: K,
@@ -368,6 +451,16 @@ interface RoomSettingsContextValue {
     key: K,
     value: PlatformSettings[K],
   ) => void;
+  setGiftField: <K extends keyof Gift>(giftId: string, key: K, value: Gift[K]) => void;
+  setRoomGiftField: <K extends keyof RoomGiftRules>(
+    room: Tier,
+    key: K,
+    value: RoomGiftRules[K],
+  ) => void;
+  toggleRoomGift: (room: Tier, giftId: string) => void;
+  /** Gifts a given room may actually send right now, with admin values. */
+  giftsFor: (room: Tier) => Gift[];
+  giftRulesOf: (room: Tier) => RoomGiftRules;
   canCall: (room: Tier, feature: "audio" | "video") => boolean;
   can: (room: Tier, feature: BooleanPrivilege) => boolean;
   accentOf: (room: Tier) => RoomAccentId;
@@ -444,6 +537,53 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
     [commit],
   );
 
+  const setGiftField = useCallback<RoomSettingsContextValue["setGiftField"]>(
+    (giftId, key, value) => {
+      commit((current) => ({
+        ...current,
+        gifts: {
+          ...current.gifts,
+          catalog: current.gifts.catalog.map((gift) =>
+            gift.id === giftId ? { ...gift, [key]: value } : gift,
+          ),
+        },
+      }));
+    },
+    [commit],
+  );
+
+  const setRoomGiftField = useCallback<RoomSettingsContextValue["setRoomGiftField"]>(
+    (room, key, value) => {
+      commit((current) => ({
+        ...current,
+        gifts: {
+          ...current.gifts,
+          rooms: { ...current.gifts.rooms, [room]: { ...current.gifts.rooms[room], [key]: value } },
+        },
+      }));
+    },
+    [commit],
+  );
+
+  const toggleRoomGift = useCallback<RoomSettingsContextValue["toggleRoomGift"]>(
+    (room, giftId) => {
+      commit((current) => {
+        const rules = current.gifts.rooms[room];
+        const giftIds = rules.giftIds.includes(giftId)
+          ? rules.giftIds.filter((id) => id !== giftId)
+          : [...rules.giftIds, giftId];
+        return {
+          ...current,
+          gifts: {
+            ...current.gifts,
+            rooms: { ...current.gifts.rooms, [room]: { ...rules, giftIds } },
+          },
+        };
+      });
+    },
+    [commit],
+  );
+
   const resetPolicy = useCallback(() => {
     commit(() => DEFAULT_STATE);
   }, [commit]);
@@ -453,9 +593,21 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
       policy: state.policy,
       profiles: state.profiles,
       platform: state.platform,
+      gifts: state.gifts,
       setPrivilege,
       setProfileField,
       setPlatformField,
+      setGiftField,
+      setRoomGiftField,
+      toggleRoomGift,
+      giftsFor: (room) => {
+        const rules = state.gifts.rooms[room] ?? DEFAULT_ROOM_GIFT_RULES[room];
+        if (!rules.enabled) return [];
+        return state.gifts.catalog.filter(
+          (gift) => gift.enabled && rules.giftIds.includes(gift.id),
+        );
+      },
+      giftRulesOf: (room) => state.gifts.rooms[room] ?? DEFAULT_ROOM_GIFT_RULES[room],
       canCall: (room, feature) =>
         state.platform.callsEnabled && (state.policy[room]?.[feature] ?? false),
       can: (room, feature) => state.policy[room]?.[feature] ?? false,
@@ -463,7 +615,16 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
       profileOf: (room) => state.profiles[room] ?? DEFAULT_ROOM_PROFILES[room],
       resetPolicy,
     }),
-    [state, setPrivilege, setProfileField, setPlatformField, resetPolicy],
+    [
+      state,
+      setPrivilege,
+      setProfileField,
+      setPlatformField,
+      setGiftField,
+      setRoomGiftField,
+      toggleRoomGift,
+      resetPolicy,
+    ],
   );
 
   return (
