@@ -253,6 +253,7 @@ export function useChat(activeThreadId: string) {
     send,
     systemNote,
     bookingNote,
+    giftNote,
     markRead,
   };
 }
