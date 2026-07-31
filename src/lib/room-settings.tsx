@@ -19,7 +19,6 @@ import {
 } from "./gifts";
 import {
   DEFAULT_MODERATION_SETTINGS,
-  type ModerationAction,
   type ModerationSettings,
 } from "./moderation";
 import { rooms } from "./mock-data";
