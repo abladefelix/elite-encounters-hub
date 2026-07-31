@@ -80,8 +80,10 @@ export interface ChatMessage {
   authorId: string;
   body: string;
   at: string;
-  kind: "text" | "system" | "booking";
+  kind: "text" | "system" | "booking" | "gift";
   bookingId?: string;
+  /** Escrow ledger row this message refers to, for booking/gift messages. */
+  escrowId?: string;
 }
 
 export interface Thread {
