@@ -120,7 +120,7 @@ function AdminBookings() {
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="requested">Requested</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="accepted">Accepted</SelectItem>
             <SelectItem value="paid">Paid — held</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
