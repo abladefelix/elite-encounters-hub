@@ -42,6 +42,7 @@ import {
   type EscrowState,
 } from "@/lib/escrow";
 import { TIERS, useRoomSettings } from "@/lib/room-settings";
+import type { RoomGiftRules } from "@/lib/gifts";
 import { money, type Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/admin/escrow")({
@@ -598,13 +599,9 @@ function RoomGiftCard({
 }: {
   tier: Tier;
   name: string;
-  rules: { enabled: boolean; allowCustom: boolean; minGift: number; maxGift: number };
+  rules: RoomGiftRules;
   count: number;
-  onChange: <K extends "enabled" | "allowCustom" | "minGift" | "maxGift">(
-    room: Tier,
-    key: K,
-    value: { enabled: boolean; allowCustom: boolean; minGift: number; maxGift: number }[K],
-  ) => void;
+  onChange: <K extends keyof RoomGiftRules>(room: Tier, key: K, value: RoomGiftRules[K]) => void;
 }) {
   return (
     <div className="rounded-xl border border-border bg-panel p-4">
