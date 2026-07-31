@@ -44,7 +44,6 @@ export interface Specialist {
   yearsExperience: number;
   services: string[];
   languages: string[];
-  photo: string;
   verified: boolean;
   online: boolean;
   responseMinutes: number;
@@ -59,7 +58,6 @@ export interface Client {
   subscriptionStatus: "active" | "past_due" | "cancelled";
   lifetimeSpend: number;
   bookings: number;
-  photo: string;
 }
 
 export interface Applicant {
@@ -74,7 +72,6 @@ export interface Applicant {
   referenceChecks: number;
   suggestedRoom: Tier;
   note: string;
-  photo: string;
 }
 
 export interface ChatMessage {
@@ -116,8 +113,29 @@ export const TIER_LABEL: Record<Tier, string> = {
   ultimate: "Ultimate",
 };
 
-export function bookingTotal(booking: Pick<Booking, "hours" | "rate" | "platformFeePct">) {
-  const subtotal = booking.hours * booking.rate;
-  const fee = Math.round(subtotal * booking.platformFeePct) / 100;
-  return { subtotal, fee: Math.round(subtotal * (booking.platformFeePct / 100)), total: subtotal + fee };
+export function bookingTotal({
+  hours,
+  rate,
+  platformFeePct,
+}: Pick<Booking, "hours" | "rate" | "platformFeePct">) {
+  const subtotal = hours * rate;
+  const fee = Math.round(subtotal * (platformFeePct / 100));
+  return { subtotal, fee, total: subtotal + fee };
+}
+
+export function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+export function money(amount: number) {
+  return amount.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  });
 }
