@@ -197,7 +197,12 @@ function AdminOverview() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{booking.service}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {getSpecialist(booking.specialistId)?.name} · {booking.scheduledFor}
+                    {getSpecialist(booking.specialistId)?.name} ·{" "}
+                    {new Date(booking.scheduledFor).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                    })}
                   </p>
                 </div>
                 <span className="shrink-0 text-sm font-medium">
