@@ -20,14 +20,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useEscrow, escrowSplit } from "@/lib/escrow";
-import { GIFT_CATALOG } from "@/lib/gifts";
+import { useRoomSettings } from "@/lib/room-settings";
 import {
   DEFAULT_PAYSTACK_CHANNEL,
   PAYSTACK_CHANNELS,
   paystackReference,
   type PaystackChannel,
 } from "@/lib/paystack";
-import { money, type Specialist } from "@/lib/types";
+import { money, type Specialist, type Tier } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export interface GiftDraft {
@@ -46,31 +46,45 @@ export interface GiftDraft {
  */
 export function GiftDialog({
   specialist,
+  room,
   open,
   onOpenChange,
   onConfirm,
 }: {
   specialist: Specialist;
+  /** The member's room — decides which gifts and amounts are available. */
+  room: Tier;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (draft: GiftDraft) => void;
 }) {
   const { settings } = useEscrow();
-  const [giftId, setGiftId] = useState<string>(GIFT_CATALOG[1]!.id);
+  const { giftsFor, giftRulesOf } = useRoomSettings();
+  const catalog = giftsFor(room);
+  const rules = giftRulesOf(room);
+  /** The room cap never exceeds the platform-wide gift ceiling. */
+  const ceiling = Math.min(rules.maxGift, settings.maxTip);
+  const floor = Math.min(rules.minGift, ceiling);
+
+  const [giftId, setGiftId] = useState<string>(catalog[0]?.id ?? "");
   const [custom, setCustom] = useState("");
   const [channel, setChannel] = useState<PaystackChannel>(DEFAULT_PAYSTACK_CHANNEL);
 
-  const gift = GIFT_CATALOG.find((item) => item.id === giftId)!;
+  const gift = catalog.find((item) => item.id === giftId) ?? catalog[0];
   const customValue = Number(custom);
   const amount = useMemo(() => {
-    const raw = custom.trim() && Number.isFinite(customValue) ? customValue : gift.value;
-    return Math.max(1, Math.min(settings.maxTip, Math.round(raw)));
-  }, [custom, customValue, gift.value, settings.maxTip]);
+    const raw =
+      rules.allowCustom && custom.trim() && Number.isFinite(customValue)
+        ? customValue
+        : (gift?.value ?? 0);
+    return Math.max(floor, Math.min(ceiling, Math.round(raw)));
+  }, [custom, customValue, gift?.value, rules.allowCustom, floor, ceiling]);
 
   const split = escrowSplit(amount, settings.tipFeePct);
   const firstName = specialist.name.split(" ")[0];
 
   function confirm() {
+    if (!gift) return;
     onConfirm({
       giftId: gift.id,
       giftLabel: gift.label,
@@ -95,11 +109,17 @@ export function GiftDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {catalog.length === 0 ? (
+          <p className="rounded-lg border border-border bg-panel p-4 text-sm text-muted-foreground">
+            Gifting isn&apos;t available in your room right now. Ask support about rooms that
+            include cash gifts.
+          </p>
+        ) : (
         <div className="space-y-5">
           <div>
             <Label>Choose a gift</Label>
             <div className="mt-3 grid grid-cols-3 gap-2">
-              {GIFT_CATALOG.map((item) => {
+              {catalog.map((item) => {
                 const active = item.id === giftId && !custom.trim();
                 return (
                   <button
@@ -127,22 +147,29 @@ export function GiftDialog({
                 );
               })}
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">{gift.hint}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{gift?.hint}</p>
           </div>
 
-          <div>
-            <Label htmlFor="gift-custom">Or set your own amount (GHS)</Label>
-            <Input
-              id="gift-custom"
-              type="number"
-              min={1}
-              max={settings.maxTip}
-              className="mt-2"
-              placeholder={`Up to ${money(settings.maxTip)}`}
-              value={custom}
-              onChange={(event) => setCustom(event.target.value)}
-            />
-          </div>
+          {rules.allowCustom ? (
+            <div>
+              <Label htmlFor="gift-custom">Or set your own amount (GHS)</Label>
+              <Input
+                id="gift-custom"
+                type="number"
+                min={floor}
+                max={ceiling}
+                className="mt-2"
+                placeholder={`${money(floor)} – ${money(ceiling)}`}
+                value={custom}
+                onChange={(event) => setCustom(event.target.value)}
+              />
+            </div>
+          ) : (
+            <p className="rounded-lg border border-border bg-panel p-3 text-xs text-muted-foreground">
+              Custom gift amounts aren&apos;t included in your room — pick a gift above, or upgrade
+              for higher-value gifts.
+            </p>
+          )}
 
           <div>
             <Label htmlFor="gift-channel">Payment method</Label>
@@ -181,9 +208,10 @@ export function GiftDialog({
             </p>
           </div>
         </div>
+        )}
 
         <DialogFooter>
-          <Button variant="brass" onClick={confirm}>
+          <Button variant="brass" onClick={confirm} disabled={!gift}>
             <Lock className="size-4" />
             <GiftIcon className="size-4" /> Send {money(amount)} gift
           </Button>
