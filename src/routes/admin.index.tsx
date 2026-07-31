@@ -112,13 +112,16 @@ function AdminOverview() {
 
           <div className="mt-8 flex h-48 items-end gap-3 sm:gap-5">
             {bookingTrend.map((point) => (
-              <div key={point.month} className="flex flex-1 flex-col items-center gap-2">
+              <div
+                key={point.month}
+                className="flex h-full flex-1 flex-col items-center justify-end gap-2"
+              >
                 <span className="text-[10px] text-muted-foreground">
                   {Math.round(point.gmv / 1000)}k
                 </span>
                 <div
-                  className="w-full rounded-t-md bg-gradient-to-t from-primary/25 to-primary transition-all"
-                  style={{ height: `${(point.gmv / maxGmv) * 100}%` }}
+                  className="w-full rounded-t-md bg-gradient-to-t from-primary/25 to-primary"
+                  style={{ height: `${(point.gmv / maxGmv) * 82}%` }}
                 />
                 <span className="text-[11px] text-muted-foreground">{point.month}</span>
               </div>
