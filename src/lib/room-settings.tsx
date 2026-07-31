@@ -17,6 +17,11 @@ import {
   type RoomGiftRules,
   type RoomGiftRulesMap,
 } from "./gifts";
+import {
+  DEFAULT_MODERATION_SETTINGS,
+  type ModerationAction,
+  type ModerationSettings,
+} from "./moderation";
 import { rooms } from "./mock-data";
 import type { Tier } from "./types";
 
@@ -462,6 +467,7 @@ function sanitizeState(value: unknown): StoredState {
     profiles: sanitizeProfiles(record["profiles"]),
     platform: sanitizePlatform(record["platform"]),
     gifts: sanitizeGifts(record["gifts"]),
+    moderation: sanitizeModeration(record["moderation"]),
   };
 }
 
@@ -470,6 +476,7 @@ const DEFAULT_STATE: StoredState = {
   profiles: DEFAULT_ROOM_PROFILES,
   platform: DEFAULT_PLATFORM_SETTINGS,
   gifts: DEFAULT_GIFT_SETTINGS,
+  moderation: DEFAULT_MODERATION_SETTINGS,
 };
 
 /* ----------------------------------------------------------------- context */
@@ -479,6 +486,7 @@ interface RoomSettingsContextValue {
   profiles: RoomProfileMap;
   platform: PlatformSettings;
   gifts: GiftSettings;
+  moderation: ModerationSettings;
   setPrivilege: <K extends keyof RoomPrivileges>(
     room: Tier,
     key: K,
@@ -500,6 +508,17 @@ interface RoomSettingsContextValue {
     value: RoomGiftRules[K],
   ) => void;
   toggleRoomGift: (room: Tier, giftId: string) => void;
+  setModerationField: <K extends keyof ModerationSettings>(
+    key: K,
+    value: ModerationSettings[K],
+  ) => void;
+  /** Replace the flagged-word list (already trimmed and de-duplicated). */
+  setFlaggedWords: (words: string[]) => void;
+  addFlaggedWord: (word: string) => void;
+  removeFlaggedWord: (word: string) => void;
+  setContactExemptRoom: (room: Tier, exempt: boolean) => void;
+  /** Whether a room may exchange contact details right now. */
+  contactSharingAllowed: (room: Tier) => boolean;
   /** Gifts a given room may actually send right now, with admin values. */
   giftsFor: (room: Tier) => Gift[];
   giftRulesOf: (room: Tier) => RoomGiftRules;
@@ -626,6 +645,71 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
     [commit],
   );
 
+  const setModerationField = useCallback<RoomSettingsContextValue["setModerationField"]>(
+    (key, value) => {
+      commit((current) => ({ ...current, moderation: { ...current.moderation, [key]: value } }));
+    },
+    [commit],
+  );
+
+  const setFlaggedWords = useCallback<RoomSettingsContextValue["setFlaggedWords"]>(
+    (words) => {
+      const cleaned = [...new Set(words.map((word) => word.trim()).filter(Boolean))];
+      commit((current) => ({
+        ...current,
+        moderation: { ...current.moderation, flaggedWords: cleaned },
+      }));
+    },
+    [commit],
+  );
+
+  const addFlaggedWord = useCallback<RoomSettingsContextValue["addFlaggedWord"]>(
+    (word) => {
+      const term = word.trim();
+      if (!term) return;
+      commit((current) =>
+        current.moderation.flaggedWords.some(
+          (existing) => existing.toLowerCase() === term.toLowerCase(),
+        )
+          ? current
+          : {
+              ...current,
+              moderation: {
+                ...current.moderation,
+                flaggedWords: [...current.moderation.flaggedWords, term],
+              },
+            },
+      );
+    },
+    [commit],
+  );
+
+  const removeFlaggedWord = useCallback<RoomSettingsContextValue["removeFlaggedWord"]>(
+    (word) => {
+      commit((current) => ({
+        ...current,
+        moderation: {
+          ...current.moderation,
+          flaggedWords: current.moderation.flaggedWords.filter((existing) => existing !== word),
+        },
+      }));
+    },
+    [commit],
+  );
+
+  const setContactExemptRoom = useCallback<RoomSettingsContextValue["setContactExemptRoom"]>(
+    (room, exempt) => {
+      commit((current) => ({
+        ...current,
+        moderation: {
+          ...current.moderation,
+          contactExemptRooms: { ...current.moderation.contactExemptRooms, [room]: exempt },
+        },
+      }));
+    },
+    [commit],
+  );
+
   const resetPolicy = useCallback(() => {
     commit(() => DEFAULT_STATE);
   }, [commit]);
@@ -636,12 +720,22 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
       profiles: state.profiles,
       platform: state.platform,
       gifts: state.gifts,
+      moderation: state.moderation,
       setPrivilege,
       setProfileField,
       setPlatformField,
       setGiftField,
       setRoomGiftField,
       toggleRoomGift,
+      setModerationField,
+      setFlaggedWords,
+      addFlaggedWord,
+      removeFlaggedWord,
+      setContactExemptRoom,
+      contactSharingAllowed: (room) =>
+        !state.moderation.enabled ||
+        !state.moderation.blockContactSharing ||
+        state.moderation.contactExemptRooms[room],
       giftsFor: (room) => {
         const rules = state.gifts.rooms[room] ?? DEFAULT_ROOM_GIFT_RULES[room];
         if (!rules.enabled) return [];
@@ -665,6 +759,11 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
       setGiftField,
       setRoomGiftField,
       toggleRoomGift,
+      setModerationField,
+      setFlaggedWords,
+      addFlaggedWord,
+      removeFlaggedWord,
+      setContactExemptRoom,
       resetPolicy,
     ],
   );
