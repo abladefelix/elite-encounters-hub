@@ -3,6 +3,7 @@ import {
   BadgeCheck,
   CalendarCheck,
   DoorOpen,
+  ShieldCheck,
   LayoutDashboard,
   LifeBuoy,
   Users,
@@ -24,6 +25,7 @@ const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] 
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/rooms", label: "Rooms", icon: DoorOpen },
   { to: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
+  { to: "/admin/escrow", label: "Escrow & gifts", icon: ShieldCheck },
 ];
 
 function AdminLayout() {
