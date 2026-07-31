@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
+  Banknote,
   Check,
   CheckCheck,
   Image as ImageIcon,
-  Banknote,
   Lock,
   Paperclip,
   Phone,
