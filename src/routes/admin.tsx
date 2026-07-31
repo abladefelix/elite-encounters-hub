@@ -17,13 +17,13 @@ export const Route = createFileRoute("/admin")({
   component: AdminLayout,
 });
 
-const NAV = [
+const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { to: "/admin/vetting", label: "Vetting queue", icon: BadgeCheck },
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/rooms", label: "Rooms", icon: DoorOpen },
   { to: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
-] as const;
+];
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
