@@ -75,7 +75,7 @@ function MessagesPage() {
   const [showListOnMobile, setShowListOnMobile] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { canCall } = useRoomSettings();
+  const { canCall, can } = useRoomSettings();
   const member = currentClient();
   const { threadList, messages, typing, send, systemNote, bookingNote } =
     useChat(activeThreadId);
@@ -85,6 +85,9 @@ function MessagesPage() {
 
   const audioAllowed = canCall(member.room, "audio");
   const videoAllowed = canCall(member.room, "video");
+  const photosAllowed = can(member.room, "photoSharing");
+  const filesAllowed = can(member.room, "fileSharing");
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -301,19 +304,40 @@ function MessagesPage() {
                       variant="ghost"
                       size="icon"
                       aria-label="Attach file"
-                      onClick={() => toast("Attachments arrive with the storage backend")}
+                      onClick={() =>
+                        toast(
+                          filesAllowed
+                            ? "Attachments arrive with the storage backend"
+                            : `File sharing isn't included in your ${member.room} room`,
+                        )
+                      }
                     >
-                      <Paperclip className="size-4" />
+                      {filesAllowed ? (
+                        <Paperclip className="size-4" />
+                      ) : (
+                        <Lock className="size-4 opacity-60" />
+                      )}
                     </Button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       aria-label="Send photo"
-                      onClick={() => toast("Photo sharing arrives with the storage backend")}
+                      onClick={() =>
+                        toast(
+                          photosAllowed
+                            ? "Photo sharing arrives with the storage backend"
+                            : `Photo sharing isn't included in your ${member.room} room`,
+                        )
+                      }
                     >
-                      <ImageIcon className="size-4" />
+                      {photosAllowed ? (
+                        <ImageIcon className="size-4" />
+                      ) : (
+                        <Lock className="size-4 opacity-60" />
+                      )}
                     </Button>
+
                     <Input
                       value={draft}
                       onChange={(event) => setDraft(event.target.value)}
