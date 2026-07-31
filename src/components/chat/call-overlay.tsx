@@ -55,10 +55,8 @@ export function CallOverlay({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onEnd()}>
-      <DialogContent
-        showCloseButton={false}
-        className="max-w-md overflow-hidden border-border/70 bg-panel p-0"
-      >
+      <DialogContent className="max-w-md overflow-hidden border-border/70 bg-panel p-0">
+
         <DialogTitle className="sr-only">
           {mode === "video" ? "Video call" : "Voice call"} with {specialist.name}
         </DialogTitle>
