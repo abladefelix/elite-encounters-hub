@@ -87,7 +87,7 @@ function MessagesPage() {
   const [showListOnMobile, setShowListOnMobile] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { canCall, can, platform } = useRoomSettings();
+  const { canCall, can, platform, giftsFor } = useRoomSettings();
   const member = currentClient();
   const { threadList, messages, typing, send, systemNote, bookingNote, giftNote } =
     useChat(activeThreadId);
@@ -102,6 +102,8 @@ function MessagesPage() {
   const activeThread = threadList.find((thread) => thread.id === activeThreadId) ?? threadList[0]!;
   const specialist = getSpecialist(activeThread.specialistId)!;
 
+  const roomGifts = giftsFor(member.room);
+  const giftsAllowed = escrow.tipsEnabled && roomGifts.length > 0;
   const audioAllowed = canCall(member.room, "audio");
   const videoAllowed = canCall(member.room, "video");
   const photosAllowed = can(member.room, "photoSharing");
@@ -196,6 +198,12 @@ function MessagesPage() {
   function openGift() {
     if (!escrow.tipsEnabled) {
       toast("Cash gifts are switched off by Ashnight right now.");
+      return;
+    }
+    if (!giftsAllowed) {
+      toast(`Cash gifts aren't included in the ${TIER_LABEL[member.room]} room`, {
+        description: "Upgrade your room or ask support to enable gifting.",
+      });
       return;
     }
     setGiftOpen(true);
@@ -430,7 +438,7 @@ function MessagesPage() {
                           aria-label="Send a cash gift"
                           onClick={openGift}
                         >
-                          {escrow.tipsEnabled ? (
+                          {giftsAllowed ? (
                             <GiftIcon className="size-4" />
                           ) : (
                             <Lock className="size-4 opacity-60" />
@@ -438,9 +446,11 @@ function MessagesPage() {
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {escrow.tipsEnabled
-                          ? "Send a cash gift"
-                          : "Cash gifts are switched off"}
+                        {giftsAllowed
+                          ? `Send a cash gift (${roomGifts.length} available in your room)`
+                          : escrow.tipsEnabled
+                            ? `Cash gifts aren't included in the ${TIER_LABEL[member.room]} room`
+                            : "Cash gifts are switched off"}
                       </TooltipContent>
                     </Tooltip>
                     <Button
@@ -513,6 +523,7 @@ function MessagesPage() {
 
         <GiftDialog
           specialist={specialist}
+          room={member.room}
           open={giftOpen}
           onOpenChange={setGiftOpen}
           onConfirm={handleGift}
