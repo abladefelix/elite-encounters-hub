@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
+import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,30 +23,39 @@ const SpecialistsIndexRoute = SpecialistsIndexRouteImport.update({
   path: '/specialists/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SpecialistsSpecialistIdRoute = SpecialistsSpecialistIdRouteImport.update({
+  id: '/specialists/$specialistId',
+  path: '/specialists/$specialistId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/specialists/': typeof SpecialistsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/specialists': typeof SpecialistsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/specialists/': typeof SpecialistsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/specialists/'
+  fullPaths: '/' | '/specialists/$specialistId' | '/specialists/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/specialists'
-  id: '__root__' | '/' | '/specialists/'
+  to: '/' | '/specialists/$specialistId' | '/specialists'
+  id: '__root__' | '/' | '/specialists/$specialistId' | '/specialists/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
 }
 
@@ -65,11 +75,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpecialistsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/specialists/$specialistId': {
+      id: '/specialists/$specialistId'
+      path: '/specialists/$specialistId'
+      fullPath: '/specialists/$specialistId'
+      preLoaderRoute: typeof SpecialistsSpecialistIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,
 }
 export const routeTree = rootRouteImport

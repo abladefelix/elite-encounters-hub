@@ -148,7 +148,7 @@ function SpecialistProfile() {
 
             <h2 className="eyebrow">Services offered</h2>
             <div className="mt-3 flex flex-wrap gap-2">
-              {specialist.services.map((service) => (
+              {specialist.services.map((service: string) => (
                 <Badge key={service} variant="secondary" className="rounded-full font-normal">
                   {service}
                 </Badge>
