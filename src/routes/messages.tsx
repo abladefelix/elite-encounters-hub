@@ -304,19 +304,40 @@ function MessagesPage() {
                       variant="ghost"
                       size="icon"
                       aria-label="Attach file"
-                      onClick={() => toast("Attachments arrive with the storage backend")}
+                      onClick={() =>
+                        toast(
+                          filesAllowed
+                            ? "Attachments arrive with the storage backend"
+                            : `File sharing isn't included in your ${member.room} room`,
+                        )
+                      }
                     >
-                      <Paperclip className="size-4" />
+                      {filesAllowed ? (
+                        <Paperclip className="size-4" />
+                      ) : (
+                        <Lock className="size-4 opacity-60" />
+                      )}
                     </Button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       aria-label="Send photo"
-                      onClick={() => toast("Photo sharing arrives with the storage backend")}
+                      onClick={() =>
+                        toast(
+                          photosAllowed
+                            ? "Photo sharing arrives with the storage backend"
+                            : `Photo sharing isn't included in your ${member.room} room`,
+                        )
+                      }
                     >
-                      <ImageIcon className="size-4" />
+                      {photosAllowed ? (
+                        <ImageIcon className="size-4" />
+                      ) : (
+                        <Lock className="size-4 opacity-60" />
+                      )}
                     </Button>
+
                     <Input
                       value={draft}
                       onChange={(event) => setDraft(event.target.value)}
