@@ -10,33 +10,186 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ApplyRouteImport } from './routes/apply'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as RoomsRouteImport } from './routes/rooms'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
+import { Route as AdminRoomsRouteImport } from './routes/admin.rooms'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminVettingRouteImport } from './routes/admin.vetting'
+import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
+import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplyRoute = ApplyRouteImport.update({
+  id: '/apply',
+  path: '/apply',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoomsRoute = RoomsRouteImport.update({
+  id: '/rooms',
+  path: '/rooms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBookingsRoute = AdminBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRoomsRoute = AdminRoomsRouteImport.update({
+  id: '/rooms',
+  path: '/rooms',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVettingRoute = AdminVettingRouteImport.update({
+  id: '/vetting',
+  path: '/vetting',
+  getParentRoute: () => AdminRoute,
+} as any)
+const SpecialistsIndexRoute = SpecialistsIndexRouteImport.update({
+  id: '/specialists/',
+  path: '/specialists/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpecialistsSpecialistIdRoute = SpecialistsSpecialistIdRouteImport.update({
+  id: '/specialists/$specialistId',
+  path: '/specialists/$specialistId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/apply': typeof ApplyRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/messages': typeof MessagesRoute
+  '/rooms': typeof RoomsRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/rooms': typeof AdminRoomsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/vetting': typeof AdminVettingRoute
+  '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/specialists/': typeof SpecialistsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/apply': typeof ApplyRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/messages': typeof MessagesRoute
+  '/rooms': typeof RoomsRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/rooms': typeof AdminRoomsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/vetting': typeof AdminVettingRoute
+  '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
+  '/admin': typeof AdminIndexRoute
+  '/specialists': typeof SpecialistsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/apply': typeof ApplyRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/messages': typeof MessagesRoute
+  '/rooms': typeof RoomsRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/rooms': typeof AdminRoomsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/vetting': typeof AdminVettingRoute
+  '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/specialists/': typeof SpecialistsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/apply'
+    | '/how-it-works'
+    | '/messages'
+    | '/rooms'
+    | '/admin/bookings'
+    | '/admin/rooms'
+    | '/admin/users'
+    | '/admin/vetting'
+    | '/specialists/$specialistId'
+    | '/admin/'
+    | '/specialists/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/apply'
+    | '/how-it-works'
+    | '/messages'
+    | '/rooms'
+    | '/admin/bookings'
+    | '/admin/rooms'
+    | '/admin/users'
+    | '/admin/vetting'
+    | '/specialists/$specialistId'
+    | '/admin'
+    | '/specialists'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/apply'
+    | '/how-it-works'
+    | '/messages'
+    | '/rooms'
+    | '/admin/bookings'
+    | '/admin/rooms'
+    | '/admin/users'
+    | '/admin/vetting'
+    | '/specialists/$specialistId'
+    | '/admin/'
+    | '/specialists/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  ApplyRoute: typeof ApplyRoute
+  HowItWorksRoute: typeof HowItWorksRoute
+  MessagesRoute: typeof MessagesRoute
+  RoomsRoute: typeof RoomsRoute
+  SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
+  SpecialistsIndexRoute: typeof SpecialistsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +201,121 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apply': {
+      id: '/apply'
+      path: '/apply'
+      fullPath: '/apply'
+      preLoaderRoute: typeof ApplyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rooms': {
+      id: '/rooms'
+      path: '/rooms'
+      fullPath: '/rooms'
+      preLoaderRoute: typeof RoomsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bookings': {
+      id: '/admin/bookings'
+      path: '/bookings'
+      fullPath: '/admin/bookings'
+      preLoaderRoute: typeof AdminBookingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/rooms': {
+      id: '/admin/rooms'
+      path: '/rooms'
+      fullPath: '/admin/rooms'
+      preLoaderRoute: typeof AdminRoomsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/vetting': {
+      id: '/admin/vetting'
+      path: '/vetting'
+      fullPath: '/admin/vetting'
+      preLoaderRoute: typeof AdminVettingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/specialists/': {
+      id: '/specialists/'
+      path: '/specialists'
+      fullPath: '/specialists/'
+      preLoaderRoute: typeof SpecialistsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/specialists/$specialistId': {
+      id: '/specialists/$specialistId'
+      path: '/specialists/$specialistId'
+      fullPath: '/specialists/$specialistId'
+      preLoaderRoute: typeof SpecialistsSpecialistIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminBookingsRoute: typeof AdminBookingsRoute
+  AdminRoomsRoute: typeof AdminRoomsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminVettingRoute: typeof AdminVettingRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminBookingsRoute: AdminBookingsRoute,
+  AdminRoomsRoute: AdminRoomsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminVettingRoute: AdminVettingRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
+  ApplyRoute: ApplyRoute,
+  HowItWorksRoute: HowItWorksRoute,
+  MessagesRoute: MessagesRoute,
+  RoomsRoute: RoomsRoute,
+  SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
+  SpecialistsIndexRoute: SpecialistsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
