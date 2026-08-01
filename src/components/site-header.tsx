@@ -18,6 +18,7 @@ const NAV = [
 
 export function SiteHeader() {
   const { platform } = useRoomSettings();
+  const { flags } = useFeatureFlags();
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
 
