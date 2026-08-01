@@ -70,3 +70,14 @@ both by RLS and by the `/ashnight-control` route guard. Secrets (Paystack secret
 call-service credentials) live in the admin key vault and are never shipped to the
 browser. Optional TOTP two-factor authentication is available to every account and can
 be *required* for admins.
+
+## Note on build tooling
+
+The app code, database schema and docs are vendor-neutral — no editor or hosting SDK is
+imported anywhere in `src/`. The only remaining editor-specific pieces are the *build
+tooling* used while the project is still developed in the online editor
+(`vite.config.ts` and the `@lovable.dev/vite-tanstack-config` devDependency in
+`package.json`). Self-hosted builds do not use them: `npm run build:selfhost` uses
+`vite.config.selfhost.ts`, which is plain open-source Vite + TanStack Start + Nitro. Once
+you no longer edit online, you can delete `vite.config.ts`, drop that devDependency, and
+rename `vite.config.selfhost.ts` to `vite.config.ts`.
