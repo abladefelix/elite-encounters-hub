@@ -446,6 +446,12 @@ export function AuthPage({
         <TabsContent value="signin">
           <Card>
             <CardContent className="space-y-4 pt-6">
+              <Alert className="border-border/70 bg-secondary/40">
+                <Info className="size-4" />
+                <AlertDescription>
+                  Create an account or sign in to view and book vetted specialists.
+                </AlertDescription>
+              </Alert>
               {googleEnabled ? (
                 <>
                   <Button
