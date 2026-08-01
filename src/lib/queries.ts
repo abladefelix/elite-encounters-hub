@@ -267,6 +267,7 @@ export function useReviewApplication() {
 
 export function useThreads(userId: string | undefined) {
   const queryClient = useQueryClient();
+  const instanceId = useId();
 
   const query = useQuery({
     queryKey: ["threads", userId],
