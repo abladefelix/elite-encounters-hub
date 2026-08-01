@@ -234,9 +234,20 @@ function AdminLayout() {
                 </Link>
               );
             })}
-            <div className="ml-auto shrink-0 pl-2">
+            <div className="ml-auto flex shrink-0 items-center gap-1 pl-2">
+              <NotificationBell />
               <ThemeToggle className="size-8" />
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-8"
+                aria-label="Sign out"
+                onClick={() => void handleSignOut()}
+              >
+                <LogOut className="size-4" />
+              </Button>
             </div>
+
           </div>
 
           <div className="px-5 py-8 sm:px-8">
