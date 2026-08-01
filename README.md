@@ -151,6 +151,17 @@ supabase/migrations/          SQL schema, RLS policies and grants (run in order)
 docs/                         setup + user guides
 ```
 
+## Payments, escrow and moderation are server-side
+
+Checkouts are started by server functions that recalculate the amount from database state,
+then create a real Paystack transaction using the secret key from the admin vault. Money
+only becomes "held" when the signed Paystack webhook (or the member's verified return trip)
+confirms the charge. Escrow rows are insert/update-locked to the server and admins, so no
+member can self-approve a payout or edit a price after payment. Chat moderation runs as a
+database trigger using the admin's own rules, so contact details are blocked even if a
+client is bypassed. Deposits are settled by the scheduled
+`/api/public/hooks/escrow-release` pass — see [docs/SETUP.md](docs/SETUP.md) §5a.
+
 ## Security model in one paragraph
 
 Every table has Row Level Security enabled with explicit grants. Roles live in a

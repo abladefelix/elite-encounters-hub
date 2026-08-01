@@ -32,9 +32,12 @@ import { Route as AshnightControlSettingsRouteImport } from './routes/ashnight-c
 import { Route as AshnightControlSignupRouteImport } from './routes/ashnight-control.signup'
 import { Route as AshnightControlUsersRouteImport } from './routes/ashnight-control.users'
 import { Route as AshnightControlVettingRouteImport } from './routes/ashnight-control.vetting'
+import { Route as PaymentReturnRouteImport } from './routes/payment.return'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
 import { Route as ApiPublicHooksBackupRouteImport } from './routes/api/public/hooks/backup'
+import { Route as ApiPublicHooksEscrowReleaseRouteImport } from './routes/api/public/hooks/escrow-release'
+import { Route as ApiPublicHooksPaystackRouteImport } from './routes/api/public/hooks/paystack'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -152,6 +155,11 @@ const AshnightControlVettingRoute = AshnightControlVettingRouteImport.update({
   path: '/vetting',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const PaymentReturnRoute = PaymentReturnRouteImport.update({
+  id: '/payment/return',
+  path: '/payment/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SpecialistsIndexRoute = SpecialistsIndexRouteImport.update({
   id: '/specialists/',
   path: '/specialists/',
@@ -165,6 +173,17 @@ const SpecialistsSpecialistIdRoute = SpecialistsSpecialistIdRouteImport.update({
 const ApiPublicHooksBackupRoute = ApiPublicHooksBackupRouteImport.update({
   id: '/api/public/hooks/backup',
   path: '/api/public/hooks/backup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksEscrowReleaseRoute =
+  ApiPublicHooksEscrowReleaseRouteImport.update({
+    id: '/api/public/hooks/escrow-release',
+    path: '/api/public/hooks/escrow-release',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPaystackRoute = ApiPublicHooksPaystackRouteImport.update({
+  id: '/api/public/hooks/paystack',
+  path: '/api/public/hooks/paystack',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -191,10 +210,13 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/signup': typeof AshnightControlSignupRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
+  '/payment/return': typeof PaymentReturnRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
+  '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
+  '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -218,10 +240,13 @@ export interface FileRoutesByTo {
   '/ashnight-control/signup': typeof AshnightControlSignupRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
+  '/payment/return': typeof PaymentReturnRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control': typeof AshnightControlIndexRoute
   '/specialists': typeof SpecialistsIndexRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
+  '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
+  '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -247,10 +272,13 @@ export interface FileRoutesById {
   '/ashnight-control/signup': typeof AshnightControlSignupRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
+  '/payment/return': typeof PaymentReturnRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
+  '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
+  '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -277,10 +305,13 @@ export interface FileRouteTypes {
     | '/ashnight-control/signup'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
+    | '/payment/return'
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
     | '/api/public/hooks/backup'
+    | '/api/public/hooks/escrow-release'
+    | '/api/public/hooks/paystack'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -304,10 +335,13 @@ export interface FileRouteTypes {
     | '/ashnight-control/signup'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
+    | '/payment/return'
     | '/specialists/$specialistId'
     | '/ashnight-control'
     | '/specialists'
     | '/api/public/hooks/backup'
+    | '/api/public/hooks/escrow-release'
+    | '/api/public/hooks/paystack'
   id:
     | '__root__'
     | '/'
@@ -332,10 +366,13 @@ export interface FileRouteTypes {
     | '/ashnight-control/signup'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
+    | '/payment/return'
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
     | '/api/public/hooks/backup'
+    | '/api/public/hooks/escrow-release'
+    | '/api/public/hooks/paystack'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -349,9 +386,12 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
+  PaymentReturnRoute: typeof PaymentReturnRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
   ApiPublicHooksBackupRoute: typeof ApiPublicHooksBackupRoute
+  ApiPublicHooksEscrowReleaseRoute: typeof ApiPublicHooksEscrowReleaseRoute
+  ApiPublicHooksPaystackRoute: typeof ApiPublicHooksPaystackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -517,6 +557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlVettingRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/payment/return': {
+      id: '/payment/return'
+      path: '/payment/return'
+      fullPath: '/payment/return'
+      preLoaderRoute: typeof PaymentReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/specialists/': {
       id: '/specialists/'
       path: '/specialists'
@@ -536,6 +583,20 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/backup'
       fullPath: '/api/public/hooks/backup'
       preLoaderRoute: typeof ApiPublicHooksBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/escrow-release': {
+      id: '/api/public/hooks/escrow-release'
+      path: '/api/public/hooks/escrow-release'
+      fullPath: '/api/public/hooks/escrow-release'
+      preLoaderRoute: typeof ApiPublicHooksEscrowReleaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/paystack': {
+      id: '/api/public/hooks/paystack'
+      path: '/api/public/hooks/paystack'
+      fullPath: '/api/public/hooks/paystack'
+      preLoaderRoute: typeof ApiPublicHooksPaystackRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -588,9 +649,12 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
+  PaymentReturnRoute: PaymentReturnRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,
   ApiPublicHooksBackupRoute: ApiPublicHooksBackupRoute,
+  ApiPublicHooksEscrowReleaseRoute: ApiPublicHooksEscrowReleaseRoute,
+  ApiPublicHooksPaystackRoute: ApiPublicHooksPaystackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

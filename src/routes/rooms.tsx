@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Check, LogIn, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +32,7 @@ import {
   type RoomPolicyMap,
   type RoomPrivileges,
 } from "@/lib/room-settings";
+import { startMembershipCheckout } from "@/lib/payments.functions";
 import { money, TIER_LABEL, type Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/rooms")({
@@ -126,6 +130,24 @@ function RoomsPage() {
 
   const { data: allSpecialists, isLoading: specialistsLoading } = useSpecialists("all");
   const { data: membership, isLoading: membershipLoading } = useMyMembership(user?.id);
+  const membershipCheckout = useServerFn(startMembershipCheckout);
+  const [joining, setJoining] = useState<Tier | null>(null);
+
+  async function joinRoom(room: Tier) {
+    setJoining(room);
+    try {
+      const checkout = await membershipCheckout({
+        data: { room, callbackUrl: `${window.location.origin}/payment/return` },
+      });
+      toast.success("Taking you to Paystack…", {
+        description: `${money(checkout.amount)} monthly membership for the ${TIER_LABEL[room]} room.`,
+      });
+      window.location.href = checkout.authorizationUrl;
+    } catch (error) {
+      setJoining(null);
+      toast.error(error instanceof Error ? error.message : "Checkout could not be started");
+    }
+  }
 
   const specialistCounts: Record<Tier, number> = { basic: 0, premium: 0, ultimate: 0 };
   for (const specialist of allSpecialists ?? []) {
@@ -275,8 +297,15 @@ function RoomsPage() {
                   </Button>
                 ) : (
                   <div className="mt-7 space-y-2">
-                    <Button variant={tier === "premium" ? "brass" : "soft"} className="w-full" disabled>
-                      Card/mobile money checkout coming soon
+                    <Button
+                      variant={tier === "premium" ? "brass" : "soft"}
+                      className="w-full"
+                      disabled={joining !== null}
+                      onClick={() => void joinRoom(tier)}
+                    >
+                      {joining === tier
+                        ? "Opening Paystack…"
+                        : `${isUpgrade ? "Upgrade" : "Join"} for ${money(profile.priceMonthly)}/mo`}
                     </Button>
                     <Button asChild variant="ghost" className="w-full">
                       <Link to="/apply">

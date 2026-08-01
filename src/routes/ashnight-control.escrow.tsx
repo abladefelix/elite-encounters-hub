@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -132,6 +133,8 @@ function AdminEscrow() {
         <Stat label="Deposited to specialists" value={money(totals.released)} icon={Banknote} />
         <Stat label="Frozen by disputes" value={money(totals.disputed)} icon={AlertTriangle} />
       </div>
+
+      <PaymentsAutomationCard />
 
       {/* -------------------------------------------------------- escrow rules */}
       <Card className="p-6">
@@ -669,5 +672,96 @@ function RoomGiftCard({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Live payment plumbing: the URLs to paste into Paystack and the scheduler,
+ * plus a manual trigger for the settlement pass.
+ */
+function PaymentsAutomationCard() {
+  const [running, setRunning] = useState(false);
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+
+  async function runNow() {
+    setRunning(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const res = await fetch("/api/public/hooks/escrow-release", {
+        method: "POST",
+        headers: data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {},
+      });
+      const body = (await res.json()) as {
+        ok?: boolean;
+        released?: number;
+        autoConfirmed?: number;
+        skipped?: string | null;
+        error?: string;
+      };
+      if (!res.ok || !body.ok) throw new Error(body.error ?? "Settlement failed");
+      toast.success(
+        body.skipped
+          ? body.skipped
+          : `${body.released ?? 0} payout(s) deposited, ${body.autoConfirmed ?? 0} moved to clearing`,
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Settlement failed");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  const rows = [
+    {
+      label: "Paystack webhook URL",
+      hint: "Paste into Paystack → Settings → API Keys & Webhooks.",
+      value: `${origin}/api/public/hooks/paystack`,
+    },
+    {
+      label: "Escrow settlement endpoint",
+      hint: "Call hourly from your scheduler with the project apikey header.",
+      value: `${origin}/api/public/hooks/escrow-release`,
+    },
+  ];
+
+  return (
+    <Card className="p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Payments &amp; automation</h2>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Paystack keys live in <strong>Keys &amp; security</strong> — nothing is stored in code.
+            Charges are verified server-side by both the webhook and the member&apos;s return trip,
+            and deposits are settled by the scheduled pass below.
+          </p>
+        </div>
+        <Button size="sm" variant="brass" disabled={running} onClick={() => void runNow()}>
+          {running ? "Settling…" : "Run settlement now"}
+        </Button>
+      </div>
+      <div className="mt-4 space-y-2">
+        {rows.map((row) => (
+          <div key={row.label} className="rounded-lg border border-border bg-surface p-3">
+            <p className="text-sm font-medium">{row.label}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{row.hint}</p>
+            <div className="mt-2 flex items-center gap-2">
+              <code className="min-w-0 flex-1 truncate rounded bg-secondary px-2 py-1.5 text-xs">
+                {row.value}
+              </code>
+              <Button
+                size="sm"
+                variant="soft"
+                onClick={() => {
+                  void navigator.clipboard.writeText(row.value);
+                  toast.success("Copied");
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }

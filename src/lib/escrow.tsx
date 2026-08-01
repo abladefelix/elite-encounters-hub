@@ -1,21 +1,23 @@
 import {
   createContext,
   useCallback,
-  useEffect,
   useMemo,
   type ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useSettingsSection } from "@/lib/platform-settings";
+import { confirmEscrowComplete, raiseEscrowIssue } from "@/lib/payments.functions";
 import {
   useEscrowEntries,
   useEscrowMutations,
   type EscrowRow,
 } from "@/lib/queries";
 import type { Database } from "@/integrations/supabase/types";
+
 
 /**
  * Escrow engine — now backed by the real `escrow_entries` table.
@@ -198,28 +200,18 @@ export function useEscrow(): EscrowContextValue {
   const entriesQuery = useEscrowEntries();
   const { create, update } = useEscrowMutations();
   const entries = useMemo(() => entriesQuery.data ?? [], [entriesQuery.data]);
+  const queryClient = useQueryClient();
+  const confirmEscrow = useServerFn(confirmEscrowComplete);
+  const raiseIssueFn = useServerFn(raiseEscrowIssue);
+  const refreshEntries = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ["escrow"] }),
+    [queryClient],
+  );
 
-  // Stopgap client-side settlement: flip anything overdue to "released".
-  // The authoritative automatic release will be a scheduled server job added
-  // in the payments phase — this only covers the case where a member/admin
-  // happens to have escrow open when a hold window elapses.
-  useEffect(() => {
-    if (!settings.autoReleaseEnabled) return;
-    const overdue = dueForRelease(entries);
-    for (const entry of overdue) {
-      void supabase
-        .from("escrow_entries")
-        .update({
-          state: "released",
-          released_at: new Date().toISOString(),
-          admin_note: entry.admin_note || "Auto-deposited — hold window elapsed with no issues raised.",
-        })
-        .eq("id", entry.id)
-        .then(({ error }) => {
-          if (error) console.error("escrow auto-release failed", error.message);
-        });
-    }
-  }, [entries, settings.autoReleaseEnabled]);
+
+  // Settlement is performed server-side by the scheduled pass at
+  // /api/public/hooks/escrow-release — no browser is involved in moving money.
+
 
   const threadEntries = useCallback(
     (threadId: string) => entries.filter((entry) => entry.thread_id === threadId),
@@ -287,34 +279,38 @@ export function useEscrow(): EscrowContextValue {
     [update],
   );
 
+  // Member-side transitions run through secure server actions: the database no
+  // longer lets a member or specialist edit an escrow row directly.
   const confirmComplete = useCallback<EscrowContextValue["confirmComplete"]>(
-    (id) =>
-      runUpdate(
-        id,
-        {
-          state: "clearing",
-          release_at: hoursFromNow(settings.holdHours),
-          admin_note: "Member confirmed the visit — clearing window started.",
-        },
-        "Couldn't confirm the visit",
-      ),
-    [runUpdate, settings.holdHours],
+    async (id) => {
+      try {
+        await confirmEscrow({ data: { escrowId: id } });
+        await refreshEntries();
+      } catch (error) {
+        toast.error("Couldn't confirm the visit", {
+          description: error instanceof Error ? error.message : "Please try again.",
+        });
+        throw error;
+      }
+    },
+    [confirmEscrow, refreshEntries],
   );
 
   const raiseIssue = useCallback<EscrowContextValue["raiseIssue"]>(
-    (id, reason) =>
-      runUpdate(
-        id,
-        {
-          state: "disputed",
-          release_at: null,
-          dispute_reason: reason,
-          disputed_at: new Date().toISOString(),
-        },
-        "Couldn't raise the issue",
-      ),
-    [runUpdate],
+    async (id, reason) => {
+      try {
+        await raiseIssueFn({ data: { escrowId: id, reason } });
+        await refreshEntries();
+      } catch (error) {
+        toast.error("Couldn't raise the issue", {
+          description: error instanceof Error ? error.message : "Please try again.",
+        });
+        throw error;
+      }
+    },
+    [raiseIssueFn, refreshEntries],
   );
+
 
   const releaseNow = useCallback<EscrowContextValue["releaseNow"]>(
     (id, note) =>

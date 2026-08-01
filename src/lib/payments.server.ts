@@ -1,0 +1,309 @@
+/**
+ * Server-only Paystack layer.
+ *
+ * No payment credential lives in the codebase or in an env file: every key is
+ * read at call time from the admin-owned `integration_keys` vault (Control room
+ * → Keys & security). Rotating a key there takes effect on the next request.
+ */
+import type { Database } from "@/integrations/supabase/types";
+
+type Tier = Database["public"]["Enums"]["tier"];
+
+const PAYSTACK_API = "https://api.paystack.co";
+
+export async function adminClient() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
+
+/** Reads the requested credentials out of the admin vault. */
+export async function vaultKeys(keys: string[]): Promise<Record<string, string>> {
+  const admin = await adminClient();
+  const { data, error } = await admin.from("integration_keys").select("key, value").in("key", keys);
+  if (error) throw new Error(`Could not read the key vault: ${error.message}`);
+  const map: Record<string, string> = {};
+  for (const row of data ?? []) map[row.key] = row.value ?? "";
+  return map;
+}
+
+export async function paystackSecret(): Promise<string> {
+  const keys = await vaultKeys(["paystack_secret_key"]);
+  const secret = (keys["paystack_secret_key"] ?? "").trim();
+  if (!secret) {
+    throw new Error(
+      "Paystack isn't configured yet. An admin must add the Paystack secret key in Control room → Keys & security.",
+    );
+  }
+  return secret;
+}
+
+async function paystack<T>(path: string, init: RequestInit, secret: string): Promise<T> {
+  const res = await fetch(`${PAYSTACK_API}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      "Content-Type": "application/json",
+      ...(init.headers ?? {}),
+    },
+  });
+  const text = await res.text();
+  let body: { status?: boolean; message?: string; data?: T } = {};
+  try {
+    body = JSON.parse(text) as typeof body;
+  } catch {
+    throw new Error(`Paystack returned an unreadable response [${res.status}]`);
+  }
+  if (!res.ok || body.status === false) {
+    throw new Error(body.message || `Paystack request failed [${res.status}]`);
+  }
+  return body.data as T;
+}
+
+export interface PaystackInitData {
+  authorization_url: string;
+  access_code: string;
+  reference: string;
+}
+
+export interface PaystackVerifyData {
+  status: string;
+  reference: string;
+  amount: number;
+  currency: string;
+  channel?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export function reference(prefix: string) {
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `ASH-${prefix}-${Date.now().toString(36).toUpperCase()}-${rand}`;
+}
+
+export function toPesewas(amountGhs: number) {
+  return Math.round(amountGhs * 100);
+}
+
+export async function initializeTransaction(input: {
+  email: string;
+  amountGhs: number;
+  reference: string;
+  callbackUrl: string;
+  channel?: string | undefined;
+  metadata: Record<string, unknown>;
+}): Promise<PaystackInitData> {
+  const secret = await paystackSecret();
+  const channels = input.channel ? [input.channel] : undefined;
+  return paystack<PaystackInitData>(
+    "/transaction/initialize",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email: input.email,
+        amount: toPesewas(input.amountGhs),
+        currency: "GHS",
+        reference: input.reference,
+        callback_url: input.callbackUrl,
+        ...(channels ? { channels } : {}),
+        metadata: input.metadata,
+      }),
+    },
+    secret,
+  );
+}
+
+export async function verifyTransaction(ref: string): Promise<PaystackVerifyData> {
+  const secret = await paystackSecret();
+  return paystack<PaystackVerifyData>(
+    `/transaction/verify/${encodeURIComponent(ref)}`,
+    { method: "GET" },
+    secret,
+  );
+}
+
+/* ------------------------------------------------------------------ settings */
+
+export interface ServerSettings {
+  escrow: {
+    escrowEnabled?: boolean;
+    holdHours?: number;
+    requireClientConfirm?: boolean;
+    autoConfirmHours?: number;
+    autoReleaseEnabled?: boolean;
+    tipsEnabled?: boolean;
+    tipFeePct?: number;
+    tipsEscrowed?: boolean;
+    maxTip?: number;
+  };
+  platform: { platformFeePct?: number; membershipEnabled?: boolean };
+  rooms: Record<string, { priceMonthly?: number; name?: string }>;
+}
+
+export async function serverSettings(): Promise<ServerSettings> {
+  const admin = await adminClient();
+  const { data } = await admin.from("platform_settings").select("data").eq("id", true).maybeSingle();
+  const blob = (data?.data ?? {}) as Record<string, unknown>;
+  return {
+    escrow: (blob["escrow"] ?? {}) as ServerSettings["escrow"],
+    platform: (blob["platform"] ?? {}) as ServerSettings["platform"],
+    rooms: (blob["rooms"] ?? {}) as ServerSettings["rooms"],
+  };
+}
+
+export function hoursFromNow(hours: number) {
+  return new Date(Date.now() + hours * 3600_000).toISOString();
+}
+
+export function split(amountGhs: number, feePct: number) {
+  const fee = Math.round(amountGhs * (feePct / 100));
+  return { amount: amountGhs, fee, net: amountGhs - fee };
+}
+
+export function roomPrice(settings: ServerSettings, room: Tier): number {
+  const fallback: Record<Tier, number> = { basic: 150, premium: 350, ultimate: 900 };
+  const configured = settings.rooms?.[room]?.priceMonthly;
+  return typeof configured === "number" && configured > 0 ? configured : fallback[room];
+}
+
+/* ---------------------------------------------------------------- finalising */
+
+/**
+ * Applies a confirmed Paystack charge. Safe to call repeatedly — the webhook
+ * and the browser return trip both land here.
+ */
+export async function finalizeReference(
+  ref: string,
+  paidChannel?: string,
+): Promise<{ applied: boolean; detail: string }> {
+  const admin = await adminClient();
+  const settings = await serverSettings();
+
+  const { data: entry } = await admin
+    .from("escrow_entries")
+    .select("*")
+    .eq("paystack_reference", ref)
+    .maybeSingle();
+
+  if (entry) {
+    if (entry.state !== "pending") return { applied: false, detail: "Already applied" };
+    const escrowed =
+      (settings.escrow.escrowEnabled ?? true) &&
+      (entry.kind === "booking" || (settings.escrow.tipsEscrowed ?? false));
+    const holdHours = entry.hold_hours || (settings.escrow.holdHours ?? 24);
+    const now = new Date().toISOString();
+
+    const patch: Database["public"]["Tables"]["escrow_entries"]["Update"] = {
+      paid_at: now,
+      admin_note: paidChannel ? `Paid via Paystack (${paidChannel}).` : "Paid via Paystack.",
+    };
+    if (!escrowed) {
+      patch.state = "released";
+      patch.released_at = now;
+      patch.admin_note = "Paid straight through — escrow not applied to this payment type.";
+    } else if (settings.escrow.requireClientConfirm ?? true) {
+      patch.state = "held";
+    } else {
+      patch.state = "clearing";
+      patch.release_at = hoursFromNow(holdHours);
+    }
+
+    const { error } = await admin.from("escrow_entries").update(patch).eq("id", entry.id);
+    if (error) throw new Error(error.message);
+
+    if (entry.booking_id) {
+      await admin.from("bookings").update({ status: "paid" }).eq("id", entry.booking_id);
+    }
+    if (entry.thread_id) {
+      await admin.from("messages").insert({
+        thread_id: entry.thread_id,
+        author_id: null,
+        kind: "system",
+        escrow_id: entry.id,
+        body: `Payment confirmed — GHS ${entry.amount.toLocaleString()} is ${
+          patch.state === "released" ? "on its way to the specialist" : "secured in Ashnight escrow"
+        }.`,
+      });
+    }
+    return { applied: true, detail: `Escrow ${entry.id} → ${patch.state}` };
+  }
+
+  const { data: membership } = await admin
+    .from("memberships")
+    .select("*")
+    .eq("paystack_reference", ref)
+    .maybeSingle();
+
+  if (membership) {
+    if (membership.status === "active") return { applied: false, detail: "Already active" };
+    const { error } = await admin
+      .from("memberships")
+      .update({
+        status: "active",
+        current_period_end: hoursFromNow(24 * 30),
+      })
+      .eq("id", membership.id);
+    if (error) throw new Error(error.message);
+    return { applied: true, detail: `Membership ${membership.id} activated` };
+  }
+
+  return { applied: false, detail: "No matching payment on file" };
+}
+
+/**
+ * The scheduled settlement pass: starts clearing for stale un-confirmed holds
+ * and deposits anything whose hold window has elapsed without a dispute.
+ */
+export async function settleDueEscrow(): Promise<{
+  autoConfirmed: number;
+  released: number;
+  skipped: string | null;
+}> {
+  const admin = await adminClient();
+  const settings = await serverSettings();
+  if (!(settings.escrow.autoReleaseEnabled ?? true)) {
+    return { autoConfirmed: 0, released: 0, skipped: "Automatic deposits are switched off" };
+  }
+  const holdHours = settings.escrow.holdHours ?? 24;
+  const autoConfirmHours = settings.escrow.autoConfirmHours ?? 72;
+  const now = Date.now();
+
+  const { data: held } = await admin
+    .from("escrow_entries")
+    .select("id, paid_at")
+    .eq("state", "held");
+  let autoConfirmed = 0;
+  for (const row of held ?? []) {
+    const paid = row.paid_at ? new Date(row.paid_at).getTime() : now;
+    if (now - paid < autoConfirmHours * 3600_000) continue;
+    await admin
+      .from("escrow_entries")
+      .update({
+        state: "clearing",
+        release_at: hoursFromNow(holdHours),
+        admin_note: "No confirmation from the member — clearing started automatically.",
+      })
+      .eq("id", row.id);
+    autoConfirmed += 1;
+  }
+
+  const { data: due } = await admin
+    .from("escrow_entries")
+    .select("id")
+    .eq("state", "clearing")
+    .not("release_at", "is", null)
+    .lte("release_at", new Date(now).toISOString());
+  let released = 0;
+  for (const row of due ?? []) {
+    await admin
+      .from("escrow_entries")
+      .update({
+        state: "released",
+        release_at: null,
+        released_at: new Date().toISOString(),
+        admin_note: "Auto-deposited — hold window elapsed with no issues raised.",
+      })
+      .eq("id", row.id);
+    released += 1;
+  }
+
+  return { autoConfirmed, released, skipped: null };
+}

@@ -338,6 +338,28 @@ Sign in as admin and open `/ashnight-control`:
    gifts, attachments, bookings, 2FA availability, required admin 2FA, audit logging.
 7. **Default theme** → choose the theme new visitors get (they can still switch).
 
+### 5a. Wire Paystack and escrow settlement
+
+Both URLs are shown with copy buttons in **Control room → Escrow & gifts → Payments &
+automation**.
+
+1. **Webhook**: in Paystack → *Settings → API Keys & Webhooks*, set the webhook URL to
+   `https://<your-domain>/api/public/hooks/paystack`. Ashnight verifies every call with
+   HMAC-SHA512 against your secret key, so an unsigned request can never move money.
+2. **Settlement pass**: call
+   `https://<your-domain>/api/public/hooks/escrow-release` hourly. It starts the clearing
+   countdown for visits the member never confirmed and deposits anything whose hold
+   window elapsed with no issue raised. Admins can also press **Run settlement now**.
+
+```bash
+# Linux cron, hourly
+0 * * * * curl -fsS -X POST https://your-domain/api/public/hooks/escrow-release \
+  -H "apikey: <your publishable key>" >/dev/null
+```
+
+Amounts are always recalculated server-side from the database (visit fee × hours, add-ons,
+room pricing, commission) — the browser never tells the server what to charge.
+
 ---
 
 ## 6. Voice & video calls

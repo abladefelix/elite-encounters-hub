@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
@@ -44,6 +45,7 @@ import { ReportDialog, type ReportDraft } from "@/components/chat/report-dialog"
 import { RatingDialog, type RatingDraft } from "@/components/chat/rating-dialog";
 import { REPORT_REASON_LABEL } from "@/lib/reports";
 import { paystackChannel } from "@/lib/paystack";
+import { startBookingCheckout, startGiftCheckout } from "@/lib/payments.functions";
 import { useAuth } from "@/hooks/use-auth";
 import {
   markThreadRead,
@@ -166,12 +168,14 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const messages = useMemo(() => messagesQuery.data ?? [], [messagesQuery.data]);
   const sendMessage = useSendMessage();
   const createBooking = useCreateBooking();
+  const bookingCheckout = useServerFn(startBookingCheckout);
+  const giftCheckout = useServerFn(startGiftCheckout);
   const logHit = useLogModerationHit();
   const reports = useReportMutations();
   const submitRating = useSubmitRating();
   const {
     settings: escrow,
-    open: openEscrow,
+    
     threadEntries,
     confirmComplete,
     raiseIssue,
@@ -219,7 +223,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     input: Partial<Omit<MessageRowType, "id" | "created_at" | "thread_id">> & { body: string },
   ) {
     if (!activeThread) return null;
-    return sendMessage.mutateAsync({
+    try {
+      return await sendMessage.mutateAsync({
       thread_id: activeThread.id,
       author_id: input.kind === "system" ? null : userId,
       kind: input.kind ?? "text",
@@ -228,8 +233,19 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       booking_id: input.booking_id ?? null,
       attachment_url: input.attachment_url ?? null,
       attachment_name: input.attachment_name ?? null,
-      redacted: input.redacted ?? false,
-    });
+        redacted: input.redacted ?? false,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Message could not be sent";
+      if (message.includes("ASHNIGHT_MODERATION_BLOCKED")) {
+        toast.error("Message withheld", {
+          description:
+            "Ashnight keeps contact details and off-platform deals out of chat. Edit your message and try again.",
+        });
+        return null;
+      }
+      throw error;
+    }
   }
 
   function systemNote(body: string) {
@@ -329,32 +345,28 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
         status: "requested",
       });
 
-      const entry = await openEscrow({
-        kind: "booking",
-        threadId: activeThread.id,
-        bookingId: booking.id,
-        specialistId: peerId,
-        label: `${request.service} · ${request.hours}h`,
-        amount: request.total,
-        feePct: platform.platformFeePct,
-        paystackReference: request.reference,
-      });
-
       await post({
         kind: "booking",
-        escrow_id: entry.id,
         booking_id: booking.id,
         body: `${request.service} · ${request.hours}h${
           request.scheduledFor ? ` · ${request.scheduledFor}` : ""
         }${request.addons.length ? ` · Add-ons: ${request.addons.join(", ")}` : ""} · ${money(
           request.total,
-        )} via Paystack (${paystackChannel(request.channel).label} · ${request.reference})`,
+        )} — opening Paystack (${paystackChannel(request.channel).label})`,
       });
 
-      toast.success(`${money(request.total)} booking opened in Ashnight escrow`, {
-        description:
-          "Funds stay pending until Paystack confirms the charge, then the hold window starts.",
+      const checkout = await bookingCheckout({
+        data: {
+          bookingId: booking.id,
+          callbackUrl: `${window.location.origin}/payment/return`,
+          channel: request.channel,
+        },
       });
+
+      toast.success("Taking you to Paystack…", {
+        description: `${money(checkout.amount)} will be held in Ashnight escrow.`,
+      });
+      window.location.href = checkout.authorizationUrl;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Booking could not be created");
     }
@@ -363,32 +375,26 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   async function handleGift(gift: GiftDraft) {
     if (!activeThread || !peerId) return;
     try {
-      const entry = await openEscrow({
-        kind: "gift",
-        threadId: activeThread.id,
-        specialistId: peerId,
-        label: `${gift.glyph} ${gift.giftLabel}`,
-        amount: gift.amount,
-        feePct: escrow.tipFeePct,
-        giftKey: gift.giftId,
-        paystackReference: gift.reference,
+      const checkout = await giftCheckout({
+        data: {
+          threadId: activeThread.id,
+          giftKey: gift.giftId,
+          giftLabel: `${gift.glyph} ${gift.giftLabel}`,
+          amount: gift.amount,
+          callbackUrl: `${window.location.origin}/payment/return`,
+          channel: gift.channel,
+        },
       });
 
-      await post({
-        kind: "gift",
-        escrow_id: entry.id,
-        body: `${gift.glyph} ${gift.giftLabel} · ${money(gift.amount)} gift via Paystack (${
-          paystackChannel(gift.channel).label
-        } · ${gift.reference}) — ${firstName} receives ${money(gift.net)}`,
+      toast.success("Taking you to Paystack…", {
+        description: `${firstName} receives ${money(checkout.net)} once the charge clears.`,
       });
-
-      toast.success(`${gift.giftLabel} sent — ${money(gift.amount)}`, {
-        description: "Confirmed once Paystack settles the charge.",
-      });
+      window.location.href = checkout.authorizationUrl;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Gift could not be sent");
     }
   }
+
 
   function handleReport(reportDraft: ReportDraft) {
     if (!activeThread || !peerId) return;
