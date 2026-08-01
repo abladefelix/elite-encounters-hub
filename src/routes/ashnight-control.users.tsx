@@ -136,7 +136,7 @@ function AdminUsers() {
 
   function move(row: ProfileRow, tier: Tier) {
     updateProfile.mutate(
-      { id: row.id, room: tier },
+      { id: row.id, patch: { room: tier } },
       {
         onSuccess: () => toast.success(`${row.display_name} moved to the ${tier} room`),
         onError: (error) =>
