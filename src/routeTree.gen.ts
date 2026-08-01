@@ -19,12 +19,17 @@ import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RoomsRouteImport } from './routes/rooms'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-control.index'
 import { Route as AshnightControlBackupsRouteImport } from './routes/ashnight-control.backups'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
+import { Route as AshnightControlComplaintsRouteImport } from './routes/ashnight-control.complaints'
+import { Route as AshnightControlDocumentsRouteImport } from './routes/ashnight-control.documents'
 import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
 import { Route as AshnightControlFeaturesRouteImport } from './routes/ashnight-control.features'
+import { Route as AshnightControlLogsRouteImport } from './routes/ashnight-control.logs'
 import { Route as AshnightControlModerationRouteImport } from './routes/ashnight-control.moderation'
+import { Route as AshnightControlNotificationsRouteImport } from './routes/ashnight-control.notifications'
 import { Route as AshnightControlRoomsRouteImport } from './routes/ashnight-control.rooms'
 import { Route as AshnightControlServerRouteImport } from './routes/ashnight-control.server'
 import { Route as AshnightControlServicesRouteImport } from './routes/ashnight-control.services'
@@ -89,6 +94,11 @@ const RoomsRoute = RoomsRouteImport.update({
   path: '/rooms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AshnightControlIndexRoute = AshnightControlIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -104,6 +114,18 @@ const AshnightControlBookingsRoute = AshnightControlBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const AshnightControlComplaintsRoute =
+  AshnightControlComplaintsRouteImport.update({
+    id: '/complaints',
+    path: '/complaints',
+    getParentRoute: () => AshnightControlRoute,
+  } as any)
+const AshnightControlDocumentsRoute =
+  AshnightControlDocumentsRouteImport.update({
+    id: '/documents',
+    path: '/documents',
+    getParentRoute: () => AshnightControlRoute,
+  } as any)
 const AshnightControlEscrowRoute = AshnightControlEscrowRouteImport.update({
   id: '/escrow',
   path: '/escrow',
@@ -114,10 +136,21 @@ const AshnightControlFeaturesRoute = AshnightControlFeaturesRouteImport.update({
   path: '/features',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const AshnightControlLogsRoute = AshnightControlLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlModerationRoute =
   AshnightControlModerationRouteImport.update({
     id: '/moderation',
     path: '/moderation',
+    getParentRoute: () => AshnightControlRoute,
+  } as any)
+const AshnightControlNotificationsRoute =
+  AshnightControlNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
     getParentRoute: () => AshnightControlRoute,
   } as any)
 const AshnightControlRoomsRoute = AshnightControlRoomsRouteImport.update({
@@ -198,11 +231,16 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/support': typeof SupportRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
+  '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
+  '/ashnight-control/logs': typeof AshnightControlLogsRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
+  '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/server': typeof AshnightControlServerRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
@@ -228,11 +266,16 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/support': typeof SupportRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
+  '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
+  '/ashnight-control/logs': typeof AshnightControlLogsRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
+  '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/server': typeof AshnightControlServerRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
@@ -260,11 +303,16 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/support': typeof SupportRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
+  '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
+  '/ashnight-control/logs': typeof AshnightControlLogsRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
+  '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/server': typeof AshnightControlServerRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
@@ -293,11 +341,16 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/rooms'
+    | '/support'
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
+    | '/ashnight-control/complaints'
+    | '/ashnight-control/documents'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
+    | '/ashnight-control/logs'
     | '/ashnight-control/moderation'
+    | '/ashnight-control/notifications'
     | '/ashnight-control/rooms'
     | '/ashnight-control/server'
     | '/ashnight-control/services'
@@ -323,11 +376,16 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/rooms'
+    | '/support'
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
+    | '/ashnight-control/complaints'
+    | '/ashnight-control/documents'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
+    | '/ashnight-control/logs'
     | '/ashnight-control/moderation'
+    | '/ashnight-control/notifications'
     | '/ashnight-control/rooms'
     | '/ashnight-control/server'
     | '/ashnight-control/services'
@@ -354,11 +412,16 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/rooms'
+    | '/support'
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
+    | '/ashnight-control/complaints'
+    | '/ashnight-control/documents'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
+    | '/ashnight-control/logs'
     | '/ashnight-control/moderation'
+    | '/ashnight-control/notifications'
     | '/ashnight-control/rooms'
     | '/ashnight-control/server'
     | '/ashnight-control/services'
@@ -386,6 +449,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
+  SupportRoute: typeof SupportRoute
   PaymentReturnRoute: typeof PaymentReturnRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
@@ -466,6 +530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RoomsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ashnight-control/': {
       id: '/ashnight-control/'
       path: '/'
@@ -487,6 +558,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlBookingsRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/complaints': {
+      id: '/ashnight-control/complaints'
+      path: '/complaints'
+      fullPath: '/ashnight-control/complaints'
+      preLoaderRoute: typeof AshnightControlComplaintsRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
+    '/ashnight-control/documents': {
+      id: '/ashnight-control/documents'
+      path: '/documents'
+      fullPath: '/ashnight-control/documents'
+      preLoaderRoute: typeof AshnightControlDocumentsRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/escrow': {
       id: '/ashnight-control/escrow'
       path: '/escrow'
@@ -501,11 +586,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlFeaturesRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/logs': {
+      id: '/ashnight-control/logs'
+      path: '/logs'
+      fullPath: '/ashnight-control/logs'
+      preLoaderRoute: typeof AshnightControlLogsRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/moderation': {
       id: '/ashnight-control/moderation'
       path: '/moderation'
       fullPath: '/ashnight-control/moderation'
       preLoaderRoute: typeof AshnightControlModerationRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
+    '/ashnight-control/notifications': {
+      id: '/ashnight-control/notifications'
+      path: '/notifications'
+      fullPath: '/ashnight-control/notifications'
+      preLoaderRoute: typeof AshnightControlNotificationsRouteImport
       parentRoute: typeof AshnightControlRoute
     }
     '/ashnight-control/rooms': {
@@ -605,9 +704,13 @@ declare module '@tanstack/react-router' {
 interface AshnightControlRouteChildren {
   AshnightControlBackupsRoute: typeof AshnightControlBackupsRoute
   AshnightControlBookingsRoute: typeof AshnightControlBookingsRoute
+  AshnightControlComplaintsRoute: typeof AshnightControlComplaintsRoute
+  AshnightControlDocumentsRoute: typeof AshnightControlDocumentsRoute
   AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
   AshnightControlFeaturesRoute: typeof AshnightControlFeaturesRoute
+  AshnightControlLogsRoute: typeof AshnightControlLogsRoute
   AshnightControlModerationRoute: typeof AshnightControlModerationRoute
+  AshnightControlNotificationsRoute: typeof AshnightControlNotificationsRoute
   AshnightControlRoomsRoute: typeof AshnightControlRoomsRoute
   AshnightControlServerRoute: typeof AshnightControlServerRoute
   AshnightControlServicesRoute: typeof AshnightControlServicesRoute
@@ -621,9 +724,13 @@ interface AshnightControlRouteChildren {
 const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlBackupsRoute: AshnightControlBackupsRoute,
   AshnightControlBookingsRoute: AshnightControlBookingsRoute,
+  AshnightControlComplaintsRoute: AshnightControlComplaintsRoute,
+  AshnightControlDocumentsRoute: AshnightControlDocumentsRoute,
   AshnightControlEscrowRoute: AshnightControlEscrowRoute,
   AshnightControlFeaturesRoute: AshnightControlFeaturesRoute,
+  AshnightControlLogsRoute: AshnightControlLogsRoute,
   AshnightControlModerationRoute: AshnightControlModerationRoute,
+  AshnightControlNotificationsRoute: AshnightControlNotificationsRoute,
   AshnightControlRoomsRoute: AshnightControlRoomsRoute,
   AshnightControlServerRoute: AshnightControlServerRoute,
   AshnightControlServicesRoute: AshnightControlServicesRoute,
@@ -649,6 +756,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
+  SupportRoute: SupportRoute,
   PaymentReturnRoute: PaymentReturnRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,

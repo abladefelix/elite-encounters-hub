@@ -223,7 +223,36 @@ export async function finalizeReference(
         }.`,
       });
     }
+
+    // A confirmed charge always leaves a receipt the member can download.
+    await issueDocument({
+      kind: "receipt",
+      clientId: entry.client_id,
+      specialistId: entry.specialist_id,
+      bookingId: entry.booking_id,
+      escrowId: entry.id,
+      title: entry.label || (entry.kind === "gift" ? "Ashnight gift" : "Ash service"),
+      subtotal: entry.amount,
+      platformFee: entry.platform_fee,
+      total: entry.amount,
+      lines: [
+        {
+          label: entry.label || "Ash service",
+          quantity: 1,
+          unitAmount: entry.amount,
+          amount: entry.amount,
+        },
+      ],
+      paystackReference: ref,
+      paid: true,
+      notes:
+        patch.state === "released"
+          ? "Paid in full and settled to the specialist."
+          : "Paid in full and held in Ashnight escrow until the visit is confirmed.",
+    });
+
     return { applied: true, detail: `Escrow ${entry.id} → ${patch.state}` };
+
   }
 
   const { data: membership } = await admin
@@ -242,7 +271,28 @@ export async function finalizeReference(
       })
       .eq("id", membership.id);
     if (error) throw new Error(error.message);
+
+    await issueDocument({
+      kind: "receipt",
+      clientId: membership.user_id,
+      title: `Ashnight ${membership.room} room membership`,
+      subtotal: membership.amount,
+      platformFee: 0,
+      total: membership.amount,
+      lines: [
+        {
+          label: `${membership.room} room — 30 days`,
+          quantity: 1,
+          unitAmount: membership.amount,
+          amount: membership.amount,
+        },
+      ],
+      paystackReference: ref,
+      paid: true,
+      notes: "Membership renews manually — you'll be prompted before it lapses.",
+    });
     return { applied: true, detail: `Membership ${membership.id} activated` };
+
   }
 
   return { applied: false, detail: "No matching payment on file" };
@@ -306,4 +356,85 @@ export async function settleDueEscrow(): Promise<{
   }
 
   return { autoConfirmed, released, skipped: null };
+}
+
+/* ------------------------------------------------------------ paper trail */
+
+type DocumentKind = Database["public"]["Enums"]["document_kind"];
+
+export interface DocumentLineInput {
+  label: string;
+  quantity: number;
+  unitAmount: number;
+  amount: number;
+}
+
+/** Sequential, human-readable document number: ASH-INV-2026-000123. */
+async function documentNumber(kind: DocumentKind) {
+  const admin = await adminClient();
+  const year = new Date().getFullYear();
+  const { count } = await admin
+    .from("documents")
+    .select("id", { count: "exact", head: true })
+    .eq("kind", kind);
+  const seq = String((count ?? 0) + 1).padStart(6, "0");
+  return `ASH-${kind === "invoice" ? "INV" : "RCT"}-${year}-${seq}`;
+}
+
+/**
+ * Issues an invoice or receipt. Amounts are always the server-computed ones, so
+ * the document can be trusted as the record of what was actually charged.
+ */
+export async function issueDocument(input: {
+  kind: DocumentKind;
+  clientId: string;
+  specialistId?: string | null;
+  bookingId?: string | null;
+  escrowId?: string | null;
+  title: string;
+  subtotal: number;
+  platformFee: number;
+  total: number;
+  lines: DocumentLineInput[];
+  paystackReference?: string | null;
+  notes?: string;
+  paid?: boolean;
+}) {
+  const admin = await adminClient();
+
+  if (input.paystackReference) {
+    const { data: existing } = await admin
+      .from("documents")
+      .select("id")
+      .eq("kind", input.kind)
+      .eq("paystack_reference", input.paystackReference)
+      .maybeSingle();
+    if (existing) return existing.id;
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await admin
+    .from("documents")
+    .insert({
+      number: await documentNumber(input.kind),
+      kind: input.kind,
+      client_id: input.clientId,
+      specialist_id: input.specialistId ?? null,
+      booking_id: input.bookingId ?? null,
+      escrow_id: input.escrowId ?? null,
+      title: input.title,
+      currency: "GHS",
+      subtotal: input.subtotal,
+      platform_fee: input.platformFee,
+      total: input.total,
+      line_items: input.lines as never,
+      paystack_reference: input.paystackReference ?? null,
+      notes: input.notes ?? "",
+      issued_at: now,
+      paid_at: input.paid ? now : null,
+    })
+    .select("id")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.id ?? null;
 }
