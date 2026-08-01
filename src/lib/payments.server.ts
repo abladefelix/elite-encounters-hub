@@ -242,6 +242,46 @@ export async function finalizeReference(
       });
     }
 
+    // The specialist is told the moment the money clears, so they can go and do
+    // the work. Only bookings trigger this; gifts need no action.
+    if (entry.kind === "booking") {
+      const { data: booking } = entry.booking_id
+        ? await admin
+            .from("bookings")
+            .select("service_name, hours, scheduled_for")
+            .eq("id", entry.booking_id)
+            .maybeSingle()
+        : { data: null };
+      const when = booking?.scheduled_for
+        ? new Date(booking.scheduled_for).toLocaleString("en-GH", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "the next available slot";
+      await admin.from("notifications").insert({
+        user_id: entry.specialist_id,
+        kind: "booking",
+        title: "Payment approved — job confirmed",
+        body: `${booking?.service_name ?? entry.label || "An ash service"}${
+          booking?.hours ? ` · ${booking.hours}h` : ""
+        } for ${when}. GHS ${entry.payout_amount.toLocaleString()} is waiting in escrow — go ahead and complete the visit.`,
+        link: "/messages",
+      });
+      if (entry.thread_id) {
+        await admin.from("messages").insert({
+          thread_id: entry.thread_id,
+          author_id: null,
+          kind: "system",
+          escrow_id: entry.id,
+          body: "The specialist has been notified and can start the job.",
+        });
+      }
+    }
+
+
     // A confirmed charge always leaves a receipt the member can download.
     await issueDocument({
       kind: "receipt",
