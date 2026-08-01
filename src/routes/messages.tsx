@@ -62,6 +62,7 @@ import {
   type ThreadRow,
 } from "@/lib/queries";
 import { useRoomSettings } from "@/lib/room-settings";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { moderateMessage } from "@/lib/moderation";
 import {
   ESCROW_STATE_LABEL,
@@ -144,6 +145,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const photoRef = useRef<HTMLInputElement>(null);
 
   const { canCall, can, platform, giftsFor, moderation } = useRoomSettings();
+  const { flags } = useFeatureFlags();
   const threadsQuery = useThreads(userId);
   const threadList = useMemo(() => threadsQuery.data ?? [], [threadsQuery.data]);
 
@@ -195,11 +197,13 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
   const escrowEntries = activeThread ? threadEntries(activeThread.id) : [];
   const roomGifts = giftsFor(room);
-  const giftsAllowed = escrow.tipsEnabled && roomGifts.length > 0 && iAmClient;
-  const audioAllowed = canCall(room, "audio");
-  const videoAllowed = canCall(room, "video");
-  const photosAllowed = can(room, "photoSharing");
-  const filesAllowed = can(room, "fileSharing");
+  const giftsAllowed =
+    flags.giftsEnabled && escrow.tipsEnabled && roomGifts.length > 0 && iAmClient;
+  const audioAllowed = flags.callsEnabled && canCall(room, "audio");
+  const videoAllowed = flags.callsEnabled && canCall(room, "video");
+  const photosAllowed = flags.attachmentsEnabled && can(room, "photoSharing");
+  const filesAllowed = flags.attachmentsEnabled && can(room, "fileSharing");
+  const bookingsOpen = flags.bookingsEnabled && platform.bookingsEnabled;
 
   useEffect(() => {
     if (!activeThread) return;
@@ -453,7 +457,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   }
 
   function openRequest() {
-    if (!platform.bookingsEnabled) {
+    if (!bookingsOpen) {
       toast("Booking requests are paused by Ashnight right now.");
       return;
     }
@@ -665,7 +669,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                     <div className="shrink-0 border-t border-border/70 p-3 sm:p-4">
                       {iAmClient ? (
                         <Button variant="brass" className="w-full" onClick={openRequest}>
-                          {platform.bookingsEnabled ? (
+                          {bookingsOpen ? (
                             <>
                               <Plus className="size-4" /> Request service &amp; pay
                             </>
@@ -695,7 +699,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                                   aria-label="Request service & pay with Paystack"
                                   onClick={openRequest}
                                 >
-                                  {platform.bookingsEnabled ? (
+                                  {bookingsOpen ? (
                                     <Banknote className="size-4" />
                                   ) : (
                                     <Lock className="size-4 opacity-60" />
@@ -703,7 +707,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                {platform.bookingsEnabled
+                                {bookingsOpen
                                   ? "Request service & pay with Paystack"
                                   : "Booking requests are paused"}
                               </TooltipContent>

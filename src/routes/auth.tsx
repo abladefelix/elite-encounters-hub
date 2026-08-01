@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
+import { useFeatureFlags } from "@/lib/feature-flags";
 
 /** Only same-origin relative paths are ever used as a post-login destination. */
 function safeNext(value: unknown) {
@@ -20,7 +21,7 @@ function safeNext(value: unknown) {
 }
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { next?: string } => ({
     next: safeNext(search["next"]),
   }),
   head: () => ({
@@ -48,6 +49,7 @@ function AuthPage() {
   const { next } = useSearch({ from: "/auth" });
   const { session, loading } = useAuth();
 
+  const { flags } = useFeatureFlags();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -73,6 +75,12 @@ function AuthPage() {
 
   async function signUp(event: React.FormEvent) {
     event.preventDefault();
+    if (!flags.signupsOpen) {
+      toast.error("Ashnight sign-ups are paused right now", {
+        description: "New memberships are closed while we work through the vetting queue.",
+      });
+      return;
+    }
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
       email,

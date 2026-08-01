@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials } from "@/lib/types";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useRoomSettings } from "@/lib/room-settings";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
 
 const NAV = [
@@ -18,6 +19,7 @@ const NAV = [
 
 export function SiteHeader() {
   const { platform } = useRoomSettings();
+  const { flags } = useFeatureFlags();
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -30,6 +32,11 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+      {flags.maintenanceMode ? (
+        <p className="bg-destructive px-5 py-1.5 text-center text-[11px] font-medium text-destructive-foreground">
+          Ashnight is in maintenance — bookings, payments and calls may be briefly unavailable.
+        </p>
+      ) : null}
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-5 md:h-16">
         <Link to="/" className="flex items-center gap-2">
           <span className="grid size-8 place-items-center rounded-lg bg-brass text-primary-foreground">

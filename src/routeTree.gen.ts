@@ -21,9 +21,11 @@ import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-control.index'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
 import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
+import { Route as AshnightControlFeaturesRouteImport } from './routes/ashnight-control.features'
 import { Route as AshnightControlModerationRouteImport } from './routes/ashnight-control.moderation'
 import { Route as AshnightControlRoomsRouteImport } from './routes/ashnight-control.rooms'
 import { Route as AshnightControlServicesRouteImport } from './routes/ashnight-control.services'
+import { Route as AshnightControlSettingsRouteImport } from './routes/ashnight-control.settings'
 import { Route as AshnightControlUsersRouteImport } from './routes/ashnight-control.users'
 import { Route as AshnightControlVettingRouteImport } from './routes/ashnight-control.vetting'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
@@ -89,6 +91,11 @@ const AshnightControlEscrowRoute = AshnightControlEscrowRouteImport.update({
   path: '/escrow',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const AshnightControlFeaturesRoute = AshnightControlFeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlModerationRoute =
   AshnightControlModerationRouteImport.update({
     id: '/moderation',
@@ -103,6 +110,11 @@ const AshnightControlRoomsRoute = AshnightControlRoomsRouteImport.update({
 const AshnightControlServicesRoute = AshnightControlServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
+const AshnightControlSettingsRoute = AshnightControlSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AshnightControlRoute,
 } as any)
 const AshnightControlUsersRoute = AshnightControlUsersRouteImport.update({
@@ -138,9 +150,11 @@ export interface FileRoutesByFullPath {
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
+  '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
+  '/ashnight-control/settings': typeof AshnightControlSettingsRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
@@ -158,9 +172,11 @@ export interface FileRoutesByTo {
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
+  '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
+  '/ashnight-control/settings': typeof AshnightControlSettingsRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
@@ -180,9 +196,11 @@ export interface FileRoutesById {
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
+  '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
+  '/ashnight-control/settings': typeof AshnightControlSettingsRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
@@ -203,9 +221,11 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
+    | '/ashnight-control/features'
     | '/ashnight-control/moderation'
     | '/ashnight-control/rooms'
     | '/ashnight-control/services'
+    | '/ashnight-control/settings'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
@@ -223,9 +243,11 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
+    | '/ashnight-control/features'
     | '/ashnight-control/moderation'
     | '/ashnight-control/rooms'
     | '/ashnight-control/services'
+    | '/ashnight-control/settings'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
@@ -244,9 +266,11 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
+    | '/ashnight-control/features'
     | '/ashnight-control/moderation'
     | '/ashnight-control/rooms'
     | '/ashnight-control/services'
+    | '/ashnight-control/settings'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
@@ -354,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlEscrowRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/features': {
+      id: '/ashnight-control/features'
+      path: '/features'
+      fullPath: '/ashnight-control/features'
+      preLoaderRoute: typeof AshnightControlFeaturesRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/moderation': {
       id: '/ashnight-control/moderation'
       path: '/moderation'
@@ -373,6 +404,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/ashnight-control/services'
       preLoaderRoute: typeof AshnightControlServicesRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
+    '/ashnight-control/settings': {
+      id: '/ashnight-control/settings'
+      path: '/settings'
+      fullPath: '/ashnight-control/settings'
+      preLoaderRoute: typeof AshnightControlSettingsRouteImport
       parentRoute: typeof AshnightControlRoute
     }
     '/ashnight-control/users': {
@@ -409,9 +447,11 @@ declare module '@tanstack/react-router' {
 interface AshnightControlRouteChildren {
   AshnightControlBookingsRoute: typeof AshnightControlBookingsRoute
   AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
+  AshnightControlFeaturesRoute: typeof AshnightControlFeaturesRoute
   AshnightControlModerationRoute: typeof AshnightControlModerationRoute
   AshnightControlRoomsRoute: typeof AshnightControlRoomsRoute
   AshnightControlServicesRoute: typeof AshnightControlServicesRoute
+  AshnightControlSettingsRoute: typeof AshnightControlSettingsRoute
   AshnightControlUsersRoute: typeof AshnightControlUsersRoute
   AshnightControlVettingRoute: typeof AshnightControlVettingRoute
   AshnightControlIndexRoute: typeof AshnightControlIndexRoute
@@ -420,9 +460,11 @@ interface AshnightControlRouteChildren {
 const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlBookingsRoute: AshnightControlBookingsRoute,
   AshnightControlEscrowRoute: AshnightControlEscrowRoute,
+  AshnightControlFeaturesRoute: AshnightControlFeaturesRoute,
   AshnightControlModerationRoute: AshnightControlModerationRoute,
   AshnightControlRoomsRoute: AshnightControlRoomsRoute,
   AshnightControlServicesRoute: AshnightControlServicesRoute,
+  AshnightControlSettingsRoute: AshnightControlSettingsRoute,
   AshnightControlUsersRoute: AshnightControlUsersRoute,
   AshnightControlVettingRoute: AshnightControlVettingRoute,
   AshnightControlIndexRoute: AshnightControlIndexRoute,

@@ -16,6 +16,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { IconContainer } from "@/components/ui/icon-container";
 import { TierBadge } from "@/components/tier-badge";
+import { TwoFactorCard } from "@/components/two-factor-card";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
 import {
   useSetSpecialistServices,
@@ -93,6 +95,7 @@ function toFields(row: {
 
 function ProfilePage() {
   const { user, profile, loading, isSpecialist, refresh } = useAuth();
+  const { flags } = useFeatureFlags();
   const { selectableServices, labelOf, isLoading: catalogLoading } = useServiceCatalog();
   const updateProfile = useUpdateProfile();
   const { data: specialistServiceRows } = useSpecialistServices(user?.id);
@@ -433,6 +436,15 @@ function ProfilePage() {
             <Save className="size-4" /> Save profile
           </Button>
         </div>
+
+        {/* account security */}
+        <TwoFactorCard
+          className="mt-8"
+          available={flags.twoFactorAvailable}
+          required={
+            flags.requireTwoFactorForSpecialists && isSpecialist
+          }
+        />
       </div>
 
       <SiteFooter />

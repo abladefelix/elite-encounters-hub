@@ -21,6 +21,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useAuth } from "@/hooks/use-auth";
 import { useApplications, useSubmitApplication } from "@/lib/queries";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { useServiceCatalog } from "@/lib/service-catalog";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,7 @@ function ApplyPage() {
   const { user, loading: authLoading } = useAuth();
   const { data: applications, isLoading: applicationsLoading } = useApplications();
   const submitApplication = useSubmitApplication();
+  const { flags } = useFeatureFlags();
   const { selectableServices } = useServiceCatalog();
 
   const [role, setRole] = useState<"client" | "specialist">("client");
@@ -161,6 +163,11 @@ function ApplyPage() {
 
     if (role === "specialist" && services.length === 0) {
       toast.error("Pick at least one service you render");
+      return;
+    }
+
+    if (!flags.specialistApplications && role === "specialist") {
+      toast.error("Specialist applications are closed right now");
       return;
     }
 

@@ -6,12 +6,20 @@
  * Each feature area owns one key inside the row.
  */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useId } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 
-export type SettingsSection = "rooms" | "escrow" | "gifts" | "moderation" | "platform";
+export type SettingsSection =
+  | "rooms"
+  | "escrow"
+  | "gifts"
+  | "moderation"
+  | "platform"
+  | "features"
+  | "integrations"
+  | "security";
 
 type SettingsBlob = Partial<Record<SettingsSection, unknown>>;
 
@@ -40,9 +48,12 @@ export function useSettingsSection<T extends object>(section: SettingsSection, f
     staleTime: 30_000,
   });
 
+  // Every hook instance gets its own realtime topic — Supabase refuses to add
+  // a second postgres_changes listener to an already-subscribed channel.
+  const channelId = useId();
   useEffect(() => {
     const channel = supabase
-      .channel("platform-settings")
+      .channel(`platform-settings:${channelId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "platform_settings" },
@@ -54,7 +65,7 @@ export function useSettingsSection<T extends object>(section: SettingsSection, f
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, channelId]);
 
   const stored = (query.data?.[section] as Partial<T> | undefined) ?? undefined;
   const value = { ...fallback, ...(stored ?? {}) } as T;
