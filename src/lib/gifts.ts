@@ -9,7 +9,7 @@
  * only the shipping defaults (see `src/lib/room-settings.tsx` for the store).
  */
 
-import type { Tier } from "./types";
+import type { RoomMap } from "./types";
 
 export interface Gift {
   id: string;
@@ -43,7 +43,7 @@ export interface RoomGiftRules {
   maxGift: number;
 }
 
-export type RoomGiftRulesMap = Record<Tier, RoomGiftRules>;
+export type RoomGiftRulesMap = RoomMap<RoomGiftRules>;
 
 export const DEFAULT_ROOM_GIFT_RULES: RoomGiftRulesMap = {
   basic: {

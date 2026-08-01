@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
-import { TIER_LABEL, type Tier } from "@/lib/types";
+import { tierLabel, type RoomMap, type Tier } from "@/lib/types";
 import { ROOM_ACCENTS, useRoomAccent } from "@/lib/room-settings";
 import { Crown, Gem, Star } from "lucide-react";
 
-const TIER_ICON: Record<Tier, typeof Star> = {
+const TIER_ICON: RoomMap<typeof Star> = {
   basic: Star,
   premium: Gem,
   ultimate: Crown,
@@ -22,7 +22,7 @@ export function TierBadge({
 }) {
   const accent = useRoomAccent(tier);
   const entry = ROOM_ACCENTS[accent];
-  const Icon = TIER_ICON[tier];
+  const Icon = TIER_ICON[tier] ?? Star;
 
   return (
     <span
@@ -44,7 +44,7 @@ export function TierBadge({
           style={{ backgroundColor: entry.color }}
         />
       )}
-      {TIER_LABEL[tier]}
+      {tierLabel(tier)}
       {withRoom ? " Room" : ""}
     </span>
   );

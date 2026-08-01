@@ -1,6 +1,6 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Bell, Download, FileText, LifeBuoy, Loader2, Printer } from "lucide-react";
+import { Bell, Download, FileText, LifeBuoy, Loader2, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -63,7 +63,7 @@ function SupportPage() {
   const [active, setActive] = useState<Tab>(tab);
 
   const notifications = useNotifications(user?.id);
-  const { markRead, markAllRead } = useNotificationMutations(user?.id);
+  const { markRead, markAllRead, remove: removeNotification } = useNotificationMutations(user?.id);
   const complaints = useComplaints();
   const documents = useDocuments();
   const { raise } = useComplaintMutations();
@@ -156,11 +156,21 @@ function SupportPage() {
                     {new Date(row.created_at).toLocaleString()}
                   </p>
                 </div>
-                {!row.read_at ? (
-                  <Button size="sm" variant="ghost" onClick={() => markRead.mutate(row.id)}>
-                    Mark read
+                <div className="flex items-center gap-1">
+                  {!row.read_at ? (
+                    <Button size="sm" variant="ghost" onClick={() => markRead.mutate(row.id)}>
+                      Mark read
+                    </Button>
+                  ) : null}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={`Delete notification ${row.title}`}
+                    onClick={() => removeNotification.mutate(row.id)}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
                   </Button>
-                ) : null}
+                </div>
               </CardContent>
             </Card>
           ))}

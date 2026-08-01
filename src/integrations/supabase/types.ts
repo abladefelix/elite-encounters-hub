@@ -1207,7 +1207,15 @@ export type Database = {
       membership_status: "active" | "past_due" | "cancelled"
       message_kind: "text" | "system" | "booking" | "gift" | "location"
       report_state: "open" | "reviewing" | "actioned" | "dismissed"
-      tier: "basic" | "premium" | "ultimate"
+      tier:
+        | "basic"
+        | "premium"
+        | "ultimate"
+        | "room4"
+        | "room5"
+        | "room6"
+        | "room7"
+        | "room8"
       vetting_status: "pending" | "in_review" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -1367,7 +1375,16 @@ export const Constants = {
       membership_status: ["active", "past_due", "cancelled"],
       message_kind: ["text", "system", "booking", "gift", "location"],
       report_state: ["open", "reviewing", "actioned", "dismissed"],
-      tier: ["basic", "premium", "ultimate"],
+      tier: [
+        "basic",
+        "premium",
+        "ultimate",
+        "room4",
+        "room5",
+        "room6",
+        "room7",
+        "room8",
+      ],
       vetting_status: ["pending", "in_review", "approved", "rejected"],
     },
   },
