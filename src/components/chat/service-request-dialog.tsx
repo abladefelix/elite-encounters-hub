@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, Lock, ShieldCheck, Smartphone } from "lucide-react";
+import { AlertCircle, CalendarClock, Lock, ShieldCheck, Smartphone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { useAddons } from "@/lib/addons";
 import { useServiceCatalog } from "@/lib/service-catalog";
 import { useRoomSettings } from "@/lib/room-settings";
 import {
@@ -36,10 +38,15 @@ export interface ServiceRequestDraft {
   serviceId: string | null;
   service: string;
   hours: number;
+  /** Labels of the admin-priced add-ons the member chose. */
   addons: string[];
+  /** Human-readable schedule, for the chat message. */
   scheduledFor: string;
+  /** Exact timestamp for the database, or null when unscheduled. */
+  scheduledForIso: string | null;
   notes: string;
   subtotal: number;
+  addonsAmount: number;
   fee: number;
   total: number;
   rate: number;
@@ -72,50 +79,133 @@ export function ServiceRequestDialog({
 }) {
   const { platform } = useRoomSettings();
   const { activeServices } = useServiceCatalog();
+  const { activeAddons } = useAddons();
   const feePct = platform.platformFeePct;
   const [step, setStep] = useState<Step>("scope");
   const [serviceId, setServiceId] = useState<string>("");
   const [hours, setHours] = useState<number>(3);
-  const [addonsText, setAddonsText] = useState("");
+  const [addonIds, setAddonIds] = useState<string[]>([]);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("09:00");
   const [notes, setNotes] = useState("");
   const [channel, setChannel] = useState<PaystackChannel>(DEFAULT_PAYSTACK_CHANNEL);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!serviceId && activeServices.length) setServiceId(activeServices[0]!.id);
   }, [activeServices, serviceId]);
 
   const service = activeServices.find((item) => item.id === serviceId);
-  const addons = useMemo(
-    () =>
-      addonsText
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-    [addonsText],
+  const chosenAddons = useMemo(
+    () => activeAddons.filter((item) => addonIds.includes(item.id)),
+    [activeAddons, addonIds],
   );
 
   const quote = useMemo(() => {
-    const { subtotal, fee } = bookingTotal({ hours, rate: hourlyRate, platformFeePct: feePct });
-    return { subtotal, fee, total: subtotal + fee };
-  }, [hours, hourlyRate, feePct]);
+    const addonsAmount = chosenAddons.reduce((total, item) => total + item.price, 0);
+    const { subtotal } = bookingTotal({ hours, rate: hourlyRate, platformFeePct: feePct });
+    const base = subtotal + addonsAmount;
+    const fee = Math.round(base * (feePct / 100));
+    return { labour: subtotal, addonsAmount, subtotal: base, fee, total: base + fee };
+  }, [hours, hourlyRate, feePct, chosenAddons]);
+
+  /**
+   * Turns the two form fields into a real timestamp. Every failure mode gets a
+   * sentence a member can act on — an empty or half-filled schedule must never
+   * reach the database as a malformed date.
+   */
+  function buildSchedule():
+    | { ok: true; iso: string | null; label: string }
+    | { ok: false; message: string } {
+    if (!date && !time) {
+      return { ok: true, iso: null, label: "Next available slot" };
+    }
+    if (!date) {
+      return {
+        ok: false,
+        message: "Pick a preferred date, or clear the start time to request the next available slot.",
+      };
+    }
+    if (!time) {
+      return { ok: false, message: "Add a start time for the visit." };
+    }
+    const stamp = new Date(`${date}T${time}`);
+    if (Number.isNaN(stamp.getTime())) {
+      return { ok: false, message: "That date and time couldn't be read — please pick them again." };
+    }
+    if (stamp.getTime() < Date.now() - 60_000) {
+      return { ok: false, message: "That slot is in the past. Choose a date and time still to come." };
+    }
+    return {
+      ok: true,
+      iso: stamp.toISOString(),
+      label: stamp.toLocaleString("en-GH", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  }
+
+  const schedule = buildSchedule();
+  const scheduleLabel = schedule.ok ? schedule.label : "Not set yet";
 
   function reset() {
     setStep("scope");
-    setAddonsText("");
+    setAddonIds([]);
     setNotes("");
+    setError(null);
+  }
+
+  /** Validates the scope step and only then shows the quote. */
+  function review() {
+    if (!activeServices.length) {
+      setError("No services are published yet — ask support to add one before booking.");
+      return;
+    }
+    if (!service) {
+      setError("Choose the service you'd like before continuing.");
+      return;
+    }
+    if (!Number.isFinite(hours) || hours < 1) {
+      setError("Set at least one hour for the visit.");
+      return;
+    }
+    if (!hourlyRate || hourlyRate <= 0) {
+      setError("This specialist hasn't set an hourly rate yet — message them first.");
+      return;
+    }
+    if (!schedule.ok) {
+      setError(schedule.message);
+      return;
+    }
+    setError(null);
+    setStep("review");
   }
 
   function confirm() {
+    if (!service) {
+      setError("Choose the service you'd like before continuing.");
+      setStep("scope");
+      return;
+    }
+    if (!schedule.ok) {
+      setError(schedule.message);
+      setStep("scope");
+      return;
+    }
     onConfirm({
-      serviceId: service?.id ?? null,
-      service: service?.label ?? "Ash service",
+      serviceId: service.id,
+      service: service.label,
       hours,
-      addons,
-      scheduledFor: date ? `${date} at ${time}` : `Next available slot, ${time}`,
-      notes,
+      addons: chosenAddons.map((item) => item.label),
+      scheduledFor: schedule.label,
+      scheduledForIso: schedule.iso,
+      notes: notes.trim(),
       subtotal: quote.subtotal,
+      addonsAmount: quote.addonsAmount,
       fee: quote.fee,
       total: quote.total,
       rate: hourlyRate,
@@ -134,7 +224,7 @@ export function ServiceRequestDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto border-border/70 bg-surface">
+      <DialogContent className="max-h-[88svh] max-w-lg overflow-y-auto border-border/70 bg-surface">
         <DialogHeader>
           <DialogTitle className="font-display">
             {step === "scope" ? "Request an ash service" : "Review & pay"}
@@ -146,6 +236,16 @@ export function ServiceRequestDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {error ? (
+          <p
+            role="alert"
+            className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
+          >
+            <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+            {error}
+          </p>
+        ) : null}
+
         {step === "scope" ? (
           <div className="space-y-5">
             <div>
@@ -153,7 +253,7 @@ export function ServiceRequestDialog({
               {activeServices.length ? (
                 <Select value={serviceId} onValueChange={setServiceId}>
                   <SelectTrigger id="service" className="mt-2">
-                    <SelectValue />
+                    <SelectValue placeholder="Choose a service" />
                   </SelectTrigger>
                   <SelectContent>
                     {activeServices.map((item) => (
@@ -189,14 +289,45 @@ export function ServiceRequestDialog({
             </div>
 
             <div>
-              <Label htmlFor="addons">Add-ons (optional)</Label>
-              <Input
-                id="addons"
-                className="mt-2"
-                placeholder="Inside fridge, ironing, windows — comma separated"
-                value={addonsText}
-                onChange={(event) => setAddonsText(event.target.value)}
-              />
+              <Label>Add-ons (optional)</Label>
+              {activeAddons.length ? (
+                <div className="mt-2 space-y-2">
+                  {activeAddons.map((item) => (
+                    <label
+                      key={item.id}
+                      htmlFor={`addon-${item.id}`}
+                      className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/70 bg-panel p-3"
+                    >
+                      <Checkbox
+                        id={`addon-${item.id}`}
+                        checked={addonIds.includes(item.id)}
+                        onCheckedChange={(checked) =>
+                          setAddonIds((current) =>
+                            checked
+                              ? [...current, item.id]
+                              : current.filter((value) => value !== item.id),
+                          )
+                        }
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center justify-between gap-2 text-sm font-medium">
+                          {item.label}
+                          <span className="font-display">+{money(item.price)}</span>
+                        </span>
+                        {item.hint ? (
+                          <span className="mt-0.5 block text-xs text-muted-foreground">
+                            {item.hint}
+                          </span>
+                        ) : null}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 rounded-lg border border-border bg-panel p-3 text-xs text-muted-foreground">
+                  No add-ons are published right now.
+                </p>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -207,7 +338,10 @@ export function ServiceRequestDialog({
                   type="date"
                   className="mt-2"
                   value={date}
-                  onChange={(event) => setDate(event.target.value)}
+                  onChange={(event) => {
+                    setDate(event.target.value);
+                    setError(null);
+                  }}
                 />
               </div>
               <div>
@@ -217,9 +351,15 @@ export function ServiceRequestDialog({
                   type="time"
                   className="mt-2"
                   value={time}
-                  onChange={(event) => setTime(event.target.value)}
+                  onChange={(event) => {
+                    setTime(event.target.value);
+                    setError(null);
+                  }}
                 />
               </div>
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                Leave both empty to request the next available slot.
+              </p>
             </div>
 
             <div>
@@ -250,15 +390,16 @@ export function ServiceRequestDialog({
               </p>
               <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <CalendarClock className="size-3.5" />
-                {date ? `${date} at ${time}` : `Next available slot, ${time}`} · {hours}h with{" "}
-                {specialistName}
+                {scheduleLabel} · {hours}h with {specialistName}
               </p>
 
               <Separator className="my-4" />
 
               <dl className="space-y-2 text-sm">
-                <Line label={`${hours}h × ${money(hourlyRate)}`} value={money(quote.subtotal)} />
-                {addons.length ? <Line label={`Add-ons (${addons.length})`} value={addons.join(", ")} /> : null}
+                <Line label={`${hours}h × ${money(hourlyRate)}`} value={money(quote.labour)} />
+                {chosenAddons.map((item) => (
+                  <Line key={item.id} label={item.label} value={money(item.price)} />
+                ))}
                 <Line label={`Platform fee (${feePct}%)`} value={money(quote.fee)} />
                 <Separator className="my-3" />
                 <div className="flex items-center justify-between font-display text-base font-semibold">
@@ -311,7 +452,7 @@ export function ServiceRequestDialog({
             <span />
           )}
           {step === "scope" ? (
-            <Button variant="brass" disabled={!service} onClick={() => setStep("review")}>
+            <Button variant="brass" onClick={review}>
               Review quote · {money(quote.total)}
             </Button>
           ) : (

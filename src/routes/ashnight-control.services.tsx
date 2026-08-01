@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2, Sparkles, RotateCcw } from "lucide-react";
+import { Plus, Trash2, Sparkles, PackagePlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { IconContainer } from "@/components/ui/icon-container";
+import { useAddons } from "@/lib/addons";
 import { useServiceCatalog } from "@/lib/service-catalog";
 import { money } from "@/lib/types";
 
@@ -25,6 +26,7 @@ function AdminServicesPage() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [suggestedRate, setSuggestedRate] = useState("70");
+
 
   function create() {
     const name = label.trim();
@@ -218,9 +220,184 @@ function AdminServicesPage() {
           </Card>
         ))}
       </div>
+
+      <AddonsPanel />
     </div>
   );
 }
+
+/**
+ * Add-ons catalogue. These are the only extras a member can attach to a
+ * booking, and the server prices them from here — so editing a price changes
+ * what future bookings actually charge.
+ */
+function AddonsPanel() {
+  const { enabled, items, setEnabled, addAddon, updateAddon, removeAddon } = useAddons();
+  const [label, setLabel] = useState("");
+  const [price, setPrice] = useState("40");
+  const [hint, setHint] = useState("");
+
+  function create() {
+    const name = label.trim();
+    if (name.length < 3) {
+      toast.error("Give the add-on a name of at least 3 characters");
+      return;
+    }
+    const amount = Number(price);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("Set a price above zero for the add-on");
+      return;
+    }
+    try {
+      addAddon({ label: name, price: Math.round(amount), hint: hint.trim(), active: true });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not add that add-on");
+      return;
+    }
+    setLabel("");
+    setHint("");
+    toast.success(`${name} added to the booking form`);
+  }
+
+  return (
+    <Card className="border-border/70 bg-panel p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <IconContainer icon={PackagePlus} />
+          <div>
+            <h2 className="font-display text-base font-semibold">Booking add-ons</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Fixed-price extras members tick when requesting a service. Prices here are what the
+              checkout charges — members can never type their own.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground">Show add-ons in booking</span>
+          <Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Enable add-ons" />
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-4">
+        <div className="md:col-span-2">
+          <Label htmlFor="addon-label" className="text-sm">
+            Name
+          </Label>
+          <Input
+            id="addon-label"
+            value={label}
+            maxLength={60}
+            className="mt-2"
+            placeholder="e.g. Inside fridge"
+            onChange={(event) => setLabel(event.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="addon-price" className="text-sm">
+            Price (GHS)
+          </Label>
+          <Input
+            id="addon-price"
+            type="number"
+            min={1}
+            value={price}
+            className="mt-2"
+            onChange={(event) => setPrice(event.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="addon-hint" className="text-sm">
+            Short note
+          </Label>
+          <Input
+            id="addon-hint"
+            value={hint}
+            maxLength={120}
+            className="mt-2"
+            placeholder="What's included"
+            onChange={(event) => setHint(event.target.value)}
+          />
+        </div>
+      </div>
+      <Button variant="brass" className="mt-4" onClick={create}>
+        <Plus className="size-4" /> Add add-on
+      </Button>
+
+      <div className="mt-5 grid gap-3 lg:grid-cols-2">
+        {items.length ? (
+          items.map((item) => (
+            <div key={item.id} className="rounded-lg border border-border/70 bg-surface p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-medium">{item.label}</p>
+                    <Badge variant={item.active ? "soft" : "outline"} className="rounded-full">
+                      {item.active ? "Live" : "Hidden"}
+                    </Badge>
+                    <span className="font-display text-sm font-semibold">{money(item.price)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={item.active}
+                    onCheckedChange={(flag) => updateAddon(item.id, { active: flag })}
+                    aria-label={`${item.label} live`}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Delete ${item.label}`}
+                    onClick={() => {
+                      removeAddon(item.id);
+                      toast.message(`${item.label} removed`);
+                    }}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor={`addon-price-${item.id}`} className="text-xs">
+                    Price (GHS)
+                  </Label>
+                  <Input
+                    id={`addon-price-${item.id}`}
+                    type="number"
+                    min={0}
+                    value={item.price}
+                    className="mt-1.5"
+                    onChange={(event) =>
+                      updateAddon(item.id, { price: Math.max(0, Number(event.target.value) || 0) })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`addon-hint-${item.id}`} className="text-xs">
+                    Short note
+                  </Label>
+                  <Input
+                    id={`addon-hint-${item.id}`}
+                    value={item.hint}
+                    maxLength={120}
+                    className="mt-1.5"
+                    onChange={(event) => updateAddon(item.id, { hint: event.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No add-ons yet — members will only see the base service.
+          </p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 
 function Row({
   label,

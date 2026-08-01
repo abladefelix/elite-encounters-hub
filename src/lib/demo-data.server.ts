@@ -793,18 +793,32 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
   must(await client.from("complaints").insert(complaints), "complaints");
   counts["complaints"] = complaints.length;
 
-  /* notifications */
-  const notifications = [...clientIds, ...specialistIds].map((userId, index) => ({
-    user_id: userId,
-    title: index % 2 === 0 ? "Welcome to Ashnight" : "Escrow released",
-    body:
-      index % 2 === 0
-        ? "Your account is vetted and active. Open Messages to reach your matched specialists."
-        : "A payout has cleared its hold window and is on its way to you.",
-    kind: index % 2 === 0 ? "welcome" : "escrow",
-    link: index % 2 === 0 ? "/specialists" : "/support",
-    read_at: index > 4 ? hoursAgo(2) : null,
-  }));
+  /* notifications — role aware: only specialists are ever paid out of escrow,
+     clients only hear about escrow when a refund is on its way back. */
+  const notifications = [
+    ...clientIds.map((userId, index) => ({
+      user_id: userId,
+      title: index % 2 === 0 ? "Welcome to Ashnight" : "Booking confirmed",
+      body:
+        index % 2 === 0
+          ? "Your account is vetted and active. Open Messages to reach your matched specialists."
+          : "Your payment is secured in Ashnight escrow. Mark the visit complete to release it.",
+      kind: index % 2 === 0 ? "welcome" : "booking",
+      link: index % 2 === 0 ? "/specialists" : "/messages",
+      read_at: index > 2 ? hoursAgo(2) : null,
+    })),
+    ...specialistIds.map((userId, index) => ({
+      user_id: userId,
+      title: index % 2 === 0 ? "Payment approved — job confirmed" : "Escrow released",
+      body:
+        index % 2 === 0
+          ? "A member's payment has cleared into escrow. Head to Messages and complete the visit."
+          : "A payout has cleared its hold window and is on its way to you.",
+      kind: index % 2 === 0 ? "booking" : "escrow",
+      link: "/messages",
+      read_at: index > 2 ? hoursAgo(2) : null,
+    })),
+  ];
   must(await client.from("notifications").insert(notifications), "notifications");
   counts["notifications"] = notifications.length;
 

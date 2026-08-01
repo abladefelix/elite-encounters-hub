@@ -136,6 +136,8 @@ export interface ServerSettings {
   };
   platform: { platformFeePct?: number; membershipEnabled?: boolean };
   rooms: Record<string, { priceMonthly?: number; name?: string }>;
+  /** Admin-priced booking extras, mirrored from src/lib/addons.ts. */
+  addons: { enabled?: boolean; items?: { id: string; label: string; price?: number }[] };
 }
 
 export async function serverSettings(): Promise<ServerSettings> {
@@ -146,7 +148,23 @@ export async function serverSettings(): Promise<ServerSettings> {
     escrow: (blob["escrow"] ?? {}) as ServerSettings["escrow"],
     platform: (blob["platform"] ?? {}) as ServerSettings["platform"],
     rooms: (blob["rooms"] ?? {}) as ServerSettings["rooms"],
+    addons: (blob["addons"] ?? {}) as ServerSettings["addons"],
   };
+}
+
+/**
+ * Price of the chosen add-ons, resolved from admin settings rather than from
+ * anything the browser sent, so a member can never price their own extras.
+ */
+export function addonsAmount(settings: ServerSettings, labels: string[]): number {
+  if (settings.addons?.enabled === false) return 0;
+  const items = settings.addons?.items ?? [];
+  return labels.reduce((total, label) => {
+    const match = items.find(
+      (item) => item.label.trim().toLowerCase() === String(label).trim().toLowerCase(),
+    );
+    return total + (typeof match?.price === "number" ? Math.max(0, match.price) : 0);
+  }, 0);
 }
 
 export function hoursFromNow(hours: number) {
@@ -224,6 +242,46 @@ export async function finalizeReference(
       });
     }
 
+    // The specialist is told the moment the money clears, so they can go and do
+    // the work. Only bookings trigger this; gifts need no action.
+    if (entry.kind === "booking") {
+      const { data: booking } = entry.booking_id
+        ? await admin
+            .from("bookings")
+            .select("service_name, hours, scheduled_for")
+            .eq("id", entry.booking_id)
+            .maybeSingle()
+        : { data: null };
+      const when = booking?.scheduled_for
+        ? new Date(booking.scheduled_for).toLocaleString("en-GH", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "the next available slot";
+      await admin.from("notifications").insert({
+        user_id: entry.specialist_id,
+        kind: "booking",
+        title: "Payment approved — job confirmed",
+        body: `${booking?.service_name ?? (entry.label || "An ash service")}${
+          booking?.hours ? ` · ${booking.hours}h` : ""
+        } for ${when}. GHS ${entry.payout_amount.toLocaleString()} is waiting in escrow — go ahead and complete the visit.`,
+        link: "/messages",
+      });
+      if (entry.thread_id) {
+        await admin.from("messages").insert({
+          thread_id: entry.thread_id,
+          author_id: null,
+          kind: "system",
+          escrow_id: entry.id,
+          body: "The specialist has been notified and can start the job.",
+        });
+      }
+    }
+
+
     // A confirmed charge always leaves a receipt the member can download.
     await issueDocument({
       kind: "receipt",
@@ -272,6 +330,33 @@ export async function finalizeReference(
       .eq("id", membership.id);
     if (error) throw new Error(error.message);
 
+    // Paying reinstates the member immediately: back into their room and back
+    // to an active account if the lapse had switched them off.
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("account_status")
+      .eq("id", membership.user_id)
+      .maybeSingle();
+    await admin
+      .from("profiles")
+      .update({
+        room: membership.room,
+        account_status: profile?.account_status === "banned" ? "banned" : "active",
+        status_reason:
+          profile?.account_status === "banned" ? "Banned by Ashnight." : "Membership paid and active.",
+        status_changed_at: new Date().toISOString(),
+      })
+      .eq("id", membership.user_id);
+    await admin.from("notifications").insert({
+      user_id: membership.user_id,
+      kind: "membership",
+      title: "Membership active",
+      body: `Your ${membership.room} room is open again for the next 30 days.`,
+      link: "/rooms",
+    });
+
+
+
     await issueDocument({
       kind: "receipt",
       clientId: membership.user_id,
@@ -299,18 +384,76 @@ export async function finalizeReference(
 }
 
 /**
+ * Lapsed-membership sweep. Only clients hold memberships, so when a period end
+ * passes without payment the membership goes past due and the account is
+ * deactivated — sign-in stays closed until they pay again, which
+ * `finalizeReference` reverses automatically.
+ */
+export async function syncMemberships(): Promise<{ lapsed: number }> {
+  const admin = await adminClient();
+  const nowIso = new Date().toISOString();
+
+  const { data: expired } = await admin
+    .from("memberships")
+    .select("id, user_id, room, current_period_end")
+    .eq("status", "active")
+    .not("current_period_end", "is", null)
+    .lte("current_period_end", nowIso);
+
+  let lapsed = 0;
+  for (const row of expired ?? []) {
+    await admin.from("memberships").update({ status: "past_due" }).eq("id", row.id);
+
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("account_status")
+      .eq("id", row.user_id)
+      .maybeSingle();
+    // Never soften a suspension or a ban — only active/pending accounts lapse.
+    if (profile && (profile.account_status === "active" || profile.account_status === "pending")) {
+      await admin
+        .from("profiles")
+        .update({
+          account_status: "deactivated",
+          status_reason: "Membership expired — reactivates as soon as it is paid.",
+          status_changed_at: nowIso,
+        })
+        .eq("id", row.user_id);
+    }
+    await admin.from("notifications").insert({
+      user_id: row.user_id,
+      kind: "membership",
+      title: "Membership expired",
+      body: `Your ${row.room} room membership has lapsed and your account is paused. Pay again to reactivate instantly.`,
+      link: "/rooms",
+    });
+    lapsed += 1;
+  }
+
+  return { lapsed };
+}
+
+/**
  * The scheduled settlement pass: starts clearing for stale un-confirmed holds
  * and deposits anything whose hold window has elapsed without a dispute.
  */
 export async function settleDueEscrow(): Promise<{
   autoConfirmed: number;
   released: number;
+  membershipsLapsed: number;
   skipped: string | null;
 }> {
   const admin = await adminClient();
   const settings = await serverSettings();
+  // Membership state is kept honest on every pass, even when auto-deposits are off.
+  const { lapsed: membershipsLapsed } = await syncMemberships();
   if (!(settings.escrow.autoReleaseEnabled ?? true)) {
-    return { autoConfirmed: 0, released: 0, skipped: "Automatic deposits are switched off" };
+    return {
+      autoConfirmed: 0,
+      released: 0,
+      membershipsLapsed,
+      skipped: "Automatic deposits are switched off",
+    };
   }
   const holdHours = settings.escrow.holdHours ?? 24;
   const autoConfirmHours = settings.escrow.autoConfirmHours ?? 72;
@@ -355,7 +498,7 @@ export async function settleDueEscrow(): Promise<{
     released += 1;
   }
 
-  return { autoConfirmed, released, skipped: null };
+  return { autoConfirmed, released, membershipsLapsed, skipped: null };
 }
 
 /* ------------------------------------------------------------ paper trail */
