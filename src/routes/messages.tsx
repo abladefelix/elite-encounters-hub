@@ -386,7 +386,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
         addons: request.addons,
         rate: request.rate,
         platform_fee_pct: platform.platformFeePct,
-        scheduled_for: request.scheduledFor || null,
+        scheduled_for: request.scheduledForIso,
         notes: request.notes,
         status: "requested",
       });
