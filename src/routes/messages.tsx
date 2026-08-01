@@ -5,6 +5,7 @@ import {
   Banknote,
   Check,
   CheckCheck,
+  Flag,
   Gift as GiftIcon,
   Image as ImageIcon,
   Lock,
@@ -14,8 +15,10 @@ import {
   ShieldAlert,
   Send,
   ShieldCheck,
+  Star,
   Video,
 } from "lucide-react";
+
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
