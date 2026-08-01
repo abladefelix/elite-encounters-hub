@@ -268,7 +268,7 @@ function MessagesPage() {
 
         <div className="mx-auto w-full max-w-6xl px-0 py-0 sm:px-5 sm:py-8">
           <Card className="overflow-hidden border-border/70 bg-surface p-0">
-            <div className="grid h-[calc(100svh-4rem)] sm:h-[76vh] md:grid-cols-[300px_1fr]">
+            <div className="grid h-[calc(100svh-7rem)] sm:h-[76vh] md:grid-cols-[300px_1fr]">
               {/* thread list */}
               <aside
                 className={cn(
