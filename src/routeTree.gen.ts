@@ -35,6 +35,7 @@ import { Route as AshnightControlVettingRouteImport } from './routes/ashnight-co
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
 import { Route as ApiPublicHooksBackupRouteImport } from './routes/api/public/hooks/backup'
+import { Route as ApiPublicHooksPaystackRouteImport } from './routes/api/public/hooks/paystack'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -167,6 +168,11 @@ const ApiPublicHooksBackupRoute = ApiPublicHooksBackupRouteImport.update({
   path: '/api/public/hooks/backup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksPaystackRoute = ApiPublicHooksPaystackRouteImport.update({
+  id: '/api/public/hooks/paystack',
+  path: '/api/public/hooks/paystack',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -195,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
+  '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -222,6 +229,7 @@ export interface FileRoutesByTo {
   '/ashnight-control': typeof AshnightControlIndexRoute
   '/specialists': typeof SpecialistsIndexRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
+  '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -251,6 +259,7 @@ export interface FileRoutesById {
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
+  '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -281,6 +290,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/'
     | '/specialists/'
     | '/api/public/hooks/backup'
+    | '/api/public/hooks/paystack'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/ashnight-control'
     | '/specialists'
     | '/api/public/hooks/backup'
+    | '/api/public/hooks/paystack'
   id:
     | '__root__'
     | '/'
@@ -336,6 +347,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/'
     | '/specialists/'
     | '/api/public/hooks/backup'
+    | '/api/public/hooks/paystack'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -352,6 +364,7 @@ export interface RootRouteChildren {
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
   ApiPublicHooksBackupRoute: typeof ApiPublicHooksBackupRoute
+  ApiPublicHooksPaystackRoute: typeof ApiPublicHooksPaystackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -538,6 +551,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBackupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/paystack': {
+      id: '/api/public/hooks/paystack'
+      path: '/api/public/hooks/paystack'
+      fullPath: '/api/public/hooks/paystack'
+      preLoaderRoute: typeof ApiPublicHooksPaystackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -591,6 +611,7 @@ const rootRouteChildren: RootRouteChildren = {
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,
   ApiPublicHooksBackupRoute: ApiPublicHooksBackupRoute,
+  ApiPublicHooksPaystackRoute: ApiPublicHooksPaystackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
