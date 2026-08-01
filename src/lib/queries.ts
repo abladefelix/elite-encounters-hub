@@ -105,6 +105,31 @@ export async function uploadAvatar(userId: string, file: File) {
   return data.signedUrl;
 }
 
+/** Looks up several members at once — used to name the other side of a thread. */
+export function useProfilesByIds(ids: string[]) {
+  const key = [...new Set(ids)].sort();
+  return useQuery({
+    queryKey: ["profiles", "by-ids", key.join(",")],
+    enabled: key.length > 0,
+    queryFn: async () =>
+      unwrap<ProfileRow[]>(await supabase.from("profiles").select("*").in("id", key)),
+  });
+}
+
+/** Uploads a chat attachment and returns a signed URL the thread can render. */
+export async function uploadAttachment(threadId: string, file: File) {
+  const path = `${threadId}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "_")}`;
+  const { error } = await supabase.storage
+    .from("attachments")
+    .upload(path, file, { contentType: file.type });
+  if (error) throw new Error(error.message);
+  const { data, error: signError } = await supabase.storage
+    .from("attachments")
+    .createSignedUrl(path, 60 * 60 * 24 * 30);
+  if (signError) throw new Error(signError.message);
+  return data.signedUrl;
+}
+
 /* ------------------------------------------------------------------ services */
 
 export function useServices(includeInactive = false) {
