@@ -16,7 +16,7 @@ Everything is administered from a private control room at `/ashnight-control`.
 
 | Guide | Who it's for |
 | --- | --- |
-| [docs/SETUP.md](docs/SETUP.md) | Developers / operators — local dev, self-hosted backend, **cPanel deployment** |
+| [docs/SETUP.md](docs/SETUP.md) | Developers / operators — local dev, self-hosted backend, **Windows deployment (Option A)** and **Linux server deployment** |
 | [docs/ADMIN-GUIDE.md](docs/ADMIN-GUIDE.md) | Platform administrators — control room, vetting, rooms, pricing, escrow, moderation, keys |
 | [docs/CLIENT-GUIDE.md](docs/CLIENT-GUIDE.md) | Clients (members who book ash services) |
 | [docs/SPECIALIST-GUIDE.md](docs/SPECIALIST-GUIDE.md) | Specialists (vetted professionals who earn) |
