@@ -21,6 +21,17 @@ Everything is administered from a private control room at `/ashnight-control`.
 | [docs/CLIENT-GUIDE.md](docs/CLIENT-GUIDE.md) | Clients (members who book ash services) |
 | [docs/SPECIALIST-GUIDE.md](docs/SPECIALIST-GUIDE.md) | Specialists (vetted professionals who earn) |
 
+## Backups
+
+Daily off-site snapshots are built in. The admin sets the Dropbox and Google Drive
+accounts in **Control room → Backups**, and any scheduler calls
+`POST /api/public/hooks/backup` once a night. Snapshots are pruned to the retention count
+you choose, and restore steps are documented.
+
+See [docs/SETUP.md § 7](docs/SETUP.md#7-backups--operations--daily-off-site-snapshots-to-dropbox--google-drive)
+for the Dropbox/Drive token setup, Windows/Linux/pg_cron schedules and the restore
+procedure.
+
 ## Quick start (local development)
 
 ```sh
