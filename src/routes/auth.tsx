@@ -11,6 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useFeatureFlags } from "@/lib/feature-flags";
+import { Checkbox } from "@/components/ui/checkbox";
+import { SignupFieldsForm, type SignupValues } from "@/components/signup-fields-form";
+import { BUILTIN_FIELDS, appliesTo, useSignupConfig } from "@/lib/signup-fields";
 
 /** Only same-origin relative paths are ever used as a post-login destination. */
 function safeNext(value: unknown) {
@@ -49,16 +52,31 @@ function AuthPage() {
   const { session, loading } = useAuth();
 
   const { flags } = useFeatureFlags();
+  const { config } = useSignupConfig();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [city, setCity] = useState("");
+  const [role, setRole] = useState<"client" | "specialist">("client");
+  const [values, setValues] = useState<SignupValues>({});
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+  const [acceptMarketing, setAcceptMarketing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
 
   useEffect(() => {
     if (!loading && session) void navigate({ to: next, replace: true });
   }, [loading, session, navigate, next]);
+
+  function setValue(key: string, value: string | boolean) {
+    setValues((current) => ({ ...current, [key]: value }));
+  }
+
+  function pickAvatar(file: File | null) {
+    setAvatarFile(file);
+    setAvatarPreview(file ? URL.createObjectURL(file) : null);
+  }
 
   async function signIn(event: React.FormEvent) {
     event.preventDefault();
@@ -72,6 +90,58 @@ function AuthPage() {
     toast.success("Welcome back.");
   }
 
+  /** Turns the configured answers into auth metadata the profile trigger reads. */
+  function buildMetadata() {
+    const text = (key: string) =>
+      typeof values[key] === "string" ? (values[key] as string).trim() : "";
+    const extra: Record<string, string | boolean> = {};
+    for (const field of config.custom) {
+      if (!field.enabled || !appliesTo(field.audience, role)) continue;
+      const answer = values[`custom:${field.id}`];
+      if (answer === undefined || answer === "") continue;
+      extra[field.label] = answer;
+    }
+    if (config.legal.marketingOptIn) extra["Marketing opt-in"] = acceptMarketing;
+
+    return {
+      role,
+      display_name: text("displayName") || text("username") || email.split("@")[0],
+      username: text("username"),
+      phone: text("phone"),
+      address: text("address"),
+      locality: text("locality"),
+      city: text("city"),
+      headline: text("headline"),
+      bio: text("bio"),
+      years_experience: text("yearsExperience"),
+      languages: text("languages"),
+      hourly_rate: text("hourlyRate"),
+      extra,
+      accepted_terms: acceptTerms || !config.legal.requireTerms ? "true" : "false",
+      accepted_privacy: acceptPrivacy || !config.legal.requirePrivacy ? "true" : "false",
+    };
+  }
+
+  /** Fields the admin marked required must actually be answered. */
+  function missingRequired() {
+    for (const meta of BUILTIN_FIELDS) {
+      const field = config.fields[meta.key];
+      if (!field?.enabled || !field.required || !appliesTo(field.audience, role)) continue;
+      if (meta.type === "avatar") {
+        if (!avatarFile) return meta.label;
+        continue;
+      }
+      const answer = values[meta.key];
+      if (typeof answer !== "string" || !answer.trim()) return field.label?.trim() || meta.label;
+    }
+    for (const field of config.custom) {
+      if (!field.enabled || !field.required || !appliesTo(field.audience, role)) continue;
+      const answer = values[`custom:${field.id}`];
+      if (answer === undefined || answer === "" || answer === false) return field.label;
+    }
+    return null;
+  }
+
   async function signUp(event: React.FormEvent) {
     event.preventDefault();
     if (!flags.signupsOpen) {
@@ -80,15 +150,41 @@ function AuthPage() {
       });
       return;
     }
+    const missing = missingRequired();
+    if (missing) {
+      toast.error(`${missing} is required.`);
+      return;
+    }
+    if (config.legal.requireTerms && !acceptTerms) {
+      toast.error(`Please accept the ${config.legal.termsTitle}.`);
+      return;
+    }
+    if (config.legal.requirePrivacy && !acceptPrivacy) {
+      toast.error(`Please confirm you read the ${config.legal.privacyTitle}.`);
+      return;
+    }
+
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth`,
-        data: { display_name: displayName, city },
+        data: buildMetadata(),
       },
     });
+
+    // The avatar can only be stored once a session exists (storage is private).
+    if (!error && data.session && avatarFile) {
+      const path = `${data.session.user.id}/avatar-${Date.now()}`;
+      const upload = await supabase.storage
+        .from("avatars")
+        .upload(path, avatarFile, { upsert: true });
+      if (!upload.error) {
+        await supabase.from("profiles").update({ avatar_url: path }).eq("id", data.session.user.id);
+      }
+    }
+
     setBusy(false);
     if (error) {
       toast.error(error.message);
@@ -100,6 +196,7 @@ function AuthPage() {
     }
     toast.success("Account created.");
   }
+
 
   async function signInWithGoogle() {
     setBusy(true);
@@ -242,26 +339,45 @@ function AuthPage() {
                 <div className="absolute inset-x-0 top-1/2 -z-10 border-t border-border" />
               </div>
               <form className="space-y-4" onSubmit={signUp}>
+                {config.roleChoice ? (
+                  <div className="space-y-2">
+                    <Label>I am joining as</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["client", "specialist"] as const).map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => setRole(option)}
+                          className={
+                            "rounded-lg border px-3 py-2 text-sm capitalize transition-colors " +
+                            (role === option
+                              ? "border-primary bg-secondary font-medium text-foreground"
+                              : "border-border text-muted-foreground hover:text-foreground")
+                          }
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {role === "client" ? config.clientIntro : config.specialistIntro}
+                    </p>
+                  </div>
+                ) : null}
+
+                <SignupFieldsForm
+                  config={config}
+                  role={role}
+                  values={values}
+                  onChange={setValue}
+                  avatarPreview={avatarPreview}
+                  onAvatarPick={pickAvatar}
+                />
+
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full name</Label>
-                  <Input
-                    id="signup-name"
-                    required
-                    value={displayName}
-                    onChange={(event) => setDisplayName(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-city">City</Label>
-                  <Input
-                    id="signup-city"
-                    placeholder="Accra"
-                    value={city}
-                    onChange={(event) => setCity(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">
+                    Email<span className="text-primary"> *</span>
+                  </Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -272,7 +388,9 @@ function AuthPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">
+                    Password<span className="text-primary"> *</span>
+                  </Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -283,10 +401,54 @@ function AuthPage() {
                     onChange={(event) => setPassword(event.target.value)}
                   />
                 </div>
+
+                <div className="space-y-3 rounded-lg border border-border/70 bg-secondary/40 p-3">
+                  {config.legal.requireTerms ? (
+                    <label className="flex items-start gap-3 text-xs">
+                      <Checkbox
+                        checked={acceptTerms}
+                        onCheckedChange={(next) => setAcceptTerms(next === true)}
+                      />
+                      <span>
+                        I accept the{" "}
+                        <Link to="/legal" className="underline underline-offset-4">
+                          {config.legal.termsTitle}
+                        </Link>
+                        .
+                      </span>
+                    </label>
+                  ) : null}
+                  {config.legal.requirePrivacy ? (
+                    <label className="flex items-start gap-3 text-xs">
+                      <Checkbox
+                        checked={acceptPrivacy}
+                        onCheckedChange={(next) => setAcceptPrivacy(next === true)}
+                      />
+                      <span>
+                        I have read the{" "}
+                        <Link to="/legal" className="underline underline-offset-4">
+                          {config.legal.privacyTitle}
+                        </Link>
+                        .
+                      </span>
+                    </label>
+                  ) : null}
+                  {config.legal.marketingOptIn ? (
+                    <label className="flex items-start gap-3 text-xs">
+                      <Checkbox
+                        checked={acceptMarketing}
+                        onCheckedChange={(next) => setAcceptMarketing(next === true)}
+                      />
+                      <span>Send me Ashnight updates and offers.</span>
+                    </label>
+                  ) : null}
+                </div>
+
                 <Button type="submit" className="w-full" disabled={busy}>
                   {busy ? <Loader2 className="size-4 animate-spin" /> : "Create account"}
                 </Button>
               </form>
+
             </CardContent>
           </Card>
         </TabsContent>

@@ -500,6 +500,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string
           available: boolean
           avatar_url: string | null
           bio: string
@@ -507,6 +508,7 @@ export type Database = {
           created_at: string
           dislikes: string[]
           display_name: string
+          extra: Json
           headline: string
           hourly_rate: number
           id: string
@@ -514,17 +516,22 @@ export type Database = {
           languages: string[]
           last_seen_at: string | null
           likes: string[]
+          locality: string
           phone: string | null
+          privacy_accepted_at: string | null
           rating: number
           response_minutes: number
           room: Database["public"]["Enums"]["tier"] | null
           suspended: boolean
+          terms_accepted_at: string | null
           updated_at: string
+          username: string | null
           verified: boolean
           vetting: Database["public"]["Enums"]["vetting_status"]
           years_experience: number
         }
         Insert: {
+          address?: string
           available?: boolean
           avatar_url?: string | null
           bio?: string
@@ -532,6 +539,7 @@ export type Database = {
           created_at?: string
           dislikes?: string[]
           display_name?: string
+          extra?: Json
           headline?: string
           hourly_rate?: number
           id: string
@@ -539,17 +547,22 @@ export type Database = {
           languages?: string[]
           last_seen_at?: string | null
           likes?: string[]
+          locality?: string
           phone?: string | null
+          privacy_accepted_at?: string | null
           rating?: number
           response_minutes?: number
           room?: Database["public"]["Enums"]["tier"] | null
           suspended?: boolean
+          terms_accepted_at?: string | null
           updated_at?: string
+          username?: string | null
           verified?: boolean
           vetting?: Database["public"]["Enums"]["vetting_status"]
           years_experience?: number
         }
         Update: {
+          address?: string
           available?: boolean
           avatar_url?: string | null
           bio?: string
@@ -557,6 +570,7 @@ export type Database = {
           created_at?: string
           dislikes?: string[]
           display_name?: string
+          extra?: Json
           headline?: string
           hourly_rate?: number
           id?: string
@@ -564,12 +578,16 @@ export type Database = {
           languages?: string[]
           last_seen_at?: string | null
           likes?: string[]
+          locality?: string
           phone?: string | null
+          privacy_accepted_at?: string | null
           rating?: number
           response_minutes?: number
           room?: Database["public"]["Enums"]["tier"] | null
           suspended?: boolean
+          terms_accepted_at?: string | null
           updated_at?: string
+          username?: string | null
           verified?: boolean
           vetting?: Database["public"]["Enums"]["vetting_status"]
           years_experience?: number

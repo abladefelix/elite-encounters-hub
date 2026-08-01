@@ -2,6 +2,7 @@ import { createFileRoute, Link, Navigate, Outlet, useRouterState } from "@tansta
 import {
   BadgeCheck,
   CalendarCheck,
+  ClipboardList,
   DoorOpen,
   KeyRound,
   ShieldCheck,
@@ -39,6 +40,7 @@ const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] 
   { to: "/ashnight-control/bookings", label: "Bookings", icon: CalendarCheck },
   { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck },
   { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan },
+  { to: "/ashnight-control/signup", label: "Sign-up form", icon: ClipboardList },
   { to: "/ashnight-control/features", label: "Features", icon: ToggleLeft },
   { to: "/ashnight-control/settings", label: "Keys & security", icon: KeyRound },
 ];

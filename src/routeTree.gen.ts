@@ -14,6 +14,7 @@ import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AshnightControlRouteImport } from './routes/ashnight-control'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as LegalRouteImport } from './routes/legal'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -26,6 +27,7 @@ import { Route as AshnightControlModerationRouteImport } from './routes/ashnight
 import { Route as AshnightControlRoomsRouteImport } from './routes/ashnight-control.rooms'
 import { Route as AshnightControlServicesRouteImport } from './routes/ashnight-control.services'
 import { Route as AshnightControlSettingsRouteImport } from './routes/ashnight-control.settings'
+import { Route as AshnightControlSignupRouteImport } from './routes/ashnight-control.signup'
 import { Route as AshnightControlUsersRouteImport } from './routes/ashnight-control.users'
 import { Route as AshnightControlVettingRouteImport } from './routes/ashnight-control.vetting'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
@@ -54,6 +56,11 @@ const AuthRoute = AuthRouteImport.update({
 const HowItWorksRoute = HowItWorksRouteImport.update({
   id: '/how-it-works',
   path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalRoute = LegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MessagesRoute = MessagesRouteImport.update({
@@ -117,6 +124,11 @@ const AshnightControlSettingsRoute = AshnightControlSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const AshnightControlSignupRoute = AshnightControlSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlUsersRoute = AshnightControlUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -144,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control': typeof AshnightControlRouteWithChildren
   '/auth': typeof AuthRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/legal': typeof LegalRoute
   '/messages': typeof MessagesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -155,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
   '/ashnight-control/settings': typeof AshnightControlSettingsRoute
+  '/ashnight-control/signup': typeof AshnightControlSignupRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
@@ -166,6 +180,7 @@ export interface FileRoutesByTo {
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/legal': typeof LegalRoute
   '/messages': typeof MessagesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -177,6 +192,7 @@ export interface FileRoutesByTo {
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
   '/ashnight-control/settings': typeof AshnightControlSettingsRoute
+  '/ashnight-control/signup': typeof AshnightControlSignupRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
@@ -190,6 +206,7 @@ export interface FileRoutesById {
   '/ashnight-control': typeof AshnightControlRouteWithChildren
   '/auth': typeof AuthRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/legal': typeof LegalRoute
   '/messages': typeof MessagesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -201,6 +218,7 @@ export interface FileRoutesById {
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
   '/ashnight-control/settings': typeof AshnightControlSettingsRoute
+  '/ashnight-control/signup': typeof AshnightControlSignupRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
@@ -215,6 +233,7 @@ export interface FileRouteTypes {
     | '/ashnight-control'
     | '/auth'
     | '/how-it-works'
+    | '/legal'
     | '/messages'
     | '/profile'
     | '/reset-password'
@@ -226,6 +245,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/rooms'
     | '/ashnight-control/services'
     | '/ashnight-control/settings'
+    | '/ashnight-control/signup'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
@@ -237,6 +257,7 @@ export interface FileRouteTypes {
     | '/apply'
     | '/auth'
     | '/how-it-works'
+    | '/legal'
     | '/messages'
     | '/profile'
     | '/reset-password'
@@ -248,6 +269,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/rooms'
     | '/ashnight-control/services'
     | '/ashnight-control/settings'
+    | '/ashnight-control/signup'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
@@ -260,6 +282,7 @@ export interface FileRouteTypes {
     | '/ashnight-control'
     | '/auth'
     | '/how-it-works'
+    | '/legal'
     | '/messages'
     | '/profile'
     | '/reset-password'
@@ -271,6 +294,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/rooms'
     | '/ashnight-control/services'
     | '/ashnight-control/settings'
+    | '/ashnight-control/signup'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
@@ -284,6 +308,7 @@ export interface RootRouteChildren {
   AshnightControlRoute: typeof AshnightControlRouteWithChildren
   AuthRoute: typeof AuthRoute
   HowItWorksRoute: typeof HowItWorksRoute
+  LegalRoute: typeof LegalRoute
   MessagesRoute: typeof MessagesRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -327,6 +352,13 @@ declare module '@tanstack/react-router' {
       path: '/how-it-works'
       fullPath: '/how-it-works'
       preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal': {
+      id: '/legal'
+      path: '/legal'
+      fullPath: '/legal'
+      preLoaderRoute: typeof LegalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/messages': {
@@ -413,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlSettingsRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/signup': {
+      id: '/ashnight-control/signup'
+      path: '/signup'
+      fullPath: '/ashnight-control/signup'
+      preLoaderRoute: typeof AshnightControlSignupRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/users': {
       id: '/ashnight-control/users'
       path: '/users'
@@ -452,6 +491,7 @@ interface AshnightControlRouteChildren {
   AshnightControlRoomsRoute: typeof AshnightControlRoomsRoute
   AshnightControlServicesRoute: typeof AshnightControlServicesRoute
   AshnightControlSettingsRoute: typeof AshnightControlSettingsRoute
+  AshnightControlSignupRoute: typeof AshnightControlSignupRoute
   AshnightControlUsersRoute: typeof AshnightControlUsersRoute
   AshnightControlVettingRoute: typeof AshnightControlVettingRoute
   AshnightControlIndexRoute: typeof AshnightControlIndexRoute
@@ -465,6 +505,7 @@ const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlRoomsRoute: AshnightControlRoomsRoute,
   AshnightControlServicesRoute: AshnightControlServicesRoute,
   AshnightControlSettingsRoute: AshnightControlSettingsRoute,
+  AshnightControlSignupRoute: AshnightControlSignupRoute,
   AshnightControlUsersRoute: AshnightControlUsersRoute,
   AshnightControlVettingRoute: AshnightControlVettingRoute,
   AshnightControlIndexRoute: AshnightControlIndexRoute,
@@ -480,6 +521,7 @@ const rootRouteChildren: RootRouteChildren = {
   AshnightControlRoute: AshnightControlRouteWithChildren,
   AuthRoute: AuthRoute,
   HowItWorksRoute: HowItWorksRoute,
+  LegalRoute: LegalRoute,
   MessagesRoute: MessagesRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -490,13 +532,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
