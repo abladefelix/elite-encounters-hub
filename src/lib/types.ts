@@ -6,7 +6,36 @@
  * backend without touching UI components.
  */
 
-export type Tier = "basic" | "premium" | "ultimate";
+/**
+ * Rooms.
+ *
+ * The three original rooms always exist. `room4` … `room8` are spare slots the
+ * database enum reserves so an admin can create brand-new rooms from the
+ * control room — their name, price and privileges all live in platform
+ * settings, so a new room is a data change, not a code change.
+ */
+export type BaseTier = "basic" | "premium" | "ultimate";
+
+export type CustomTier = "room4" | "room5" | "room6" | "room7" | "room8";
+
+export type Tier = BaseTier | CustomTier;
+
+export const BASE_TIERS: BaseTier[] = ["basic", "premium", "ultimate"];
+
+/** Spare enum slots, in the order the admin console hands them out. */
+export const CUSTOM_TIER_SLOTS: CustomTier[] = ["room4", "room5", "room6", "room7", "room8"];
+
+export const ALL_TIERS: Tier[] = [...BASE_TIERS, ...CUSTOM_TIER_SLOTS];
+
+export function isTier(value: string): value is Tier {
+  return (ALL_TIERS as string[]).includes(value);
+}
+
+/**
+ * A map keyed by room. The three base rooms are always present; custom rooms
+ * appear only once an admin creates them, so reads must tolerate a miss.
+ */
+export type RoomMap<T> = Record<BaseTier, T> & Partial<Record<CustomTier, T>>;
 
 export type VettingStatus = "pending" | "in_review" | "approved" | "rejected";
 
