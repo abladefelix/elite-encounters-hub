@@ -43,12 +43,15 @@ const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] 
   { to: "/ashnight-control/bookings", label: "Bookings", icon: CalendarCheck },
   { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck },
   { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan },
+  { to: "/ashnight-control/complaints", label: "Complaints", icon: LifeBuoy },
+  { to: "/ashnight-control/notifications", label: "Notifications", icon: Bell },
+  { to: "/ashnight-control/documents", label: "Invoices & receipts", icon: ReceiptText },
+  { to: "/ashnight-control/logs", label: "Activity log", icon: ScrollText },
   { to: "/ashnight-control/signup", label: "Sign-up form", icon: ClipboardList },
   { to: "/ashnight-control/features", label: "Features", icon: ToggleLeft },
   { to: "/ashnight-control/settings", label: "Keys & security", icon: KeyRound },
   { to: "/ashnight-control/backups", label: "Backups", icon: DatabaseBackup },
   { to: "/ashnight-control/server", label: "Server & DNS", icon: Server },
-
 ];
 
 function AdminLayout() {
