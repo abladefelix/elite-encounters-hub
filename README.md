@@ -40,6 +40,26 @@ procedure.
 Everything below is toggled live in **Control room → Features** (no deploy needed) and every
 change is written to the admin audit log.
 
+### Phone numbers in chat
+
+Members **cannot** share phone numbers — this is on by default and set to **Block send**, so
+the message never leaves the composer. It has its own switch, separate from other contact
+details, in **Control room → Moderation → Rules**:
+
+| Control | Default | Effect |
+| --- | --- | --- |
+| `Prevent phone numbers` | **On** | Master switch for phone-number detection |
+| Action next to it | **Block send** | Or `Mask it` (delivered with digits redacted) or `Warn only` |
+| `Prevent other contact sharing` | On / Mask | Emails, external links and social handles |
+| Room exemptions | none | Per-tier override that lets a room exchange contacts anyway |
+
+Detection covers plain digits, spaced/dashed/bracketed numbers (`024 412 3456`, `+233…`),
+spelled-out digits (`zero two four one two three…`) and messenger handoffs
+(`WhatsApp me 020…`, `telegram: @handle`). Every hit is written to the review log at
+**Control room → Moderation** when `Log hits for review` is on, and the member sees a system
+note in the thread when `Tell the member` is on. Turning the switch off restores phone sharing
+immediately, with no deploy.
+
 ### One-to-one chat attachments
 
 Yes — members can attach images and files inside a thread. Three layers must all agree before
