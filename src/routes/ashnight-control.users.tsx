@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -269,7 +270,7 @@ function AdminUsers() {
                 </TableRow>
               ) : null}
 
-              {rows.map((row) => {
+              {paged.rows.map((row) => {
                 const status = (row.account_status ?? "pending") as AccountStatus;
                 return (
                   <TableRow key={row.id}>
@@ -378,6 +379,9 @@ function AdminUsers() {
               ) : null}
             </TableBody>
           </Table>
+        </div>
+        <div className="border-t border-border p-3">
+          <DataPager paged={paged} label="accounts" />
         </div>
       </Card>
 

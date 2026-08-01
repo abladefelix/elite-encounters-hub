@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -121,7 +122,7 @@ function AdminLogs() {
                   </TableCell>
                 </TableRow>
               ) : null}
-              {(logs.data ?? []).map((row) => (
+              {paged.rows.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                     {new Date(row.created_at).toLocaleString()}
