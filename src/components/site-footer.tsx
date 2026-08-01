@@ -59,7 +59,7 @@ function FooterColumn({
   links,
 }: {
   title: string;
-  links: { to: string; label: string }[];
+  links: { to: string; label: string; search?: Record<string, string> }[];
 }) {
   return (
     <div>
@@ -69,6 +69,7 @@ function FooterColumn({
           <li key={link.label}>
             <Link
               to={link.to}
+              search={link.search ?? {}}
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               {link.label}
