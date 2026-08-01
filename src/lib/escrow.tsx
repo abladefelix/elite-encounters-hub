@@ -443,6 +443,7 @@ export function useEscrow(): EscrowContextValue {
     entriesLoading: entriesQuery.isLoading,
     threadEntries,
     open,
+    openManual,
     confirmComplete,
     raiseIssue,
     releaseNow,
