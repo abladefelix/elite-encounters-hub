@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Loader2, Search, ShieldBan, ShieldCheck } from "lucide-react";
+import { Loader2, Pencil, Search, ShieldBan, ShieldCheck, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,6 +43,8 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { TierBadge } from "@/components/tier-badge";
+import { UserEditorDialog } from "@/components/admin/user-editor-dialog";
+import { deleteUserAccount } from "@/lib/admin-users.functions";
 import { useAllProfiles, useUpdateProfile, type ProfileRow } from "@/lib/queries";
 import { releaseAbandonedSignups, setAccountStatus } from "@/lib/identity.functions";
 import {
@@ -89,6 +91,27 @@ function AdminUsers() {
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [releasing, setReleasing] = useState(false);
+  const [editor, setEditor] = useState<{ open: boolean; profile: ProfileRow | null }>({
+    open: false,
+    profile: null,
+  });
+  const [removing, setRemoving] = useState<ProfileRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function removeAccount() {
+    if (!removing) return;
+    setDeleting(true);
+    try {
+      await deleteUserAccount({ data: { userId: removing.id } });
+      toast.success(`${removing.display_name} deleted`);
+      setRemoving(null);
+      await profilesQuery.refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Delete failed.");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   const rows = useMemo(() => {
     const all = profilesQuery.data ?? [];
@@ -218,6 +241,11 @@ function AdminUsers() {
         <Button variant="outline" onClick={() => void reclaim()} disabled={releasing}>
           {releasing ? <Loader2 className="size-4 animate-spin" /> : "Release abandoned sign-ups"}
         </Button>
+
+        <Button onClick={() => setEditor({ open: true, profile: null })}>
+          <UserPlus className="size-4" />
+          Add member
+        </Button>
       </div>
 
       <Card className="overflow-hidden p-0">
@@ -295,6 +323,13 @@ function AdminUsers() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuItem
+                            onClick={() => setEditor({ open: true, profile: row })}
+                          >
+                            <Pencil className="size-4" />
+                            Edit everything
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuLabel>Room placement</DropdownMenuLabel>
                           {TIERS.map((tier) => (
                             <DropdownMenuItem key={tier} onClick={() => move(row, tier)}>
@@ -319,6 +354,14 @@ function AdminUsers() {
                               {ACCOUNT_STATUS_META[value].label}
                             </DropdownMenuItem>
                           ))}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setRemoving(row)}
+                          >
+                            <Trash2 className="size-4" />
+                            Delete account
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -358,6 +401,33 @@ function AdminUsers() {
           ))}
         </CardContent>
       </Card>
+
+      <UserEditorDialog
+        open={editor.open}
+        onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))}
+        profile={editor.profile}
+        onSaved={() => profilesQuery.refetch()}
+      />
+
+      <Dialog open={!!removing} onOpenChange={(open) => (!open ? setRemoving(null) : undefined)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {removing?.display_name}?</DialogTitle>
+            <DialogDescription>
+              This removes the sign-in, the profile and everything linked to it. It cannot be
+              undone — suspend or ban instead if you may need the history.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoving(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={() => void removeAccount()} disabled={deleting}>
+              {deleting ? <Loader2 className="size-4 animate-spin" /> : "Delete permanently"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!target} onOpenChange={(open) => (!open ? setTarget(null) : undefined)}>
         <DialogContent>
