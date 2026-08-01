@@ -198,6 +198,14 @@ export function useEscrow(): EscrowContextValue {
   const entriesQuery = useEscrowEntries();
   const { create, update } = useEscrowMutations();
   const entries = useMemo(() => entriesQuery.data ?? [], [entriesQuery.data]);
+  const queryClient = useQueryClient();
+  const confirmEscrow = useServerFn(confirmEscrowComplete);
+  const raiseIssueFn = useServerFn(raiseEscrowIssue);
+  const refreshEntries = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ["escrow"] }),
+    [queryClient],
+  );
+
 
   // Settlement is performed server-side by the scheduled pass at
   // /api/public/hooks/escrow-release — no browser is involved in moving money.
