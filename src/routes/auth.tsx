@@ -452,6 +452,16 @@ export function AuthPage({
                   onAvatarPick={pickAvatar}
                 />
 
+                {portfolioEnabled ? (
+                  <PortfolioPicker
+                    photos={portfolioPhotos}
+                    video={portfolioVideo}
+                    onPhotosChange={setPortfolioPhotos}
+                    onVideoChange={setPortfolioVideo}
+                    onReject={(message) => toast.error(message)}
+                  />
+                ) : null}
+
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">
                     Email<span className="text-primary"> *</span>
