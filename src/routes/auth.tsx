@@ -395,19 +395,23 @@ export function AuthPage({
         <TabsContent value="signup">
           <Card>
             <CardContent className="space-y-4 pt-6">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={busy}
-                onClick={signInWithGoogle}
-              >
-                Continue with Google
-              </Button>
-              <div className="relative text-center text-xs text-muted-foreground">
-                <span className="bg-card px-2">or sign up with email</span>
-                <div className="absolute inset-x-0 top-1/2 -z-10 border-t border-border" />
-              </div>
+              {googleEnabled ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={busy}
+                    onClick={signInWithGoogle}
+                  >
+                    Continue with Google
+                  </Button>
+                  <div className="relative text-center text-xs text-muted-foreground">
+                    <span className="bg-card px-2">or sign up with email</span>
+                    <div className="absolute inset-x-0 top-1/2 -z-10 border-t border-border" />
+                  </div>
+                </>
+              ) : null}
               <form className="space-y-4" onSubmit={signUp}>
                 {config.roleChoice ? (
                   <div className="space-y-2">
