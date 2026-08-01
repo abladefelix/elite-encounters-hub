@@ -3,11 +3,12 @@ import { Menu, Sparkle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { currentClient } from "@/lib/mock-data";
 import { initials } from "@/lib/types";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useRoomSettings } from "@/lib/room-settings";
+import { useProfile } from "@/lib/profile";
 
 const NAV = [
   { to: "/specialists", label: "Specialists" },
@@ -19,6 +20,7 @@ const NAV = [
 export function SiteHeader() {
   const me = currentClient();
   const { platform } = useRoomSettings();
+  const { profile } = useProfile();
 
 
 
@@ -48,18 +50,18 @@ export function SiteHeader() {
 
         <div className="ml-auto flex items-center gap-2">
           {platform.memberThemeChoice ? <ThemeToggle /> : null}
-          <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-            <Link to="/ashnight-control">Admin</Link>
-          </Button>
           <Button asChild size="sm" variant="brass" className="hidden sm:inline-flex">
             <Link to="/apply">Apply to join</Link>
           </Button>
 
-          <Avatar className="hidden size-9 border border-border sm:flex">
-            <AvatarFallback className="bg-surface-strong text-xs">
-              {initials(me.name)}
-            </AvatarFallback>
-          </Avatar>
+          <Link to="/profile" aria-label="Your profile" className="hidden sm:flex">
+            <Avatar className="size-9 border border-border transition-colors hover:border-primary/50">
+              {profile.avatar ? <AvatarImage src={profile.avatar} alt={profile.name} /> : null}
+              <AvatarFallback className="bg-surface-strong text-xs">
+                {initials(profile.name || me.name)}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
 
           <Sheet>
             <SheetTrigger asChild>
@@ -72,7 +74,7 @@ export function SiteHeader() {
               <nav className="mt-8 flex flex-col gap-1">
                 {[
                   ...NAV,
-                  { to: "/ashnight-control", label: "Admin dashboard" } as const,
+                  { to: "/profile", label: "Your profile" } as const,
                   { to: "/apply", label: "Apply to join" } as const,
                 ].map((item) => (
                   <Link

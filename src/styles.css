@@ -324,4 +324,8 @@
   body {
     padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
   }
+  /* The admin control room is not an app shell — no tab bar, no reserved space. */
+  body:has([data-admin-shell]) {
+    padding-bottom: 0;
+  }
 }

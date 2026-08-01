@@ -4,6 +4,7 @@ import {
   CalendarCheck,
   DoorOpen,
   ShieldCheck,
+  Sparkles,
   ShieldBan,
   LayoutDashboard,
   LifeBuoy,
@@ -25,6 +26,7 @@ const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] 
   { to: "/ashnight-control/vetting", label: "Vetting queue", icon: BadgeCheck },
   { to: "/ashnight-control/users", label: "Users", icon: Users },
   { to: "/ashnight-control/rooms", label: "Rooms", icon: DoorOpen },
+  { to: "/ashnight-control/services", label: "Services", icon: Sparkles },
   { to: "/ashnight-control/bookings", label: "Bookings", icon: CalendarCheck },
   { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck },
   { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan },
@@ -35,7 +37,7 @@ function AdminLayout() {
   const metrics = adminMetrics();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div data-admin-shell className="min-h-screen bg-background">
       <div className="mx-auto flex max-w-[1400px]">
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-border/70 bg-panel px-4 py-6 lg:flex">
           <Link to="/" className="px-2 font-display text-lg font-semibold tracking-tight">

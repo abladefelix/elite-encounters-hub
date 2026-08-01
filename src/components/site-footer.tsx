@@ -36,11 +36,11 @@ export function SiteFooter() {
           ]}
         />
         <FooterColumn
-          title="Operations"
+          title="Your account"
           links={[
-            { to: "/ashnight-control", label: "Admin dashboard" },
-            { to: "/ashnight-control/vetting", label: "Vetting queue" },
-            { to: "/ashnight-control/bookings", label: "Bookings & payouts" },
+            { to: "/profile", label: "Profile & settings" },
+            { to: "/messages", label: "Your conversations" },
+            { to: "/how-it-works", label: "Escrow & payments" },
           ]}
         />
       </div>

@@ -21,6 +21,7 @@ import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-c
 import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
 import { Route as AshnightControlModerationRouteImport } from './routes/ashnight-control.moderation'
 import { Route as AshnightControlRoomsRouteImport } from './routes/ashnight-control.rooms'
+import { Route as AshnightControlServicesRouteImport } from './routes/ashnight-control.services'
 import { Route as AshnightControlUsersRouteImport } from './routes/ashnight-control.users'
 import { Route as AshnightControlVettingRouteImport } from './routes/ashnight-control.vetting'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
@@ -87,6 +88,11 @@ const AshnightControlRoomsRoute = AshnightControlRoomsRouteImport.update({
   path: '/rooms',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const AshnightControlServicesRoute = AshnightControlServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlUsersRoute = AshnightControlUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
+  '/ashnight-control/services': typeof AshnightControlServicesRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
+  '/ashnight-control/services': typeof AshnightControlServicesRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
+  '/ashnight-control/services': typeof AshnightControlServicesRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/moderation'
     | '/ashnight-control/rooms'
+    | '/ashnight-control/services'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/moderation'
     | '/ashnight-control/rooms'
+    | '/ashnight-control/services'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/moderation'
     | '/ashnight-control/rooms'
+    | '/ashnight-control/services'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
@@ -316,6 +328,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlRoomsRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/services': {
+      id: '/ashnight-control/services'
+      path: '/services'
+      fullPath: '/ashnight-control/services'
+      preLoaderRoute: typeof AshnightControlServicesRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/users': {
       id: '/ashnight-control/users'
       path: '/users'
@@ -352,6 +371,7 @@ interface AshnightControlRouteChildren {
   AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
   AshnightControlModerationRoute: typeof AshnightControlModerationRoute
   AshnightControlRoomsRoute: typeof AshnightControlRoomsRoute
+  AshnightControlServicesRoute: typeof AshnightControlServicesRoute
   AshnightControlUsersRoute: typeof AshnightControlUsersRoute
   AshnightControlVettingRoute: typeof AshnightControlVettingRoute
   AshnightControlIndexRoute: typeof AshnightControlIndexRoute
@@ -362,6 +382,7 @@ const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlEscrowRoute: AshnightControlEscrowRoute,
   AshnightControlModerationRoute: AshnightControlModerationRoute,
   AshnightControlRoomsRoute: AshnightControlRoomsRoute,
+  AshnightControlServicesRoute: AshnightControlServicesRoute,
   AshnightControlUsersRoute: AshnightControlUsersRoute,
   AshnightControlVettingRoute: AshnightControlVettingRoute,
   AshnightControlIndexRoute: AshnightControlIndexRoute,
