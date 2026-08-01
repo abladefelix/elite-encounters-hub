@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { FileText, Loader2, ReceiptText, Wallet } from "lucide-react";
 
+import { DocumentTemplateManager } from "@/components/admin/document-template-manager";
 import { Card, CardContent } from "@/components/ui/card";
+import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -13,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { StatCard } from "@/components/ui/stat-card";
 import { DocumentCard } from "@/routes/support";
+import type { DocumentTemplate } from "@/lib/document-templates";
 import { useDocuments, type DocumentKind } from "@/lib/support";
 import { money } from "@/lib/types";
 
@@ -36,6 +39,7 @@ export const Route = createFileRoute("/ashnight-control/documents")({
 function AdminDocuments() {
   const [kind, setKind] = useState<DocumentKind | "all">("all");
   const [search, setSearch] = useState("");
+  const [preview, setPreview] = useState<DocumentTemplate | null>(null);
   const documents = useDocuments(kind === "all" ? undefined : kind);
 
   const rows = (documents.data ?? []).filter((row) =>
@@ -45,6 +49,8 @@ function AdminDocuments() {
           .includes(search.toLowerCase())
       : true,
   );
+
+  const paged = usePaged(rows, 10);
 
   const invoiced = rows.filter((row) => row.kind === "invoice").reduce((sum, row) => sum + row.total, 0);
   const receipted = rows.filter((row) => row.kind === "receipt").reduce((sum, row) => sum + row.total, 0);
@@ -88,11 +94,15 @@ function AdminDocuments() {
         />
       </div>
 
+      <DocumentTemplateManager onPreview={setPreview} />
+
       {documents.isLoading ? <Loader2 className="size-5 animate-spin text-muted-foreground" /> : null}
 
+      <DataPager paged={paged} label="documents" />
+
       <div className="space-y-4">
-        {rows.map((row) => (
-          <DocumentCard key={row.id} row={row} />
+        {paged.rows.map((row) => (
+          <DocumentCard key={row.id} row={row} template={preview ?? undefined} />
         ))}
         {!documents.isLoading && rows.length === 0 ? (
           <Card>
@@ -102,6 +112,8 @@ function AdminDocuments() {
           </Card>
         ) : null}
       </div>
+
+      <DataPager paged={paged} label="documents" />
     </div>
   );
 }
