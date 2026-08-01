@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
@@ -44,6 +45,7 @@ import { ReportDialog, type ReportDraft } from "@/components/chat/report-dialog"
 import { RatingDialog, type RatingDraft } from "@/components/chat/rating-dialog";
 import { REPORT_REASON_LABEL } from "@/lib/reports";
 import { paystackChannel } from "@/lib/paystack";
+import { startBookingCheckout, startGiftCheckout } from "@/lib/payments.functions";
 import { useAuth } from "@/hooks/use-auth";
 import {
   markThreadRead,
@@ -166,6 +168,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const messages = useMemo(() => messagesQuery.data ?? [], [messagesQuery.data]);
   const sendMessage = useSendMessage();
   const createBooking = useCreateBooking();
+  const bookingCheckout = useServerFn(startBookingCheckout);
+  const giftCheckout = useServerFn(startGiftCheckout);
   const logHit = useLogModerationHit();
   const reports = useReportMutations();
   const submitRating = useSubmitRating();
