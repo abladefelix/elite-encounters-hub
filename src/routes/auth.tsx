@@ -458,16 +458,21 @@ export function AuthPage({
               ) : null}
               <form className="space-y-4" onSubmit={signIn}>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label htmlFor="signin-identifier">Username or email</Label>
                   <Input
-                    id="signin-email"
-                    type="email"
+                    id="signin-identifier"
+                    type="text"
                     required
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="username"
+                    placeholder="ashfan_kojo or you@example.com"
+                    value={identifier}
+                    onChange={(event) => setIdentifier(event.target.value)}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Either works — your username is unique across Ashnight.
+                  </p>
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="signin-password">Password</Label>
                   <Input
