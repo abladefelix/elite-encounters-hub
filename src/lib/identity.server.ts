@@ -30,15 +30,15 @@ export function isEmailShaped(value: string) {
 /* --------------------------------------------------------------- activity log */
 
 export interface ActivityInput {
-  actorId?: string | null;
-  actorLabel?: string;
-  area?: string;
+  actorId?: string | null | undefined;
+  actorLabel?: string | undefined;
+  area?: string | undefined;
   event: string;
-  severity?: "info" | "warn" | "error";
-  target?: string;
-  ip?: string;
-  userAgent?: string;
-  details?: Record<string, unknown>;
+  severity?: "info" | "warn" | "error" | undefined;
+  target?: string | undefined;
+  ip?: string | undefined;
+  userAgent?: string | undefined;
+  details?: Record<string, unknown> | undefined;
 }
 
 /** Never throws: an investigation trail must not break the action it records. */
@@ -65,7 +65,13 @@ export async function logActivity(input: ActivityInput) {
 
 export async function notify(
   userIds: string[],
-  payload: { title: string; body?: string; kind?: string; link?: string; sentBy?: string | null },
+  payload: {
+    title: string;
+    body?: string | undefined;
+    kind?: string | undefined;
+    link?: string | undefined;
+    sentBy?: string | null | undefined;
+  },
 ) {
   if (!userIds.length) return 0;
   const client = await admin();
@@ -87,10 +93,10 @@ export async function notify(
 /* ----------------------------------------------------------- availability */
 
 export interface AvailabilityInput {
-  username?: string;
-  email?: string;
-  phone?: string;
-  ghanaCard?: string;
+  username?: string | undefined;
+  email?: string | undefined;
+  phone?: string | undefined;
+  ghanaCard?: string | undefined;
 }
 
 export interface AvailabilityResult {
@@ -263,7 +269,7 @@ export interface SignInResult {
 export async function signInWithIdentifier(
   identifier: string,
   password: string,
-  meta: { ip?: string; userAgent?: string },
+  meta: { ip?: string | undefined; userAgent?: string | undefined },
 ): Promise<SignInResult> {
   const client = await admin();
   const raw = identifier.trim();
