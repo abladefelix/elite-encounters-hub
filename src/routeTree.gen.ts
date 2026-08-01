@@ -20,6 +20,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-control.index'
+import { Route as AshnightControlBackupsRouteImport } from './routes/ashnight-control.backups'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
 import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
 import { Route as AshnightControlFeaturesRouteImport } from './routes/ashnight-control.features'
@@ -87,6 +88,11 @@ const RoomsRoute = RoomsRouteImport.update({
 const AshnightControlIndexRoute = AshnightControlIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
+const AshnightControlBackupsRoute = AshnightControlBackupsRouteImport.update({
+  id: '/backups',
+  path: '/backups',
   getParentRoute: () => AshnightControlRoute,
 } as any)
 const AshnightControlBookingsRoute = AshnightControlBookingsRouteImport.update({
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
@@ -247,6 +256,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/rooms'
+    | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
@@ -272,6 +282,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/rooms'
+    | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/rooms'
+    | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
@@ -409,6 +421,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlIndexRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/backups': {
+      id: '/ashnight-control/backups'
+      path: '/backups'
+      fullPath: '/ashnight-control/backups'
+      preLoaderRoute: typeof AshnightControlBackupsRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/bookings': {
       id: '/ashnight-control/bookings'
       path: '/bookings'
@@ -504,6 +523,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AshnightControlRouteChildren {
+  AshnightControlBackupsRoute: typeof AshnightControlBackupsRoute
   AshnightControlBookingsRoute: typeof AshnightControlBookingsRoute
   AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
   AshnightControlFeaturesRoute: typeof AshnightControlFeaturesRoute
@@ -518,6 +538,7 @@ interface AshnightControlRouteChildren {
 }
 
 const AshnightControlRouteChildren: AshnightControlRouteChildren = {
+  AshnightControlBackupsRoute: AshnightControlBackupsRoute,
   AshnightControlBookingsRoute: AshnightControlBookingsRoute,
   AshnightControlEscrowRoute: AshnightControlEscrowRoute,
   AshnightControlFeaturesRoute: AshnightControlFeaturesRoute,

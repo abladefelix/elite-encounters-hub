@@ -31,7 +31,7 @@ export function SiteFooter() {
           title="Join"
           links={[
             { to: "/apply", label: "Apply as a client" },
-            { to: "/apply", label: "Apply as a specialist" },
+            { to: "/apply", search: { role: "specialist" }, label: "Apply as a specialist" },
             { to: "/rooms", label: "Compare rooms" },
           ]}
         />

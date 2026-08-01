@@ -23,8 +23,11 @@ function safeNext(value: unknown) {
 }
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>): { next?: string } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { next?: string; role?: "client" | "specialist" } => ({
     next: safeNext(search["next"]),
+    role: search["role"] === "specialist" ? "specialist" : "client",
   }),
   head: () => ({
     meta: [
@@ -48,14 +51,14 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { next } = useSearch({ from: "/auth" });
+  const { next, role: intendedRole } = useSearch({ from: "/auth" });
   const { session, loading } = useAuth();
 
   const { flags } = useFeatureFlags();
   const { config } = useSignupConfig();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"client" | "specialist">("client");
+  const [role, setRole] = useState<"client" | "specialist">(intendedRole ?? "client");
   const [values, setValues] = useState<SignupValues>({});
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -262,7 +265,7 @@ function AuthPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="signin">
+      <Tabs defaultValue={intendedRole === "specialist" ? "signup" : "signin"}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="signin">Sign in</TabsTrigger>
           <TabsTrigger value="signup">Create account</TabsTrigger>
@@ -458,7 +461,11 @@ function AuthPage() {
         <ShieldCheck className="mt-0.5 size-4 shrink-0" />
         <span>
           Every member is vetted by hand before room access is granted.{" "}
-          <Link to="/apply" className="underline underline-offset-4">
+          <Link
+            to="/apply"
+            search={{ role: "specialist" }}
+            className="underline underline-offset-4"
+          >
             Apply as a specialist
           </Link>
           .
