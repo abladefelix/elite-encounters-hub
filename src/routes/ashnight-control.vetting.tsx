@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Check,
   FileSearch,
+  Film,
+  Image as ImageIcon,
   Mail,
   MapPin,
   Phone,
