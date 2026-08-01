@@ -25,6 +25,7 @@ import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-cont
 import { Route as AshnightControlBackupsRouteImport } from './routes/ashnight-control.backups'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
 import { Route as AshnightControlComplaintsRouteImport } from './routes/ashnight-control.complaints'
+import { Route as AshnightControlDemoRouteImport } from './routes/ashnight-control.demo'
 import { Route as AshnightControlDeployRouteImport } from './routes/ashnight-control.deploy'
 import { Route as AshnightControlDocumentsRouteImport } from './routes/ashnight-control.documents'
 import { Route as AshnightControlEmailRouteImport } from './routes/ashnight-control.email'
@@ -129,6 +130,11 @@ const AshnightControlComplaintsRoute =
     path: '/complaints',
     getParentRoute: () => AshnightControlRoute,
   } as any)
+const AshnightControlDemoRoute = AshnightControlDemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlDeployRoute = AshnightControlDeployRouteImport.update({
   id: '/deploy',
   path: '/deploy',
@@ -260,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/demo': typeof AshnightControlDemoRoute
   '/ashnight-control/deploy': typeof AshnightControlDeployRoute
   '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
   '/ashnight-control/email': typeof AshnightControlEmailRoute
@@ -299,6 +306,7 @@ export interface FileRoutesByTo {
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/demo': typeof AshnightControlDemoRoute
   '/ashnight-control/deploy': typeof AshnightControlDeployRoute
   '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
   '/ashnight-control/email': typeof AshnightControlEmailRoute
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/demo': typeof AshnightControlDemoRoute
   '/ashnight-control/deploy': typeof AshnightControlDeployRoute
   '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
   '/ashnight-control/email': typeof AshnightControlEmailRoute
@@ -382,6 +391,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
+    | '/ashnight-control/demo'
     | '/ashnight-control/deploy'
     | '/ashnight-control/documents'
     | '/ashnight-control/email'
@@ -421,6 +431,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
+    | '/ashnight-control/demo'
     | '/ashnight-control/deploy'
     | '/ashnight-control/documents'
     | '/ashnight-control/email'
@@ -461,6 +472,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
+    | '/ashnight-control/demo'
     | '/ashnight-control/deploy'
     | '/ashnight-control/documents'
     | '/ashnight-control/email'
@@ -620,6 +632,13 @@ declare module '@tanstack/react-router' {
       path: '/complaints'
       fullPath: '/ashnight-control/complaints'
       preLoaderRoute: typeof AshnightControlComplaintsRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
+    '/ashnight-control/demo': {
+      id: '/ashnight-control/demo'
+      path: '/demo'
+      fullPath: '/ashnight-control/demo'
+      preLoaderRoute: typeof AshnightControlDemoRouteImport
       parentRoute: typeof AshnightControlRoute
     }
     '/ashnight-control/deploy': {
@@ -783,6 +802,7 @@ interface AshnightControlRouteChildren {
   AshnightControlBackupsRoute: typeof AshnightControlBackupsRoute
   AshnightControlBookingsRoute: typeof AshnightControlBookingsRoute
   AshnightControlComplaintsRoute: typeof AshnightControlComplaintsRoute
+  AshnightControlDemoRoute: typeof AshnightControlDemoRoute
   AshnightControlDeployRoute: typeof AshnightControlDeployRoute
   AshnightControlDocumentsRoute: typeof AshnightControlDocumentsRoute
   AshnightControlEmailRoute: typeof AshnightControlEmailRoute
@@ -805,6 +825,7 @@ const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlBackupsRoute: AshnightControlBackupsRoute,
   AshnightControlBookingsRoute: AshnightControlBookingsRoute,
   AshnightControlComplaintsRoute: AshnightControlComplaintsRoute,
+  AshnightControlDemoRoute: AshnightControlDemoRoute,
   AshnightControlDeployRoute: AshnightControlDeployRoute,
   AshnightControlDocumentsRoute: AshnightControlDocumentsRoute,
   AshnightControlEmailRoute: AshnightControlEmailRoute,
@@ -851,13 +872,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
