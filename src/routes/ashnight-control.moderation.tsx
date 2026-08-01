@@ -108,8 +108,8 @@ function AdminModeration() {
         <Stat label="Flagged words" value={String(moderation.flaggedWords.length)} icon={MessageSquareWarning} />
         <Stat label="Hits awaiting review" value={String(open)} icon={AlertTriangle} />
         <Stat
-          label="Contact sharing"
-          value={moderation.blockContactSharing ? "Restricted" : "Allowed"}
+          label="Phone numbers"
+          value={moderation.blockPhoneNumbers ? "Blocked" : "Allowed"}
           icon={ShieldBan}
         />
       </div>
@@ -130,8 +130,25 @@ function AdminModeration() {
           </Row>
           <Separator />
           <Row
-            label="Prevent contact sharing"
-            hint="Detects phone numbers (including spelled-out digits), emails, links, social handles and “WhatsApp me” patterns."
+            label="Prevent phone numbers"
+            hint="Catches digits, spaced or dashed numbers, spelled-out digits (“zero two four…”) and “WhatsApp me 024…” handoffs. Blocks the send by default."
+          >
+            <div className="flex items-center gap-3">
+              <ActionSelect
+                value={moderation.phoneAction}
+                onChange={(value) => setModerationField("phoneAction", value)}
+                disabled={!moderation.blockPhoneNumbers}
+              />
+              <Switch
+                checked={moderation.blockPhoneNumbers}
+                onCheckedChange={(value) => setModerationField("blockPhoneNumbers", value)}
+                aria-label="Prevent phone numbers"
+              />
+            </div>
+          </Row>
+          <Row
+            label="Prevent other contact sharing"
+            hint="Emails, external links and social handles."
           >
             <div className="flex items-center gap-3">
               <ActionSelect
@@ -142,7 +159,7 @@ function AdminModeration() {
               <Switch
                 checked={moderation.blockContactSharing}
                 onCheckedChange={(value) => setModerationField("blockContactSharing", value)}
-                aria-label="Prevent contact sharing"
+                aria-label="Prevent other contact sharing"
               />
             </div>
           </Row>

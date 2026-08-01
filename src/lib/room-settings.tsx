@@ -287,6 +287,7 @@ function sanitizeModeration(value: unknown): ModerationSettings {
 
   for (const key of [
     "enabled",
+    "blockPhoneNumbers",
     "blockContactSharing",
     "flaggedWordsEnabled",
     "notifyMember",
@@ -295,7 +296,7 @@ function sanitizeModeration(value: unknown): ModerationSettings {
     if (typeof record[key] === "boolean") next[key] = record[key] as boolean;
   }
 
-  for (const key of ["contactAction", "flaggedWordsAction"] as const) {
+  for (const key of ["phoneAction", "contactAction", "flaggedWordsAction"] as const) {
     const action = record[key];
     if (action === "warn" || action === "mask" || action === "block") next[key] = action;
   }
@@ -814,7 +815,7 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
       setContactExemptRoom,
       contactSharingAllowed: (room) =>
         !state.moderation.enabled ||
-        !state.moderation.blockContactSharing ||
+        (!state.moderation.blockContactSharing && !state.moderation.blockPhoneNumbers) ||
         state.moderation.contactExemptRooms[room],
       giftsFor: (room) => {
         const rules = state.gifts.rooms[room] ?? DEFAULT_ROOM_GIFT_RULES[room];

@@ -29,7 +29,13 @@ export const MODERATION_ACTIONS: { id: ModerationAction; label: string; hint: st
 export interface ModerationSettings {
   /** Master switch for all chat moderation. */
   enabled: boolean;
-  /** Detect and act on phone numbers, emails, links and social handles. */
+  /**
+   * Phone numbers get their own switch, because they are the single most
+   * common way a deal walks off-platform. On by default and set to "block".
+   */
+  blockPhoneNumbers: boolean;
+  phoneAction: ModerationAction;
+  /** Detect and act on emails, links and social handles. */
   blockContactSharing: boolean;
   contactAction: ModerationAction;
   /** Act on the flagged-word list below. */
@@ -57,6 +63,8 @@ export const DEFAULT_FLAGGED_WORDS = [
 
 export const DEFAULT_MODERATION_SETTINGS: ModerationSettings = {
   enabled: true,
+  blockPhoneNumbers: true,
+  phoneAction: "block",
   blockContactSharing: true,
   contactAction: "mask",
   flaggedWordsEnabled: true,
@@ -105,21 +113,40 @@ function collect(text: string, pattern: RegExp, kind: FindingKind, out: Finding[
     const raw = hit[0];
     const trimmed = raw.replace(/^\s+/, "");
     const start = hit.index + (raw.length - trimmed.length);
-    if (kind === "phone" && (trimmed.replace(/\D/g, "").length < 7)) continue;
+    // Numeric phone matches need 7+ digits to count; spelled-out digit runs
+    // ("zero two four …") carry no digits at all, so they are exempt.
+    if (kind === "phone" && /\d/.test(trimmed) && trimmed.replace(/\D/g, "").length < 7) continue;
     out.push({ kind, match: trimmed.trim(), start, end: start + trimmed.trim().length });
     if (regex.lastIndex === hit.index) regex.lastIndex += 1;
   }
 }
 
-/** Contact details a member tried to exchange. */
-export function detectContact(text: string): Finding[] {
+/**
+ * Phone numbers only — digits, spelled-out digits, and "WhatsApp me 024…"
+ * style messenger handoffs. Kept separate so admins can govern phone numbers
+ * independently of emails and links.
+ */
+export function detectPhones(text: string): Finding[] {
+  const out: Finding[] = [];
+  collect(text, MESSENGER, "phone", out);
+  collect(text, PHONE, "phone", out);
+  collect(text, SPELLED, "phone", out);
+  return dedupe(out);
+}
+
+/**
+ * Contact details a member tried to exchange. Phone numbers are included by
+ * default; pass `{ includePhones: false }` when they are handled separately.
+ */
+export function detectContact(
+  text: string,
+  options: { includePhones?: boolean } = {},
+): Finding[] {
   const out: Finding[] = [];
   collect(text, EMAIL, "email", out);
   collect(text, LINK, "link", out);
   collect(text, HANDLE, "handle", out);
-  collect(text, MESSENGER, "phone", out);
-  collect(text, PHONE, "phone", out);
-  collect(text, SPELLED, "phone", out);
+  if (options.includePhones !== false) out.push(...detectPhones(text));
   return dedupe(out);
 }
 
@@ -169,6 +196,9 @@ export interface ModerationVerdict {
   action: "allow" | "mask" | "block";
   /** Body to actually send (masked when action is "mask"). */
   body: string;
+  /** Phone-number hits, governed by their own admin switch. */
+  phones: Finding[];
+  /** Email, link and social-handle hits. */
   contact: Finding[];
   words: Finding[];
   findings: Finding[];
@@ -186,6 +216,7 @@ export function moderateMessage(
   const clean: ModerationVerdict = {
     action: "allow",
     body,
+    phones: [],
     contact: [],
     words: [],
     findings: [],
@@ -193,15 +224,19 @@ export function moderateMessage(
   };
   if (!settings.enabled) return clean;
 
-  const contactOn = settings.blockContactSharing && !settings.contactExemptRooms[room];
-  const contact = contactOn ? detectContact(body) : [];
+  const exempt = settings.contactExemptRooms[room];
+  const phoneOn = settings.blockPhoneNumbers && !exempt;
+  const contactOn = settings.blockContactSharing && !exempt;
+  const phones = phoneOn ? detectPhones(body) : [];
+  const contact = contactOn ? detectContact(body, { includePhones: false }) : [];
   const words = settings.flaggedWordsEnabled
     ? detectFlaggedWords(body, settings.flaggedWords)
     : [];
 
-  if (!contact.length && !words.length) return clean;
+  if (!phones.length && !contact.length && !words.length) return clean;
 
   const actions: ModerationAction[] = [];
+  if (phones.length) actions.push(settings.phoneAction);
   if (contact.length) actions.push(settings.contactAction);
   if (words.length) actions.push(settings.flaggedWordsAction);
   const action = actions.reduce<"allow" | "mask" | "block">((worst, current) => {
@@ -209,8 +244,11 @@ export function moderateMessage(
     return RANK[mapped] > RANK[worst] ? mapped : worst;
   }, "allow");
 
-  const findings = dedupe([...contact, ...words]);
+  const findings = dedupe([...phones, ...contact, ...words]);
   const reasons: string[] = [];
+  if (phones.length) {
+    reasons.push(phones.length > 1 ? "phone numbers" : "a phone number");
+  }
   if (contact.length) {
     reasons.push(
       `contact details (${[...new Set(contact.map((f) => FINDING_LABEL[f.kind].toLowerCase()))].join(", ")})`,
@@ -223,6 +261,7 @@ export function moderateMessage(
   return {
     action,
     body: action === "mask" ? maskFindings(body, findings) : body,
+    phones,
     contact,
     words,
     findings,
