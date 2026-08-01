@@ -894,6 +894,7 @@ export type Database = {
       }
       in_thread: { Args: { _thread_id: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      settings_section: { Args: { _section: string }; Returns: Json }
     }
     Enums: {
       app_role: "client" | "specialist" | "admin"
