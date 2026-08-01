@@ -49,16 +49,31 @@ function AuthPage() {
   const { session, loading } = useAuth();
 
   const { flags } = useFeatureFlags();
+  const { config } = useSignupConfig();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [city, setCity] = useState("");
+  const [role, setRole] = useState<"client" | "specialist">("client");
+  const [values, setValues] = useState<SignupValues>({});
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+  const [acceptMarketing, setAcceptMarketing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
 
   useEffect(() => {
     if (!loading && session) void navigate({ to: next, replace: true });
   }, [loading, session, navigate, next]);
+
+  function setValue(key: string, value: string | boolean) {
+    setValues((current) => ({ ...current, [key]: value }));
+  }
+
+  function pickAvatar(file: File | null) {
+    setAvatarFile(file);
+    setAvatarPreview(file ? URL.createObjectURL(file) : null);
+  }
 
   async function signIn(event: React.FormEvent) {
     event.preventDefault();
@@ -72,6 +87,58 @@ function AuthPage() {
     toast.success("Welcome back.");
   }
 
+  /** Turns the configured answers into auth metadata the profile trigger reads. */
+  function buildMetadata() {
+    const text = (key: string) =>
+      typeof values[key] === "string" ? (values[key] as string).trim() : "";
+    const extra: Record<string, string | boolean> = {};
+    for (const field of config.custom) {
+      if (!field.enabled || !appliesTo(field.audience, role)) continue;
+      const answer = values[`custom:${field.id}`];
+      if (answer === undefined || answer === "") continue;
+      extra[field.label] = answer;
+    }
+    if (config.legal.marketingOptIn) extra["Marketing opt-in"] = acceptMarketing;
+
+    return {
+      role,
+      display_name: text("displayName") || text("username") || email.split("@")[0],
+      username: text("username"),
+      phone: text("phone"),
+      address: text("address"),
+      locality: text("locality"),
+      city: text("city"),
+      headline: text("headline"),
+      bio: text("bio"),
+      years_experience: text("yearsExperience"),
+      languages: text("languages"),
+      hourly_rate: text("hourlyRate"),
+      extra,
+      accepted_terms: acceptTerms || !config.legal.requireTerms ? "true" : "false",
+      accepted_privacy: acceptPrivacy || !config.legal.requirePrivacy ? "true" : "false",
+    };
+  }
+
+  /** Fields the admin marked required must actually be answered. */
+  function missingRequired() {
+    for (const meta of BUILTIN_FIELDS) {
+      const field = config.fields[meta.key];
+      if (!field?.enabled || !field.required || !appliesTo(field.audience, role)) continue;
+      if (meta.type === "avatar") {
+        if (!avatarFile) return meta.label;
+        continue;
+      }
+      const answer = values[meta.key];
+      if (typeof answer !== "string" || !answer.trim()) return field.label?.trim() || meta.label;
+    }
+    for (const field of config.custom) {
+      if (!field.enabled || !field.required || !appliesTo(field.audience, role)) continue;
+      const answer = values[`custom:${field.id}`];
+      if (answer === undefined || answer === "" || answer === false) return field.label;
+    }
+    return null;
+  }
+
   async function signUp(event: React.FormEvent) {
     event.preventDefault();
     if (!flags.signupsOpen) {
@@ -80,15 +147,41 @@ function AuthPage() {
       });
       return;
     }
+    const missing = missingRequired();
+    if (missing) {
+      toast.error(`${missing} is required.`);
+      return;
+    }
+    if (config.legal.requireTerms && !acceptTerms) {
+      toast.error(`Please accept the ${config.legal.termsTitle}.`);
+      return;
+    }
+    if (config.legal.requirePrivacy && !acceptPrivacy) {
+      toast.error(`Please confirm you read the ${config.legal.privacyTitle}.`);
+      return;
+    }
+
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth`,
-        data: { display_name: displayName, city },
+        data: buildMetadata(),
       },
     });
+
+    // The avatar can only be stored once a session exists (storage is private).
+    if (!error && data.session && avatarFile) {
+      const path = `${data.session.user.id}/avatar-${Date.now()}`;
+      const upload = await supabase.storage
+        .from("avatars")
+        .upload(path, avatarFile, { upsert: true });
+      if (!upload.error) {
+        await supabase.from("profiles").update({ avatar_url: path }).eq("id", data.session.user.id);
+      }
+    }
+
     setBusy(false);
     if (error) {
       toast.error(error.message);
@@ -100,6 +193,7 @@ function AuthPage() {
     }
     toast.success("Account created.");
   }
+
 
   async function signInWithGoogle() {
     setBusy(true);
