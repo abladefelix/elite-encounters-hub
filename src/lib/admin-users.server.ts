@@ -22,31 +22,31 @@ type VettingStatus = Database["public"]["Enums"]["vetting_status"];
 type AccountStatus = Database["public"]["Enums"]["account_status"];
 
 export interface AdminUserFields {
-  display_name?: string;
-  username?: string | null;
-  city?: string;
-  address?: string;
-  locality?: string;
-  phone?: string | null;
-  headline?: string;
-  bio?: string;
-  avatar_url?: string | null;
-  hourly_rate?: number;
-  years_experience?: number;
-  response_minutes?: number;
-  languages?: string[];
-  likes?: string[];
-  dislikes?: string[];
-  room?: Tier | null;
-  vetting?: VettingStatus;
-  verified?: boolean;
-  available?: boolean;
-  suspended?: boolean;
-  jobs_completed?: number;
-  ghana_card_number?: string | null;
-  ghana_card_expiry?: string | null;
-  account_status?: AccountStatus;
-  status_reason?: string;
+  display_name?: string | undefined;
+  username?: string | null | undefined;
+  city?: string | undefined;
+  address?: string | undefined;
+  locality?: string | undefined;
+  phone?: string | null | undefined;
+  headline?: string | undefined;
+  bio?: string | undefined;
+  avatar_url?: string | null | undefined;
+  hourly_rate?: number | undefined;
+  years_experience?: number | undefined;
+  response_minutes?: number | undefined;
+  languages?: string[] | undefined;
+  likes?: string[] | undefined;
+  dislikes?: string[] | undefined;
+  room?: Tier | null | undefined;
+  vetting?: VettingStatus | undefined;
+  verified?: boolean | undefined;
+  available?: boolean | undefined;
+  suspended?: boolean | undefined;
+  jobs_completed?: number | undefined;
+  ghana_card_number?: string | null | undefined;
+  ghana_card_expiry?: string | null | undefined;
+  account_status?: AccountStatus | undefined;
+  status_reason?: string | undefined;
 }
 
 export interface AdminUserAccount {
