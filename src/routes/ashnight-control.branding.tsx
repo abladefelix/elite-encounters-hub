@@ -395,7 +395,7 @@ function LanguageCard() {
                       key={entry.key}
                       label={entry.label}
                       value={(draft.copy ?? {})[entry.key] ?? ""}
-                      placeholder={DEFAULT_COPY[entry.key]}
+                      placeholder={DEFAULT_COPY[entry.key] ?? ""}
                       onChange={(v) => setWord(entry.key, v)}
                     />
                   ))}
@@ -456,8 +456,8 @@ function Field({
   label: string;
   value: string;
   onChange: (value: string) => void;
-  hint?: string;
-  placeholder?: string;
+  hint?: string | undefined;
+  placeholder?: string | undefined;
 }) {
   return (
     <div className="min-w-0">
@@ -483,7 +483,7 @@ function AreaField({
   label: string;
   value: string;
   onChange: (value: string) => void;
-  hint?: string;
+  hint?: string | undefined;
   rows?: number;
 }) {
   return (
