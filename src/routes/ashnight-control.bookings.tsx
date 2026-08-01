@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { CircleDollarSign, Filter } from "lucide-react";
+import { CircleDollarSign, Filter, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -56,14 +57,25 @@ const STATUS_STYLE: Record<BookingStatus, string> = {
 
 function AdminBookings() {
   const [status, setStatus] = useState<BookingStatus | "all">("all");
+  const [search, setSearch] = useState("");
 
-  const rows = useMemo(
-    () =>
-      status === "all"
-        ? seedBookings
-        : seedBookings.filter((booking) => booking.status === status),
-    [status],
-  );
+  const rows = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return seedBookings.filter((booking) => {
+      if (status !== "all" && booking.status !== status) return false;
+      if (!term) return true;
+      const haystack = [
+        booking.service,
+        booking.id,
+        getClient(booking.clientId)?.name ?? "",
+        getSpecialist(booking.specialistId)?.name ?? "",
+        ...booking.addons,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [status, search]);
 
   const held = seedBookings
     .filter((booking) => booking.status === "paid" || booking.status === "accepted")
@@ -108,7 +120,17 @@ function AdminBookings() {
         </Card>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-56 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Search by service, member, specialist or add-on"
+            aria-label="Search bookings"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
         <Filter className="size-4 text-muted-foreground" />
         <Select
           value={status}
@@ -145,6 +167,13 @@ function AdminBookings() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                    No bookings match this search.
+                  </TableCell>
+                </TableRow>
+              ) : null}
               {rows.map((booking) => {
                 const specialist = getSpecialist(booking.specialistId);
                 const totals = bookingTotal(booking);
