@@ -1,4 +1,6 @@
-import { createFileRoute, Link, Navigate, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+
 import {
   Bell,
   ReceiptText,
@@ -18,23 +20,25 @@ import {
   Server,
   Mail,
   Rocket,
-
-
+  LogOut,
   ToggleLeft,
   Users,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useApplications } from "@/lib/queries";
 import { initials } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationBell } from "@/components/notification-bell";
 import { TwoFactorCard } from "@/components/two-factor-card";
 import { useAuth } from "@/hooks/use-auth";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useTwoFactor } from "@/lib/two-factor";
+
 
 export const Route = createFileRoute("/ashnight-control")({
   component: AdminLayout,
@@ -64,7 +68,17 @@ const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] 
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const { loading, session, profile, isAdmin } = useAuth();
+  const { loading, session, profile, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  async function handleSignOut() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await signOut();
+    void navigate({ to: "/auth", replace: true });
+  }
+
   const applicationsQuery = useApplications();
   const { flags } = useFeatureFlags();
   const twoFactor = useTwoFactor();
@@ -162,19 +176,39 @@ function AdminLayout() {
             </a>
             <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2">
               <span className="text-xs text-muted-foreground">Appearance</span>
-              <ThemeToggle className="size-8" />
-            </div>
-            <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3">
-              <Avatar className="size-8 border border-border">
-                <AvatarFallback className="bg-surface-strong text-[11px]">
-                  {initials(displayName)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-medium">{displayName}</p>
-                <p className="truncate text-[10px] text-muted-foreground">Administrator</p>
+              <div className="flex items-center gap-1">
+                <NotificationBell />
+                <ThemeToggle className="size-8" />
               </div>
             </div>
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3">
+              <Link to="/profile" aria-label="Your profile">
+                <Avatar className="size-8 border border-border transition-colors hover:border-primary/50">
+                  <AvatarFallback className="bg-surface-strong text-[11px]">
+                    {initials(displayName)}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium">{displayName}</p>
+                <Link
+                  to="/profile"
+                  className="truncate text-[10px] text-muted-foreground hover:text-foreground"
+                >
+                  Administrator · view profile
+                </Link>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-8"
+                aria-label="Sign out"
+                onClick={() => void handleSignOut()}
+              >
+                <LogOut className="size-4" />
+              </Button>
+            </div>
+
           </div>
         </aside>
 
@@ -200,9 +234,20 @@ function AdminLayout() {
                 </Link>
               );
             })}
-            <div className="ml-auto shrink-0 pl-2">
+            <div className="ml-auto flex shrink-0 items-center gap-1 pl-2">
+              <NotificationBell />
               <ThemeToggle className="size-8" />
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-8"
+                aria-label="Sign out"
+                onClick={() => void handleSignOut()}
+              >
+                <LogOut className="size-4" />
+              </Button>
             </div>
+
           </div>
 
           <div className="px-5 py-8 sm:px-8">
