@@ -91,10 +91,14 @@ function AdminEscrow() {
   } = useEscrow();
   const {
     gifts,
-    profiles,
+    roomIds,
+    profileOf,
+    giftRulesOf,
     setGiftField,
     setRoomGiftField,
     toggleRoomGift,
+    addGift,
+    removeGift,
   } = useRoomSettings();
   const { data: allProfiles } = useAllProfiles();
   const [filter, setFilter] = useState<EscrowState | "all">("all");

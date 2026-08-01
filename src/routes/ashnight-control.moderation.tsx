@@ -74,6 +74,7 @@ function AdminModeration() {
     removeFlaggedWord,
     setContactExemptRoom,
     profiles,
+    roomIds,
   } = useRoomSettings();
   const { hits, markReviewed, remove, clear } = useModerationLog();
   const { reports, setStatus, remove: removeReport } = useReports();
