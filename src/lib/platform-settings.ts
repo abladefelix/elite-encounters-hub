@@ -26,7 +26,10 @@ export type SettingsSection =
   | "addons"
   | "documents"
   | "dns"
-  | "deployment";
+  | "deployment"
+  | "branding"
+  | "locale"
+  | "welcome";
 
 type SettingsBlob = Partial<Record<SettingsSection, unknown>>;
 
