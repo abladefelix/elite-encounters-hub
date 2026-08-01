@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials } from "@/lib/types";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationBell } from "@/components/notification-bell";
 import { useRoomSettings } from "@/lib/room-settings";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
@@ -59,6 +60,7 @@ export function SiteHeader() {
 
         <div className="ml-auto flex items-center gap-2">
           {platform.memberThemeChoice ? <ThemeToggle /> : null}
+          <NotificationBell />
 
           {user ? (
             <>
