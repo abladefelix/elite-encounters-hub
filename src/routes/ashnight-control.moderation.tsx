@@ -221,7 +221,7 @@ function AdminModeration() {
                 </p>
               </div>
               <Switch
-                checked={moderation.contactExemptRooms[tier]}
+                checked={moderation.contactExemptRooms[tier] ?? false}
                 onCheckedChange={(value) => setContactExemptRoom(tier, value)}
                 aria-label={`Allow contact sharing in ${tierLabel(tier)}`}
               />
