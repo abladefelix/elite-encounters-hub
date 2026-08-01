@@ -223,7 +223,36 @@ export async function finalizeReference(
         }.`,
       });
     }
+
+    // A confirmed charge always leaves a receipt the member can download.
+    await issueDocument({
+      kind: "receipt",
+      clientId: entry.client_id,
+      specialistId: entry.specialist_id,
+      bookingId: entry.booking_id,
+      escrowId: entry.id,
+      title: entry.label || (entry.kind === "gift" ? "Ashnight gift" : "Ash service"),
+      subtotal: entry.amount,
+      platformFee: entry.platform_fee,
+      total: entry.amount,
+      lines: [
+        {
+          label: entry.label || "Ash service",
+          quantity: 1,
+          unitAmount: entry.amount,
+          amount: entry.amount,
+        },
+      ],
+      paystackReference: ref,
+      paid: true,
+      notes:
+        patch.state === "released"
+          ? "Paid in full and settled to the specialist."
+          : "Paid in full and held in Ashnight escrow until the visit is confirmed.",
+    });
+
     return { applied: true, detail: `Escrow ${entry.id} → ${patch.state}` };
+
   }
 
   const { data: membership } = await admin
