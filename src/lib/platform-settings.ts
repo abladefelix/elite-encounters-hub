@@ -21,7 +21,9 @@ export type SettingsSection =
   | "integrations"
   | "security"
   | "signup"
-  | "backups";
+  | "backups"
+  | "email"
+  | "deployment";
 
 type SettingsBlob = Partial<Record<SettingsSection, unknown>>;
 
