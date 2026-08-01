@@ -69,6 +69,9 @@ function AdminModeration() {
     profiles,
   } = useRoomSettings();
   const { hits, markReviewed, remove, clear } = useModerationLog();
+  const { reports, setStatus, remove: removeReport } = useReports();
+  const { ratings } = useRatings();
+
 
   const [newWord, setNewWord] = useState("");
   const [bulk, setBulk] = useState("");
