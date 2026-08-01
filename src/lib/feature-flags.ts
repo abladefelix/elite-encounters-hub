@@ -84,6 +84,24 @@ export const FEATURE_FLAGS: FeatureFlagMeta[] = [
     group: "Chat & calls",
   },
   {
+    key: "chatImageSharing",
+    label: "Chat image sharing",
+    hint: "Photos in one-to-one threads. Per-room photo privileges still apply underneath.",
+    group: "Chat & calls",
+  },
+  {
+    key: "googleSignIn",
+    label: "Continue with Google",
+    hint: "Show the Google button on sign in and sign up. Hidden by default.",
+    group: "Access",
+  },
+  {
+    key: "specialistPortfolioUploads",
+    label: "Specialist portfolio uploads",
+    hint: "Let specialists attach work photos and one intro video while signing up.",
+    group: "Access",
+  },
+  {
     key: "giftsEnabled",
     label: "Cash gifts",
     hint: "Master switch for in-chat gifts with real cash value.",
