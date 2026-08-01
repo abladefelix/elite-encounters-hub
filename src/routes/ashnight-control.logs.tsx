@@ -54,6 +54,7 @@ function AdminLogs() {
   const [severity, setSeverity] = useState("all");
   const [search, setSearch] = useState("");
   const logs = useActivityLog({ area, severity, search: search.trim() });
+  const paged = usePaged(logs.data ?? [], 25);
 
   return (
     <div className="space-y-6">
@@ -163,6 +164,9 @@ function AdminLogs() {
               ) : null}
             </TableBody>
           </Table>
+        </div>
+        <div className="border-t border-border p-3">
+          <DataPager paged={paged} label="events" />
         </div>
       </Card>
     </div>

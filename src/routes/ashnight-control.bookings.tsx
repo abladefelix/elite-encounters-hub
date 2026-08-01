@@ -78,6 +78,8 @@ function AdminBookings() {
     });
   }, [status, search]);
 
+  const paged = usePaged(rows, 25);
+
   const held = seedBookings
     .filter((booking) => booking.status === "paid" || booking.status === "accepted")
     .reduce((sum, booking) => sum + bookingTotal(booking).total, 0);
@@ -238,6 +240,9 @@ function AdminBookings() {
               })}
             </TableBody>
           </Table>
+        </div>
+        <div className="border-t border-border p-3">
+          <DataPager paged={paged} label="bookings" />
         </div>
       </Card>
     </div>

@@ -133,6 +133,8 @@ function AdminUsers() {
       );
   }, [profilesQuery.data, query, segment, statusFilter]);
 
+  const paged = usePaged(rows, 25);
+
   async function applyStatus() {
     if (!target) return;
     const needsReason = target.status !== "active" && target.status !== "pending";
