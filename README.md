@@ -115,7 +115,7 @@ Point `deploy_hook_url` at `https://your-host:9099/` (or proxy it behind nginx) 
 same secret in the service environment. Every sync — success or failure — is recorded in
 the admin audit log with the commit it shipped.
 
-## Documentation
+## Backups
 
 
 Daily off-site snapshots are built in and **already automated** — a database cron job
