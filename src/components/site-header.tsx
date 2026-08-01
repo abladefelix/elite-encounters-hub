@@ -23,8 +23,9 @@ export function SiteHeader() {
 
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-5">
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-5 md:h-16">
+
         <Link to="/" className="flex items-center gap-2">
           <span className="grid size-8 place-items-center rounded-lg bg-brass text-primary-foreground">
             <Sparkle className="size-4" />
