@@ -11,6 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useFeatureFlags } from "@/lib/feature-flags";
+import { Checkbox } from "@/components/ui/checkbox";
+import { SignupFieldsForm, type SignupValues } from "@/components/signup-fields-form";
+import { BUILTIN_FIELDS, appliesTo, useSignupConfig } from "@/lib/signup-fields";
 
 /** Only same-origin relative paths are ever used as a post-login destination. */
 function safeNext(value: unknown) {
