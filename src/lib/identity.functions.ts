@@ -14,7 +14,7 @@ const identifier = z.string().trim().min(3).max(254);
 
 /** Pre-flight check so sign-up can say "that username is taken" before submit. */
 export const checkAvailability = createServerFn({ method: "POST" })
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         username: z.string().trim().max(64).optional(),
@@ -31,7 +31,7 @@ export const checkAvailability = createServerFn({ method: "POST" })
 
 /** Sign in with a username or an email address. */
 export const signInWithIdentifier = createServerFn({ method: "POST" })
-  .inputValidator((input) =>
+  .validator((input) =>
     z.object({ identifier, password: z.string().min(6).max(200) }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -45,7 +45,7 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
 /** Records a client-side event (sign-out, payment start) in the audit trail. */
 export const recordActivity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         event: z.string().trim().min(2).max(64),
@@ -70,7 +70,7 @@ export const recordActivity = createServerFn({ method: "POST" })
 /** Admin: ban, suspend, deactivate or reactivate an account. */
 export const setAccountStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         userId: z.string().uuid(),
@@ -94,7 +94,7 @@ export const setAccountStatus = createServerFn({ method: "POST" })
 /** Admin: send a notification to one member, a room, a role, or everyone. */
 export const sendNotification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         title: z.string().trim().min(2).max(120),
@@ -148,7 +148,7 @@ export const sendNotification = createServerFn({ method: "POST" })
 /** Admin: free up usernames, emails and card numbers from abandoned sign-ups. */
 export const releaseAbandonedSignups = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ hours: z.number().min(1).max(720) }).parse(input))
+  .validator((input) => z.object({ hours: z.number().min(1).max(720) }).parse(input))
   .handler(async ({ data, context }) => {
     const { assertAdmin, releaseAbandonedSignups: run } = await import("./identity.server");
     await assertAdmin(context.userId);

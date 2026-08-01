@@ -20,7 +20,7 @@ const checkoutBase = z.object({
 /** Client pays for a booking they already created in the thread. */
 export const startBookingCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => checkoutBase.extend({ bookingId: z.string().uuid() }).parse(input))
+  .validator((input) => checkoutBase.extend({ bookingId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const {
       adminClient,
@@ -114,7 +114,7 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
 /** Client sends a cash gift in chat. */
 export const startGiftCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     checkoutBase
       .extend({
         threadId: z.string().uuid(),
@@ -190,7 +190,7 @@ export const startGiftCheckout = createServerFn({ method: "POST" })
 /** Client pays a monthly membership for a room. */
 export const startMembershipCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => checkoutBase.extend({ room: tier }).parse(input))
+  .validator((input) => checkoutBase.extend({ room: tier }).parse(input))
   .handler(async ({ data, context }) => {
     const { adminClient, initializeTransaction, reference, roomPrice, serverSettings } =
       await import("./payments.server");
@@ -223,7 +223,7 @@ export const startMembershipCheckout = createServerFn({ method: "POST" })
 /** Confirms a charge from the browser after Paystack redirects back. */
 export const confirmPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ reference: z.string().min(6).max(120) }).parse(input))
+  .validator((input) => z.object({ reference: z.string().min(6).max(120) }).parse(input))
   .handler(async ({ data, context }) => {
     const { adminClient, finalizeReference, verifyTransaction } = await import("./payments.server");
     const admin = await adminClient();
@@ -261,7 +261,7 @@ export const confirmPayment = createServerFn({ method: "POST" })
 /** Member confirms the visit is done — starts the clearing countdown. */
 export const confirmEscrowComplete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ escrowId: z.string().uuid() }).parse(input))
+  .validator((input) => z.object({ escrowId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { adminClient, hoursFromNow, serverSettings } = await import("./payments.server");
     const admin = await adminClient();
@@ -293,7 +293,7 @@ export const confirmEscrowComplete = createServerFn({ method: "POST" })
 /** Member freezes a payout while a problem is looked at. */
 export const raiseEscrowIssue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z.object({ escrowId: z.string().uuid(), reason: z.string().trim().min(4).max(600) }).parse(input),
   )
   .handler(async ({ data, context }) => {
