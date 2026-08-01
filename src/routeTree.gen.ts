@@ -27,6 +27,7 @@ import { Route as AshnightControlComplaintsRouteImport } from './routes/ashnight
 import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
 import { Route as AshnightControlFeaturesRouteImport } from './routes/ashnight-control.features'
 import { Route as AshnightControlModerationRouteImport } from './routes/ashnight-control.moderation'
+import { Route as AshnightControlNotificationsRouteImport } from './routes/ashnight-control.notifications'
 import { Route as AshnightControlRoomsRouteImport } from './routes/ashnight-control.rooms'
 import { Route as AshnightControlServerRouteImport } from './routes/ashnight-control.server'
 import { Route as AshnightControlServicesRouteImport } from './routes/ashnight-control.services'
@@ -133,6 +134,12 @@ const AshnightControlModerationRoute =
     path: '/moderation',
     getParentRoute: () => AshnightControlRoute,
   } as any)
+const AshnightControlNotificationsRoute =
+  AshnightControlNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AshnightControlRoute,
+  } as any)
 const AshnightControlRoomsRoute = AshnightControlRoomsRouteImport.update({
   id: '/rooms',
   path: '/rooms',
@@ -218,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
+  '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/server': typeof AshnightControlServerRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
@@ -250,6 +258,7 @@ export interface FileRoutesByTo {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
+  '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/server': typeof AshnightControlServerRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
@@ -284,6 +293,7 @@ export interface FileRoutesById {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
+  '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/server': typeof AshnightControlServerRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/moderation'
+    | '/ashnight-control/notifications'
     | '/ashnight-control/rooms'
     | '/ashnight-control/server'
     | '/ashnight-control/services'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/moderation'
+    | '/ashnight-control/notifications'
     | '/ashnight-control/rooms'
     | '/ashnight-control/server'
     | '/ashnight-control/services'
@@ -384,6 +396,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/moderation'
+    | '/ashnight-control/notifications'
     | '/ashnight-control/rooms'
     | '/ashnight-control/server'
     | '/ashnight-control/services'
@@ -548,6 +561,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlModerationRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/notifications': {
+      id: '/ashnight-control/notifications'
+      path: '/notifications'
+      fullPath: '/ashnight-control/notifications'
+      preLoaderRoute: typeof AshnightControlNotificationsRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/rooms': {
       id: '/ashnight-control/rooms'
       path: '/rooms'
@@ -649,6 +669,7 @@ interface AshnightControlRouteChildren {
   AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
   AshnightControlFeaturesRoute: typeof AshnightControlFeaturesRoute
   AshnightControlModerationRoute: typeof AshnightControlModerationRoute
+  AshnightControlNotificationsRoute: typeof AshnightControlNotificationsRoute
   AshnightControlRoomsRoute: typeof AshnightControlRoomsRoute
   AshnightControlServerRoute: typeof AshnightControlServerRoute
   AshnightControlServicesRoute: typeof AshnightControlServicesRoute
@@ -666,6 +687,7 @@ const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlEscrowRoute: AshnightControlEscrowRoute,
   AshnightControlFeaturesRoute: AshnightControlFeaturesRoute,
   AshnightControlModerationRoute: AshnightControlModerationRoute,
+  AshnightControlNotificationsRoute: AshnightControlNotificationsRoute,
   AshnightControlRoomsRoute: AshnightControlRoomsRoute,
   AshnightControlServerRoute: AshnightControlServerRoute,
   AshnightControlServicesRoute: AshnightControlServicesRoute,
