@@ -318,3 +318,10 @@
   background: color-mix(in oklab, var(--color-success) 14%, transparent);
   color: var(--color-success);
 }
+
+/* Mobile app shell: leave room for the fixed bottom tab bar. */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+  }
+}
