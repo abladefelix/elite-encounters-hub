@@ -281,7 +281,7 @@ export function DocumentCard({
 }: {
   row: DocumentRow;
   /** Preview override; otherwise the admin's active template is used. */
-  template?: DocumentTemplate;
+  template?: DocumentTemplate | undefined;
 }) {
   const lines = useMemo(() => documentLines(row), [row]);
   const { active } = useDocumentTemplates();
