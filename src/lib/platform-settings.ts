@@ -19,7 +19,8 @@ export type SettingsSection =
   | "platform"
   | "features"
   | "integrations"
-  | "security";
+  | "security"
+  | "signup";
 
 type SettingsBlob = Partial<Record<SettingsSection, unknown>>;
 
