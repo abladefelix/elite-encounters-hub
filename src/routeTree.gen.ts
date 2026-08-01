@@ -32,6 +32,7 @@ import { Route as AshnightControlSettingsRouteImport } from './routes/ashnight-c
 import { Route as AshnightControlSignupRouteImport } from './routes/ashnight-control.signup'
 import { Route as AshnightControlUsersRouteImport } from './routes/ashnight-control.users'
 import { Route as AshnightControlVettingRouteImport } from './routes/ashnight-control.vetting'
+import { Route as PaymentReturnRouteImport } from './routes/payment.return'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
 import { Route as ApiPublicHooksBackupRouteImport } from './routes/api/public/hooks/backup'
@@ -154,6 +155,11 @@ const AshnightControlVettingRoute = AshnightControlVettingRouteImport.update({
   path: '/vetting',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const PaymentReturnRoute = PaymentReturnRouteImport.update({
+  id: '/payment/return',
+  path: '/payment/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SpecialistsIndexRoute = SpecialistsIndexRouteImport.update({
   id: '/specialists/',
   path: '/specialists/',
@@ -204,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/signup': typeof AshnightControlSignupRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
+  '/payment/return': typeof PaymentReturnRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/ashnight-control/signup': typeof AshnightControlSignupRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
+  '/payment/return': typeof PaymentReturnRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control': typeof AshnightControlIndexRoute
   '/specialists': typeof SpecialistsIndexRoute
@@ -264,6 +272,7 @@ export interface FileRoutesById {
   '/ashnight-control/signup': typeof AshnightControlSignupRoute
   '/ashnight-control/users': typeof AshnightControlUsersRoute
   '/ashnight-control/vetting': typeof AshnightControlVettingRoute
+  '/payment/return': typeof PaymentReturnRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/signup'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
+    | '/payment/return'
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/signup'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
+    | '/payment/return'
     | '/specialists/$specialistId'
     | '/ashnight-control'
     | '/specialists'
@@ -355,6 +366,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/signup'
     | '/ashnight-control/users'
     | '/ashnight-control/vetting'
+    | '/payment/return'
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
@@ -374,6 +386,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
+  PaymentReturnRoute: typeof PaymentReturnRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
   ApiPublicHooksBackupRoute: typeof ApiPublicHooksBackupRoute
@@ -544,6 +557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlVettingRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/payment/return': {
+      id: '/payment/return'
+      path: '/payment/return'
+      fullPath: '/payment/return'
+      preLoaderRoute: typeof PaymentReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/specialists/': {
       id: '/specialists/'
       path: '/specialists'
@@ -629,6 +649,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
+  PaymentReturnRoute: PaymentReturnRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,
   ApiPublicHooksBackupRoute: ApiPublicHooksBackupRoute,

@@ -199,27 +199,9 @@ export function useEscrow(): EscrowContextValue {
   const { create, update } = useEscrowMutations();
   const entries = useMemo(() => entriesQuery.data ?? [], [entriesQuery.data]);
 
-  // Stopgap client-side settlement: flip anything overdue to "released".
-  // The authoritative automatic release will be a scheduled server job added
-  // in the payments phase — this only covers the case where a member/admin
-  // happens to have escrow open when a hold window elapses.
-  useEffect(() => {
-    if (!settings.autoReleaseEnabled) return;
-    const overdue = dueForRelease(entries);
-    for (const entry of overdue) {
-      void supabase
-        .from("escrow_entries")
-        .update({
-          state: "released",
-          released_at: new Date().toISOString(),
-          admin_note: entry.admin_note || "Auto-deposited — hold window elapsed with no issues raised.",
-        })
-        .eq("id", entry.id)
-        .then(({ error }) => {
-          if (error) console.error("escrow auto-release failed", error.message);
-        });
-    }
-  }, [entries, settings.autoReleaseEnabled]);
+  // Settlement is performed server-side by the scheduled pass at
+  // /api/public/hooks/escrow-release — no browser is involved in moving money.
+
 
   const threadEntries = useCallback(
     (threadId: string) => entries.filter((entry) => entry.thread_id === threadId),
