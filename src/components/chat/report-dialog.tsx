@@ -49,7 +49,19 @@ export function ReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="flex max-h-[85svh] max-w-md flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
+          <DialogTitle className="flex items-center gap-2 font-display">
+            <Flag className="size-4 text-destructive" /> Report {specialistName.split(" ")[0]}
+          </DialogTitle>
+          <DialogDescription>
+            Ashnight trust &amp; safety reviews every report with the thread attached. Nothing is
+            shared with the other member.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="-mx-1 flex-1 space-y-4 overflow-y-auto px-1">
+          <div className="space-y-2">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display">
             <Flag className="size-4 text-destructive" /> Report {specialistName.split(" ")[0]}
