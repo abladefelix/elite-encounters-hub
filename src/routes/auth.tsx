@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SignupFieldsForm, type SignupValues } from "@/components/signup-fields-form";
+import { BrandMark } from "@/components/brand-mark";
 import { BUILTIN_FIELDS, appliesTo, useSignupConfig } from "@/lib/signup-fields";
 
 /** Only same-origin relative paths are ever used as a post-login destination. */
@@ -46,12 +47,22 @@ export const Route = createFileRoute("/auth")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: AuthPage,
+  component: AuthRoutePage,
 });
 
-function AuthPage() {
-  const navigate = useNavigate();
+function AuthRoutePage() {
   const { next, role: intendedRole } = useSearch({ from: "/auth" });
+  return <AuthPage next={next} intendedRole={intendedRole} />;
+}
+
+export function AuthPage({
+  next = "/",
+  intendedRole = "client",
+}: {
+  next?: string;
+  intendedRole?: "client" | "specialist";
+}) {
+  const navigate = useNavigate();
   const { session, loading } = useAuth();
 
   const { flags } = useFeatureFlags();
@@ -67,6 +78,15 @@ function AuthPage() {
   const [acceptMarketing, setAcceptMarketing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
+  const [authMode, setAuthMode] = useState<"signin" | "signup">(
+    intendedRole === "specialist" ? "signup" : "signin",
+  );
+
+  useEffect(() => {
+    if (intendedRole !== "specialist") return;
+    setRole("specialist");
+    setAuthMode("signup");
+  }, [intendedRole]);
 
   useEffect(() => {
     if (!loading && session) void navigate({ to: next, replace: true });
@@ -259,13 +279,14 @@ function AuthPage() {
   return (
     <main className="mx-auto flex min-h-[80svh] max-w-md flex-col justify-center px-4 py-10">
       <div className="mb-6 text-center">
+        <BrandMark className="mx-auto mb-4 size-16" />
         <h1 className="font-display text-3xl font-semibold tracking-tight">Ashnight</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Members-only access to vetted ash specialists.
         </p>
       </div>
 
-      <Tabs defaultValue={intendedRole === "specialist" ? "signup" : "signin"}>
+      <Tabs value={authMode} onValueChange={(value) => setAuthMode(value as "signin" | "signup")}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="signin">Sign in</TabsTrigger>
           <TabsTrigger value="signup">Create account</TabsTrigger>
@@ -462,8 +483,8 @@ function AuthPage() {
         <span>
           Every member is vetted by hand before room access is granted.{" "}
           <Link
-            to="/apply"
-            search={{ role: "specialist" }}
+            to="/auth"
+            search={{ next: "/apply", role: "specialist" }}
             className="underline underline-offset-4"
           >
             Apply as a specialist

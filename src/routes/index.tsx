@@ -26,26 +26,33 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSpecialists, type ProfileRow } from "@/lib/queries";
 import { TIERS, useRoomSettings } from "@/lib/room-settings";
 import { initials, money, type Specialist } from "@/lib/types";
+import { AuthPage } from "@/routes/auth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Ashnight — Members-Only Vetted Ash Services" },
+      { title: "Sign in or Join Ashnight | Vetted Ash Services" },
       {
         name: "description",
         content:
-          "Ashnight is a members-only ash platform. Manually vetted specialists, tiered membership rooms, in-chat booking, calls and secure payments.",
+          "Sign in or create an Ashnight account to access vetted ash specialists, secure in-chat booking, and room membership.",
       },
-      { property: "og:title", content: "Ashnight — Members-Only Vetted Ash Services" },
+      { property: "og:title", content: "Sign in or Join Ashnight" },
       {
         property: "og:description",
         content:
-          "Manually vetted ash specialists, tiered rooms, in-chat booking, video walkthroughs and secure on-platform payments.",
+          "Members-only access to vetted ash specialists across Ghana.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Home,
+  component: AuthHome,
 });
+
+function AuthHome() {
+  return <AuthPage />;
+}
 
 /** Maps a live profile row (plus its service names) onto the presentational Specialist shape. */
 function toSpecialist(profile: ProfileRow, serviceNames: string[]): Specialist {

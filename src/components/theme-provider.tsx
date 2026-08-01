@@ -11,8 +11,8 @@ import {
 /**
  * Theme layer.
  *
- * Tokens for both themes live in src/styles.css (`:root` = dark, `.light` =
- * light). This provider only decides which class sits on <html>, so components
+ * Tokens for both themes live in src/styles.css. This provider only decides
+ * which class sits on <html>, so components
  * never need to know about theming beyond using semantic tokens.
  */
 
@@ -32,13 +32,13 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function systemTheme(): "dark" | "light" {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
-  const [systemPref, setSystemPref] = useState<"dark" | "light">("dark");
+  const [theme, setThemeState] = useState<Theme>("light");
+  const [systemPref, setSystemPref] = useState<"dark" | "light">("light");
 
   // Read the stored preference after hydration to avoid SSR mismatches.
   useEffect(() => {
