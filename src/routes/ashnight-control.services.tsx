@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2, Sparkles, RotateCcw } from "lucide-react";
+import { Plus, Trash2, Sparkles, PackagePlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { IconContainer } from "@/components/ui/icon-container";
+import { useAddons } from "@/lib/addons";
 import { useServiceCatalog } from "@/lib/service-catalog";
 import { money } from "@/lib/types";
 
@@ -25,6 +26,7 @@ function AdminServicesPage() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [suggestedRate, setSuggestedRate] = useState("70");
+
 
   function create() {
     const name = label.trim();
