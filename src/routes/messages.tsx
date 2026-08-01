@@ -62,6 +62,7 @@ import {
   type ThreadRow,
 } from "@/lib/queries";
 import { useRoomSettings } from "@/lib/room-settings";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { moderateMessage } from "@/lib/moderation";
 import {
   ESCROW_STATE_LABEL,
@@ -456,7 +457,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   }
 
   function openRequest() {
-    if (!platform.bookingsEnabled) {
+    if (!bookingsOpen) {
       toast("Booking requests are paused by Ashnight right now.");
       return;
     }
@@ -668,7 +669,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                     <div className="shrink-0 border-t border-border/70 p-3 sm:p-4">
                       {iAmClient ? (
                         <Button variant="brass" className="w-full" onClick={openRequest}>
-                          {platform.bookingsEnabled ? (
+                          {bookingsOpen ? (
                             <>
                               <Plus className="size-4" /> Request service &amp; pay
                             </>
@@ -698,7 +699,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                                   aria-label="Request service & pay with Paystack"
                                   onClick={openRequest}
                                 >
-                                  {platform.bookingsEnabled ? (
+                                  {bookingsOpen ? (
                                     <Banknote className="size-4" />
                                   ) : (
                                     <Lock className="size-4 opacity-60" />
@@ -706,7 +707,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                {platform.bookingsEnabled
+                                {bookingsOpen
                                   ? "Request service & pay with Paystack"
                                   : "Booking requests are paused"}
                               </TooltipContent>
