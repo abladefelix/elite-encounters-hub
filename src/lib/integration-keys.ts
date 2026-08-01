@@ -101,6 +101,36 @@ export const EXPECTED_KEYS: { key: string; label: string; description: string; s
       description: "Used to sign call tokens.",
       secret: true,
     },
+    {
+      key: "github_repo",
+      label: "GitHub repository",
+      description: "owner/repository the live site is deployed from.",
+      secret: false,
+    },
+    {
+      key: "github_branch",
+      label: "GitHub branch",
+      description: "Branch the Deploy screen compares against. Defaults to main.",
+      secret: false,
+    },
+    {
+      key: "github_token",
+      label: "GitHub access token",
+      description: "Only needed for a private repository (read-only contents scope).",
+      secret: true,
+    },
+    {
+      key: "deploy_hook_url",
+      label: "Deploy hook URL",
+      description: "Listener on your server that runs git pull, build and restart.",
+      secret: true,
+    },
+    {
+      key: "deploy_hook_secret",
+      label: "Deploy hook secret",
+      description: "Ashnight signs every sync request with this shared secret.",
+      secret: true,
+    },
   ];
 
 /** Public values the member-facing app is allowed to read. */

@@ -24,7 +24,9 @@ import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-cont
 import { Route as AshnightControlBackupsRouteImport } from './routes/ashnight-control.backups'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
 import { Route as AshnightControlComplaintsRouteImport } from './routes/ashnight-control.complaints'
+import { Route as AshnightControlDeployRouteImport } from './routes/ashnight-control.deploy'
 import { Route as AshnightControlDocumentsRouteImport } from './routes/ashnight-control.documents'
+import { Route as AshnightControlEmailRouteImport } from './routes/ashnight-control.email'
 import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
 import { Route as AshnightControlFeaturesRouteImport } from './routes/ashnight-control.features'
 import { Route as AshnightControlLogsRouteImport } from './routes/ashnight-control.logs'
@@ -40,6 +42,7 @@ import { Route as AshnightControlVettingRouteImport } from './routes/ashnight-co
 import { Route as PaymentReturnRouteImport } from './routes/payment.return'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
+import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 import { Route as ApiPublicHooksBackupRouteImport } from './routes/api/public/hooks/backup'
 import { Route as ApiPublicHooksEscrowReleaseRouteImport } from './routes/api/public/hooks/escrow-release'
 import { Route as ApiPublicHooksPaystackRouteImport } from './routes/api/public/hooks/paystack'
@@ -120,12 +123,22 @@ const AshnightControlComplaintsRoute =
     path: '/complaints',
     getParentRoute: () => AshnightControlRoute,
   } as any)
+const AshnightControlDeployRoute = AshnightControlDeployRouteImport.update({
+  id: '/deploy',
+  path: '/deploy',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlDocumentsRoute =
   AshnightControlDocumentsRouteImport.update({
     id: '/documents',
     path: '/documents',
     getParentRoute: () => AshnightControlRoute,
   } as any)
+const AshnightControlEmailRoute = AshnightControlEmailRouteImport.update({
+  id: '/email',
+  path: '/email',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlEscrowRoute = AshnightControlEscrowRouteImport.update({
   id: '/escrow',
   path: '/escrow',
@@ -203,6 +216,11 @@ const SpecialistsSpecialistIdRoute = SpecialistsSpecialistIdRouteImport.update({
   path: '/specialists/$specialistId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
+  id: '/api/public/bootstrap-admin',
+  path: '/api/public/bootstrap-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksBackupRoute = ApiPublicHooksBackupRouteImport.update({
   id: '/api/public/hooks/backup',
   path: '/api/public/hooks/backup',
@@ -235,7 +253,9 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/deploy': typeof AshnightControlDeployRoute
   '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
+  '/ashnight-control/email': typeof AshnightControlEmailRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
@@ -252,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
   '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
@@ -270,7 +291,9 @@ export interface FileRoutesByTo {
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/deploy': typeof AshnightControlDeployRoute
   '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
+  '/ashnight-control/email': typeof AshnightControlEmailRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
@@ -287,6 +310,7 @@ export interface FileRoutesByTo {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control': typeof AshnightControlIndexRoute
   '/specialists': typeof SpecialistsIndexRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
   '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
@@ -307,7 +331,9 @@ export interface FileRoutesById {
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/deploy': typeof AshnightControlDeployRoute
   '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
+  '/ashnight-control/email': typeof AshnightControlEmailRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
@@ -324,6 +350,7 @@ export interface FileRoutesById {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
   '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
@@ -345,7 +372,9 @@ export interface FileRouteTypes {
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
+    | '/ashnight-control/deploy'
     | '/ashnight-control/documents'
+    | '/ashnight-control/email'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/logs'
@@ -362,6 +391,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
+    | '/api/public/bootstrap-admin'
     | '/api/public/hooks/backup'
     | '/api/public/hooks/escrow-release'
     | '/api/public/hooks/paystack'
@@ -380,7 +410,9 @@ export interface FileRouteTypes {
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
+    | '/ashnight-control/deploy'
     | '/ashnight-control/documents'
+    | '/ashnight-control/email'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/logs'
@@ -397,6 +429,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control'
     | '/specialists'
+    | '/api/public/bootstrap-admin'
     | '/api/public/hooks/backup'
     | '/api/public/hooks/escrow-release'
     | '/api/public/hooks/paystack'
@@ -416,7 +449,9 @@ export interface FileRouteTypes {
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
+    | '/ashnight-control/deploy'
     | '/ashnight-control/documents'
+    | '/ashnight-control/email'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/logs'
@@ -433,6 +468,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
+    | '/api/public/bootstrap-admin'
     | '/api/public/hooks/backup'
     | '/api/public/hooks/escrow-release'
     | '/api/public/hooks/paystack'
@@ -453,6 +489,7 @@ export interface RootRouteChildren {
   PaymentReturnRoute: typeof PaymentReturnRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
+  ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
   ApiPublicHooksBackupRoute: typeof ApiPublicHooksBackupRoute
   ApiPublicHooksEscrowReleaseRoute: typeof ApiPublicHooksEscrowReleaseRoute
   ApiPublicHooksPaystackRoute: typeof ApiPublicHooksPaystackRoute
@@ -565,11 +602,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlComplaintsRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/deploy': {
+      id: '/ashnight-control/deploy'
+      path: '/deploy'
+      fullPath: '/ashnight-control/deploy'
+      preLoaderRoute: typeof AshnightControlDeployRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/documents': {
       id: '/ashnight-control/documents'
       path: '/documents'
       fullPath: '/ashnight-control/documents'
       preLoaderRoute: typeof AshnightControlDocumentsRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
+    '/ashnight-control/email': {
+      id: '/ashnight-control/email'
+      path: '/email'
+      fullPath: '/ashnight-control/email'
+      preLoaderRoute: typeof AshnightControlEmailRouteImport
       parentRoute: typeof AshnightControlRoute
     }
     '/ashnight-control/escrow': {
@@ -677,6 +728,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpecialistsSpecialistIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bootstrap-admin': {
+      id: '/api/public/bootstrap-admin'
+      path: '/api/public/bootstrap-admin'
+      fullPath: '/api/public/bootstrap-admin'
+      preLoaderRoute: typeof ApiPublicBootstrapAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/backup': {
       id: '/api/public/hooks/backup'
       path: '/api/public/hooks/backup'
@@ -705,7 +763,9 @@ interface AshnightControlRouteChildren {
   AshnightControlBackupsRoute: typeof AshnightControlBackupsRoute
   AshnightControlBookingsRoute: typeof AshnightControlBookingsRoute
   AshnightControlComplaintsRoute: typeof AshnightControlComplaintsRoute
+  AshnightControlDeployRoute: typeof AshnightControlDeployRoute
   AshnightControlDocumentsRoute: typeof AshnightControlDocumentsRoute
+  AshnightControlEmailRoute: typeof AshnightControlEmailRoute
   AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
   AshnightControlFeaturesRoute: typeof AshnightControlFeaturesRoute
   AshnightControlLogsRoute: typeof AshnightControlLogsRoute
@@ -725,7 +785,9 @@ const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlBackupsRoute: AshnightControlBackupsRoute,
   AshnightControlBookingsRoute: AshnightControlBookingsRoute,
   AshnightControlComplaintsRoute: AshnightControlComplaintsRoute,
+  AshnightControlDeployRoute: AshnightControlDeployRoute,
   AshnightControlDocumentsRoute: AshnightControlDocumentsRoute,
+  AshnightControlEmailRoute: AshnightControlEmailRoute,
   AshnightControlEscrowRoute: AshnightControlEscrowRoute,
   AshnightControlFeaturesRoute: AshnightControlFeaturesRoute,
   AshnightControlLogsRoute: AshnightControlLogsRoute,
@@ -760,6 +822,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentReturnRoute: PaymentReturnRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,
+  ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
   ApiPublicHooksBackupRoute: ApiPublicHooksBackupRoute,
   ApiPublicHooksEscrowReleaseRoute: ApiPublicHooksEscrowReleaseRoute,
   ApiPublicHooksPaystackRoute: ApiPublicHooksPaystackRoute,

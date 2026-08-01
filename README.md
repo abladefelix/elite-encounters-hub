@@ -21,7 +21,102 @@ Everything is administered from a private control room at `/ashnight-control`.
 | [docs/CLIENT-GUIDE.md](docs/CLIENT-GUIDE.md) | Clients (members who book ash services) |
 | [docs/SPECIALIST-GUIDE.md](docs/SPECIALIST-GUIDE.md) | Specialists (vetted professionals who earn) |
 
+## First sign-in (default admin)
+
+Ashnight ships with **no** admin. The first `POST` to `/api/public/bootstrap-admin` creates
+one and every later call is refused, so the window closes as soon as the account exists:
+
+```bash
+curl -X POST https://your-site/api/public/bootstrap-admin
+```
+
+| Field | Value |
+| --- | --- |
+| Email | `admin@ashnight.app` |
+| Username | `ashnight.admin` |
+| Password | `AshnightControl2026!` |
+
+1. Sign in on the home page with either the email or the username.
+2. Open the private control room at **`/ashnight-control`** (never linked from the site).
+3. Go to **Control room → Email & domain → Admin account** and change the email and password
+   immediately. Every change is written to the admin audit log.
+
+Extra admins are made in **Control room → Users** — admin is a role in the `user_roles`
+table, checked server-side, so it can never be granted from the browser.
+
+## Email verification & sending domain
+
+Email verification is **off by default**: members sign up and are usable at once, which
+also means no confirmation mail has to be delivered before the platform works.
+
+- **Control room → Email & domain** holds the switch. Turn it on and any address without a
+  confirmed link is refused at sign-in (enforced server-side in `signInWithIdentifier`, not
+  in the browser).
+- The same page stores the sending domain, mailbox, display name, reply-to address, the
+  automated-email switches (welcome / receipts / complaint updates), and how long an
+  unverified sign-up keeps its username, email, phone and Ghana Card reserved.
+- It prints the **DNS checklist** (SPF, DKIM, DMARC, optional MX) for the domain you type,
+  with copy buttons. Add those records at your DNS provider, verify the domain with your
+  mail provider, then flip verification on.
+- SMTP credentials for a self-hosted mail server live in **Control room → Server & DNS**
+  (`smtp_host`, `smtp_port`, `smtp_user`, `smtp_password`, `smtp_from`); pick
+  *Transport → My SMTP server* on the Email page to use them.
+
+## Manual deploy sync (GitHub → live server)
+
+**Control room → Deploy** compares the configured GitHub branch with the commit the live
+site is running and ships it on a button press. Nothing deploys automatically.
+
+Vault entries (**Control room → Keys & security**):
+
+| Key | Purpose |
+| --- | --- |
+| `github_repo` | `owner/repository` |
+| `github_branch` | branch to track (defaults to `main`) |
+| `github_token` | read-only token, only for a private repo |
+| `deploy_hook_url` | listener on your server that pulls and rebuilds |
+| `deploy_hook_secret` | shared secret; Ashnight signs every request with HMAC-SHA256 in `X-Ashnight-Signature` |
+
+Minimal listener to run on the host (systemd service, port 9099):
+
+```js
+// deploy-hook.mjs — node deploy-hook.mjs
+import { createServer } from "node:http";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { execSync } from "node:child_process";
+
+const SECRET = process.env.DEPLOY_HOOK_SECRET;
+const DIR = process.env.APP_DIR ?? "/var/www/ashnight";
+
+createServer((req, res) => {
+  if (req.method !== "POST") return res.writeHead(405).end();
+  let body = "";
+  req.on("data", (chunk) => (body += chunk));
+  req.on("end", () => {
+    const sent = Buffer.from(req.headers["x-ashnight-signature"] ?? "", "utf8");
+    const want = Buffer.from(createHmac("sha256", SECRET).update(body).digest("hex"), "utf8");
+    if (sent.length !== want.length || !timingSafeEqual(sent, want)) {
+      return res.writeHead(401).end("bad signature");
+    }
+    try {
+      const { branch } = JSON.parse(body);
+      execSync(`git -C ${DIR} fetch --all && git -C ${DIR} reset --hard origin/${branch}`);
+      execSync(`cd ${DIR} && bun install && bun run build`);
+      execSync("systemctl restart ashnight");
+      res.writeHead(200).end("deployed");
+    } catch (error) {
+      res.writeHead(500).end(String(error));
+    }
+  });
+}).listen(9099);
+```
+
+Point `deploy_hook_url` at `https://your-host:9099/` (or proxy it behind nginx) and set the
+same secret in the service environment. Every sync — success or failure — is recorded in
+the admin audit log with the commit it shipped.
+
 ## Backups
+
 
 Daily off-site snapshots are built in and **already automated** — a database cron job
 (`ashnight-hourly-backup`) pings `POST /api/public/hooks/backup` every hour, and the

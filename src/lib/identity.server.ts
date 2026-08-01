@@ -27,6 +27,25 @@ export function isEmailShaped(value: string) {
   return EMAIL_RE.test(value.trim()) && value.trim().length <= 254;
 }
 
+/**
+ * Is email verification currently enforced? Admin-owned setting, default off.
+ */
+export async function verificationRequired(): Promise<boolean> {
+  try {
+    const client = await admin();
+    const { data } = await client
+      .from("platform_settings")
+      .select("data")
+      .eq("id", true)
+      .maybeSingle();
+    const blob = (data?.data ?? {}) as Record<string, unknown>;
+    const section = (blob["email"] ?? {}) as { requireVerification?: boolean };
+    return section.requireVerification === true;
+  } catch {
+    return false;
+  }
+}
+
 /* --------------------------------------------------------------- activity log */
 
 export interface ActivityInput {
@@ -341,6 +360,27 @@ export async function signInWithIdentifier(
     });
     throw new Error(status.message);
   }
+
+  // Verification is a policy an admin owns (Control room → Email & domain), and
+  // it ships off so members can join before the sending domain is live.
+  if (await verificationRequired()) {
+    if (!data.session.user.email_confirmed_at) {
+      await auth.auth.signOut();
+      await logActivity({
+        area: "auth",
+        event: "sign_in_unverified",
+        severity: "warn",
+        actorId: data.session.user.id,
+        target: email,
+        ip: meta.ip ?? "",
+      });
+      throw new Error(
+        "Confirm your email address first — open the link we sent you, or ask support to resend it.",
+      );
+    }
+  }
+
+
 
   await logActivity({
     area: "auth",
