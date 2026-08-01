@@ -175,7 +175,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const submitRating = useSubmitRating();
   const {
     settings: escrow,
-    open: openEscrow,
+    
     threadEntries,
     confirmComplete,
     raiseIssue,
