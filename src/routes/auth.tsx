@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SignupFieldsForm, type SignupValues } from "@/components/signup-fields-form";
+import { PortfolioPicker } from "@/components/portfolio-picker";
 import { BrandMark } from "@/components/brand-mark";
 import { BUILTIN_FIELDS, appliesTo, useSignupConfig } from "@/lib/signup-fields";
 
@@ -73,6 +74,8 @@ export function AuthPage({
   const [values, setValues] = useState<SignupValues>({});
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [portfolioPhotos, setPortfolioPhotos] = useState<File[]>([]);
+  const [portfolioVideo, setPortfolioVideo] = useState<File | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [acceptMarketing, setAcceptMarketing] = useState(false);
@@ -91,6 +94,10 @@ export function AuthPage({
   useEffect(() => {
     if (!loading && session) void navigate({ to: next, replace: true });
   }, [loading, session, navigate, next]);
+
+  /** Google is opt-in: admins turn it on in Control room → Features. */
+  const googleEnabled = flags.googleSignIn;
+  const portfolioEnabled = flags.specialistPortfolioUploads && role === "specialist";
 
   function setValue(key: string, value: string | boolean) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -208,6 +215,46 @@ export function AuthPage({
       }
     }
 
+    // Specialist portfolio: work photos plus one intro video, stored privately
+    // under the new member's own folder and recorded on their profile.
+    if (!error && data.session && portfolioEnabled && (portfolioPhotos.length || portfolioVideo)) {
+      const uid = data.session.user.id;
+      const photoPaths: string[] = [];
+      let videoPath: string | null = null;
+      for (const [index, file] of portfolioPhotos.entries()) {
+        const path = `${uid}/portfolio/photo-${Date.now()}-${index}-${file.name.replace(/[^\w.-]+/g, "_")}`;
+        const upload = await supabase.storage
+          .from("attachments")
+          .upload(path, file, { contentType: file.type });
+        if (!upload.error) photoPaths.push(path);
+      }
+      if (portfolioVideo) {
+        const path = `${uid}/portfolio/video-${Date.now()}-${portfolioVideo.name.replace(/[^\w.-]+/g, "_")}`;
+        const upload = await supabase.storage
+          .from("attachments")
+          .upload(path, portfolioVideo, { contentType: portfolioVideo.type });
+        if (!upload.error) videoPath = path;
+      }
+      if (photoPaths.length || videoPath) {
+        const { data: current } = await supabase
+          .from("profiles")
+          .select("extra")
+          .eq("id", uid)
+          .maybeSingle();
+        const extra = (current?.extra ?? {}) as Record<string, unknown>;
+        await supabase
+          .from("profiles")
+          .update({
+            extra: {
+              ...extra,
+              portfolio_photos: photoPaths,
+              portfolio_video: videoPath,
+            },
+          })
+          .eq("id", uid);
+      }
+    }
+
     setBusy(false);
     if (error) {
       toast.error(error.message);
@@ -295,19 +342,23 @@ export function AuthPage({
         <TabsContent value="signin">
           <Card>
             <CardContent className="space-y-4 pt-6">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={busy}
-                onClick={signInWithGoogle}
-              >
-                Continue with Google
-              </Button>
-              <div className="relative text-center text-xs text-muted-foreground">
-                <span className="bg-card px-2">or use your email</span>
-                <div className="absolute inset-x-0 top-1/2 -z-10 border-t border-border" />
-              </div>
+              {googleEnabled ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={busy}
+                    onClick={signInWithGoogle}
+                  >
+                    Continue with Google
+                  </Button>
+                  <div className="relative text-center text-xs text-muted-foreground">
+                    <span className="bg-card px-2">or use your email</span>
+                    <div className="absolute inset-x-0 top-1/2 -z-10 border-t border-border" />
+                  </div>
+                </>
+              ) : null}
               <form className="space-y-4" onSubmit={signIn}>
                 <div className="space-y-2">
                   <Label htmlFor="signin-email">Email</Label>
@@ -349,19 +400,23 @@ export function AuthPage({
         <TabsContent value="signup">
           <Card>
             <CardContent className="space-y-4 pt-6">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={busy}
-                onClick={signInWithGoogle}
-              >
-                Continue with Google
-              </Button>
-              <div className="relative text-center text-xs text-muted-foreground">
-                <span className="bg-card px-2">or sign up with email</span>
-                <div className="absolute inset-x-0 top-1/2 -z-10 border-t border-border" />
-              </div>
+              {googleEnabled ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={busy}
+                    onClick={signInWithGoogle}
+                  >
+                    Continue with Google
+                  </Button>
+                  <div className="relative text-center text-xs text-muted-foreground">
+                    <span className="bg-card px-2">or sign up with email</span>
+                    <div className="absolute inset-x-0 top-1/2 -z-10 border-t border-border" />
+                  </div>
+                </>
+              ) : null}
               <form className="space-y-4" onSubmit={signUp}>
                 {config.roleChoice ? (
                   <div className="space-y-2">
@@ -397,6 +452,16 @@ export function AuthPage({
                   avatarPreview={avatarPreview}
                   onAvatarPick={pickAvatar}
                 />
+
+                {portfolioEnabled ? (
+                  <PortfolioPicker
+                    photos={portfolioPhotos}
+                    video={portfolioVideo}
+                    onPhotosChange={setPortfolioPhotos}
+                    onVideoChange={setPortfolioVideo}
+                    onReject={(message) => toast.error(message)}
+                  />
+                ) : null}
 
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">

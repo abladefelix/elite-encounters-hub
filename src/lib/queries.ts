@@ -118,7 +118,11 @@ export function useProfilesByIds(ids: string[]) {
 
 /** Uploads a chat attachment and returns a signed URL the thread can render. */
 export async function uploadAttachment(threadId: string, file: File) {
-  const path = `${threadId}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "_")}`;
+  const { data: auth } = await supabase.auth.getUser();
+  const owner = auth.user?.id;
+  if (!owner) throw new Error("Sign in again to share attachments.");
+  // Storage rules scope writes to the uploader's own folder.
+  const path = `${owner}/${threadId}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "_")}`;
   const { error } = await supabase.storage
     .from("attachments")
     .upload(path, file, { contentType: file.type });

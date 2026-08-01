@@ -201,7 +201,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     flags.giftsEnabled && escrow.tipsEnabled && roomGifts.length > 0 && iAmClient;
   const audioAllowed = flags.callsEnabled && canCall(room, "audio");
   const videoAllowed = flags.callsEnabled && canCall(room, "video");
-  const photosAllowed = flags.attachmentsEnabled && can(room, "photoSharing");
+  const photosAllowed =
+    flags.attachmentsEnabled && flags.chatImageSharing && can(room, "photoSharing");
   const filesAllowed = flags.attachmentsEnabled && can(room, "fileSharing");
   const bookingsOpen = flags.bookingsEnabled && platform.bookingsEnabled;
 
@@ -987,15 +988,27 @@ function MessageBubble({
           )}
         >
           {message.attachment_url ? (
-            <a
-              href={message.attachment_url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 underline"
-            >
-              <Paperclip className="size-3.5" />
-              {message.attachment_name ?? "Attachment"}
-            </a>
+            /\.(png|jpe?g|gif|webp|avif)(\?|$)/i.test(message.attachment_name ?? "") ||
+            /image/i.test(message.attachment_name ?? "") ? (
+              <a href={message.attachment_url} target="_blank" rel="noreferrer" className="block">
+                <img
+                  src={message.attachment_url}
+                  alt={message.attachment_name ?? "Shared photo"}
+                  loading="lazy"
+                  className="max-h-64 w-full rounded-lg object-cover"
+                />
+              </a>
+            ) : (
+              <a
+                href={message.attachment_url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 underline"
+              >
+                <Paperclip className="size-3.5" />
+                {message.attachment_name ?? "Attachment"}
+              </a>
+            )
           ) : (
             message.body
           )}

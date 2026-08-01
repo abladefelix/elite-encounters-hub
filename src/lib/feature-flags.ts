@@ -16,6 +16,9 @@ export type FeatureFlagKey =
   | "giftsEnabled"
   | "bookingsEnabled"
   | "attachmentsEnabled"
+  | "chatImageSharing"
+  | "googleSignIn"
+  | "specialistPortfolioUploads"
   | "ratingsEnabled"
   | "reportsEnabled"
   | "twoFactorAvailable"
@@ -79,6 +82,24 @@ export const FEATURE_FLAGS: FeatureFlagMeta[] = [
     label: "Chat attachments",
     hint: "Master switch for photo and file sharing in threads.",
     group: "Chat & calls",
+  },
+  {
+    key: "chatImageSharing",
+    label: "Chat image sharing",
+    hint: "Photos in one-to-one threads. Per-room photo privileges still apply underneath.",
+    group: "Chat & calls",
+  },
+  {
+    key: "googleSignIn",
+    label: "Continue with Google",
+    hint: "Show the Google button on sign in and sign up. Hidden by default.",
+    group: "Access",
+  },
+  {
+    key: "specialistPortfolioUploads",
+    label: "Specialist portfolio uploads",
+    hint: "Let specialists attach work photos and one intro video while signing up.",
+    group: "Access",
   },
   {
     key: "giftsEnabled",
@@ -217,6 +238,9 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   giftsEnabled: true,
   bookingsEnabled: true,
   attachmentsEnabled: true,
+  chatImageSharing: true,
+  googleSignIn: false,
+  specialistPortfolioUploads: true,
   ratingsEnabled: true,
   reportsEnabled: true,
   twoFactorAvailable: true,
