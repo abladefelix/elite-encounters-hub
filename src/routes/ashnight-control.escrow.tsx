@@ -797,7 +797,7 @@ function AdminEscrow() {
           <div className="border-t border-border p-3">
             <DataPager paged={paged} label="escrow entries" />
           </div>
-        )}
+        ) : null}
       </Card>
     </div>
   );
