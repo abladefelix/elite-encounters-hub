@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  Loader2,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ import { useSpecialists, type ProfileRow } from "@/lib/queries";
 import { TIERS, useRoomSettings } from "@/lib/room-settings";
 import { initials, money, type Specialist } from "@/lib/types";
 import { AuthPage } from "@/routes/auth";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,7 +53,19 @@ export const Route = createFileRoute("/")({
 });
 
 function AuthHome() {
-  return <AuthPage />;
+  const { session, loading, isAdmin } = useAuth();
+  // Signed-in members get the real landing page; the auth form is for guests only.
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  // Admins land straight in the control room; the public site stays one click
+  // away from the header.
+  if (session && isAdmin) return <Navigate to="/ashnight-control" replace />;
+  return session ? <Home /> : <AuthPage />;
 }
 
 /** Maps a live profile row (plus its service names) onto the presentational Specialist shape. */
