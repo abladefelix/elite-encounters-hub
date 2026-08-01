@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SignupFieldsForm, type SignupValues } from "@/components/signup-fields-form";
+import { PortfolioPicker } from "@/components/portfolio-picker";
 import { BrandMark } from "@/components/brand-mark";
 import { BUILTIN_FIELDS, appliesTo, useSignupConfig } from "@/lib/signup-fields";
 
