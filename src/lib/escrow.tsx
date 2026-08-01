@@ -153,6 +153,14 @@ export interface NewEscrowInput {
   paystackReference?: string | null;
 }
 
+export interface ManualEscrowInput extends NewEscrowInput {
+  /** Whoever paid. Admins record entries on behalf of a member. */
+  clientId: string;
+  /** Skip the hold window and mark the row released immediately. */
+  releaseImmediately?: boolean;
+  note?: string;
+}
+
 interface EscrowContextValue {
   settings: EscrowSettings;
   settingsReady: boolean;
@@ -161,6 +169,8 @@ interface EscrowContextValue {
   /** Escrow rows for a chat thread, newest first. */
   threadEntries: (threadId: string) => EscrowEntry[];
   open: (input: NewEscrowInput) => Promise<EscrowEntry>;
+  /** Admin-created ledger row — used when money was taken outside the app. */
+  openManual: (input: ManualEscrowInput) => Promise<EscrowEntry>;
   confirmComplete: (id: string) => Promise<void>;
   raiseIssue: (id: string, reason: string) => Promise<void>;
   releaseNow: (id: string, note?: string) => Promise<void>;
@@ -263,6 +273,42 @@ export function useEscrow(): EscrowContextValue {
       }
     },
     [create, settings, user],
+  );
+
+  const openManual = useCallback<EscrowContextValue["openManual"]>(
+    async (input) => {
+      const { amount, fee, net } = escrowSplit(input.amount, input.feePct);
+      const now = new Date().toISOString();
+      const insert: Database["public"]["Tables"]["escrow_entries"]["Insert"] = {
+        kind: input.kind,
+        thread_id: input.threadId ?? null,
+        booking_id: input.bookingId ?? null,
+        client_id: input.clientId,
+        specialist_id: input.specialistId,
+        label: input.label,
+        gift_key: input.giftKey ?? null,
+        amount,
+        platform_fee: fee,
+        payout_amount: net,
+        hold_hours: settings.holdHours,
+        paystack_reference: input.paystackReference ?? null,
+        paid_at: now,
+        state: input.releaseImmediately ? "released" : "clearing",
+        release_at: input.releaseImmediately ? null : hoursFromNow(settings.holdHours),
+        admin_note: input.note ?? "Added manually from the control room.",
+      };
+      if (input.releaseImmediately) insert.released_at = now;
+
+      try {
+        return await create.mutateAsync(insert);
+      } catch (error) {
+        toast.error("Escrow entry couldn't be added", {
+          description: error instanceof Error ? error.message : "Please try again.",
+        });
+        throw error;
+      }
+    },
+    [create, settings.holdHours],
   );
 
   const runUpdate = useCallback(
