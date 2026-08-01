@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { Camera, Heart, ThumbsDown, Sparkles, X, Save, RotateCcw } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { SiteHeader } from "@/components/site-header";
@@ -228,9 +229,7 @@ function ProfilePage() {
         {/* services rendered — from the admin catalogue */}
         <Card className="mt-5 border-border/70 bg-panel p-5 sm:p-6">
           <div className="flex items-start gap-3">
-            <IconContainer>
-              <Sparkles className="size-4" />
-            </IconContainer>
+            <IconContainer icon={Sparkles} />
             <div>
               <h2 className="font-display text-base font-semibold">Services you render</h2>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -286,7 +285,7 @@ function ProfilePage() {
           <ChipEditor
             title="Likes"
             hint="Products, routines and habits you prefer."
-            icon={<Heart className="size-4" />}
+            icon={Heart}
             values={profile.likes}
             onChange={(likes) => updateProfile({ likes })}
             placeholder="e.g. Eco-friendly products"
@@ -294,7 +293,7 @@ function ProfilePage() {
           <ChipEditor
             title="Dislikes"
             hint="Things to avoid on every visit."
-            icon={<ThumbsDown className="size-4" />}
+            icon={ThumbsDown}
             values={profile.dislikes}
             onChange={(dislikes) => updateProfile({ dislikes })}
             placeholder="e.g. Strong bleach smell"
@@ -400,7 +399,7 @@ function ChipEditor({
 }: {
   title: string;
   hint: string;
-  icon: React.ReactNode;
+  icon: LucideIcon;
   values: string[];
   onChange: (values: string[]) => void;
   placeholder: string;
@@ -421,7 +420,7 @@ function ChipEditor({
   return (
     <Card className="border-border/70 bg-panel p-5 sm:p-6">
       <div className="flex items-start gap-3">
-        <IconContainer>{icon}</IconContainer>
+        <IconContainer icon={icon} />
         <div>
           <h2 className="font-display text-base font-semibold">{title}</h2>
           <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
