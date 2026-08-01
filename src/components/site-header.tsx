@@ -113,10 +113,10 @@ export function SiteHeader() {
                 {[
                   ...NAV,
                   ...(user
-                    ? ([{ to: "/profile", label: "Your profile" }] as const)
+                    ? ([{ to: "/profile", copyKey: "nav.profile" }] as const)
                     : ([
-                        { to: "/auth", label: "Sign in" },
-                        { to: "/apply", label: "Apply to join" },
+                        { to: "/auth", copyKey: "action.signIn" },
+                        { to: "/apply", copyKey: "nav.apply" },
                       ] as const)),
                 ].map((item) => (
                   <Link
@@ -125,7 +125,7 @@ export function SiteHeader() {
                     className="rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
                     activeProps={{ className: "bg-secondary text-foreground" }}
                   >
-                    {t(item.copyKey)}
+                    {t(item.copyKey, item.copyKey === "nav.profile" ? "Your profile" : "Apply to join")}
                   </Link>
                 ))}
                 {user ? (
