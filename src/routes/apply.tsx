@@ -144,7 +144,7 @@ function ApplyPage() {
                     {
                       value: "client",
                       title: "A client",
-                      body: "I need ash for my home or business. Paid membership.",
+                      body: "I need an ash for my home or business. Paid membership.",
                     },
                     {
                       value: "specialist",
