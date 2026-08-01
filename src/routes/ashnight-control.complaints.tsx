@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
-import { useProfiles } from "@/lib/queries";
+import { useProfilesByIds } from "@/lib/queries";
 import { useComplaintMutations, useComplaints, type ComplaintState } from "@/lib/support";
 
 export const Route = createFileRoute("/ashnight-control/complaints")({
@@ -37,11 +37,11 @@ export const Route = createFileRoute("/ashnight-control/complaints")({
   component: AdminComplaints,
 });
 
-const STATES: ComplaintState[] = ["open", "investigating", "resolved", "dismissed"];
+const STATES: ComplaintState[] = ["open", "reviewing", "resolved", "dismissed"];
 
 const STATE_TONE: Record<ComplaintState, string> = {
   open: "border-destructive/40 text-destructive",
-  investigating: "border-primary/40 text-primary",
+  reviewing: "border-primary/40 text-primary",
   resolved: "border-emerald-500/40 text-emerald-500",
   dismissed: "border-border text-muted-foreground",
 };
@@ -55,10 +55,11 @@ function AdminComplaints() {
   const [drafts, setDrafts] = useState<Record<string, { note: string; resolution: string }>>({});
 
   const ids = useMemo(
-    () => [...new Set((complaints.data ?? []).map((row) => row.user_id).filter(Boolean))] as string[],
+    () =>
+      [...new Set((complaints.data ?? []).map((row) => row.user_id).filter(Boolean))] as string[],
     [complaints.data],
   );
-  const profiles = useProfiles(ids);
+  const profiles = useProfilesByIds(ids);
   const nameFor = (id: string | null) =>
     (profiles.data ?? []).find((row) => row.id === id)?.display_name ?? "Member";
 
@@ -81,7 +82,7 @@ function AdminComplaints() {
         state,
         adminNote: values.note,
         resolution: values.resolution,
-        handledBy: user?.id,
+        handledBy: user?.id ?? "",
       });
       toast.success(`Complaint marked ${state}`);
     } catch (error) {
