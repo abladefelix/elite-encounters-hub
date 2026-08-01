@@ -23,8 +23,9 @@ export function SiteHeader() {
 
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-5">
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-5 md:h-16">
+
         <Link to="/" className="flex items-center gap-2">
           <span className="grid size-8 place-items-center rounded-lg bg-brass text-primary-foreground">
             <Sparkle className="size-4" />
@@ -50,9 +51,10 @@ export function SiteHeader() {
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
             <Link to="/admin">Admin</Link>
           </Button>
-          <Button asChild size="sm" variant="brass">
+          <Button asChild size="sm" variant="brass" className="hidden sm:inline-flex">
             <Link to="/apply">Apply to join</Link>
           </Button>
+
           <Avatar className="hidden size-9 border border-border sm:flex">
             <AvatarFallback className="bg-surface-strong text-xs">
               {initials(me.name)}
@@ -68,9 +70,13 @@ export function SiteHeader() {
             </SheetTrigger>
             <SheetContent side="right" className="w-72 bg-surface">
               <nav className="mt-8 flex flex-col gap-1">
-                {[...NAV, { to: "/admin", label: "Admin dashboard" } as const].map((item) => (
+                {[
+                  ...NAV,
+                  { to: "/admin", label: "Admin dashboard" } as const,
+                  { to: "/apply", label: "Apply to join" } as const,
+                ].map((item) => (
                   <Link
-                    key={item.to}
+                    key={item.label}
                     to={item.to}
                     className="rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
                     activeProps={{ className: "bg-secondary text-foreground" }}
@@ -79,6 +85,7 @@ export function SiteHeader() {
                   </Link>
                 ))}
               </nav>
+
               {platform.memberThemeChoice ? (
                 <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2.5">
                   <span className="text-sm text-muted-foreground">Appearance</span>

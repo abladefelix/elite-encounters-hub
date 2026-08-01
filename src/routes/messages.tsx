@@ -268,11 +268,11 @@ function MessagesPage() {
 
         <div className="mx-auto w-full max-w-6xl px-0 py-0 sm:px-5 sm:py-8">
           <Card className="overflow-hidden border-border/70 bg-surface p-0">
-            <div className="grid h-[calc(100svh-4rem)] sm:h-[76vh] md:grid-cols-[300px_1fr]">
+            <div className="grid h-[calc(100svh-7rem)] sm:h-[76vh] md:grid-cols-[300px_1fr]">
               {/* thread list */}
               <aside
                 className={cn(
-                  "flex-col border-r border-border/70 bg-background/40 md:flex",
+                  "min-h-0 flex-col border-r border-border/70 bg-background/40 md:flex",
                   showListOnMobile ? "flex" : "hidden",
                 )}
               >
@@ -282,7 +282,7 @@ function MessagesPage() {
                     {threadList.length} active conversations · {TIER_LABEL[member.room]} room
                   </p>
                 </div>
-                <ScrollArea className="flex-1">
+                <ScrollArea className="min-h-0 flex-1">
                   {threadList.map((item) => {
                     const active = item.id === activeThread.id;
                     return (
@@ -334,11 +334,11 @@ function MessagesPage() {
               {/* conversation */}
               <section
                 className={cn(
-                  "flex min-w-0 flex-col",
+                  "flex min-h-0 min-w-0 flex-col",
                   showListOnMobile ? "hidden md:flex" : "flex",
                 )}
               >
-                <header className="flex items-center gap-3 border-b border-border/70 p-4">
+                <header className="flex shrink-0 items-center gap-3 border-b border-border/70 p-4">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -394,7 +394,7 @@ function MessagesPage() {
                   </p>
                 ) : null}
 
-                <ScrollArea className="flex-1">
+                <ScrollArea className="min-h-0 flex-1">
                   <div className="space-y-4 p-4 sm:p-6">
                     {messages.map((message) => (
                       <MessageRow
@@ -427,7 +427,7 @@ function MessagesPage() {
                   </div>
                 </ScrollArea>
 
-                <div className="border-t border-border/70 p-3 sm:p-4">
+                <div className="shrink-0 border-t border-border/70 p-3 sm:p-4">
                   <Button
                     variant="brass"
                     className="w-full"
