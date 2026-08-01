@@ -384,18 +384,76 @@ export async function finalizeReference(
 }
 
 /**
+ * Lapsed-membership sweep. Only clients hold memberships, so when a period end
+ * passes without payment the membership goes past due and the account is
+ * deactivated — sign-in stays closed until they pay again, which
+ * `finalizeReference` reverses automatically.
+ */
+export async function syncMemberships(): Promise<{ lapsed: number }> {
+  const admin = await adminClient();
+  const nowIso = new Date().toISOString();
+
+  const { data: expired } = await admin
+    .from("memberships")
+    .select("id, user_id, room, current_period_end")
+    .eq("status", "active")
+    .not("current_period_end", "is", null)
+    .lte("current_period_end", nowIso);
+
+  let lapsed = 0;
+  for (const row of expired ?? []) {
+    await admin.from("memberships").update({ status: "past_due" }).eq("id", row.id);
+
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("account_status")
+      .eq("id", row.user_id)
+      .maybeSingle();
+    // Never soften a suspension or a ban — only active/pending accounts lapse.
+    if (profile && (profile.account_status === "active" || profile.account_status === "pending")) {
+      await admin
+        .from("profiles")
+        .update({
+          account_status: "deactivated",
+          status_reason: "Membership expired — reactivates as soon as it is paid.",
+          status_changed_at: nowIso,
+        })
+        .eq("id", row.user_id);
+    }
+    await admin.from("notifications").insert({
+      user_id: row.user_id,
+      kind: "membership",
+      title: "Membership expired",
+      body: `Your ${row.room} room membership has lapsed and your account is paused. Pay again to reactivate instantly.`,
+      link: "/rooms",
+    });
+    lapsed += 1;
+  }
+
+  return { lapsed };
+}
+
+/**
  * The scheduled settlement pass: starts clearing for stale un-confirmed holds
  * and deposits anything whose hold window has elapsed without a dispute.
  */
 export async function settleDueEscrow(): Promise<{
   autoConfirmed: number;
   released: number;
+  membershipsLapsed: number;
   skipped: string | null;
 }> {
   const admin = await adminClient();
   const settings = await serverSettings();
+  // Membership state is kept honest on every pass, even when auto-deposits are off.
+  const { lapsed: membershipsLapsed } = await syncMemberships();
   if (!(settings.escrow.autoReleaseEnabled ?? true)) {
-    return { autoConfirmed: 0, released: 0, skipped: "Automatic deposits are switched off" };
+    return {
+      autoConfirmed: 0,
+      released: 0,
+      membershipsLapsed,
+      skipped: "Automatic deposits are switched off",
+    };
   }
   const holdHours = settings.escrow.holdHours ?? 24;
   const autoConfirmHours = settings.escrow.autoConfirmHours ?? 72;
