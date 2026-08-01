@@ -1,0 +1,261 @@
+/**
+ * Control room → Email & domain.
+ *
+ * Email verification ships OFF. When the sending domain is live, flip the
+ * switch here and Ashnight starts refusing sign-ins from unverified addresses.
+ */
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Copy, Loader2, Mail, Save, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
+
+import { AdminAccountCard } from "@/components/admin-account-card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useRecordAudit } from "@/lib/audit-log";
+import {
+  DEFAULT_EMAIL_SETTINGS,
+  dnsChecklist,
+  fromAddress,
+  useEmailSettings,
+  type EmailSettings,
+} from "@/lib/email-settings";
+
+export const Route = createFileRoute("/ashnight-control/email")({
+  head: () => ({
+    meta: [
+      { title: "Email & Sending Domain | Ashnight Admin" },
+      {
+        name: "description",
+        content:
+          "Turn Ashnight email verification on or off, set the sending domain and reply address, and copy the DNS records the domain needs.",
+      },
+      { property: "og:title", content: "Email & Sending Domain | Ashnight Admin" },
+      {
+        property: "og:description",
+        content: "Verification toggle, sender identity and DNS checklist for Ashnight email.",
+      },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: AdminEmail,
+});
+
+function AdminEmail() {
+  const { settings, save, loading } = useEmailSettings();
+  const recordAudit = useRecordAudit();
+  const [draft, setDraft] = useState<EmailSettings>(settings);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!loading) setDraft(settings);
+  }, [loading, settings]);
+
+  function set<K extends keyof EmailSettings>(key: K, value: EmailSettings[K]) {
+    setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  async function persist(next: EmailSettings, note: string) {
+    setBusy(true);
+    try {
+      await save(next);
+      void recordAudit.mutateAsync({ area: "email", action: "settings_saved", note });
+      toast.success("Email settings saved.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const records = dnsChecklist(draft);
+  const sender = fromAddress(draft);
+
+  return (
+    <div className="space-y-6">
+      <header>
+        <h1 className="font-display text-2xl">Email &amp; domain</h1>
+        <p className="text-sm text-muted-foreground">
+          Verification is off by default so members can join immediately. Turn it on once your
+          sending domain is verified below.
+        </p>
+      </header>
+
+      <Card className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="icon-box">
+                <ShieldCheck className="size-4" />
+              </span>
+              <h2 className="font-display text-lg">Email verification</h2>
+              <Badge variant={draft.requireVerification ? "default" : "secondary"}>
+                {draft.requireVerification ? "required" : "off"}
+              </Badge>
+            </div>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              When required, a member who hasn&apos;t opened their confirmation link cannot sign in
+              and is told to check their inbox. Keep it off until mail is reliably delivered from
+              your own domain.
+            </p>
+          </div>
+          <Switch
+            checked={draft.requireVerification}
+            aria-label="Require email verification"
+            onCheckedChange={(checked) => {
+              const next = { ...draft, requireVerification: checked };
+              setDraft(next);
+              void persist(
+                next,
+                checked ? "email verification required" : "email verification disabled",
+              );
+            }}
+          />
+        </div>
+      </Card>
+
+      <Card className="p-5">
+        <div className="flex items-center gap-2">
+          <span className="icon-box">
+            <Mail className="size-4" />
+          </span>
+          <div>
+            <h2 className="font-display text-lg">Sender identity</h2>
+            <p className="text-xs text-muted-foreground">
+              {sender ? `Mail goes out as ${draft.senderName} <${sender}>` : "No domain set yet."}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="sender-domain">Sending domain</Label>
+            <Input
+              id="sender-domain"
+              value={draft.senderDomain}
+              placeholder="notify.ashnight.com"
+              onChange={(event) => set("senderDomain", event.target.value.trim().toLowerCase())}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="sender-mailbox">Mailbox</Label>
+            <Input
+              id="sender-mailbox"
+              value={draft.senderMailbox}
+              placeholder="no-reply"
+              onChange={(event) => set("senderMailbox", event.target.value.trim())}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="sender-name">Display name</Label>
+            <Input
+              id="sender-name"
+              value={draft.senderName}
+              onChange={(event) => set("senderName", event.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="reply-to">Reply-to address</Label>
+            <Input
+              id="reply-to"
+              value={draft.replyTo}
+              placeholder="support@ashnight.com"
+              onChange={(event) => set("replyTo", event.target.value.trim())}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="reclaim-hours">Release unverified sign-ups after (hours)</Label>
+            <Input
+              id="reclaim-hours"
+              type="number"
+              min={1}
+              value={draft.reclaimAfterHours}
+              onChange={(event) =>
+                set("reclaimAfterHours", Number(event.target.value) || DEFAULT_EMAIL_SETTINGS.reclaimAfterHours)
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="transport">Transport</Label>
+            <select
+              id="transport"
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={draft.transport}
+              onChange={(event) => set("transport", event.target.value as EmailSettings["transport"])}
+            >
+              <option value="platform">Built-in sender</option>
+              <option value="smtp">My SMTP server (Server &amp; DNS credentials)</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {(
+            [
+              ["welcomeEmail", "Welcome email on approval"],
+              ["receiptEmail", "Email receipts and invoices"],
+              ["complaintEmail", "Email complaint updates"],
+            ] as const
+          ).map(([key, label]) => (
+            <div key={key} className="flex items-center justify-between gap-4 text-sm">
+              <span>{label}</span>
+              <Switch
+                checked={draft[key]}
+                aria-label={label}
+                onCheckedChange={(checked) => set(key, checked)}
+              />
+            </div>
+          ))}
+        </div>
+
+        <Button
+          size="sm"
+          className="mt-4"
+          disabled={busy}
+          onClick={() => void persist(draft, "sender identity updated")}
+        >
+          {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />} Save
+          email settings
+        </Button>
+      </Card>
+
+      <Card className="p-5">
+        <h2 className="font-display text-lg">DNS records for {draft.senderDomain || "your domain"}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Add these at your DNS provider, then verify the domain with your mail provider. Copy each
+          value with the button on its row.
+        </p>
+        <div className="mt-4 space-y-3">
+          {records.map((record) => (
+            <div key={`${record.type}-${record.name}`} className="rounded-lg border p-3 text-sm">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{record.type}</Badge>
+                <code className="text-xs">{record.name}</code>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(record.value);
+                    toast.success("Copied.");
+                  }}
+                >
+                  <Copy className="size-3.5" /> Copy
+                </Button>
+              </div>
+              <code className="mt-2 block break-all text-xs text-muted-foreground">
+                {record.value}
+              </code>
+              <p className="mt-1 text-xs text-muted-foreground">{record.note}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <AdminAccountCard />
+    </div>
+  );
+}

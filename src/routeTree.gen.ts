@@ -40,6 +40,7 @@ import { Route as AshnightControlVettingRouteImport } from './routes/ashnight-co
 import { Route as PaymentReturnRouteImport } from './routes/payment.return'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
+import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 import { Route as ApiPublicHooksBackupRouteImport } from './routes/api/public/hooks/backup'
 import { Route as ApiPublicHooksEscrowReleaseRouteImport } from './routes/api/public/hooks/escrow-release'
 import { Route as ApiPublicHooksPaystackRouteImport } from './routes/api/public/hooks/paystack'
@@ -203,6 +204,11 @@ const SpecialistsSpecialistIdRoute = SpecialistsSpecialistIdRouteImport.update({
   path: '/specialists/$specialistId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
+  id: '/api/public/bootstrap-admin',
+  path: '/api/public/bootstrap-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksBackupRoute = ApiPublicHooksBackupRouteImport.update({
   id: '/api/public/hooks/backup',
   path: '/api/public/hooks/backup',
@@ -252,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
   '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control': typeof AshnightControlIndexRoute
   '/specialists': typeof SpecialistsIndexRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
   '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
@@ -324,6 +332,7 @@ export interface FileRoutesById {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
+  '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
   '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
@@ -362,6 +371,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
+    | '/api/public/bootstrap-admin'
     | '/api/public/hooks/backup'
     | '/api/public/hooks/escrow-release'
     | '/api/public/hooks/paystack'
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control'
     | '/specialists'
+    | '/api/public/bootstrap-admin'
     | '/api/public/hooks/backup'
     | '/api/public/hooks/escrow-release'
     | '/api/public/hooks/paystack'
@@ -433,6 +444,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
+    | '/api/public/bootstrap-admin'
     | '/api/public/hooks/backup'
     | '/api/public/hooks/escrow-release'
     | '/api/public/hooks/paystack'
@@ -453,6 +465,7 @@ export interface RootRouteChildren {
   PaymentReturnRoute: typeof PaymentReturnRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
+  ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
   ApiPublicHooksBackupRoute: typeof ApiPublicHooksBackupRoute
   ApiPublicHooksEscrowReleaseRoute: typeof ApiPublicHooksEscrowReleaseRoute
   ApiPublicHooksPaystackRoute: typeof ApiPublicHooksPaystackRoute
@@ -677,6 +690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpecialistsSpecialistIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bootstrap-admin': {
+      id: '/api/public/bootstrap-admin'
+      path: '/api/public/bootstrap-admin'
+      fullPath: '/api/public/bootstrap-admin'
+      preLoaderRoute: typeof ApiPublicBootstrapAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/backup': {
       id: '/api/public/hooks/backup'
       path: '/api/public/hooks/backup'
@@ -760,6 +780,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentReturnRoute: PaymentReturnRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,
+  ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
   ApiPublicHooksBackupRoute: ApiPublicHooksBackupRoute,
   ApiPublicHooksEscrowReleaseRoute: ApiPublicHooksEscrowReleaseRoute,
   ApiPublicHooksPaystackRoute: ApiPublicHooksPaystackRoute,
