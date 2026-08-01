@@ -36,7 +36,7 @@ import {
 
 import { money, type Tier } from "@/lib/types";
 
-export const Route = createFileRoute("/admin/rooms")({
+export const Route = createFileRoute("/ashnight-control/rooms")({
   head: () => ({
     meta: [
       { title: "Room Management | Ashnight Admin" },

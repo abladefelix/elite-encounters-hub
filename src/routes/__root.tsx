@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -15,6 +16,8 @@ import { ThemeProvider } from "../components/theme-provider";
 import { MobileTabBar } from "../components/mobile-tab-bar";
 
 import { RoomSettingsProvider } from "../lib/room-settings";
+import { ServiceCatalogProvider } from "../lib/service-catalog";
+import { ProfileProvider } from "../lib/profile";
 import { EscrowProvider } from "../lib/escrow";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -129,18 +132,25 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  // The control room is a desktop admin surface: no app-style bottom tabs.
+  const isAdmin = pathname.startsWith("/ashnight-control");
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <RoomSettingsProvider>
+          <ServiceCatalogProvider>
+          <ProfileProvider>
           <EscrowProvider>
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
-            <MobileTabBar />
+            {isAdmin ? null : <MobileTabBar />}
             <Toaster position="top-center" />
 
           </EscrowProvider>
+          </ProfileProvider>
+          </ServiceCatalogProvider>
         </RoomSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>

@@ -10,18 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ApplyRouteImport } from './routes/apply'
+import { Route as AshnightControlRouteImport } from './routes/ashnight-control'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RoomsRouteImport } from './routes/rooms'
-import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
-import { Route as AdminEscrowRouteImport } from './routes/admin.escrow'
-import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
-import { Route as AdminRoomsRouteImport } from './routes/admin.rooms'
-import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as AdminVettingRouteImport } from './routes/admin.vetting'
+import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-control.index'
+import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
+import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
+import { Route as AshnightControlModerationRouteImport } from './routes/ashnight-control.moderation'
+import { Route as AshnightControlRoomsRouteImport } from './routes/ashnight-control.rooms'
+import { Route as AshnightControlServicesRouteImport } from './routes/ashnight-control.services'
+import { Route as AshnightControlUsersRouteImport } from './routes/ashnight-control.users'
+import { Route as AshnightControlVettingRouteImport } from './routes/ashnight-control.vetting'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
 
@@ -30,14 +32,14 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApplyRoute = ApplyRouteImport.update({
   id: '/apply',
   path: '/apply',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AshnightControlRoute = AshnightControlRouteImport.update({
+  id: '/ashnight-control',
+  path: '/ashnight-control',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HowItWorksRoute = HowItWorksRouteImport.update({
@@ -50,45 +52,56 @@ const MessagesRoute = MessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RoomsRoute = RoomsRouteImport.update({
   id: '/rooms',
   path: '/rooms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
+const AshnightControlIndexRoute = AshnightControlIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => AshnightControlRoute,
 } as any)
-const AdminBookingsRoute = AdminBookingsRouteImport.update({
+const AshnightControlBookingsRoute = AshnightControlBookingsRouteImport.update({
   id: '/bookings',
   path: '/bookings',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => AshnightControlRoute,
 } as any)
-const AdminEscrowRoute = AdminEscrowRouteImport.update({
+const AshnightControlEscrowRoute = AshnightControlEscrowRouteImport.update({
   id: '/escrow',
   path: '/escrow',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => AshnightControlRoute,
 } as any)
-const AdminModerationRoute = AdminModerationRouteImport.update({
-  id: '/moderation',
-  path: '/moderation',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminRoomsRoute = AdminRoomsRouteImport.update({
+const AshnightControlModerationRoute =
+  AshnightControlModerationRouteImport.update({
+    id: '/moderation',
+    path: '/moderation',
+    getParentRoute: () => AshnightControlRoute,
+  } as any)
+const AshnightControlRoomsRoute = AshnightControlRoomsRouteImport.update({
   id: '/rooms',
   path: '/rooms',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => AshnightControlRoute,
 } as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
+const AshnightControlServicesRoute = AshnightControlServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
+const AshnightControlUsersRoute = AshnightControlUsersRouteImport.update({
   id: '/users',
   path: '/users',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => AshnightControlRoute,
 } as any)
-const AdminVettingRoute = AdminVettingRouteImport.update({
+const AshnightControlVettingRoute = AshnightControlVettingRouteImport.update({
   id: '/vetting',
   path: '/vetting',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => AshnightControlRoute,
 } as any)
 const SpecialistsIndexRoute = SpecialistsIndexRouteImport.update({
   id: '/specialists/',
@@ -103,19 +116,21 @@ const SpecialistsSpecialistIdRoute = SpecialistsSpecialistIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/apply': typeof ApplyRoute
+  '/ashnight-control': typeof AshnightControlRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
+  '/profile': typeof ProfileRoute
   '/rooms': typeof RoomsRoute
-  '/admin/bookings': typeof AdminBookingsRoute
-  '/admin/escrow': typeof AdminEscrowRoute
-  '/admin/moderation': typeof AdminModerationRoute
-  '/admin/rooms': typeof AdminRoomsRoute
-  '/admin/users': typeof AdminUsersRoute
-  '/admin/vetting': typeof AdminVettingRoute
+  '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
+  '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
+  '/ashnight-control/moderation': typeof AshnightControlModerationRoute
+  '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
+  '/ashnight-control/services': typeof AshnightControlServicesRoute
+  '/ashnight-control/users': typeof AshnightControlUsersRoute
+  '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
-  '/admin/': typeof AdminIndexRoute
+  '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -123,52 +138,58 @@ export interface FileRoutesByTo {
   '/apply': typeof ApplyRoute
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
+  '/profile': typeof ProfileRoute
   '/rooms': typeof RoomsRoute
-  '/admin/bookings': typeof AdminBookingsRoute
-  '/admin/escrow': typeof AdminEscrowRoute
-  '/admin/moderation': typeof AdminModerationRoute
-  '/admin/rooms': typeof AdminRoomsRoute
-  '/admin/users': typeof AdminUsersRoute
-  '/admin/vetting': typeof AdminVettingRoute
+  '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
+  '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
+  '/ashnight-control/moderation': typeof AshnightControlModerationRoute
+  '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
+  '/ashnight-control/services': typeof AshnightControlServicesRoute
+  '/ashnight-control/users': typeof AshnightControlUsersRoute
+  '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
-  '/admin': typeof AdminIndexRoute
+  '/ashnight-control': typeof AshnightControlIndexRoute
   '/specialists': typeof SpecialistsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/apply': typeof ApplyRoute
+  '/ashnight-control': typeof AshnightControlRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
+  '/profile': typeof ProfileRoute
   '/rooms': typeof RoomsRoute
-  '/admin/bookings': typeof AdminBookingsRoute
-  '/admin/escrow': typeof AdminEscrowRoute
-  '/admin/moderation': typeof AdminModerationRoute
-  '/admin/rooms': typeof AdminRoomsRoute
-  '/admin/users': typeof AdminUsersRoute
-  '/admin/vetting': typeof AdminVettingRoute
+  '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
+  '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
+  '/ashnight-control/moderation': typeof AshnightControlModerationRoute
+  '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
+  '/ashnight-control/services': typeof AshnightControlServicesRoute
+  '/ashnight-control/users': typeof AshnightControlUsersRoute
+  '/ashnight-control/vetting': typeof AshnightControlVettingRoute
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
-  '/admin/': typeof AdminIndexRoute
+  '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
     | '/apply'
+    | '/ashnight-control'
     | '/how-it-works'
     | '/messages'
+    | '/profile'
     | '/rooms'
-    | '/admin/bookings'
-    | '/admin/escrow'
-    | '/admin/moderation'
-    | '/admin/rooms'
-    | '/admin/users'
-    | '/admin/vetting'
+    | '/ashnight-control/bookings'
+    | '/ashnight-control/escrow'
+    | '/ashnight-control/moderation'
+    | '/ashnight-control/rooms'
+    | '/ashnight-control/services'
+    | '/ashnight-control/users'
+    | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
-    | '/admin/'
+    | '/ashnight-control/'
     | '/specialists/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -176,41 +197,46 @@ export interface FileRouteTypes {
     | '/apply'
     | '/how-it-works'
     | '/messages'
+    | '/profile'
     | '/rooms'
-    | '/admin/bookings'
-    | '/admin/escrow'
-    | '/admin/moderation'
-    | '/admin/rooms'
-    | '/admin/users'
-    | '/admin/vetting'
+    | '/ashnight-control/bookings'
+    | '/ashnight-control/escrow'
+    | '/ashnight-control/moderation'
+    | '/ashnight-control/rooms'
+    | '/ashnight-control/services'
+    | '/ashnight-control/users'
+    | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
-    | '/admin'
+    | '/ashnight-control'
     | '/specialists'
   id:
     | '__root__'
     | '/'
-    | '/admin'
     | '/apply'
+    | '/ashnight-control'
     | '/how-it-works'
     | '/messages'
+    | '/profile'
     | '/rooms'
-    | '/admin/bookings'
-    | '/admin/escrow'
-    | '/admin/moderation'
-    | '/admin/rooms'
-    | '/admin/users'
-    | '/admin/vetting'
+    | '/ashnight-control/bookings'
+    | '/ashnight-control/escrow'
+    | '/ashnight-control/moderation'
+    | '/ashnight-control/rooms'
+    | '/ashnight-control/services'
+    | '/ashnight-control/users'
+    | '/ashnight-control/vetting'
     | '/specialists/$specialistId'
-    | '/admin/'
+    | '/ashnight-control/'
     | '/specialists/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRouteWithChildren
   ApplyRoute: typeof ApplyRoute
+  AshnightControlRoute: typeof AshnightControlRouteWithChildren
   HowItWorksRoute: typeof HowItWorksRoute
   MessagesRoute: typeof MessagesRoute
+  ProfileRoute: typeof ProfileRoute
   RoomsRoute: typeof RoomsRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
@@ -225,18 +251,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/apply': {
       id: '/apply'
       path: '/apply'
       fullPath: '/apply'
       preLoaderRoute: typeof ApplyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ashnight-control': {
+      id: '/ashnight-control'
+      path: '/ashnight-control'
+      fullPath: '/ashnight-control'
+      preLoaderRoute: typeof AshnightControlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/how-it-works': {
@@ -253,6 +279,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rooms': {
       id: '/rooms'
       path: '/rooms'
@@ -260,54 +293,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RoomsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
+    '/ashnight-control/': {
+      id: '/ashnight-control/'
       path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
+      fullPath: '/ashnight-control/'
+      preLoaderRoute: typeof AshnightControlIndexRouteImport
+      parentRoute: typeof AshnightControlRoute
     }
-    '/admin/bookings': {
-      id: '/admin/bookings'
+    '/ashnight-control/bookings': {
+      id: '/ashnight-control/bookings'
       path: '/bookings'
-      fullPath: '/admin/bookings'
-      preLoaderRoute: typeof AdminBookingsRouteImport
-      parentRoute: typeof AdminRoute
+      fullPath: '/ashnight-control/bookings'
+      preLoaderRoute: typeof AshnightControlBookingsRouteImport
+      parentRoute: typeof AshnightControlRoute
     }
-    '/admin/escrow': {
-      id: '/admin/escrow'
+    '/ashnight-control/escrow': {
+      id: '/ashnight-control/escrow'
       path: '/escrow'
-      fullPath: '/admin/escrow'
-      preLoaderRoute: typeof AdminEscrowRouteImport
-      parentRoute: typeof AdminRoute
+      fullPath: '/ashnight-control/escrow'
+      preLoaderRoute: typeof AshnightControlEscrowRouteImport
+      parentRoute: typeof AshnightControlRoute
     }
-    '/admin/moderation': {
-      id: '/admin/moderation'
+    '/ashnight-control/moderation': {
+      id: '/ashnight-control/moderation'
       path: '/moderation'
-      fullPath: '/admin/moderation'
-      preLoaderRoute: typeof AdminModerationRouteImport
-      parentRoute: typeof AdminRoute
+      fullPath: '/ashnight-control/moderation'
+      preLoaderRoute: typeof AshnightControlModerationRouteImport
+      parentRoute: typeof AshnightControlRoute
     }
-    '/admin/rooms': {
-      id: '/admin/rooms'
+    '/ashnight-control/rooms': {
+      id: '/ashnight-control/rooms'
       path: '/rooms'
-      fullPath: '/admin/rooms'
-      preLoaderRoute: typeof AdminRoomsRouteImport
-      parentRoute: typeof AdminRoute
+      fullPath: '/ashnight-control/rooms'
+      preLoaderRoute: typeof AshnightControlRoomsRouteImport
+      parentRoute: typeof AshnightControlRoute
     }
-    '/admin/users': {
-      id: '/admin/users'
+    '/ashnight-control/services': {
+      id: '/ashnight-control/services'
+      path: '/services'
+      fullPath: '/ashnight-control/services'
+      preLoaderRoute: typeof AshnightControlServicesRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
+    '/ashnight-control/users': {
+      id: '/ashnight-control/users'
       path: '/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof AdminRoute
+      fullPath: '/ashnight-control/users'
+      preLoaderRoute: typeof AshnightControlUsersRouteImport
+      parentRoute: typeof AshnightControlRoute
     }
-    '/admin/vetting': {
-      id: '/admin/vetting'
+    '/ashnight-control/vetting': {
+      id: '/ashnight-control/vetting'
       path: '/vetting'
-      fullPath: '/admin/vetting'
-      preLoaderRoute: typeof AdminVettingRouteImport
-      parentRoute: typeof AdminRoute
+      fullPath: '/ashnight-control/vetting'
+      preLoaderRoute: typeof AshnightControlVettingRouteImport
+      parentRoute: typeof AshnightControlRoute
     }
     '/specialists/': {
       id: '/specialists/'
@@ -326,34 +366,39 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminRouteChildren {
-  AdminBookingsRoute: typeof AdminBookingsRoute
-  AdminEscrowRoute: typeof AdminEscrowRoute
-  AdminModerationRoute: typeof AdminModerationRoute
-  AdminRoomsRoute: typeof AdminRoomsRoute
-  AdminUsersRoute: typeof AdminUsersRoute
-  AdminVettingRoute: typeof AdminVettingRoute
-  AdminIndexRoute: typeof AdminIndexRoute
+interface AshnightControlRouteChildren {
+  AshnightControlBookingsRoute: typeof AshnightControlBookingsRoute
+  AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
+  AshnightControlModerationRoute: typeof AshnightControlModerationRoute
+  AshnightControlRoomsRoute: typeof AshnightControlRoomsRoute
+  AshnightControlServicesRoute: typeof AshnightControlServicesRoute
+  AshnightControlUsersRoute: typeof AshnightControlUsersRoute
+  AshnightControlVettingRoute: typeof AshnightControlVettingRoute
+  AshnightControlIndexRoute: typeof AshnightControlIndexRoute
 }
 
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminBookingsRoute: AdminBookingsRoute,
-  AdminEscrowRoute: AdminEscrowRoute,
-  AdminModerationRoute: AdminModerationRoute,
-  AdminRoomsRoute: AdminRoomsRoute,
-  AdminUsersRoute: AdminUsersRoute,
-  AdminVettingRoute: AdminVettingRoute,
-  AdminIndexRoute: AdminIndexRoute,
+const AshnightControlRouteChildren: AshnightControlRouteChildren = {
+  AshnightControlBookingsRoute: AshnightControlBookingsRoute,
+  AshnightControlEscrowRoute: AshnightControlEscrowRoute,
+  AshnightControlModerationRoute: AshnightControlModerationRoute,
+  AshnightControlRoomsRoute: AshnightControlRoomsRoute,
+  AshnightControlServicesRoute: AshnightControlServicesRoute,
+  AshnightControlUsersRoute: AshnightControlUsersRoute,
+  AshnightControlVettingRoute: AshnightControlVettingRoute,
+  AshnightControlIndexRoute: AshnightControlIndexRoute,
 }
 
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+const AshnightControlRouteWithChildren = AshnightControlRoute._addFileChildren(
+  AshnightControlRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRouteWithChildren,
   ApplyRoute: ApplyRoute,
+  AshnightControlRoute: AshnightControlRouteWithChildren,
   HowItWorksRoute: HowItWorksRoute,
   MessagesRoute: MessagesRoute,
+  ProfileRoute: ProfileRoute,
   RoomsRoute: RoomsRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,

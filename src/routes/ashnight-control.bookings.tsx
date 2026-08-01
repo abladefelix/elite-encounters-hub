@@ -25,7 +25,7 @@ import { TierBadge } from "@/components/tier-badge";
 import { bookings as seedBookings, getClient, getSpecialist } from "@/lib/mock-data";
 import { bookingTotal, money, type BookingStatus } from "@/lib/types";
 
-export const Route = createFileRoute("/admin/bookings")({
+export const Route = createFileRoute("/ashnight-control/bookings")({
   head: () => ({
     meta: [
       { title: "Bookings & Payouts | Ashnight Admin" },

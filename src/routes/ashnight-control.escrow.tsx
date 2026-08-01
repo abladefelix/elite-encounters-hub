@@ -45,7 +45,7 @@ import { TIERS, useRoomSettings } from "@/lib/room-settings";
 import type { RoomGiftRules } from "@/lib/gifts";
 import { money, type Tier } from "@/lib/types";
 
-export const Route = createFileRoute("/admin/escrow")({
+export const Route = createFileRoute("/ashnight-control/escrow")({
   head: () => ({
     meta: [
       { title: "Escrow & Gifts | Ashnight Admin" },

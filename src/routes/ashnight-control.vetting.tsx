@@ -19,7 +19,7 @@ import { TierBadge } from "@/components/tier-badge";
 import { applicants as seedApplicants } from "@/lib/mock-data";
 import type { Applicant, Tier, VettingStatus } from "@/lib/types";
 
-export const Route = createFileRoute("/admin/vetting")({
+export const Route = createFileRoute("/ashnight-control/vetting")({
   head: () => ({
     meta: [
       { title: "Vetting Queue | Ashnight Admin" },

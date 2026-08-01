@@ -25,7 +25,7 @@ import {
 } from "@/lib/mock-data";
 import { money } from "@/lib/types";
 
-export const Route = createFileRoute("/admin/")({
+export const Route = createFileRoute("/ashnight-control/")({
   head: () => ({
     meta: [
       { title: "Admin Overview | Ashnight Control Room" },
@@ -66,7 +66,7 @@ function AdminOverview() {
           </p>
         </div>
         <Button asChild variant="brass">
-          <Link to="/admin/vetting">
+          <Link to="/ashnight-control/vetting">
             Review {metrics.pendingVetting} applications <ArrowUpRight className="size-4" />
           </Link>
         </Button>
@@ -176,7 +176,7 @@ function AdminOverview() {
               <h2 className="font-display text-base font-semibold">Vetting queue</h2>
             </div>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/vetting">Open</Link>
+              <Link to="/ashnight-control/vetting">Open</Link>
             </Button>
           </div>
           <ul className="mt-4 divide-y divide-border/60">
@@ -198,7 +198,7 @@ function AdminOverview() {
           <div className="flex items-center justify-between">
             <h2 className="font-display text-base font-semibold">Latest bookings</h2>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/bookings">Open</Link>
+              <Link to="/ashnight-control/bookings">Open</Link>
             </Button>
           </div>
           <ul className="mt-4 divide-y divide-border/60">
