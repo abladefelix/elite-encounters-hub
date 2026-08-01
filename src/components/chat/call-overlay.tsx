@@ -11,15 +11,22 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { initials, type Specialist } from "@/lib/types";
+import { initials } from "@/lib/types";
 
 export type CallMode = "audio" | "video";
 
+type SignalPayload =
+  | { kind: "offer"; sdp: RTCSessionDescriptionInit; from: string }
+  | { kind: "answer"; sdp: RTCSessionDescriptionInit; from: string }
+  | { kind: "ice"; candidate: RTCIceCandidateInit; from: string }
+  | { kind: "hangup"; from: string };
+
+const ICE_SERVERS: RTCIceServer[] = [{ urls: "stun:stun.l.google.com:19302" }];
+
 function formatDuration(seconds: number) {
-  const mins = Math.floor(seconds / 60)
-    .toString()
-    .padStart(2, "0");
+  const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
   const secs = (seconds % 60).toString().padStart(2, "0");
   return `${mins}:${secs}`;
 }
@@ -27,16 +34,24 @@ function formatDuration(seconds: number) {
 /**
  * Call surface for the chat thread.
  *
- * The local side is real: we capture mic (and camera for video calls) with
- * getUserMedia, and the mute / camera controls toggle the actual tracks. The
- * remote side is simulated until the realtime peer connection lands.
+ * Local capture (mic/camera) is real. Signalling (offer/answer/ICE) runs over
+ * a Supabase realtime broadcast channel scoped to the thread, so two real
+ * participants who both open this overlay on the same thread establish an
+ * actual WebRTC peer connection and exchange live media, no simulation.
  */
 export function CallOverlay({
-  specialist,
+  threadId,
+  selfId,
+  isCaller,
+  peerName,
   mode,
   onEnd,
 }: {
-  specialist: Specialist;
+  threadId: string;
+  selfId: string;
+  /** Whoever clicked "start call" makes the offer; the other side answers. */
+  isCaller: boolean;
+  peerName: string;
   mode: CallMode;
   onEnd: () => void;
 }) {
@@ -45,28 +60,47 @@ export function CallOverlay({
   const [muted, setMuted] = useState(false);
   const [cameraOn, setCameraOn] = useState(mode === "video");
   const [mediaError, setMediaError] = useState<string | null>(null);
+  const [status, setStatus] = useState("Connecting…");
   const streamRef = useRef<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const endedRef = useRef(false);
 
-  // Acquire local media once, and always release it when the call ends.
+  const cleanup = useCallback(() => {
+    endedRef.current = true;
+    pcRef.current?.close();
+    pcRef.current = null;
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    if (channelRef.current) {
+      void supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+  }, []);
+
+  const hangUp = useCallback(() => {
+    void channelRef.current?.send({
+      type: "broadcast",
+      event: "signal",
+      payload: { kind: "hangup", from: selfId } satisfies SignalPayload,
+    });
+    cleanup();
+    onEnd();
+  }, [cleanup, onEnd, selfId]);
+
   useEffect(() => {
     let cancelled = false;
 
     async function start() {
+      let stream: MediaStream | null = null;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
           video: mode === "video" ? { facingMode: "user" } : false,
         });
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          void videoRef.current.play().catch(() => undefined);
-        }
       } catch {
         if (!cancelled) {
           setMediaError(
@@ -76,21 +110,113 @@ export function CallOverlay({
           );
         }
       }
+      if (cancelled) {
+        stream?.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
+      streamRef.current = stream;
+      if (stream && videoRef.current) {
+        videoRef.current.srcObject = stream;
+        void videoRef.current.play().catch(() => undefined);
+      }
+
+      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+      pcRef.current = pc;
+      stream?.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+      pc.ontrack = (event) => {
+        const [remoteStream] = event.streams;
+        if (!remoteStream) return;
+        if (mode === "video" && remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream;
+          void remoteVideoRef.current.play().catch(() => undefined);
+        }
+        if (remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = remoteStream;
+          void remoteAudioRef.current.play().catch(() => undefined);
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (cancelled) return;
+        if (pc.connectionState === "connected") {
+          setConnected(true);
+          setStatus("Connected");
+        } else if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
+          setStatus("Connection lost");
+        }
+      };
+
+      const channel = supabase.channel(`call:${threadId}`, {
+        config: { broadcast: { self: false } },
+      });
+      channelRef.current = channel;
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          void channel.send({
+            type: "broadcast",
+            event: "signal",
+            payload: { kind: "ice", candidate: event.candidate.toJSON(), from: selfId } satisfies SignalPayload,
+          });
+        }
+      };
+
+      channel
+        .on("broadcast", { event: "signal" }, async ({ payload }: { payload: SignalPayload }) => {
+          if (cancelled || payload.from === selfId || !pcRef.current) return;
+          const conn = pcRef.current;
+          try {
+            if (payload.kind === "offer" && !isCaller) {
+              await conn.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+              const answer = await conn.createAnswer();
+              await conn.setLocalDescription(answer);
+              void channel.send({
+                type: "broadcast",
+                event: "signal",
+                payload: { kind: "answer", sdp: answer, from: selfId } satisfies SignalPayload,
+              });
+            } else if (payload.kind === "answer" && isCaller) {
+              await conn.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+            } else if (payload.kind === "ice") {
+              await conn.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            } else if (payload.kind === "hangup") {
+              setStatus("The other person left the call");
+              cleanup();
+              onEnd();
+            }
+          } catch (error) {
+            console.error("call signal failed", error);
+          }
+        })
+        .subscribe((subStatus) => {
+          if (subStatus !== "SUBSCRIBED" || cancelled) return;
+          if (isCaller) {
+            void (async () => {
+              const offer = await pc.createOffer();
+              await pc.setLocalDescription(offer);
+              void channel.send({
+                type: "broadcast",
+                event: "signal",
+                payload: { kind: "offer", sdp: offer, from: selfId } satisfies SignalPayload,
+              });
+              setStatus("Ringing…");
+            })();
+          } else {
+            setStatus("Waiting for the caller…");
+          }
+        });
     }
 
     void start();
 
     return () => {
       cancelled = true;
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+      if (!endedRef.current) cleanup();
     };
-  }, [mode]);
-
-  useEffect(() => {
-    const connectTimer = setTimeout(() => setConnected(true), 1400);
-    return () => clearTimeout(connectTimer);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, threadId, selfId, isCaller]);
 
   useEffect(() => {
     if (!connected) return;
@@ -121,13 +247,24 @@ export function CallOverlay({
   const showSelfVideo = mode === "video" && cameraOn && !mediaError;
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onEnd()}>
+    <Dialog open onOpenChange={(open) => !open && hangUp()}>
       <DialogContent className="max-w-md overflow-hidden border-border/70 bg-panel p-0">
         <DialogTitle className="sr-only">
-          {mode === "video" ? "Video call" : "Voice call"} with {specialist.name}
+          {mode === "video" ? "Video call" : "Voice call"} with {peerName}
         </DialogTitle>
 
         <div className="relative aspect-[4/5] w-full bg-hero">
+          {mode === "video" ? (
+            <video
+              ref={remoteVideoRef}
+              playsInline
+              autoPlay
+              className={cn("absolute inset-0 h-full w-full object-cover", !connected && "hidden")}
+            />
+          ) : (
+            <audio ref={remoteAudioRef} autoPlay />
+          )}
+
           <video
             ref={videoRef}
             muted
@@ -144,7 +281,12 @@ export function CallOverlay({
             </div>
           ) : null}
 
-          <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+          <div
+            className={cn(
+              "flex h-full flex-col items-center justify-center gap-4 px-6 text-center",
+              connected && mode === "video" && "pointer-events-none opacity-0",
+            )}
+          >
             <Avatar
               className={cn(
                 "size-24 border border-border transition-all",
@@ -152,29 +294,23 @@ export function CallOverlay({
               )}
             >
               <AvatarFallback className="bg-surface-strong font-display text-2xl font-semibold">
-                {initials(specialist.name)}
+                {initials(peerName)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-display text-lg font-semibold">{specialist.name}</p>
+              <p className="font-display text-lg font-semibold">{peerName}</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {connected
                   ? `${mode === "video" ? "Video" : "Voice"} call · ${formatDuration(seconds)}`
-                  : "Connecting…"}
+                  : status}
               </p>
             </div>
-            {mediaError ? (
-              <p className="max-w-xs text-xs text-warning">{mediaError}</p>
-            ) : null}
+            {mediaError ? <p className="max-w-xs text-xs text-warning">{mediaError}</p> : null}
           </div>
         </div>
 
         <div className="flex items-center justify-center gap-3 border-t border-border/70 bg-surface p-5">
-          <CallButton
-            active={!muted}
-            onClick={toggleMute}
-            label={muted ? "Unmute" : "Mute"}
-          >
+          <CallButton active={!muted} onClick={toggleMute} label={muted ? "Unmute" : "Mute"}>
             {muted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
           </CallButton>
 
@@ -196,7 +332,7 @@ export function CallOverlay({
             size="icon"
             variant="destructive"
             className="size-12 rounded-full"
-            onClick={onEnd}
+            onClick={hangUp}
             aria-label="End call"
           >
             <PhoneOff className="size-5" />

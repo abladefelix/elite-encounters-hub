@@ -27,7 +27,7 @@ import {
   paystackReference,
   type PaystackChannel,
 } from "@/lib/paystack";
-import { money, type Specialist, type Tier } from "@/lib/types";
+import { money, type Tier } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export interface GiftDraft {
@@ -45,13 +45,13 @@ export interface GiftDraft {
  * the specialist keeps the value minus the admin-set tip commission.
  */
 export function GiftDialog({
-  specialist,
+  specialistName,
   room,
   open,
   onOpenChange,
   onConfirm,
 }: {
-  specialist: Specialist;
+  specialistName: string;
   /** The member's room — decides which gifts and amounts are available. */
   room: Tier;
   open: boolean;
@@ -81,7 +81,7 @@ export function GiftDialog({
   }, [custom, customValue, gift?.value, rules.allowCustom, floor, ceiling]);
 
   const split = escrowSplit(amount, settings.tipFeePct);
-  const firstName = specialist.name.split(" ")[0];
+  const firstName = specialistName.split(" ")[0];
 
   function confirm() {
     if (!gift) return;

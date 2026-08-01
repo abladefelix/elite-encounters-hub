@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AshnightControlRouteImport } from './routes/ashnight-control'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-control.index'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
@@ -42,6 +44,11 @@ const AshnightControlRoute = AshnightControlRouteImport.update({
   path: '/ashnight-control',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HowItWorksRoute = HowItWorksRouteImport.update({
   id: '/how-it-works',
   path: '/how-it-works',
@@ -55,6 +62,11 @@ const MessagesRoute = MessagesRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoomsRoute = RoomsRouteImport.update({
@@ -118,9 +130,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/apply': typeof ApplyRoute
   '/ashnight-control': typeof AshnightControlRouteWithChildren
+  '/auth': typeof AuthRoute
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
@@ -136,9 +150,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/apply': typeof ApplyRoute
+  '/auth': typeof AuthRoute
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
@@ -156,9 +172,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/apply': typeof ApplyRoute
   '/ashnight-control': typeof AshnightControlRouteWithChildren
+  '/auth': typeof AuthRoute
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
@@ -177,9 +195,11 @@ export interface FileRouteTypes {
     | '/'
     | '/apply'
     | '/ashnight-control'
+    | '/auth'
     | '/how-it-works'
     | '/messages'
     | '/profile'
+    | '/reset-password'
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
@@ -195,9 +215,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/apply'
+    | '/auth'
     | '/how-it-works'
     | '/messages'
     | '/profile'
+    | '/reset-password'
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
@@ -214,9 +236,11 @@ export interface FileRouteTypes {
     | '/'
     | '/apply'
     | '/ashnight-control'
+    | '/auth'
     | '/how-it-works'
     | '/messages'
     | '/profile'
+    | '/reset-password'
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
@@ -234,9 +258,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApplyRoute: typeof ApplyRoute
   AshnightControlRoute: typeof AshnightControlRouteWithChildren
+  AuthRoute: typeof AuthRoute
   HowItWorksRoute: typeof HowItWorksRoute
   MessagesRoute: typeof MessagesRoute
   ProfileRoute: typeof ProfileRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
@@ -265,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/how-it-works': {
       id: '/how-it-works'
       path: '/how-it-works'
@@ -284,6 +317,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rooms': {
@@ -396,9 +436,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApplyRoute: ApplyRoute,
   AshnightControlRoute: AshnightControlRouteWithChildren,
+  AuthRoute: AuthRoute,
   HowItWorksRoute: HowItWorksRoute,
   MessagesRoute: MessagesRoute,
   ProfileRoute: ProfileRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,

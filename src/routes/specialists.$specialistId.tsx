@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -8,6 +9,7 @@ import {
   MessageSquare,
   Star,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -17,14 +19,23 @@ import { Separator } from "@/components/ui/separator";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { TierBadge } from "@/components/tier-badge";
-import { getRoom, getSpecialist } from "@/lib/mock-data";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { openThread, useRatings, useServices, useSpecialistServices } from "@/lib/queries";
+import { useRoomSettings } from "@/lib/room-settings";
 import { initials, money } from "@/lib/types";
 
 export const Route = createFileRoute("/specialists/$specialistId")({
-  loader: ({ params }) => {
-    const specialist = getSpecialist(params.specialistId);
-    if (!specialist) throw notFound();
-    return { specialist };
+  loader: async ({ params }) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", params.specialistId)
+      .eq("vetting", "approved")
+      .eq("suspended", false)
+      .maybeSingle();
+    if (error || !data) throw notFound();
+    return { specialist: data };
   },
   head: ({ loaderData }) => {
     if (!loaderData) {
@@ -36,12 +47,12 @@ export const Route = createFileRoute("/specialists/$specialistId")({
       };
     }
     const { specialist } = loaderData;
-    const description = `${specialist.name} — ${specialist.headline}. ${specialist.rating.toFixed(2)}★ across ${specialist.jobsCompleted} completed cleans on Ashnight.`;
+    const description = `${specialist.display_name} — ${specialist.headline}. ${specialist.rating.toFixed(2)}★ across ${specialist.jobs_completed} completed cleans on Ashnight.`;
     return {
       meta: [
-        { title: `${specialist.name} — Ash Specialist on Ashnight` },
+        { title: `${specialist.display_name} — Ash Specialist on Ashnight` },
         { name: "description", content: description },
-        { property: "og:title", content: `${specialist.name} — Ash Specialist` },
+        { property: "og:title", content: `${specialist.display_name} — Ash Specialist` },
         { property: "og:description", content: description },
       ],
     };
@@ -71,7 +82,39 @@ function ProfileFallback({ title }: { title: string }) {
 
 function SpecialistProfile() {
   const { specialist } = Route.useLoaderData();
-  const room = getRoom(specialist.room);
+  const { profileOf } = useRoomSettings();
+  const room = specialist.room ? profileOf(specialist.room) : null;
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [starting, setStarting] = useState(false);
+
+  const { data: serviceLinks } = useSpecialistServices(specialist.id);
+  const { data: allServices } = useServices(true);
+  const { data: reviews } = useRatings(specialist.id);
+
+  const serviceNames = (serviceLinks ?? [])
+    .map((link) => allServices?.find((service) => service.id === link.service_id)?.name)
+    .filter((name): name is string => Boolean(name));
+
+  async function handleStartChat() {
+    if (!user) {
+      void navigate({ to: "/auth", search: { next: `/specialists/${specialist.id}` } });
+      return;
+    }
+    if (user.id === specialist.id) {
+      toast.error("You can't message your own profile.");
+      return;
+    }
+    setStarting(true);
+    try {
+      await openThread(user.id, specialist.id, specialist.room);
+      void navigate({ to: "/messages" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't open that chat.");
+    } finally {
+      setStarting(false);
+    }
+  }
 
   return (
     <div className="min-h-screen">
@@ -88,16 +131,16 @@ function SpecialistProfile() {
           <div className="flex flex-wrap items-start gap-5">
             <Avatar className="size-20 border border-border">
               <AvatarFallback className="bg-surface-strong font-display text-xl font-semibold">
-                {initials(specialist.name)}
+                {initials(specialist.display_name || "Ashnight")}
               </AvatarFallback>
             </Avatar>
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="font-display text-2xl font-semibold sm:text-3xl">
-                  {specialist.name}
+                  {specialist.display_name}
                 </h1>
-                <TierBadge tier={specialist.room} withRoom />
+                {specialist.room ? <TierBadge tier={specialist.room} withRoom /> : null}
                 {specialist.verified ? (
                   <Badge
                     variant="outline"
@@ -114,26 +157,31 @@ function SpecialistProfile() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Star className="size-3.5 text-primary" /> {specialist.rating.toFixed(2)} ·{" "}
-                  {specialist.jobsCompleted} jobs
+                  {specialist.jobs_completed} jobs
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Clock className="size-3.5" /> Replies in ~{specialist.responseMinutes}m
+                  <Clock className="size-3.5" /> Replies in ~{specialist.response_minutes}m
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <Globe className="size-3.5" /> {specialist.languages.join(", ")}
-                </span>
+                {specialist.languages.length ? (
+                  <span className="flex items-center gap-1.5">
+                    <Globe className="size-3.5" /> {specialist.languages.join(", ")}
+                  </span>
+                ) : null}
               </div>
             </div>
 
             <div className="w-full sm:w-auto">
               <p className="font-display text-2xl font-semibold">
-                {money(specialist.hourlyRate)}
+                {money(specialist.hourly_rate)}
                 <span className="text-sm font-normal text-muted-foreground">/hr</span>
               </p>
-              <Button asChild variant="brass" className="mt-3 w-full sm:w-auto">
-                <Link to="/messages">
-                  <MessageSquare className="size-4" /> Start a chat
-                </Link>
+              <Button
+                variant="brass"
+                className="mt-3 w-full sm:w-auto"
+                disabled={starting}
+                onClick={handleStartChat}
+              >
+                <MessageSquare className="size-4" /> {starting ? "Opening…" : "Start a chat"}
               </Button>
             </div>
           </div>
@@ -142,17 +190,23 @@ function SpecialistProfile() {
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <Card className="border-border/70 bg-surface p-6 lg:col-span-2">
             <h2 className="eyebrow">About</h2>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{specialist.bio}</p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              {specialist.bio || "This specialist hasn't added a bio yet."}
+            </p>
 
             <Separator className="my-6" />
 
             <h2 className="eyebrow">Services offered</h2>
             <div className="mt-3 flex flex-wrap gap-2">
-              {specialist.services.map((service: string) => (
-                <Badge key={service} variant="secondary" className="rounded-full font-normal">
-                  {service}
-                </Badge>
-              ))}
+              {serviceNames.length ? (
+                serviceNames.map((service) => (
+                  <Badge key={service} variant="secondary" className="rounded-full font-normal">
+                    {service}
+                  </Badge>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No services listed yet.</p>
+              )}
             </div>
 
             <Separator className="my-6" />
@@ -162,10 +216,9 @@ function SpecialistProfile() {
               {[
                 "Government ID verified",
                 "Background check cleared",
-                `${specialist.yearsExperience} years of verified experience`,
-                "Two reference calls completed",
+                `${specialist.years_experience} years of verified experience`,
+                "Reference calls completed",
                 "Signed platform conduct policy",
-                "Insurance documents on file",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2">
                   <BadgeCheck className="mt-0.5 size-4 shrink-0 text-accent" />
@@ -173,14 +226,42 @@ function SpecialistProfile() {
                 </li>
               ))}
             </ul>
+
+            <Separator className="my-6" />
+
+            <h2 className="eyebrow">Member reviews</h2>
+            {!reviews || reviews.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                No ratings yet — reviews appear here once clients rate completed bookings.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-4">
+                {reviews.slice(0, 5).map((review) => (
+                  <li key={review.id} className="border-b border-border/60 pb-3 last:border-0">
+                    <div className="flex items-center gap-1 text-primary">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <Star
+                          key={index}
+                          className="size-3.5"
+                          fill={index < review.stars ? "currentColor" : "none"}
+                        />
+                      ))}
+                    </div>
+                    {review.note ? (
+                      <p className="mt-1.5 text-sm text-muted-foreground">{review.note}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
 
           <Card className="h-fit border-border/70 bg-surface p-6">
             <h2 className="eyebrow">Room access</h2>
             <p className="mt-3 text-sm text-muted-foreground">
-              {specialist.name.split(" ")[0]} is placed in the{" "}
-              <span className="text-foreground">{room?.name}</span>. You need an active{" "}
-              {room?.name.replace(" Room", "")} membership or above to book.
+              {specialist.display_name.split(" ")[0] || "This specialist"} is placed in the{" "}
+              <span className="text-foreground">{room?.name ?? "an unassigned room"}</span>. You
+              need an active {room?.name.replace(" Room", "") ?? ""} membership or above to book.
             </p>
             <p className="mt-4 font-display text-xl font-semibold">
               {money(room?.priceMonthly ?? 0)}

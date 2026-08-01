@@ -19,12 +19,11 @@ export const Route = createFileRoute("/ashnight-control/services")({
 });
 
 function AdminServicesPage() {
-  const { services, updateService, addService, removeService, resetServices } =
-    useServiceCatalog();
+  const { services, updateService, addService, removeService } = useServiceCatalog();
 
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
-  const [baseHours, setBaseHours] = useState("3");
+  const [category, setCategory] = useState("");
   const [suggestedRate, setSuggestedRate] = useState("70");
 
   function create() {
@@ -36,13 +35,14 @@ function AdminServicesPage() {
     addService({
       label: name,
       description: description.trim(),
-      baseHours: Math.max(1, Number(baseHours) || 1),
+      category: category.trim(),
       suggestedRate: Math.max(0, Number(suggestedRate) || 0),
       active: true,
       specialistSelectable: true,
     });
     setLabel("");
     setDescription("");
+    setCategory("");
     toast.success(`${name} published to the catalogue`);
   }
 
@@ -59,16 +59,9 @@ function AdminServicesPage() {
             </p>
           </div>
         </div>
-        <Button
-          variant="soft"
-          size="sm"
-          onClick={() => {
-            resetServices();
-            toast.message("Catalogue reset to defaults");
-          }}
-        >
-          <RotateCcw className="size-4" /> Reset
-        </Button>
+        <p className="text-xs text-muted-foreground">
+          {services.length} service{services.length === 1 ? "" : "s"} in the live catalogue
+        </p>
       </div>
 
       <Card className="border-border/70 bg-panel p-5">
@@ -88,17 +81,15 @@ function AdminServicesPage() {
             />
           </div>
           <div>
-            <Label htmlFor="svc-hours" className="text-sm">
-              Typical hours
+            <Label htmlFor="svc-category" className="text-sm">
+              Category
             </Label>
             <Input
-              id="svc-hours"
-              type="number"
-              min={1}
-              max={24}
-              value={baseHours}
+              id="svc-category"
+              value={category}
               className="mt-2"
-              onChange={(event) => setBaseHours(event.target.value)}
+              placeholder="e.g. Residential"
+              onChange={(event) => setCategory(event.target.value)}
             />
           </div>
           <div>
@@ -164,18 +155,16 @@ function AdminServicesPage() {
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div>
-                <Label htmlFor={`hours-${service.id}`} className="text-xs">
-                  Typical hours
+                <Label htmlFor={`category-${service.id}`} className="text-xs">
+                  Category
                 </Label>
                 <Input
-                  id={`hours-${service.id}`}
-                  type="number"
-                  min={1}
-                  max={24}
-                  value={service.baseHours}
+                  id={`category-${service.id}`}
+                  value={service.category ?? ""}
                   className="mt-1.5"
+                  placeholder="e.g. Residential"
                   onChange={(event) =>
-                    updateService(service.id, { baseHours: Number(event.target.value) || 1 })
+                    updateService(service.id, { category: event.target.value })
                   }
                 />
               </div>

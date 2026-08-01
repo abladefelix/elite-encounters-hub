@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-import { Camera, Heart, ThumbsDown, Sparkles, X, Save, RotateCcw } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { Camera, Heart, ThumbsDown, Sparkles, X, Save, ShieldCheck, LogIn } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -16,7 +16,13 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { IconContainer } from "@/components/ui/icon-container";
 import { TierBadge } from "@/components/tier-badge";
-import { useProfile, type MemberProfile } from "@/lib/profile";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  useSetSpecialistServices,
+  useSpecialistServices,
+  useUpdateProfile,
+  uploadAvatar,
+} from "@/lib/queries";
 import { useServiceCatalog } from "@/lib/service-catalog";
 import { initials, money } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -43,17 +49,113 @@ export const Route = createFileRoute("/profile")({
 
 const MAX_AVATAR_BYTES = 1_500_000;
 
+interface EditableFields {
+  display_name: string;
+  headline: string;
+  city: string;
+  phone: string;
+  bio: string;
+  likes: string[];
+  dislikes: string[];
+  languages: string[];
+  hourly_rate: number;
+  years_experience: number;
+  available: boolean;
+}
+
+function toFields(row: {
+  display_name: string;
+  headline: string;
+  city: string;
+  phone: string | null;
+  bio: string;
+  likes: string[];
+  dislikes: string[];
+  languages: string[];
+  hourly_rate: number;
+  years_experience: number;
+  available: boolean;
+}): EditableFields {
+  return {
+    display_name: row.display_name,
+    headline: row.headline,
+    city: row.city,
+    phone: row.phone ?? "",
+    bio: row.bio,
+    likes: row.likes,
+    dislikes: row.dislikes,
+    languages: row.languages,
+    hourly_rate: row.hourly_rate,
+    years_experience: row.years_experience,
+    available: row.available,
+  };
+}
+
 function ProfilePage() {
-  const { profile, updateProfile, updatePreference, resetProfile } = useProfile();
-  const { selectableServices, labelOf } = useServiceCatalog();
+  const { user, profile, loading, isSpecialist, refresh } = useAuth();
+  const { selectableServices, labelOf, isLoading: catalogLoading } = useServiceCatalog();
+  const updateProfile = useUpdateProfile();
+  const { data: specialistServiceRows } = useSpecialistServices(user?.id);
+  const setSpecialistServices = useSetSpecialistServices();
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const isSpecialist = profile.role === "specialist";
+  const [fields, setFields] = useState<EditableFields | null>(null);
+  const [serviceIds, setServiceIds] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  function onAvatarPicked(event: React.ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    if (profile) {
+      setFields(toFields(profile));
+      setAvatarUrl(profile.avatar_url ?? null);
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (specialistServiceRows) setServiceIds(specialistServiceRows.map((row) => row.service_id));
+  }, [specialistServiceRows]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <div className="mx-auto w-full max-w-5xl px-5 py-16 text-center text-sm text-muted-foreground">
+          Loading your profile…
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  if (!user || !profile || !fields) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <div className="mx-auto max-w-md px-5 py-24 text-center">
+          <ShieldCheck className="mx-auto size-10 text-accent" />
+          <h1 className="mt-6 font-display text-2xl font-semibold">Sign in to continue</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Your profile is only visible to you once you're signed in to Ashnight.
+          </p>
+          <Button asChild variant="brass" className="mt-7">
+            <Link to="/auth">
+              <LogIn className="size-4" /> Sign in
+            </Link>
+          </Button>
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  function patch<K extends keyof EditableFields>(key: K, value: EditableFields[K]) {
+    setFields((prev) => (prev ? { ...prev, [key]: value } : prev));
+  }
+
+  async function onAvatarPicked(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) return;
+    if (!file || !user) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Choose an image file");
       return;
@@ -62,20 +164,51 @@ function ProfilePage() {
       toast.error("Image is too large — pick one under 1.5MB");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateProfile({ avatar: typeof reader.result === "string" ? reader.result : null });
+    setUploading(true);
+    try {
+      const url = await uploadAvatar(user.id, file);
+      setAvatarUrl(url);
+      await updateProfile.mutateAsync({ id: user.id, patch: { avatar_url: url } });
+      await refresh();
       toast.success("Profile photo updated");
-    };
-    reader.onerror = () => toast.error("Couldn't read that image");
-    reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't upload that image");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function toggleService(id: string) {
-    const next = profile.serviceIds.includes(id)
-      ? profile.serviceIds.filter((item) => item !== id)
-      : [...profile.serviceIds, id];
-    updateProfile({ serviceIds: next });
+    setServiceIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+  }
+
+  async function saveProfile() {
+    if (!user || !fields) return;
+    try {
+      await updateProfile.mutateAsync({
+        id: user.id,
+        patch: {
+          display_name: fields.display_name,
+          headline: fields.headline,
+          city: fields.city,
+          phone: fields.phone || null,
+          bio: fields.bio,
+          likes: fields.likes,
+          dislikes: fields.dislikes,
+          languages: fields.languages,
+          hourly_rate: fields.hourly_rate,
+          years_experience: fields.years_experience,
+          available: fields.available,
+        },
+      });
+      if (isSpecialist) {
+        await setSpecialistServices.mutateAsync({ specialistId: user.id, serviceIds });
+      }
+      await refresh();
+      toast.success("Profile saved");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't save your profile");
+    }
   }
 
   return (
@@ -85,7 +218,7 @@ function ProfilePage() {
       <div className="mx-auto w-full max-w-5xl px-5 py-8 md:py-12">
         <h1 className="font-display text-2xl font-semibold sm:text-3xl">Your profile</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Everything here is visible to the members of your room. Changes save as you make them.
+          Everything here is visible to the members of your room. Changes save when you tap Save.
         </p>
 
         {/* identity card */}
@@ -93,15 +226,16 @@ function ProfilePage() {
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             <div className="relative mx-auto sm:mx-0">
               <Avatar className="size-24 border border-border">
-                {profile.avatar ? <AvatarImage src={profile.avatar} alt={profile.name} /> : null}
+                {avatarUrl ? <AvatarImage src={avatarUrl} alt={fields.display_name} /> : null}
                 <AvatarFallback className="bg-surface-strong font-display text-xl">
-                  {initials(profile.name || "Ashnight Member")}
+                  {initials(fields.display_name || "Ashnight Member")}
                 </AvatarFallback>
               </Avatar>
               <button
                 type="button"
                 onClick={() => fileInput.current?.click()}
-                className="absolute -bottom-1 -right-1 grid size-9 place-items-center rounded-full border border-border bg-brass text-primary-foreground shadow-elevated transition-transform active:scale-95"
+                disabled={uploading}
+                className="absolute -bottom-1 -right-1 grid size-9 place-items-center rounded-full border border-border bg-brass text-primary-foreground shadow-elevated transition-transform active:scale-95 disabled:opacity-60"
                 aria-label="Upload profile photo"
               >
                 <Camera className="size-4" />
@@ -118,37 +252,27 @@ function ProfilePage() {
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <p className="font-display text-lg font-semibold">
-                  {profile.name || "Unnamed member"}
+                  {fields.display_name || "Unnamed member"}
                 </p>
-                <TierBadge tier={profile.room} showIcon />
+                {profile.room ? <TierBadge tier={profile.room} showIcon /> : null}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                {profile.headline || "Add a short headline"}
+                {fields.headline || "Add a short headline"}
               </p>
               <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
-                {(["client", "specialist"] as const).map((role) => (
-                  <Button
-                    key={role}
-                    size="sm"
-                    variant={profile.role === role ? "brass" : "soft"}
-                    onClick={() => updateProfile({ role })}
-                  >
-                    {role === "client" ? "I book cleans" : "I render services"}
-                  </Button>
-                ))}
+                <Badge variant="soft" className="rounded-full font-normal capitalize">
+                  {isSpecialist ? "Specialist" : "Client"}
+                </Badge>
+                <Badge variant="soft" className="rounded-full font-normal capitalize">
+                  Vetting: {profile.vetting.replace("_", " ")}
+                </Badge>
+                {profile.verified ? (
+                  <Badge variant="soft" className="rounded-full font-normal">
+                    ID verified
+                  </Badge>
+                ) : null}
               </div>
             </div>
-
-            {profile.avatar ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="shrink-0"
-                onClick={() => updateProfile({ avatar: null })}
-              >
-                Remove photo
-              </Button>
-            ) : null}
           </div>
         </Card>
 
@@ -158,49 +282,30 @@ function ProfilePage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <TextField
               label="Full name"
-              value={profile.name}
-              onChange={(value) => updateProfile({ name: value })}
+              value={fields.display_name}
+              onChange={(value) => patch("display_name", value)}
             />
             <TextField
               label="Headline"
-              value={profile.headline}
-              onChange={(value) => updateProfile({ headline: value })}
+              value={fields.headline}
+              onChange={(value) => patch("headline", value)}
             />
-            <TextField
-              label="City"
-              value={profile.city}
-              onChange={(value) => updateProfile({ city: value })}
-            />
-            <TextField
-              label="Phone"
-              value={profile.phone}
-              onChange={(value) => updateProfile({ phone: value })}
-            />
-            <TextField
-              label="Email"
-              type="email"
-              value={profile.email}
-              onChange={(value) => updateProfile({ email: value })}
-            />
-            <TextField
-              label="Availability"
-              value={profile.availability}
-              onChange={(value) => updateProfile({ availability: value })}
-            />
+            <TextField label="City" value={fields.city} onChange={(value) => patch("city", value)} />
+            <TextField label="Phone" value={fields.phone} onChange={(value) => patch("phone", value)} />
             {isSpecialist ? (
               <>
                 <TextField
                   label="Hourly rate (GHS)"
                   type="number"
-                  value={String(profile.hourlyRate)}
-                  onChange={(value) => updateProfile({ hourlyRate: Number(value) || 0 })}
-                  hint={`Members see ${money(profile.hourlyRate)} per hour`}
+                  value={String(fields.hourly_rate)}
+                  onChange={(value) => patch("hourly_rate", Number(value) || 0)}
+                  hint={`Members see ${money(fields.hourly_rate)} per hour`}
                 />
                 <TextField
                   label="Years of experience"
                   type="number"
-                  value={String(profile.yearsExperience)}
-                  onChange={(value) => updateProfile({ yearsExperience: Number(value) || 0 })}
+                  value={String(fields.years_experience)}
+                  onChange={(value) => patch("years_experience", Number(value) || 0)}
                 />
               </>
             ) : null}
@@ -215,8 +320,8 @@ function ProfilePage() {
               rows={4}
               maxLength={600}
               className="mt-2"
-              value={profile.bio}
-              onChange={(event) => updateProfile({ bio: event.target.value })}
+              value={fields.bio}
+              onChange={(event) => patch("bio", event.target.value)}
               placeholder={
                 isSpecialist
                   ? "e.g. 6 years hotel housekeeping, deep cleans and move-outs, insured."
@@ -224,61 +329,79 @@ function ProfilePage() {
               }
             />
           </div>
-        </Card>
 
-        {/* services rendered — from the admin catalogue */}
-        <Card className="mt-5 border-border/70 bg-panel p-5 sm:p-6">
-          <div className="flex items-start gap-3">
-            <IconContainer icon={Sparkles} />
-            <div>
-              <h2 className="font-display text-base font-semibold">Services you render</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                The catalogue is set by Ashnight operations — pick the ones you actually cover.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {selectableServices.map((service) => {
-              const selected = profile.serviceIds.includes(service.id);
-              return (
-                <button
-                  key={service.id}
-                  type="button"
-                  onClick={() => toggleService(service.id)}
-                  aria-pressed={selected}
-                  className={cn(
-                    "rounded-xl border p-4 text-left transition-colors",
-                    selected
-                      ? "border-primary/50 bg-primary/5"
-                      : "border-border bg-background hover:bg-secondary/50",
-                  )}
-                >
-                  <p className="font-display text-sm font-semibold">{service.label}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{service.description}</p>
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    ~{service.baseHours}h · from {money(service.suggestedRate)}/hr
-                  </p>
-                </button>
-              );
-            })}
-            {selectableServices.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No services published yet. Ashnight operations will add them shortly.
-              </p>
-            ) : null}
-          </div>
-
-          {profile.serviceIds.length ? (
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {profile.serviceIds.map((id) => (
-                <Badge key={id} variant="soft" className="rounded-full font-normal">
-                  {labelOf(id)}
-                </Badge>
-              ))}
+          {isSpecialist ? (
+            <div className="mt-4 flex items-center justify-between gap-4 rounded-lg border border-border/70 bg-background px-4 py-3.5">
+              <div>
+                <p className="text-sm font-medium">Available for new bookings</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Turn off if you're fully booked or on leave.
+                </p>
+              </div>
+              <Switch
+                checked={fields.available}
+                onCheckedChange={(flag) => patch("available", flag)}
+                aria-label="Available for new bookings"
+              />
             </div>
           ) : null}
         </Card>
+
+        {/* services rendered — from the admin catalogue */}
+        {isSpecialist ? (
+          <Card className="mt-5 border-border/70 bg-panel p-5 sm:p-6">
+            <div className="flex items-start gap-3">
+              <IconContainer icon={Sparkles} />
+              <div>
+                <h2 className="font-display text-base font-semibold">Services you render</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  The catalogue is set by Ashnight operations — pick the ones you actually cover.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {selectableServices.map((service) => {
+                const selected = serviceIds.includes(service.id);
+                return (
+                  <button
+                    key={service.id}
+                    type="button"
+                    onClick={() => toggleService(service.id)}
+                    aria-pressed={selected}
+                    className={cn(
+                      "rounded-xl border p-4 text-left transition-colors",
+                      selected
+                        ? "border-primary/50 bg-primary/5"
+                        : "border-border bg-background hover:bg-secondary/50",
+                    )}
+                  >
+                    <p className="font-display text-sm font-semibold">{service.label}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{service.description}</p>
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      from {money(service.suggestedRate)}/hr
+                    </p>
+                  </button>
+                );
+              })}
+              {!catalogLoading && selectableServices.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No services published yet. Ashnight operations will add them shortly.
+                </p>
+              ) : null}
+            </div>
+
+            {serviceIds.length ? (
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {serviceIds.map((id) => (
+                  <Badge key={id} variant="soft" className="rounded-full font-normal">
+                    {labelOf(id)}
+                  </Badge>
+                ))}
+              </div>
+            ) : null}
+          </Card>
+        ) : null}
 
         {/* likes / dislikes */}
         <div className="mt-5 grid gap-5 md:grid-cols-2">
@@ -286,70 +409,30 @@ function ProfilePage() {
             title="Likes"
             hint="Products, routines and habits you prefer."
             icon={Heart}
-            values={profile.likes}
-            onChange={(likes) => updateProfile({ likes })}
+            values={fields.likes}
+            onChange={(likes) => patch("likes", likes)}
             placeholder="e.g. Eco-friendly products"
           />
           <ChipEditor
             title="Dislikes"
             hint="Things to avoid on every visit."
             icon={ThumbsDown}
-            values={profile.dislikes}
-            onChange={(dislikes) => updateProfile({ dislikes })}
+            values={fields.dislikes}
+            onChange={(dislikes) => patch("dislikes", dislikes)}
             placeholder="e.g. Strong bleach smell"
           />
         </div>
 
-        {/* preferences */}
-        <Card className="mt-5 border-border/70 bg-surface p-5 sm:p-6">
-          <h2 className="font-display text-base font-semibold">Settings</h2>
-          <div className="mt-4 divide-y divide-border/70">
-            {(
-              [
-                ["emailUpdates", "Email updates", "Booking confirmations and escrow receipts."],
-                ["smsAlerts", "SMS alerts", "Text me when a specialist replies or arrives."],
-                ["showOnlineStatus", "Show online status", "Let your room see when you're active."],
-                ["allowCalls", "Allow audio & video calls", "Room privileges still apply."],
-                [
-                  "showProfileInRoom",
-                  "Show my profile in the room",
-                  "Turn off to browse without being listed.",
-                ],
-              ] as [keyof MemberProfile["preferences"], string, string][]
-            ).map(([key, label, hint]) => (
-              <div key={key} className="flex items-center justify-between gap-4 py-3.5">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">{label}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
-                </div>
-                <Switch
-                  checked={profile.preferences[key]}
-                  onCheckedChange={(flag) => updatePreference(key, flag)}
-                  aria-label={label}
-                />
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Button
-              variant="brass"
-              onClick={() => toast.success("Profile saved")}
-              className="flex-1 sm:flex-none"
-            >
-              <Save className="size-4" /> Save profile
-            </Button>
-            <Button
-              variant="soft"
-              onClick={() => {
-                resetProfile();
-                toast.message("Profile reset to defaults");
-              }}
-            >
-              <RotateCcw className="size-4" /> Reset
-            </Button>
-          </div>
-        </Card>
+        <div className="mt-5 flex justify-end">
+          <Button
+            variant="brass"
+            onClick={saveProfile}
+            disabled={updateProfile.isPending || setSpecialistServices.isPending}
+            className="w-full sm:w-auto"
+          >
+            <Save className="size-4" /> Save profile
+          </Button>
+        </div>
       </div>
 
       <SiteFooter />

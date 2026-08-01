@@ -15,9 +15,9 @@ import { Toaster } from "../components/ui/sonner";
 import { ThemeProvider } from "../components/theme-provider";
 import { MobileTabBar } from "../components/mobile-tab-bar";
 
+import { AuthProvider } from "../hooks/use-auth";
 import { RoomSettingsProvider } from "../lib/room-settings";
 import { ServiceCatalogProvider } from "../lib/service-catalog";
-import { ProfileProvider } from "../lib/profile";
 import { EscrowProvider } from "../lib/escrow";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -138,21 +138,20 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <RoomSettingsProvider>
-          <ServiceCatalogProvider>
-          <ProfileProvider>
-          <EscrowProvider>
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
-            {isAdmin ? null : <MobileTabBar />}
-            <Toaster position="top-center" />
-
-          </EscrowProvider>
-          </ProfileProvider>
-          </ServiceCatalogProvider>
-        </RoomSettingsProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <RoomSettingsProvider>
+            <ServiceCatalogProvider>
+              <EscrowProvider>
+                {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                <Outlet />
+                {isAdmin ? null : <MobileTabBar />}
+                <Toaster position="top-center" />
+              </EscrowProvider>
+            </ServiceCatalogProvider>
+          </RoomSettingsProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

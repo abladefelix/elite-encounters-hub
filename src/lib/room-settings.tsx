@@ -4,12 +4,13 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
-  useState,
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 
+import { supabase } from "@/integrations/supabase/client";
+import { useSettingsSection } from "./platform-settings";
 import {
   DEFAULT_GIFT_CATALOG,
   DEFAULT_ROOM_GIFT_RULES,
@@ -29,10 +30,9 @@ import type { Tier } from "./types";
  *
  * Admins decide, per room, which features and privileges a subscription
  * unlocks — calls, sharing, scheduling windows, booking limits, cover — plus
- * the room's theme colour. The client app reads the same store, so a change in
- * the admin dashboard immediately changes what members see and can do.
- *
- * Persisted in localStorage today; swap `read`/`write` for backend calls later.
+ * the room's theme colour. All of this lives in the shared `platform_settings`
+ * database row (via `useSettingsSection`), so a change in the admin dashboard
+ * immediately changes what every member, on every device, sees and can do.
  */
 
 /* ------------------------------------------------------------------ accents */
@@ -241,10 +241,15 @@ export const DEFAULT_GIFT_SETTINGS: GiftSettings = {
   rooms: DEFAULT_ROOM_GIFT_RULES,
 };
 
+/** Kept for compatibility with code that still references it by name; no
+ * longer used for persistence — everything lives in the database now. */
 export const ROOM_SETTINGS_STORAGE_KEY = "ashnight-room-policy-v4";
-const STORAGE_KEY = ROOM_SETTINGS_STORAGE_KEY;
 
-/** Event fired in the current tab whenever admin settings are written. */
+/** Event fired whenever the admin room/platform settings change, so parts of
+ * the app that live outside the React settings tree (e.g. the theme
+ * provider, which must resolve a theme before first paint) can react without
+ * needing the full query client. This is a live notification only — nothing
+ * is ever persisted to it. */
 export const ROOM_SETTINGS_EVENT = "ashnight-room-settings-change";
 
 interface StoredState {
@@ -254,6 +259,22 @@ interface StoredState {
   gifts: GiftSettings;
   moderation: ModerationSettings;
 }
+
+/** Shape of the "rooms" section of the shared settings row. Platform
+ * settings live in their own "platform" section. */
+interface RoomsSection {
+  policy: RoomPolicyMap;
+  profiles: RoomProfileMap;
+  gifts: GiftSettings;
+  moderation: ModerationSettings;
+}
+
+const DEFAULT_ROOMS_SECTION: RoomsSection = {
+  policy: DEFAULT_ROOM_POLICY,
+  profiles: DEFAULT_ROOM_PROFILES,
+  gifts: DEFAULT_GIFT_SETTINGS,
+  moderation: DEFAULT_MODERATION_SETTINGS,
+};
 
 function sanitizeModeration(value: unknown): ModerationSettings {
   const next: ModerationSettings = {
@@ -299,7 +320,6 @@ function sanitizeModeration(value: unknown): ModerationSettings {
 function clampNumber(value: unknown, fallback: number, min = 0) {
   return typeof value === "number" && Number.isFinite(value) ? Math.max(min, value) : fallback;
 }
-
 
 function sanitizePolicy(value: unknown): RoomPolicyMap {
   const next: RoomPolicyMap = {
@@ -446,37 +466,75 @@ function sanitizeGifts(value: unknown): GiftSettings {
   return next;
 }
 
-/** Read the admin-chosen default theme without needing the React context. */
-export function readDefaultTheme(): DefaultTheme {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_PLATFORM_SETTINGS.defaultTheme;
-    return sanitizePlatform((JSON.parse(raw) as Record<string, unknown>)["platform"]).defaultTheme;
-  } catch {
-    return DEFAULT_PLATFORM_SETTINGS.defaultTheme;
-  }
-}
-
-function sanitizeState(value: unknown): StoredState {
+function sanitizeRoomsSection(value: unknown): RoomsSection {
   const record = (value ?? {}) as Record<string, unknown>;
-  // v2 stored the policy map at the root; keep those settings working.
-  const policySource = record["policy"] ?? record;
   return {
-    policy: sanitizePolicy(policySource),
+    policy: sanitizePolicy(record["policy"]),
     profiles: sanitizeProfiles(record["profiles"]),
-    platform: sanitizePlatform(record["platform"]),
     gifts: sanitizeGifts(record["gifts"]),
     moderation: sanitizeModeration(record["moderation"]),
   };
 }
 
-const DEFAULT_STATE: StoredState = {
-  policy: DEFAULT_ROOM_POLICY,
-  profiles: DEFAULT_ROOM_PROFILES,
-  platform: DEFAULT_PLATFORM_SETTINGS,
-  gifts: DEFAULT_GIFT_SETTINGS,
-  moderation: DEFAULT_MODERATION_SETTINGS,
-};
+/* ------------------------------------------------- default-theme fast path */
+//
+// The theme provider must resolve a theme before first paint, synchronously,
+// without waiting on React Query. We keep a tiny module-level cache fed by a
+// one-off read plus a realtime subscription, so it stays in sync with the
+// database without ever touching localStorage.
+
+let cachedDefaultTheme: DefaultTheme = DEFAULT_PLATFORM_SETTINGS.defaultTheme;
+let themeCacheInitialized = false;
+
+function notifySettingsChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(ROOM_SETTINGS_EVENT));
+}
+
+function initThemeCache() {
+  if (themeCacheInitialized || typeof window === "undefined") return;
+  themeCacheInitialized = true;
+
+  const applyPlatform = (data: unknown) => {
+    const record = (data ?? {}) as Record<string, unknown>;
+    const platform = sanitizePlatform(record["platform"]);
+    if (platform.defaultTheme !== cachedDefaultTheme) {
+      cachedDefaultTheme = platform.defaultTheme;
+      notifySettingsChanged();
+    }
+  };
+
+  void supabase
+    .from("platform_settings")
+    .select("data")
+    .eq("id", true)
+    .maybeSingle()
+    .then(({ data, error }) => {
+      if (!error) applyPlatform(data?.data);
+    });
+
+  supabase
+    .channel("platform-settings-theme")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "platform_settings" },
+      async () => {
+        const { data, error } = await supabase
+          .from("platform_settings")
+          .select("data")
+          .eq("id", true)
+          .maybeSingle();
+        if (!error) applyPlatform(data?.data);
+      },
+    )
+    .subscribe();
+}
+
+/** Read the admin-chosen default theme without needing the React context. */
+export function readDefaultTheme(): DefaultTheme {
+  initThemeCache();
+  return cachedDefaultTheme;
+}
 
 /* ----------------------------------------------------------------- context */
 
@@ -530,188 +588,211 @@ interface RoomSettingsContextValue {
 
 const RoomSettingsContext = createContext<RoomSettingsContextValue | null>(null);
 
+function reportSaveError(context: string) {
+  return (error: unknown) => {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    toast.error(`Could not save ${context}: ${message}`);
+  };
+}
+
 export function RoomSettingsProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<StoredState>(DEFAULT_STATE);
+  const roomsSection = useSettingsSection<RoomsSection>("rooms", DEFAULT_ROOMS_SECTION);
+  const platformSection = useSettingsSection<PlatformSettings>("platform", DEFAULT_PLATFORM_SETTINGS);
 
-  // Read after hydration so server and first client render match.
+  const state = useMemo<StoredState>(() => {
+    const rooms = sanitizeRoomsSection(roomsSection.value);
+    return {
+      policy: rooms.policy,
+      profiles: rooms.profiles,
+      gifts: rooms.gifts,
+      moderation: rooms.moderation,
+      platform: sanitizePlatform(platformSection.value),
+    };
+  }, [roomsSection.value, platformSection.value]);
+
+  // Keep the module-level theme cache (used by readDefaultTheme) in sync with
+  // whatever this provider already has loaded, and notify listeners such as
+  // the theme provider.
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setState(sanitizeState(JSON.parse(raw)));
-    } catch {
-      /* ignore malformed storage */
+    if (state.platform.defaultTheme !== cachedDefaultTheme) {
+      cachedDefaultTheme = state.platform.defaultTheme;
+      notifySettingsChanged();
     }
+  }, [state.platform.defaultTheme]);
 
-    function onStorage(event: StorageEvent) {
-      if (event.key !== STORAGE_KEY) return;
-      try {
-        setState(event.newValue ? sanitizeState(JSON.parse(event.newValue)) : DEFAULT_STATE);
-      } catch {
-        /* ignore */
-      }
-    }
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
+  const saveRooms = useCallback(
+    (next: RoomsSection) => {
+      void roomsSection.save(next).catch(reportSaveError("room settings"));
+    },
+    [roomsSection],
+  );
 
-  // Mirror of state so writes happen outside the render phase.
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  const savePlatform = useCallback(
+    (next: PlatformSettings) => {
+      void platformSection.save(next).catch(reportSaveError("platform settings"));
+    },
+    [platformSection],
+  );
 
-  const commit = useCallback((updater: (current: StoredState) => StoredState) => {
-    const next = updater(stateRef.current);
-    stateRef.current = next;
-    setState(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      window.dispatchEvent(new CustomEvent(ROOM_SETTINGS_EVENT));
-    } catch {
-      /* storage unavailable */
-    }
-  }, []);
+  const roomsBase = useCallback(
+    (): RoomsSection => ({
+      policy: state.policy,
+      profiles: state.profiles,
+      gifts: state.gifts,
+      moderation: state.moderation,
+    }),
+    [state],
+  );
 
   const setPrivilege = useCallback<RoomSettingsContextValue["setPrivilege"]>(
     (room, key, value) => {
-      commit((current) => ({
-        ...current,
-        policy: { ...current.policy, [room]: { ...current.policy[room], [key]: value } },
-      }));
+      const base = roomsBase();
+      saveRooms({
+        ...base,
+        policy: { ...base.policy, [room]: { ...base.policy[room], [key]: value } },
+      });
     },
-    [commit],
+    [roomsBase, saveRooms],
   );
 
   const setProfileField = useCallback<RoomSettingsContextValue["setProfileField"]>(
     (room, key, value) => {
-      commit((current) => ({
-        ...current,
-        profiles: { ...current.profiles, [room]: { ...current.profiles[room], [key]: value } },
-      }));
+      const base = roomsBase();
+      saveRooms({
+        ...base,
+        profiles: { ...base.profiles, [room]: { ...base.profiles[room], [key]: value } },
+      });
     },
-    [commit],
+    [roomsBase, saveRooms],
   );
 
   const setPlatformField = useCallback<RoomSettingsContextValue["setPlatformField"]>(
     (key, value) => {
-      commit((current) => ({ ...current, platform: { ...current.platform, [key]: value } }));
+      savePlatform({ ...state.platform, [key]: value });
     },
-    [commit],
+    [state.platform, savePlatform],
   );
 
   const setGiftField = useCallback<RoomSettingsContextValue["setGiftField"]>(
     (giftId, key, value) => {
-      commit((current) => ({
-        ...current,
+      const base = roomsBase();
+      saveRooms({
+        ...base,
         gifts: {
-          ...current.gifts,
-          catalog: current.gifts.catalog.map((gift) =>
+          ...base.gifts,
+          catalog: base.gifts.catalog.map((gift) =>
             gift.id === giftId ? { ...gift, [key]: value } : gift,
           ),
         },
-      }));
+      });
     },
-    [commit],
+    [roomsBase, saveRooms],
   );
 
   const setRoomGiftField = useCallback<RoomSettingsContextValue["setRoomGiftField"]>(
     (room, key, value) => {
-      commit((current) => ({
-        ...current,
+      const base = roomsBase();
+      saveRooms({
+        ...base,
         gifts: {
-          ...current.gifts,
-          rooms: { ...current.gifts.rooms, [room]: { ...current.gifts.rooms[room], [key]: value } },
+          ...base.gifts,
+          rooms: { ...base.gifts.rooms, [room]: { ...base.gifts.rooms[room], [key]: value } },
         },
-      }));
+      });
     },
-    [commit],
+    [roomsBase, saveRooms],
   );
 
   const toggleRoomGift = useCallback<RoomSettingsContextValue["toggleRoomGift"]>(
     (room, giftId) => {
-      commit((current) => {
-        const rules = current.gifts.rooms[room];
-        const giftIds = rules.giftIds.includes(giftId)
-          ? rules.giftIds.filter((id) => id !== giftId)
-          : [...rules.giftIds, giftId];
-        return {
-          ...current,
-          gifts: {
-            ...current.gifts,
-            rooms: { ...current.gifts.rooms, [room]: { ...rules, giftIds } },
-          },
-        };
+      const base = roomsBase();
+      const rules = base.gifts.rooms[room];
+      const giftIds = rules.giftIds.includes(giftId)
+        ? rules.giftIds.filter((id) => id !== giftId)
+        : [...rules.giftIds, giftId];
+      saveRooms({
+        ...base,
+        gifts: {
+          ...base.gifts,
+          rooms: { ...base.gifts.rooms, [room]: { ...rules, giftIds } },
+        },
       });
     },
-    [commit],
+    [roomsBase, saveRooms],
   );
 
   const setModerationField = useCallback<RoomSettingsContextValue["setModerationField"]>(
     (key, value) => {
-      commit((current) => ({ ...current, moderation: { ...current.moderation, [key]: value } }));
+      const base = roomsBase();
+      saveRooms({ ...base, moderation: { ...base.moderation, [key]: value } });
     },
-    [commit],
+    [roomsBase, saveRooms],
   );
 
   const setFlaggedWords = useCallback<RoomSettingsContextValue["setFlaggedWords"]>(
     (words) => {
       const cleaned = [...new Set(words.map((word) => word.trim()).filter(Boolean))];
-      commit((current) => ({
-        ...current,
-        moderation: { ...current.moderation, flaggedWords: cleaned },
-      }));
+      const base = roomsBase();
+      saveRooms({ ...base, moderation: { ...base.moderation, flaggedWords: cleaned } });
     },
-    [commit],
+    [roomsBase, saveRooms],
   );
 
   const addFlaggedWord = useCallback<RoomSettingsContextValue["addFlaggedWord"]>(
     (word) => {
       const term = word.trim();
       if (!term) return;
-      commit((current) =>
-        current.moderation.flaggedWords.some(
+      const base = roomsBase();
+      if (
+        base.moderation.flaggedWords.some(
           (existing) => existing.toLowerCase() === term.toLowerCase(),
         )
-          ? current
-          : {
-              ...current,
-              moderation: {
-                ...current.moderation,
-                flaggedWords: [...current.moderation.flaggedWords, term],
-              },
-            },
-      );
+      ) {
+        return;
+      }
+      saveRooms({
+        ...base,
+        moderation: {
+          ...base.moderation,
+          flaggedWords: [...base.moderation.flaggedWords, term],
+        },
+      });
     },
-    [commit],
+    [roomsBase, saveRooms],
   );
 
   const removeFlaggedWord = useCallback<RoomSettingsContextValue["removeFlaggedWord"]>(
     (word) => {
-      commit((current) => ({
-        ...current,
+      const base = roomsBase();
+      saveRooms({
+        ...base,
         moderation: {
-          ...current.moderation,
-          flaggedWords: current.moderation.flaggedWords.filter((existing) => existing !== word),
+          ...base.moderation,
+          flaggedWords: base.moderation.flaggedWords.filter((existing) => existing !== word),
         },
-      }));
+      });
     },
-    [commit],
+    [roomsBase, saveRooms],
   );
 
   const setContactExemptRoom = useCallback<RoomSettingsContextValue["setContactExemptRoom"]>(
     (room, exempt) => {
-      commit((current) => ({
-        ...current,
+      const base = roomsBase();
+      saveRooms({
+        ...base,
         moderation: {
-          ...current.moderation,
-          contactExemptRooms: { ...current.moderation.contactExemptRooms, [room]: exempt },
+          ...base.moderation,
+          contactExemptRooms: { ...base.moderation.contactExemptRooms, [room]: exempt },
         },
-      }));
+      });
     },
-    [commit],
+    [roomsBase, saveRooms],
   );
 
   const resetPolicy = useCallback(() => {
-    commit(() => DEFAULT_STATE);
-  }, [commit]);
+    saveRooms(DEFAULT_ROOMS_SECTION);
+    savePlatform(DEFAULT_PLATFORM_SETTINGS);
+  }, [saveRooms, savePlatform]);
 
   const value = useMemo<RoomSettingsContextValue>(
     () => ({
@@ -771,7 +852,6 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
     <RoomSettingsContext.Provider value={value}>{children}</RoomSettingsContext.Provider>
   );
 }
-
 
 export function useRoomSettings() {
   const context = useContext(RoomSettingsContext);
