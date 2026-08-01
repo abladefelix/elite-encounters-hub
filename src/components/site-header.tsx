@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials } from "@/lib/types";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useRoomSettings } from "@/lib/room-settings";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
 
 const NAV = [
