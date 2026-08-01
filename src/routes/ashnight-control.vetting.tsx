@@ -401,6 +401,145 @@ function VettingQueue() {
   );
 }
 
+/**
+ * Everything the applicant uploaded — profile photo, Ghana Card scans, work
+ * photos and the intro video — resolved into viewable links for the reviewer.
+ */
+function ApplicantMedia({ profile }: { profile: ProfileRow }) {
+  const extra = (profile.extra ?? {}) as Record<string, unknown>;
+  const portfolioPhotos = Array.isArray(extra.portfolio_photos)
+    ? (extra.portfolio_photos as unknown[]).filter(
+        (item): item is string => typeof item === "string" && item.length > 0,
+      )
+    : [];
+  const portfolioVideo =
+    typeof extra.portfolio_video === "string" && extra.portfolio_video
+      ? extra.portfolio_video
+      : null;
+
+  const items = [
+    ...(profile.avatar_url ? [{ bucket: "avatars" as const, value: profile.avatar_url }] : []),
+    ...(profile.ghana_card_front_url
+      ? [{ bucket: "avatars" as const, value: profile.ghana_card_front_url }]
+      : []),
+    ...(profile.ghana_card_back_url
+      ? [{ bucket: "avatars" as const, value: profile.ghana_card_back_url }]
+      : []),
+    ...portfolioPhotos.map((value) => ({ bucket: "attachments" as const, value })),
+    ...(portfolioVideo ? [{ bucket: "attachments" as const, value: portfolioVideo }] : []),
+  ];
+
+  const mediaQuery = useStoredMedia(items);
+  const urls = mediaQuery.data ?? {};
+
+  if (items.length === 0) {
+    return (
+      <p className="mt-4 rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
+        This applicant has not uploaded a profile photo, ID scans or portfolio media yet.
+      </p>
+    );
+  }
+
+  const avatar = profile.avatar_url ? urls[profile.avatar_url] : undefined;
+  const cardFront = profile.ghana_card_front_url ? urls[profile.ghana_card_front_url] : undefined;
+  const cardBack = profile.ghana_card_back_url ? urls[profile.ghana_card_back_url] : undefined;
+  const videoUrl = portfolioVideo ? urls[portfolioVideo] : undefined;
+
+  return (
+    <div className="mt-5 space-y-4">
+      <p className="flex items-center gap-2 text-xs font-medium">
+        <ImageIcon className="size-3.5 text-primary" /> Uploaded media
+      </p>
+
+      {mediaQuery.isLoading ? (
+        <p className="text-xs text-muted-foreground">Preparing uploads…</p>
+      ) : null}
+
+      {avatar ? (
+        <div className="flex items-center gap-3">
+          <a href={avatar} target="_blank" rel="noreferrer">
+            <img
+              src={avatar}
+              alt={`${profile.display_name} profile photo`}
+              className="size-16 rounded-full border border-border object-cover"
+            />
+          </a>
+          <p className="text-xs text-muted-foreground">Profile photo — click to open full size</p>
+        </div>
+      ) : null}
+
+      {cardFront || cardBack ? (
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            Ghana Card
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {[
+              { url: cardFront, label: "Front" },
+              { url: cardBack, label: "Back" },
+            ]
+              .filter((item) => Boolean(item.url))
+              .map((item) => (
+                <a
+                  key={item.label}
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group overflow-hidden rounded-lg border border-border"
+                >
+                  <img
+                    src={item.url}
+                    alt={`Ghana Card ${item.label.toLowerCase()}`}
+                    className="h-24 w-full object-cover transition-transform group-hover:scale-105"
+                  />
+                  <span className="block bg-panel p-1.5 text-center text-[10px] text-muted-foreground">
+                    {item.label}
+                  </span>
+                </a>
+              ))}
+          </div>
+        </div>
+      ) : null}
+
+      {portfolioPhotos.length ? (
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            Work photos ({portfolioPhotos.length})
+          </p>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {portfolioPhotos.map((path, index) =>
+              urls[path] ? (
+                <a
+                  key={path}
+                  href={urls[path]}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="overflow-hidden rounded-lg border border-border"
+                >
+                  <img
+                    src={urls[path]}
+                    alt={`Portfolio photo ${index + 1}`}
+                    className="h-20 w-full object-cover"
+                  />
+                </a>
+              ) : null,
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {videoUrl ? (
+        <div>
+          <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            <Film className="size-3.5" /> Intro video
+          </p>
+          <video src={videoUrl} controls className="mt-2 w-full rounded-lg border border-border" />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function ContactLine({
   icon: Icon,
   value,
