@@ -62,58 +62,48 @@ export function ReportDialog({
 
         <div className="-mx-1 flex-1 space-y-4 overflow-y-auto px-1">
           <div className="space-y-2">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 font-display">
-            <Flag className="size-4 text-destructive" /> Report {specialistName.split(" ")[0]}
-          </DialogTitle>
-          <DialogDescription>
-            Ashnight trust &amp; safety reviews every report with the thread attached. Nothing is
-            shared with the other member.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-2">
-          {REPORT_REASONS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setReason(item.id)}
-              className={cn(
-                "w-full rounded-lg border p-3 text-left transition-colors",
-                reason === item.id
-                  ? "border-primary/60 bg-primary/10"
-                  : "border-border/70 bg-background/50 hover:bg-secondary/60",
-              )}
-            >
-              <p className="text-sm font-medium">{item.label}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{item.hint}</p>
-            </button>
-          ))}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="report-details">What happened?</Label>
-          <Textarea
-            id="report-details"
-            value={details}
-            onChange={(event) => setDetails(event.target.value)}
-            placeholder="Add anything that helps us review — dates, message times, booking reference."
-            maxLength={800}
-            rows={3}
-          />
-        </div>
-
-        <div className="flex items-center justify-between rounded-lg border border-border/70 bg-background/50 p-3">
-          <div className="pr-3">
-            <p className="text-sm font-medium">Also block this member</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Hides the thread and stops new messages while we review.
-            </p>
+            {REPORT_REASONS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setReason(item.id)}
+                className={cn(
+                  "w-full rounded-lg border p-3 text-left transition-colors",
+                  reason === item.id
+                    ? "border-primary/60 bg-primary/10"
+                    : "border-border/70 bg-background/50 hover:bg-secondary/60",
+                )}
+              >
+                <p className="text-sm font-medium">{item.label}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{item.hint}</p>
+              </button>
+            ))}
           </div>
-          <Switch checked={blocked} onCheckedChange={setBlocked} />
+
+          <div className="space-y-2">
+            <Label htmlFor="report-details">What happened?</Label>
+            <Textarea
+              id="report-details"
+              value={details}
+              onChange={(event) => setDetails(event.target.value)}
+              placeholder="Add anything that helps us review — dates, message times, booking reference."
+              maxLength={800}
+              rows={3}
+            />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-border/70 bg-background/50 p-3">
+            <div className="pr-3">
+              <p className="text-sm font-medium">Also block this member</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Hides the thread and stops new messages while we review.
+              </p>
+            </div>
+            <Switch checked={blocked} onCheckedChange={setBlocked} />
+          </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="shrink-0">
           <Button variant="ghost" onClick={() => close(false)}>
             Cancel
           </Button>
