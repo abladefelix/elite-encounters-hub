@@ -3,12 +3,14 @@ import {
   BadgeCheck,
   CalendarCheck,
   DoorOpen,
+  KeyRound,
   ShieldCheck,
   Sparkles,
   ShieldBan,
   LayoutDashboard,
   LifeBuoy,
   Loader2,
+  ToggleLeft,
   Users,
 } from "lucide-react";
 
@@ -19,7 +21,10 @@ import { useApplications } from "@/lib/queries";
 import { initials } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TwoFactorCard } from "@/components/two-factor-card";
 import { useAuth } from "@/hooks/use-auth";
+import { useFeatureFlags } from "@/lib/feature-flags";
+import { useTwoFactor } from "@/lib/two-factor";
 
 export const Route = createFileRoute("/ashnight-control")({
   component: AdminLayout,
@@ -34,6 +39,8 @@ const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] 
   { to: "/ashnight-control/bookings", label: "Bookings", icon: CalendarCheck },
   { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck },
   { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan },
+  { to: "/ashnight-control/features", label: "Features", icon: ToggleLeft },
+  { to: "/ashnight-control/settings", label: "Keys & security", icon: KeyRound },
 ];
 
 function AdminLayout() {

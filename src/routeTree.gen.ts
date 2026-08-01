@@ -21,6 +21,7 @@ import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-control.index'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
 import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
+import { Route as AshnightControlFeaturesRouteImport } from './routes/ashnight-control.features'
 import { Route as AshnightControlModerationRouteImport } from './routes/ashnight-control.moderation'
 import { Route as AshnightControlRoomsRouteImport } from './routes/ashnight-control.rooms'
 import { Route as AshnightControlServicesRouteImport } from './routes/ashnight-control.services'
@@ -90,6 +91,11 @@ const AshnightControlEscrowRoute = AshnightControlEscrowRouteImport.update({
   path: '/escrow',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const AshnightControlFeaturesRoute = AshnightControlFeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlModerationRoute =
   AshnightControlModerationRouteImport.update({
     id: '/moderation',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
+  '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
+  '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
+  '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/rooms': typeof AshnightControlRoomsRoute
   '/ashnight-control/services': typeof AshnightControlServicesRoute
@@ -212,6 +221,7 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
+    | '/ashnight-control/features'
     | '/ashnight-control/moderation'
     | '/ashnight-control/rooms'
     | '/ashnight-control/services'
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
+    | '/ashnight-control/features'
     | '/ashnight-control/moderation'
     | '/ashnight-control/rooms'
     | '/ashnight-control/services'
@@ -255,6 +266,7 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
+    | '/ashnight-control/features'
     | '/ashnight-control/moderation'
     | '/ashnight-control/rooms'
     | '/ashnight-control/services'
@@ -366,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlEscrowRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/features': {
+      id: '/ashnight-control/features'
+      path: '/features'
+      fullPath: '/ashnight-control/features'
+      preLoaderRoute: typeof AshnightControlFeaturesRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/moderation': {
       id: '/ashnight-control/moderation'
       path: '/moderation'
@@ -428,6 +447,7 @@ declare module '@tanstack/react-router' {
 interface AshnightControlRouteChildren {
   AshnightControlBookingsRoute: typeof AshnightControlBookingsRoute
   AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
+  AshnightControlFeaturesRoute: typeof AshnightControlFeaturesRoute
   AshnightControlModerationRoute: typeof AshnightControlModerationRoute
   AshnightControlRoomsRoute: typeof AshnightControlRoomsRoute
   AshnightControlServicesRoute: typeof AshnightControlServicesRoute
@@ -440,6 +460,7 @@ interface AshnightControlRouteChildren {
 const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlBookingsRoute: AshnightControlBookingsRoute,
   AshnightControlEscrowRoute: AshnightControlEscrowRoute,
+  AshnightControlFeaturesRoute: AshnightControlFeaturesRoute,
   AshnightControlModerationRoute: AshnightControlModerationRoute,
   AshnightControlRoomsRoute: AshnightControlRoomsRoute,
   AshnightControlServicesRoute: AshnightControlServicesRoute,
