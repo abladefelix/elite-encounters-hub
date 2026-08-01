@@ -36,9 +36,18 @@ export function useSpecialists(room?: Tier | "all") {
   return useQuery({
     queryKey: ["specialists", room ?? "all"],
     queryFn: async () => {
+      // Clients also hold a room (their membership tier), so the directory is
+      // scoped to accounts that actually carry the specialist role.
+      const roles = unwrap<{ user_id: string }[]>(
+        await supabase.from("user_roles").select("user_id").eq("role", "specialist"),
+      );
+      const ids = roles.map((row) => row.user_id);
+      if (!ids.length) return [] as ProfileRow[];
+
       let query = supabase
         .from("profiles")
         .select("*")
+        .in("id", ids)
         .eq("vetting", "approved")
         .eq("suspended", false)
         .not("room", "is", null)
@@ -48,6 +57,7 @@ export function useSpecialists(room?: Tier | "all") {
     },
   });
 }
+
 
 export function useProfile(id: string | undefined) {
   return useQuery({
