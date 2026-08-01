@@ -9,6 +9,7 @@ import {
   Gift as GiftIcon,
   Image as ImageIcon,
   Lock,
+  MapPin,
   Paperclip,
   Phone,
   Plus,
@@ -137,6 +138,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [activeThreadId, setActiveThreadId] = useState("");
   const [draft, setDraft] = useState("");
   const [call, setCall] = useState<CallMode | null>(null);
+  const [locating, setLocating] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -208,6 +210,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const photosAllowed =
     flags.attachmentsEnabled && flags.chatImageSharing && can(room, "photoSharing");
   const filesAllowed = flags.attachmentsEnabled && can(room, "fileSharing");
+  const locationAllowed = flags.chatLocationSharing;
   const bookingsOpen = flags.bookingsEnabled && platform.bookingsEnabled;
 
   useEffect(() => {
@@ -311,6 +314,48 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       await post({ body: file.name, attachment_url: url, attachment_name: file.name });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Upload failed");
+    }
+  }
+
+  /**
+   * Shares the member's current coordinates as a location message. The browser
+   * asks permission every time - nothing is tracked in the background.
+   */
+  async function shareLocation() {
+    if (!activeThread) return;
+    if (!locationAllowed) {
+      toast("Location sharing is switched off right now");
+      return;
+    }
+    if (!("geolocation" in navigator)) {
+      toast.error("This device cannot share a location.");
+      return;
+    }
+    setLocating(true);
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+        });
+      });
+      const lat = position.coords.latitude.toFixed(6);
+      const lng = position.coords.longitude.toFixed(6);
+      await post({
+        kind: "location",
+        body: lat + "," + lng,
+        attachment_url:
+          "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng,
+        attachment_name: "Shared location",
+      });
+    } catch (error) {
+      const denied =
+        typeof error === "object" &&
+        error !== null &&
+        (error as GeolocationPositionError).code === 1;
+      toast.error(denied ? "Location permission was declined." : "We could not get your location.");
+    } finally {
+      setLocating(false);
     }
   }
 
@@ -798,6 +843,23 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           )}
                         </Button>
 
+                        {locationAllowed ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Share my location"
+                            disabled={locating}
+                            onClick={() => void shareLocation()}
+                          >
+                            {locating ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <MapPin className="size-4" />
+                            )}
+                          </Button>
+                        ) : null}
+
                         <Input
                           value={draft}
                           onChange={(event) => setDraft(event.target.value)}
@@ -940,6 +1002,31 @@ function MessageBubble({
           <p className="eyebrow text-accent">Cash gift</p>
           <p className="mt-2 text-sm leading-relaxed">{message.body}</p>
           {escrow ? <EscrowStrip entry={escrow} /> : null}
+        </div>
+      </div>
+    );
+  }
+
+  if (message.kind === "location") {
+    const [lat, lng] = message.body.split(",");
+    const mapUrl =
+      message.attachment_url ??
+      "https://www.google.com/maps/search/?api=1&query=" + message.body.trim();
+    return (
+      <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
+        <div className="max-w-sm rounded-xl border border-border bg-card p-4">
+          <p className="eyebrow text-primary">Location shared</p>
+          <p className="mt-2 font-mono text-xs text-muted-foreground">
+            {lat}, {lng}
+          </p>
+          <a
+            href={mapUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            <MapPin className="size-4" /> Open in maps
+          </a>
         </div>
       </div>
     );
