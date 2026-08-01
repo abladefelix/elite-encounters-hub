@@ -329,32 +329,28 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
         status: "requested",
       });
 
-      const entry = await openEscrow({
-        kind: "booking",
-        threadId: activeThread.id,
-        bookingId: booking.id,
-        specialistId: peerId,
-        label: `${request.service} · ${request.hours}h`,
-        amount: request.total,
-        feePct: platform.platformFeePct,
-        paystackReference: request.reference,
-      });
-
       await post({
         kind: "booking",
-        escrow_id: entry.id,
         booking_id: booking.id,
         body: `${request.service} · ${request.hours}h${
           request.scheduledFor ? ` · ${request.scheduledFor}` : ""
         }${request.addons.length ? ` · Add-ons: ${request.addons.join(", ")}` : ""} · ${money(
           request.total,
-        )} via Paystack (${paystackChannel(request.channel).label} · ${request.reference})`,
+        )} — opening Paystack (${paystackChannel(request.channel).label})`,
       });
 
-      toast.success(`${money(request.total)} booking opened in Ashnight escrow`, {
-        description:
-          "Funds stay pending until Paystack confirms the charge, then the hold window starts.",
+      const checkout = await bookingCheckout({
+        data: {
+          bookingId: booking.id,
+          callbackUrl: `${window.location.origin}/payment/return`,
+          channel: request.channel,
+        },
       });
+
+      toast.success("Taking you to Paystack…", {
+        description: `${money(checkout.amount)} will be held in Ashnight escrow.`,
+      });
+      window.location.href = checkout.authorizationUrl;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Booking could not be created");
     }
@@ -363,32 +359,26 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   async function handleGift(gift: GiftDraft) {
     if (!activeThread || !peerId) return;
     try {
-      const entry = await openEscrow({
-        kind: "gift",
-        threadId: activeThread.id,
-        specialistId: peerId,
-        label: `${gift.glyph} ${gift.giftLabel}`,
-        amount: gift.amount,
-        feePct: escrow.tipFeePct,
-        giftKey: gift.giftId,
-        paystackReference: gift.reference,
+      const checkout = await giftCheckout({
+        data: {
+          threadId: activeThread.id,
+          giftKey: gift.giftId,
+          giftLabel: `${gift.glyph} ${gift.giftLabel}`,
+          amount: gift.amount,
+          callbackUrl: `${window.location.origin}/payment/return`,
+          channel: gift.channel,
+        },
       });
 
-      await post({
-        kind: "gift",
-        escrow_id: entry.id,
-        body: `${gift.glyph} ${gift.giftLabel} · ${money(gift.amount)} gift via Paystack (${
-          paystackChannel(gift.channel).label
-        } · ${gift.reference}) — ${firstName} receives ${money(gift.net)}`,
+      toast.success("Taking you to Paystack…", {
+        description: `${firstName} receives ${money(checkout.net)} once the charge clears.`,
       });
-
-      toast.success(`${gift.giftLabel} sent — ${money(gift.amount)}`, {
-        description: "Confirmed once Paystack settles the charge.",
-      });
+      window.location.href = checkout.authorizationUrl;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Gift could not be sent");
     }
   }
+
 
   function handleReport(reportDraft: ReportDraft) {
     if (!activeThread || !peerId) return;
