@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { FileText, Loader2, ReceiptText, Wallet } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -63,9 +63,9 @@ function AdminDocuments() {
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Documents" value={String(rows.length)} />
-        <StatCard label="Invoiced" value={money(invoiced)} />
-        <StatCard label="Receipted" value={money(receipted)} />
+        <StatCard label="Documents" value={String(rows.length)} icon={FileText} />
+        <StatCard label="Invoiced" value={money(invoiced)} icon={Wallet} />
+        <StatCard label="Receipted" value={money(receipted)} icon={ReceiptText} />
       </div>
 
       <div className="flex flex-wrap gap-3">
