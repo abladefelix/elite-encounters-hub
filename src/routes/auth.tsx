@@ -94,6 +94,10 @@ export function AuthPage({
     if (!loading && session) void navigate({ to: next, replace: true });
   }, [loading, session, navigate, next]);
 
+  /** Google is opt-in: admins turn it on in Control room → Features. */
+  const googleEnabled = flags.googleSignIn;
+  const portfolioEnabled = flags.specialistPortfolioUploads && role === "specialist";
+
   function setValue(key: string, value: string | boolean) {
     setValues((current) => ({ ...current, [key]: value }));
   }
