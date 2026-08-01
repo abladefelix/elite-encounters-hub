@@ -24,7 +24,9 @@ import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-cont
 import { Route as AshnightControlBackupsRouteImport } from './routes/ashnight-control.backups'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
 import { Route as AshnightControlComplaintsRouteImport } from './routes/ashnight-control.complaints'
+import { Route as AshnightControlDeployRouteImport } from './routes/ashnight-control.deploy'
 import { Route as AshnightControlDocumentsRouteImport } from './routes/ashnight-control.documents'
+import { Route as AshnightControlEmailRouteImport } from './routes/ashnight-control.email'
 import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
 import { Route as AshnightControlFeaturesRouteImport } from './routes/ashnight-control.features'
 import { Route as AshnightControlLogsRouteImport } from './routes/ashnight-control.logs'
@@ -121,12 +123,22 @@ const AshnightControlComplaintsRoute =
     path: '/complaints',
     getParentRoute: () => AshnightControlRoute,
   } as any)
+const AshnightControlDeployRoute = AshnightControlDeployRouteImport.update({
+  id: '/deploy',
+  path: '/deploy',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlDocumentsRoute =
   AshnightControlDocumentsRouteImport.update({
     id: '/documents',
     path: '/documents',
     getParentRoute: () => AshnightControlRoute,
   } as any)
+const AshnightControlEmailRoute = AshnightControlEmailRouteImport.update({
+  id: '/email',
+  path: '/email',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlEscrowRoute = AshnightControlEscrowRouteImport.update({
   id: '/escrow',
   path: '/escrow',
@@ -241,7 +253,9 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/deploy': typeof AshnightControlDeployRoute
   '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
+  '/ashnight-control/email': typeof AshnightControlEmailRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
@@ -277,7 +291,9 @@ export interface FileRoutesByTo {
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/deploy': typeof AshnightControlDeployRoute
   '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
+  '/ashnight-control/email': typeof AshnightControlEmailRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
@@ -315,7 +331,9 @@ export interface FileRoutesById {
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
+  '/ashnight-control/deploy': typeof AshnightControlDeployRoute
   '/ashnight-control/documents': typeof AshnightControlDocumentsRoute
+  '/ashnight-control/email': typeof AshnightControlEmailRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
@@ -354,7 +372,9 @@ export interface FileRouteTypes {
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
+    | '/ashnight-control/deploy'
     | '/ashnight-control/documents'
+    | '/ashnight-control/email'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/logs'
@@ -390,7 +410,9 @@ export interface FileRouteTypes {
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
+    | '/ashnight-control/deploy'
     | '/ashnight-control/documents'
+    | '/ashnight-control/email'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/logs'
@@ -427,7 +449,9 @@ export interface FileRouteTypes {
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
+    | '/ashnight-control/deploy'
     | '/ashnight-control/documents'
+    | '/ashnight-control/email'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/logs'
@@ -578,11 +602,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlComplaintsRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/deploy': {
+      id: '/ashnight-control/deploy'
+      path: '/deploy'
+      fullPath: '/ashnight-control/deploy'
+      preLoaderRoute: typeof AshnightControlDeployRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/documents': {
       id: '/ashnight-control/documents'
       path: '/documents'
       fullPath: '/ashnight-control/documents'
       preLoaderRoute: typeof AshnightControlDocumentsRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
+    '/ashnight-control/email': {
+      id: '/ashnight-control/email'
+      path: '/email'
+      fullPath: '/ashnight-control/email'
+      preLoaderRoute: typeof AshnightControlEmailRouteImport
       parentRoute: typeof AshnightControlRoute
     }
     '/ashnight-control/escrow': {
@@ -725,7 +763,9 @@ interface AshnightControlRouteChildren {
   AshnightControlBackupsRoute: typeof AshnightControlBackupsRoute
   AshnightControlBookingsRoute: typeof AshnightControlBookingsRoute
   AshnightControlComplaintsRoute: typeof AshnightControlComplaintsRoute
+  AshnightControlDeployRoute: typeof AshnightControlDeployRoute
   AshnightControlDocumentsRoute: typeof AshnightControlDocumentsRoute
+  AshnightControlEmailRoute: typeof AshnightControlEmailRoute
   AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
   AshnightControlFeaturesRoute: typeof AshnightControlFeaturesRoute
   AshnightControlLogsRoute: typeof AshnightControlLogsRoute
@@ -745,7 +785,9 @@ const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlBackupsRoute: AshnightControlBackupsRoute,
   AshnightControlBookingsRoute: AshnightControlBookingsRoute,
   AshnightControlComplaintsRoute: AshnightControlComplaintsRoute,
+  AshnightControlDeployRoute: AshnightControlDeployRoute,
   AshnightControlDocumentsRoute: AshnightControlDocumentsRoute,
+  AshnightControlEmailRoute: AshnightControlEmailRoute,
   AshnightControlEscrowRoute: AshnightControlEscrowRoute,
   AshnightControlFeaturesRoute: AshnightControlFeaturesRoute,
   AshnightControlLogsRoute: AshnightControlLogsRoute,
