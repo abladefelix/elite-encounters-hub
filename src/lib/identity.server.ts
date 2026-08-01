@@ -342,6 +342,27 @@ export async function signInWithIdentifier(
     throw new Error(status.message);
   }
 
+  // Verification is a policy an admin owns (Control room → Email & domain), and
+  // it ships off so members can join before the sending domain is live.
+  if (await verificationRequired()) {
+    if (!data.session.user.email_confirmed_at) {
+      await auth.auth.signOut();
+      await logActivity({
+        area: "auth",
+        event: "sign_in_unverified",
+        severity: "warn",
+        actorId: data.session.user.id,
+        target: email,
+        ip: meta.ip ?? "",
+      });
+      throw new Error(
+        "Confirm your email address first — open the link we sent you, or ask support to resend it.",
+      );
+    }
+  }
+
+
+
   await logActivity({
     area: "auth",
     event: "sign_in",
