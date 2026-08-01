@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, SlidersHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -14,8 +16,9 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SpecialistCard } from "@/components/specialist-card";
-import { specialists } from "@/lib/mock-data";
-import type { Tier } from "@/lib/types";
+import { supabase } from "@/integrations/supabase/client";
+import { useServices, useSpecialists, type ProfileRow } from "@/lib/queries";
+import type { Specialist, Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/specialists/")({
   head: () => ({
@@ -39,37 +42,81 @@ export const Route = createFileRoute("/specialists/")({
 
 type SortKey = "rating" | "rate-low" | "rate-high" | "experience";
 
+function toSpecialist(profile: ProfileRow, serviceNames: string[]): Specialist {
+  return {
+    id: profile.id,
+    name: profile.display_name || "Ashnight specialist",
+    city: profile.city,
+    room: profile.room ?? "basic",
+    headline: profile.headline,
+    bio: profile.bio,
+    rating: profile.rating,
+    jobsCompleted: profile.jobs_completed,
+    hourlyRate: profile.hourly_rate,
+    yearsExperience: profile.years_experience,
+    services: serviceNames,
+    languages: profile.languages,
+    verified: profile.verified,
+    online: profile.available,
+    responseMinutes: profile.response_minutes,
+  };
+}
+
+/** All specialist -> service name links, so listings can filter and badge without N+1 queries. */
+function useSpecialistServiceMap() {
+  return useQuery({
+    queryKey: ["specialist-service-map"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("specialist_services")
+        .select("specialist_id, services(name)");
+      if (error) throw new Error(error.message);
+      const map = new Map<string, string[]>();
+      for (const row of (data ?? []) as unknown as {
+        specialist_id: string;
+        services: { name: string } | null;
+      }[]) {
+        const name = row.services?.name;
+        if (!name) continue;
+        map.set(row.specialist_id, [...(map.get(row.specialist_id) ?? []), name]);
+      }
+      return map;
+    },
+  });
+}
+
 function SpecialistsPage() {
   const [query, setQuery] = useState("");
   const [room, setRoom] = useState<Tier | "all">("all");
   const [service, setService] = useState("all");
   const [sort, setSort] = useState<SortKey>("rating");
 
-  const allServices = useMemo(
-    () => Array.from(new Set(specialists.flatMap((s) => s.services))).sort(),
-    [],
-  );
+  const { data: profiles, isLoading } = useSpecialists(room);
+  const { data: serviceMap } = useSpecialistServiceMap();
+  const { data: allServices } = useServices();
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = specialists.filter((s) => {
+    const filtered = (profiles ?? []).filter((s) => {
       const matchesQuery =
         !q ||
-        s.name.toLowerCase().includes(q) ||
+        s.display_name.toLowerCase().includes(q) ||
         s.city.toLowerCase().includes(q) ||
         s.headline.toLowerCase().includes(q);
-      const matchesRoom = room === "all" || s.room === room;
-      const matchesService = service === "all" || s.services.includes(service);
-      return matchesQuery && matchesRoom && matchesService;
+      const serviceNames = serviceMap?.get(s.id) ?? [];
+      const matchesService = service === "all" || serviceNames.includes(service);
+      return matchesQuery && matchesService;
     });
 
     return [...filtered].sort((a, b) => {
-      if (sort === "rate-low") return a.hourlyRate - b.hourlyRate;
-      if (sort === "rate-high") return b.hourlyRate - a.hourlyRate;
-      if (sort === "experience") return b.yearsExperience - a.yearsExperience;
+      if (sort === "rate-low") return a.hourly_rate - b.hourly_rate;
+      if (sort === "rate-high") return b.hourly_rate - a.hourly_rate;
+      if (sort === "experience") return b.years_experience - a.years_experience;
       return b.rating - a.rating;
     });
-  }, [query, room, service, sort]);
+  }, [profiles, query, service, sort, serviceMap]);
+
+  const hasAnySpecialists = (profiles?.length ?? 0) > 0;
 
   return (
     <div className="min-h-screen">
@@ -111,9 +158,9 @@ function SpecialistsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All services</SelectItem>
-              {allServices.map((item) => (
-                <SelectItem key={item} value={item}>
-                  {item}
+              {(allServices ?? []).map((item) => (
+                <SelectItem key={item.id} value={item.name}>
+                  {item.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -133,35 +180,55 @@ function SpecialistsPage() {
           </Select>
         </div>
 
-        <p className="mt-6 text-xs text-muted-foreground">
-          {results.length} specialist{results.length === 1 ? "" : "s"} match your filters
-        </p>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {results.map((specialist) => (
-            <SpecialistCard key={specialist.id} specialist={specialist} />
-          ))}
-        </div>
-
-        {results.length === 0 ? (
-          <div className="mt-10 rounded-xl border border-dashed border-border p-12 text-center">
-            <p className="font-display text-lg font-semibold">No matches yet</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Try widening the room filter or clearing your search.
-            </p>
-            <Button
-              variant="soft"
-              className="mt-5"
-              onClick={() => {
-                setQuery("");
-                setRoom("all");
-                setService("all");
-              }}
-            >
-              Reset filters
-            </Button>
+        {isLoading ? (
+          <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton key={index} className="h-64 rounded-xl" />
+            ))}
           </div>
-        ) : null}
+        ) : (
+          <>
+            <p className="mt-6 text-xs text-muted-foreground">
+              {results.length} specialist{results.length === 1 ? "" : "s"} match your filters
+            </p>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {results.map((specialist) => (
+                <SpecialistCard
+                  key={specialist.id}
+                  specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
+                />
+              ))}
+            </div>
+
+            {results.length === 0 && !hasAnySpecialists ? (
+              <div className="mt-10 rounded-xl border border-dashed border-border p-12 text-center">
+                <p className="font-display text-lg font-semibold">No specialists yet</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  We're still onboarding vetted specialists. Check back soon.
+                </p>
+              </div>
+            ) : results.length === 0 ? (
+              <div className="mt-10 rounded-xl border border-dashed border-border p-12 text-center">
+                <p className="font-display text-lg font-semibold">No matches yet</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Try widening the room filter or clearing your search.
+                </p>
+                <Button
+                  variant="soft"
+                  className="mt-5"
+                  onClick={() => {
+                    setQuery("");
+                    setRoom("all");
+                    setService("all");
+                  }}
+                >
+                  Reset filters
+                </Button>
+              </div>
+            ) : null}
+          </>
+        )}
 
         <div className="mt-14 rounded-xl border border-primary/25 bg-panel p-6">
           <p className="font-display text-lg font-semibold">

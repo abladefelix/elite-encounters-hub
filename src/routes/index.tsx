@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   BadgeCheck,
@@ -8,18 +10,22 @@ import {
   PhoneCall,
   ShieldCheck,
   Sparkles,
+  Star,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { IconContainer } from "@/components/ui/icon-container";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SpecialistCard } from "@/components/specialist-card";
 import { TierBadge } from "@/components/tier-badge";
-import { rooms, specialists } from "@/lib/mock-data";
-import { money } from "@/lib/types";
+import { supabase } from "@/integrations/supabase/client";
+import { useSpecialists, type ProfileRow } from "@/lib/queries";
+import { TIERS, useRoomSettings } from "@/lib/room-settings";
+import { initials, money, type Specialist } from "@/lib/types";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,8 +47,104 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+/** Maps a live profile row (plus its service names) onto the presentational Specialist shape. */
+function toSpecialist(profile: ProfileRow, serviceNames: string[]): Specialist {
+  return {
+    id: profile.id,
+    name: profile.display_name || "Ashnight specialist",
+    city: profile.city,
+    room: profile.room ?? "basic",
+    headline: profile.headline,
+    bio: profile.bio,
+    rating: profile.rating,
+    jobsCompleted: profile.jobs_completed,
+    hourlyRate: profile.hourly_rate,
+    yearsExperience: profile.years_experience,
+    services: serviceNames,
+    languages: profile.languages,
+    verified: profile.verified,
+    online: profile.available,
+    responseMinutes: profile.response_minutes,
+  };
+}
+
+interface TestimonialRow {
+  id: string;
+  stars: number;
+  note: string;
+  created_at: string;
+  rated: { display_name: string; room: string | null } | null;
+}
+
+function useLandingTestimonials() {
+  return useQuery({
+    queryKey: ["landing-testimonials"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ratings")
+        .select("id, stars, note, created_at, rated:profiles!ratings_rated_id_fkey(display_name, room)")
+        .neq("note", "")
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as TestimonialRow[];
+    },
+  });
+}
+
+function useServiceNamesFor(specialistIds: string[]) {
+  return useQuery({
+    queryKey: ["landing-service-names", specialistIds],
+    enabled: specialistIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("specialist_services")
+        .select("specialist_id, services(name)")
+        .in("specialist_id", specialistIds);
+      if (error) throw new Error(error.message);
+      const map = new Map<string, string[]>();
+      for (const row of (data ?? []) as unknown as { specialist_id: string; services: { name: string } | null }[]) {
+        const name = row.services?.name;
+        if (!name) continue;
+        map.set(row.specialist_id, [...(map.get(row.specialist_id) ?? []), name]);
+      }
+      return map;
+    },
+  });
+}
+
 function Home() {
-  const featured = specialists.filter((s) => s.rating >= 4.9).slice(0, 3);
+  const { data: specialists, isLoading: specialistsLoading } = useSpecialists("all");
+  const { profiles: roomProfiles } = useRoomSettings();
+
+  const featured = useMemo(
+    () => [...(specialists ?? [])].sort((a, b) => b.rating - a.rating).slice(0, 3),
+    [specialists],
+  );
+  const featuredIds = useMemo(() => featured.map((s) => s.id), [featured]);
+  const { data: serviceMap } = useServiceNamesFor(featuredIds);
+  const { data: testimonials, isLoading: testimonialsLoading } = useLandingTestimonials();
+
+  const stats = useMemo(() => {
+    if (!specialists || specialists.length === 0) return null;
+    const count = specialists.length;
+    const rated = specialists.filter((s) => s.jobs_completed > 0);
+    const avgRating = rated.length
+      ? rated.reduce((sum, s) => sum + s.rating, 0) / rated.length
+      : null;
+    const avgResponse = Math.round(
+      specialists.reduce((sum, s) => sum + s.response_minutes, 0) / count,
+    );
+    return { count, avgRating, avgResponse };
+  }, [specialists]);
+
+  const roomCounts = useMemo(() => {
+    const counts: Record<string, number> = { basic: 0, premium: 0, ultimate: 0 };
+    for (const specialist of specialists ?? []) {
+      if (specialist.room) counts[specialist.room] = (counts[specialist.room] ?? 0) + 1;
+    }
+    return counts;
+  }, [specialists]);
 
   return (
     <div className="min-h-screen">
@@ -80,19 +182,37 @@ function Home() {
           </div>
 
           <dl className="mt-14 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
-            {[
-              { value: "149", label: "Vetted specialists" },
-              { value: "4.91", label: "Average rating" },
-              { value: "8 min", label: "Median chat reply" },
-              { value: "100%", label: "On-platform payments" },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <dt className="font-display text-2xl font-semibold text-foreground">
-                  {stat.value}
-                </dt>
-                <dd className="mt-1 text-xs text-muted-foreground">{stat.label}</dd>
-              </div>
-            ))}
+            {specialistsLoading ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index}>
+                  <Skeleton className="h-7 w-14" />
+                  <Skeleton className="mt-2 h-3 w-20" />
+                </div>
+              ))
+            ) : (
+              [
+                {
+                  value: stats ? String(stats.count) : "New",
+                  label: "Vetted specialists",
+                },
+                {
+                  value: stats?.avgRating ? stats.avgRating.toFixed(2) : "—",
+                  label: "Average rating",
+                },
+                {
+                  value: stats ? `${stats.avgResponse} min` : "—",
+                  label: "Median chat reply",
+                },
+                { value: "100%", label: "On-platform payments" },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <dt className="font-display text-2xl font-semibold text-foreground">
+                    {stat.value}
+                  </dt>
+                  <dd className="mt-1 text-xs text-muted-foreground">{stat.label}</dd>
+                </div>
+              ))
+            )}
           </dl>
         </div>
       </section>
@@ -154,35 +274,30 @@ function Home() {
         </div>
 
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
-          {rooms.map((room) => (
-            <Card
-              key={room.id}
-              className="flex flex-col border-border/70 bg-panel p-6 data-[featured=true]:border-primary/40"
-              data-featured={room.id === "premium"}
-            >
-              <TierBadge tier={room.id} withRoom className="self-start" />
-              <p className="mt-5 font-display text-3xl font-semibold">
-                {money(room.priceMonthly)}
-                <span className="text-sm font-normal text-muted-foreground">/mo</span>
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">{room.tagline}</p>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Visit fees {money(room.visitFeeRange[0])}–{money(room.visitFeeRange[1])} · {room.specialistCount}{" "}
-                specialists
-              </p>
-              <ul className="mt-5 space-y-2.5 text-sm">
-                {room.perks.slice(0, 4).map((perk) => (
-                  <li key={perk} className="flex gap-2 text-muted-foreground">
-                    <CalendarCheck className="mt-0.5 size-4 shrink-0 text-primary" />
-                    {perk}
-                  </li>
-                ))}
-              </ul>
-              <Button asChild variant={room.id === "premium" ? "brass" : "soft"} className="mt-6">
-                <Link to="/rooms">See {room.name}</Link>
-              </Button>
-            </Card>
-          ))}
+          {TIERS.map((tier) => {
+            const room = roomProfiles[tier];
+            return (
+              <Card
+                key={tier}
+                className="flex flex-col border-border/70 bg-panel p-6 data-[featured=true]:border-primary/40"
+                data-featured={tier === "premium"}
+              >
+                <TierBadge tier={tier} withRoom className="self-start" />
+                <p className="mt-5 font-display text-3xl font-semibold">
+                  {money(room.priceMonthly)}
+                  <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">{room.tagline}</p>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Visit fees {money(room.visitFeeMin)}–{money(room.visitFeeMax)} ·{" "}
+                  {roomCounts[tier] ?? 0} specialists
+                </p>
+                <Button asChild variant={tier === "premium" ? "brass" : "soft"} className="mt-6">
+                  <Link to="/rooms">See {room.name}</Link>
+                </Button>
+              </Card>
+            );
+          })}
         </div>
       </section>
 
@@ -200,11 +315,72 @@ function Home() {
             </Link>
           </Button>
         </div>
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {featured.map((specialist) => (
-            <SpecialistCard key={specialist.id} specialist={specialist} />
-          ))}
-        </div>
+        {specialistsLoading ? (
+          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton key={index} className="h-64 rounded-xl" />
+            ))}
+          </div>
+        ) : featured.length === 0 ? (
+          <div className="mt-10 rounded-xl border border-dashed border-border p-10 text-center">
+            <p className="font-display text-lg font-semibold">No specialists yet</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We're onboarding our first vetted specialists. Check back soon, or apply yourself.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {featured.map((specialist) => (
+              <SpecialistCard
+                key={specialist.id}
+                specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-5 pb-20">
+        <h2 className="eyebrow">What members are saying</h2>
+        <p className="mt-3 font-display text-2xl font-semibold sm:text-3xl">
+          Real ratings, left after a real booking.
+        </p>
+        {testimonialsLoading ? (
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton key={index} className="h-36 rounded-xl" />
+            ))}
+          </div>
+        ) : !testimonials || testimonials.length === 0 ? (
+          <div className="mt-8 rounded-xl border border-dashed border-border p-10 text-center">
+            <p className="font-display text-lg font-semibold">No reviews yet</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Testimonials will appear here once members start rating completed bookings.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            {testimonials.map((review) => (
+              <Card key={review.id} className="border-border/70 bg-panel p-5">
+                <div className="flex items-center gap-1 text-primary">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <Star
+                      key={index}
+                      className="size-3.5"
+                      fill={index < review.stars ? "currentColor" : "none"}
+                    />
+                  ))}
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  "{review.note}"
+                </p>
+                <p className="mt-3 text-xs font-medium text-foreground">
+                  {review.rated?.display_name ?? "Ashnight specialist"}
+                </p>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-5 pb-4">

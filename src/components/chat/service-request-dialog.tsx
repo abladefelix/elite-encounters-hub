@@ -1,8 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarClock, Lock, ShieldCheck, Smartphone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { ADDON_CATALOG, SERVICE_CATALOG } from "@/lib/mock-data";
+import { useServiceCatalog } from "@/lib/service-catalog";
 import { useRoomSettings } from "@/lib/room-settings";
 import {
   DEFAULT_PAYSTACK_CHANNEL,
@@ -31,15 +30,19 @@ import {
   paystackReference,
   type PaystackChannel,
 } from "@/lib/paystack";
-import { bookingTotal, money, type Specialist } from "@/lib/types";
+import { bookingTotal, money } from "@/lib/types";
 
 export interface ServiceRequestDraft {
+  serviceId: string | null;
   service: string;
   hours: number;
   addons: string[];
   scheduledFor: string;
   notes: string;
+  subtotal: number;
+  fee: number;
   total: number;
+  rate: number;
   /** Paystack channel the client chose to pay with. */
   channel: PaystackChannel;
   /** Paystack transaction reference for this request. */
@@ -49,61 +52,73 @@ export interface ServiceRequestDraft {
 type Step = "scope" | "review";
 
 /**
- * The in-chat "Request service" flow: scope the job, review an itemised
- * quote, then authorise payment. Payment is a stub until the provider is
- * connected; the quote maths is the real thing.
+ * The in-chat "Request service" flow: scope the job against the real active
+ * service catalogue, review an itemised quote, then authorise payment.
+ * Payment is only *initiated* here — see the escrow entry created by the
+ * parent for what actually happens with the money.
  */
 export function ServiceRequestDialog({
-  specialist,
+  specialistName,
+  hourlyRate,
   open,
   onOpenChange,
   onConfirm,
 }: {
-  specialist: Specialist;
+  specialistName: string;
+  hourlyRate: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (draft: ServiceRequestDraft) => void;
 }) {
   const { platform } = useRoomSettings();
+  const { activeServices } = useServiceCatalog();
   const feePct = platform.platformFeePct;
   const [step, setStep] = useState<Step>("scope");
-  const [serviceId, setServiceId] = useState<string>(SERVICE_CATALOG[1].id);
-  const [hours, setHours] = useState<number>(SERVICE_CATALOG[1].baseHours);
-  const [addons, setAddons] = useState<string[]>([]);
+  const [serviceId, setServiceId] = useState<string>("");
+  const [hours, setHours] = useState<number>(3);
+  const [addonsText, setAddonsText] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("09:00");
   const [notes, setNotes] = useState("");
   const [channel, setChannel] = useState<PaystackChannel>(DEFAULT_PAYSTACK_CHANNEL);
 
-  const service = SERVICE_CATALOG.find((item) => item.id === serviceId)!;
+  useEffect(() => {
+    if (!serviceId && activeServices.length) setServiceId(activeServices[0]!.id);
+  }, [activeServices, serviceId]);
+
+  const service = activeServices.find((item) => item.id === serviceId);
+  const addons = useMemo(
+    () =>
+      addonsText
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    [addonsText],
+  );
 
   const quote = useMemo(() => {
-    const { subtotal, fee } = bookingTotal({
-      hours,
-      rate: specialist.hourlyRate,
-      platformFeePct: feePct,
-    });
-    const addonsTotal = ADDON_CATALOG.filter((addon) => addons.includes(addon.id)).reduce(
-      (sum, addon) => sum + addon.price,
-      0,
-    );
-    return { subtotal, fee, addonsTotal, total: subtotal + fee + addonsTotal };
-  }, [hours, addons, specialist.hourlyRate, feePct]);
+    const { subtotal, fee } = bookingTotal({ hours, rate: hourlyRate, platformFeePct: feePct });
+    return { subtotal, fee, total: subtotal + fee };
+  }, [hours, hourlyRate, feePct]);
 
   function reset() {
     setStep("scope");
-    setAddons([]);
+    setAddonsText("");
     setNotes("");
   }
 
   function confirm() {
     onConfirm({
-      service: service.label,
+      serviceId: service?.id ?? null,
+      service: service?.label ?? "Ash service",
       hours,
-      addons: ADDON_CATALOG.filter((addon) => addons.includes(addon.id)).map((a) => a.label),
+      addons,
       scheduledFor: date ? `${date} at ${time}` : `Next available slot, ${time}`,
       notes,
+      subtotal: quote.subtotal,
+      fee: quote.fee,
       total: quote.total,
+      rate: hourlyRate,
       channel,
       reference: paystackReference(),
     });
@@ -126,7 +141,7 @@ export function ServiceRequestDialog({
           </DialogTitle>
           <DialogDescription>
             {step === "scope"
-              ? `Scope the job with ${specialist.name}. They confirm before anything is charged.`
+              ? `Scope the job with ${specialistName}. They confirm before anything is charged.`
               : "Funds are held on-platform and released once you confirm the job is complete."}
           </DialogDescription>
         </DialogHeader>
@@ -135,25 +150,24 @@ export function ServiceRequestDialog({
           <div className="space-y-5">
             <div>
               <Label htmlFor="service">Service</Label>
-              <Select
-                value={serviceId}
-                onValueChange={(value) => {
-                  setServiceId(value);
-                  const next = SERVICE_CATALOG.find((item) => item.id === value);
-                  if (next) setHours(next.baseHours);
-                }}
-              >
-                <SelectTrigger id="service" className="mt-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SERVICE_CATALOG.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.label} · ~{item.baseHours}h
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {activeServices.length ? (
+                <Select value={serviceId} onValueChange={setServiceId}>
+                  <SelectTrigger id="service" className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeServices.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.label} · {money(item.suggestedRate)}/hr
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="mt-2 rounded-lg border border-border bg-panel p-3 text-xs text-muted-foreground">
+                  No services are published yet — ask support to add one.
+                </p>
+              )}
             </div>
 
             <div>
@@ -170,38 +184,19 @@ export function ServiceRequestDialog({
                 onValueChange={([value]) => setHours(value ?? 1)}
               />
               <p className="mt-2 text-xs text-muted-foreground">
-                {money(specialist.hourlyRate)}/hr · adjust if the specialist suggests otherwise.
+                {money(hourlyRate)}/hr · adjust if the specialist suggests otherwise.
               </p>
             </div>
 
             <div>
-              <Label>Add-ons</Label>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {ADDON_CATALOG.map((addon) => {
-                  const checked = addons.includes(addon.id);
-                  return (
-                    <Label
-                      key={addon.id}
-                      htmlFor={`addon-${addon.id}`}
-                      className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-background p-3 text-sm transition-colors has-[:checked]:border-primary/50 has-[:checked]:bg-primary/5"
-                    >
-                      <Checkbox
-                        id={`addon-${addon.id}`}
-                        checked={checked}
-                        onCheckedChange={(value) =>
-                          setAddons((current) =>
-                            value === true
-                              ? [...current, addon.id]
-                              : current.filter((id) => id !== addon.id),
-                          )
-                        }
-                      />
-                      <span className="flex-1">{addon.label}</span>
-                      <span className="text-xs text-muted-foreground">+{money(addon.price)}</span>
-                    </Label>
-                  );
-                })}
-              </div>
+              <Label htmlFor="addons">Add-ons (optional)</Label>
+              <Input
+                id="addons"
+                className="mt-2"
+                placeholder="Inside fridge, ironing, windows — comma separated"
+                value={addonsText}
+                onChange={(event) => setAddonsText(event.target.value)}
+              />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -250,26 +245,20 @@ export function ServiceRequestDialog({
         ) : (
           <div className="space-y-5">
             <div className="rounded-lg border border-border bg-panel p-4">
-              <p className="font-display text-base font-semibold">{service.label}</p>
+              <p className="font-display text-base font-semibold">
+                {service?.label ?? "Ash service"}
+              </p>
               <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <CalendarClock className="size-3.5" />
                 {date ? `${date} at ${time}` : `Next available slot, ${time}`} · {hours}h with{" "}
-                {specialist.name}
+                {specialistName}
               </p>
 
               <Separator className="my-4" />
 
               <dl className="space-y-2 text-sm">
-                <Line
-                  label={`${hours}h × ${money(specialist.hourlyRate)}`}
-                  value={money(quote.subtotal)}
-                />
-                {addons.length ? (
-                  <Line
-                    label={`Add-ons (${addons.length})`}
-                    value={money(quote.addonsTotal)}
-                  />
-                ) : null}
+                <Line label={`${hours}h × ${money(hourlyRate)}`} value={money(quote.subtotal)} />
+                {addons.length ? <Line label={`Add-ons (${addons.length})`} value={addons.join(", ")} /> : null}
                 <Line label={`Platform fee (${feePct}%)`} value={money(quote.fee)} />
                 <Separator className="my-3" />
                 <div className="flex items-center justify-between font-display text-base font-semibold">
@@ -301,12 +290,13 @@ export function ServiceRequestDialog({
               <p className="flex items-start gap-2 text-xs text-muted-foreground">
                 <Smartphone className="mt-0.5 size-3.5 shrink-0 text-primary" />
                 You'll approve the {money(quote.total)} charge in Paystack's secure checkout, in
-                Ghana cedis.
+                Ghana cedis. This request only *initiates* the charge — it stays pending until
+                Paystack confirms it.
               </p>
               <p className="flex items-start gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-accent" />
-                Held securely and released to {specialist.name.split(" ")[0]} only after you mark
-                the job complete. Cancel free up to 24h before the visit.
+                Held securely and released to {specialistName.split(" ")[0]} only after you mark
+                the job complete.
               </p>
             </div>
           </div>
@@ -321,7 +311,7 @@ export function ServiceRequestDialog({
             <span />
           )}
           {step === "scope" ? (
-            <Button variant="brass" onClick={() => setStep("review")}>
+            <Button variant="brass" disabled={!service} onClick={() => setStep("review")}>
               Review quote · {money(quote.total)}
             </Button>
           ) : (

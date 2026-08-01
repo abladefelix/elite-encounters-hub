@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, Outlet, useRouterState } from "@tanstack/react-router";
 import {
   BadgeCheck,
   CalendarCheck,
@@ -8,14 +8,18 @@ import {
   ShieldBan,
   LayoutDashboard,
   LifeBuoy,
+  Loader2,
   Users,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { adminMetrics } from "@/lib/mock-data";
+import { Card } from "@/components/ui/card";
+import { useApplications } from "@/lib/queries";
+import { initials } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/ashnight-control")({
   component: AdminLayout,
@@ -34,7 +38,38 @@ const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] 
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const metrics = adminMetrics();
+  const { loading, session, profile, isAdmin } = useAuth();
+  const applicationsQuery = useApplications();
+  const pendingVetting = (applicationsQuery.data ?? []).filter(
+    (row) => row.status === "pending" || row.status === "in_review",
+  ).length;
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Navigate to="/auth" />;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="max-w-sm p-8 text-center">
+          <h1 className="font-display text-lg font-semibold">Not authorised</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your account doesn't have admin access to the Ashnight control room.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  const displayName = profile?.display_name || "Admin";
 
   return (
     <div data-admin-shell className="min-h-screen bg-background">
@@ -65,9 +100,9 @@ function AdminLayout() {
                 >
                   <item.icon className="size-4" />
                   {item.label}
-                  {item.to === "/ashnight-control/vetting" && metrics.pendingVetting ? (
+                  {item.to === "/ashnight-control/vetting" && pendingVetting ? (
                     <Badge className="ml-auto h-5 min-w-5 justify-center rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">
-                      {metrics.pendingVetting}
+                      {pendingVetting}
                     </Badge>
                   ) : null}
                 </Link>
@@ -88,11 +123,13 @@ function AdminLayout() {
             </div>
             <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3">
               <Avatar className="size-8 border border-border">
-                <AvatarFallback className="bg-surface-strong text-[11px]">AD</AvatarFallback>
+                <AvatarFallback className="bg-surface-strong text-[11px]">
+                  {initials(displayName)}
+                </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="truncate text-xs font-medium">Ada Duru</p>
-                <p className="truncate text-[10px] text-muted-foreground">Head of vetting</p>
+                <p className="truncate text-xs font-medium">{displayName}</p>
+                <p className="truncate text-[10px] text-muted-foreground">Administrator</p>
               </div>
             </div>
           </div>

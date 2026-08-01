@@ -38,11 +38,13 @@ import {
   ESCROW_STATE_LABEL,
   relativeTime,
   useEscrow,
+  type EscrowEntry,
   type EscrowSettings,
   type EscrowState,
 } from "@/lib/escrow";
 import { TIERS, useRoomSettings } from "@/lib/room-settings";
 import type { RoomGiftRules } from "@/lib/gifts";
+import { useAllProfiles } from "@/lib/queries";
 import { money, type Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/ashnight-control/escrow")({
@@ -67,6 +69,7 @@ export const Route = createFileRoute("/ashnight-control/escrow")({
 });
 
 const STATE_STYLE: Record<EscrowState, string> = {
+  pending: "border-border text-muted-foreground",
   held: "border-border text-muted-foreground",
   clearing: "border-primary/40 text-primary",
   released: "border-success/40 text-success",
@@ -84,7 +87,6 @@ function AdminEscrow() {
     releaseNow,
     refund,
     resolveDispute,
-    clearLedger,
   } = useEscrow();
   const {
     gifts,
@@ -93,7 +95,17 @@ function AdminEscrow() {
     setRoomGiftField,
     toggleRoomGift,
   } = useRoomSettings();
+  const { data: allProfiles } = useAllProfiles();
   const [filter, setFilter] = useState<EscrowState | "all">("all");
+
+  const nameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const profile of allProfiles ?? []) map.set(profile.id, profile.display_name);
+    return map;
+  }, [allProfiles]);
+
+  const specialistName = (entry: EscrowEntry) =>
+    nameById.get(entry.specialist_id) ?? "Unknown specialist";
 
   const rows = useMemo(
     () => (filter === "all" ? entries : entries.filter((entry) => entry.state === filter)),
@@ -130,10 +142,13 @@ function AdminEscrow() {
               These apply platform-wide, the moment you change them.
             </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => {
-            resetSettings();
-            toast("Escrow rules reset to Ashnight defaults");
-          }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              void resetSettings().then(() => toast("Escrow rules reset to Ashnight defaults"));
+            }}
+          >
             <RotateCcw className="size-4" /> Reset
           </Button>
         </div>
@@ -146,19 +161,19 @@ function AdminEscrow() {
               label="Escrow enabled"
               hint="Off means booking payments settle straight to the specialist."
               value={settings.escrowEnabled}
-              onChange={(value) => setSetting("escrowEnabled", value)}
+              onChange={(value) => void setSetting("escrowEnabled", value)}
             />
             <Toggle
               label="Automatic deposits"
               hint="Off means every payout waits for a manual release below."
               value={settings.autoReleaseEnabled}
-              onChange={(value) => setSetting("autoReleaseEnabled", value)}
+              onChange={(value) => void setSetting("autoReleaseEnabled", value)}
             />
             <Toggle
               label="Require member confirmation"
               hint="The hold window only starts once the member marks the visit complete."
               value={settings.requireClientConfirm}
-              onChange={(value) => setSetting("requireClientConfirm", value)}
+              onChange={(value) => void setSetting("requireClientConfirm", value)}
             />
           </div>
 
@@ -168,28 +183,28 @@ function AdminEscrow() {
               hint="Time in clearing before funds auto-deposit."
               value={settings.holdHours}
               min={0}
-              onChange={(value) => setSetting("holdHours", value)}
+              onChange={(value) => void setSetting("holdHours", value)}
             />
             <NumberField
               label="Auto-confirm after (hours)"
               hint="If the member never confirms, clearing starts anyway."
               value={settings.autoConfirmHours}
               min={1}
-              onChange={(value) => setSetting("autoConfirmHours", value)}
+              onChange={(value) => void setSetting("autoConfirmHours", value)}
             />
             <NumberField
               label="Dispute window (hours)"
               hint="How long a member may raise an issue."
               value={settings.disputeWindowHours}
               min={0}
-              onChange={(value) => setSetting("disputeWindowHours", value)}
+              onChange={(value) => void setSetting("disputeWindowHours", value)}
             />
             <NumberField
               label="Dispute resolution SLA (hours)"
               hint="Target for your trust team to close a case."
               value={settings.disputeSlaHours}
               min={1}
-              onChange={(value) => setSetting("disputeSlaHours", value)}
+              onChange={(value) => void setSetting("disputeSlaHours", value)}
             />
           </div>
         </div>
@@ -201,7 +216,7 @@ function AdminEscrow() {
           <Gift className="size-4 text-primary" /> Cash gifts
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Gifts sent in chat carry a real cedi value. {money(totals.tips)} gifted so far.
+          Gifts sent in chat carry a real cedi value. {money(totals.gifts)} gifted so far.
         </p>
 
         <Separator className="my-5" />
@@ -212,13 +227,13 @@ function AdminEscrow() {
               label="Gifts enabled"
               hint="Shows the gift button in every member chat."
               value={settings.tipsEnabled}
-              onChange={(value) => setSetting("tipsEnabled", value)}
+              onChange={(value) => void setSetting("tipsEnabled", value)}
             />
             <Toggle
               label="Route gifts through escrow"
               hint="Off means gifts deposit instantly and can't be reversed."
               value={settings.tipsEscrowed}
-              onChange={(value) => setSetting("tipsEscrowed", value)}
+              onChange={(value) => void setSetting("tipsEscrowed", value)}
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -228,14 +243,14 @@ function AdminEscrow() {
               value={settings.tipFeePct}
               min={0}
               max={50}
-              onChange={(value) => setSetting("tipFeePct", value)}
+              onChange={(value) => void setSetting("tipFeePct", value)}
             />
             <NumberField
               label="Maximum single gift (GHS)"
               hint="Caps custom amounts in chat."
               value={settings.maxTip}
               min={1}
-              onChange={(value) => setSetting("maxTip", value)}
+              onChange={(value) => void setSetting("maxTip", value)}
             />
           </div>
         </div>
@@ -372,19 +387,6 @@ function AdminEscrow() {
             ))}
           </SelectContent>
         </Select>
-        {entries.length ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="ml-auto"
-            onClick={() => {
-              clearLedger();
-              toast("Escrow ledger cleared");
-            }}
-          >
-            Clear ledger
-          </Button>
-        ) : null}
       </div>
 
       <Card className="overflow-hidden p-0">
@@ -411,15 +413,16 @@ function AdminEscrow() {
                   <TableRow key={entry.id}>
                     <TableCell className="font-medium">
                       <span className="flex items-center gap-1.5">
-                        {entry.kind === "tip" ? <Gift className="size-3.5 text-primary" /> : null}
+                        {entry.kind === "gift" ? <Gift className="size-3.5 text-primary" /> : null}
                         {entry.label}
                       </span>
                       <span className="block text-xs text-muted-foreground">
-                        {entry.reference}
-                        {entry.note ? ` · ${entry.note}` : ""}
+                        {entry.paystack_reference}
+                        {entry.admin_note ? ` · ${entry.admin_note}` : ""}
+                        {entry.dispute_reason ? ` · ${entry.dispute_reason}` : ""}
                       </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{entry.specialistName}</TableCell>
+                    <TableCell className="text-muted-foreground">{specialistName(entry)}</TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
@@ -430,19 +433,19 @@ function AdminEscrow() {
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                       {entry.state === "clearing"
-                        ? relativeTime(entry.clearingAt)
+                        ? relativeTime(entry.release_at)
                         : entry.state === "released"
-                          ? relativeTime(entry.releasedAt)
+                          ? relativeTime(entry.released_at)
                           : "—"}
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-right">
-                      {money(entry.gross)}
+                      {money(entry.amount)}
                       <span className="block text-xs text-muted-foreground">
-                        fee {money(entry.fee)}
+                        fee {money(entry.platform_fee)}
                       </span>
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-right">
-                      {money(entry.net)}
+                      {money(entry.payout_amount)}
                     </TableCell>
                     <TableCell>
                       {entry.state === "released" || entry.state === "refunded" ? (
@@ -453,8 +456,9 @@ function AdminEscrow() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              resolveDispute(entry.id, "release", "");
-                              toast.success(`Payout approved for ${entry.specialistName}`);
+                              void resolveDispute(entry.id, "release", "").then(() =>
+                                toast.success(`Payout approved for ${specialistName(entry)}`),
+                              );
                             }}
                           >
                             <Banknote className="size-4" /> Pay out
@@ -463,8 +467,9 @@ function AdminEscrow() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              resolveDispute(entry.id, "refund", "");
-                              toast(`${money(entry.gross)} refunded to the member`);
+                              void resolveDispute(entry.id, "refund", "").then(() =>
+                                toast(`${money(entry.amount)} refunded to the member`),
+                              );
                             }}
                           >
                             <Undo2 className="size-4" /> Refund
@@ -476,9 +481,10 @@ function AdminEscrow() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              releaseNow(entry.id);
-                              toast.success(
-                                `${money(entry.net)} released to ${entry.specialistName}`,
+                              void releaseNow(entry.id).then(() =>
+                                toast.success(
+                                  `${money(entry.payout_amount)} released to ${specialistName(entry)}`,
+                                ),
                               );
                             }}
                           >
@@ -488,8 +494,9 @@ function AdminEscrow() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              refund(entry.id);
-                              toast(`${money(entry.gross)} refunded to the member`);
+                              void refund(entry.id).then(() =>
+                                toast(`${money(entry.amount)} refunded to the member`),
+                              );
                             }}
                           >
                             <Undo2 className="size-4" /> Refund

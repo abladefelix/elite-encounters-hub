@@ -1,14 +1,13 @@
-import { Link } from "@tanstack/react-router";
-import { Menu, Sparkle } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { LogOut, Menu, Sparkle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { currentClient } from "@/lib/mock-data";
 import { initials } from "@/lib/types";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useRoomSettings } from "@/lib/room-settings";
-import { useProfile } from "@/lib/profile";
+import { useAuth } from "@/hooks/use-auth";
 
 const NAV = [
   { to: "/specialists", label: "Specialists" },
@@ -18,16 +17,20 @@ const NAV = [
 ] as const;
 
 export function SiteHeader() {
-  const me = currentClient();
   const { platform } = useRoomSettings();
-  const { profile } = useProfile();
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
 
+  const displayName = profile?.display_name ?? user?.email ?? "";
 
+  async function handleSignOut() {
+    await signOut();
+    void navigate({ to: "/auth" });
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-5 md:h-16">
-
         <Link to="/" className="flex items-center gap-2">
           <span className="grid size-8 place-items-center rounded-lg bg-brass text-primary-foreground">
             <Sparkle className="size-4" />
@@ -50,18 +53,39 @@ export function SiteHeader() {
 
         <div className="ml-auto flex items-center gap-2">
           {platform.memberThemeChoice ? <ThemeToggle /> : null}
-          <Button asChild size="sm" variant="brass" className="hidden sm:inline-flex">
-            <Link to="/apply">Apply to join</Link>
-          </Button>
 
-          <Link to="/profile" aria-label="Your profile" className="hidden sm:flex">
-            <Avatar className="size-9 border border-border transition-colors hover:border-primary/50">
-              {profile.avatar ? <AvatarImage src={profile.avatar} alt={profile.name} /> : null}
-              <AvatarFallback className="bg-surface-strong text-xs">
-                {initials(profile.name || me.name)}
-              </AvatarFallback>
-            </Avatar>
-          </Link>
+          {user ? (
+            <>
+              <Link to="/profile" aria-label="Your profile" className="hidden sm:flex">
+                <Avatar className="size-9 border border-border transition-colors hover:border-primary/50">
+                  {profile?.avatar_url ? (
+                    <AvatarImage src={profile.avatar_url} alt={displayName} />
+                  ) : null}
+                  <AvatarFallback className="bg-surface-strong text-xs">
+                    {initials(displayName || "Member")}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+              <Button
+                variant="outline"
+                size="icon"
+                className="hidden sm:inline-flex"
+                aria-label="Sign out"
+                onClick={() => void handleSignOut()}
+              >
+                <LogOut className="size-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild size="sm" variant="ghost" className="hidden sm:inline-flex">
+                <Link to="/auth">Sign in</Link>
+              </Button>
+              <Button asChild size="sm" variant="brass" className="hidden sm:inline-flex">
+                <Link to="/apply">Apply to join</Link>
+              </Button>
+            </>
+          )}
 
           <Sheet>
             <SheetTrigger asChild>
@@ -74,8 +98,12 @@ export function SiteHeader() {
               <nav className="mt-8 flex flex-col gap-1">
                 {[
                   ...NAV,
-                  { to: "/profile", label: "Your profile" } as const,
-                  { to: "/apply", label: "Apply to join" } as const,
+                  ...(user
+                    ? ([{ to: "/profile", label: "Your profile" }] as const)
+                    : ([
+                        { to: "/auth", label: "Sign in" },
+                        { to: "/apply", label: "Apply to join" },
+                      ] as const)),
                 ].map((item) => (
                   <Link
                     key={item.label}
@@ -86,6 +114,15 @@ export function SiteHeader() {
                     {item.label}
                   </Link>
                 ))}
+                {user ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleSignOut()}
+                    className="rounded-md px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    Sign out
+                  </button>
+                ) : null}
               </nav>
 
               {platform.memberThemeChoice ? (

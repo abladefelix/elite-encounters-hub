@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Check, LogIn, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { IconContainer } from "@/components/ui/icon-container";
 import {
   Table,
   TableBody,
@@ -16,17 +16,20 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { TierBadge } from "@/components/tier-badge";
-import { rooms } from "@/lib/mock-data";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { useSpecialists, type MembershipRow } from "@/lib/queries";
 import {
   formatBookingLimit,
   formatLeadTime,
   formatSupport,
   roomAccentStyle,
+  TIERS,
   useRoomSettings,
   type RoomPolicyMap,
   type RoomPrivileges,
 } from "@/lib/room-settings";
-import { money } from "@/lib/types";
+import { money, TIER_LABEL, type Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/rooms")({
   head: () => ({
@@ -47,6 +50,25 @@ export const Route = createFileRoute("/rooms")({
   }),
   component: RoomsPage,
 });
+
+/** The signed-in client's most recent membership row, straight from the database. */
+function useMyMembership(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["my-membership", userId],
+    enabled: Boolean(userId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("memberships")
+        .select("*")
+        .eq("user_id", userId!)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data as MembershipRow | null;
+    },
+  });
+}
 
 /** Privileges rendered as the room's feature list, in order of importance. */
 function privilegeList(privileges: RoomPrivileges): string[] {
@@ -95,9 +117,25 @@ function comparisonRows(policy: RoomPolicyMap) {
   ];
 }
 
+const TIER_RANK: Record<Tier, number> = { basic: 0, premium: 1, ultimate: 2 };
+
 function RoomsPage() {
   const { policy, profiles } = useRoomSettings();
+  const { user, loading: authLoading } = useAuth();
   const rows = comparisonRows(policy);
+
+  const { data: allSpecialists, isLoading: specialistsLoading } = useSpecialists("all");
+  const { data: membership, isLoading: membershipLoading } = useMyMembership(user?.id);
+
+  const specialistCounts: Record<Tier, number> = { basic: 0, premium: 0, ultimate: 0 };
+  for (const specialist of allSpecialists ?? []) {
+    if (specialist.room && specialist.room in specialistCounts) {
+      specialistCounts[specialist.room as Tier] += 1;
+    }
+  }
+
+  const activeMembership =
+    membership && membership.status === "active" ? membership : null;
 
   return (
     <div className="min-h-screen">
@@ -112,14 +150,53 @@ function RoomsPage() {
           record and the type of work they're cleared for, and earn from each booking.
         </p>
 
+        {!authLoading && !user ? (
+          <Card className="mt-6 border-primary/25 bg-panel p-5">
+            <p className="flex items-center gap-2 font-display text-base font-semibold">
+              <LogIn className="size-4" /> Sign in to see your room and join one
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              You can compare rooms below without an account, but joining or upgrading a room
+              needs a signed-in client account.
+            </p>
+            <Button asChild variant="soft" className="mt-4">
+              <Link to="/auth">Sign in or create an account</Link>
+            </Button>
+          </Card>
+        ) : null}
+
+        {user && !membershipLoading && activeMembership ? (
+          <Card className="mt-6 border-border/70 bg-panel p-5">
+            <p className="text-sm text-muted-foreground">You're currently in</p>
+            <p className="mt-1 font-display text-lg font-semibold">
+              {TIER_LABEL[activeMembership.room]} Room
+            </p>
+          </Card>
+        ) : null}
+
+        {user && !membershipLoading && !activeMembership ? (
+          <Card className="mt-6 border-dashed border-border/70 bg-panel/60 p-5">
+            <p className="text-sm text-muted-foreground">
+              You don't have an active membership yet. Pick a room below to get started.
+            </p>
+          </Card>
+        ) : null}
+
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
-          {rooms.map((room) => {
-            const privileges = policy[room.id];
-            const profile = profiles[room.id];
+          {TIERS.map((tier) => {
+            const privileges = policy[tier];
+            const profile = profiles[tier];
+            const specialistCount = specialistCounts[tier];
+            const isCurrentRoom = activeMembership?.room === tier;
+            const isUpgrade =
+              Boolean(activeMembership) &&
+              !isCurrentRoom &&
+              TIER_RANK[tier] > TIER_RANK[activeMembership!.room];
+
             return (
               <Card
-                key={room.id}
-                data-featured={room.id === "premium"}
+                key={tier}
+                data-featured={tier === "premium"}
                 className="flex flex-col border-border/70 border-t-2 bg-panel p-6 data-[featured=true]:shadow-elevated"
                 style={{
                   ...roomAccentStyle(privileges.accent),
@@ -127,8 +204,8 @@ function RoomsPage() {
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <TierBadge tier={room.id} withRoom />
-                  {room.id === "premium" ? (
+                  <TierBadge tier={tier} withRoom />
+                  {tier === "premium" ? (
                     <Badge
                       variant="outline"
                       className="rounded-full"
@@ -138,6 +215,17 @@ function RoomsPage() {
                       }}
                     >
                       Most chosen
+                    </Badge>
+                  ) : isCurrentRoom ? (
+                    <Badge
+                      variant="outline"
+                      className="rounded-full"
+                      style={{
+                        color: "var(--room-accent)",
+                        borderColor: "color-mix(in oklab, var(--room-accent) 35%, transparent)",
+                      }}
+                    >
+                      Your room
                     </Badge>
                   ) : null}
                 </div>
@@ -153,7 +241,9 @@ function RoomsPage() {
 
                 <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/50 px-2 py-0.5">
-                    <Users className="size-3.5" /> {room.specialistCount} specialists
+                    <Users className="size-3.5" />
+                    {specialistsLoading ? "…" : specialistCount} specialist
+                    {specialistCount === 1 ? "" : "s"}
                   </span>
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/50 px-2 py-0.5">
                     Visit fees {money(profile.visitFeeMin)}–{money(profile.visitFeeMax)}
@@ -175,16 +265,27 @@ function RoomsPage() {
                   ))}
                 </ul>
 
-                <Button
-                  asChild
-                  variant={room.id === "premium" ? "brass" : "soft"}
-                  className="mt-7 w-full"
-                >
-                  <Link to="/apply">
-                    {profile.intakeOpen ? "Apply for" : "Join waitlist for"}{" "}
-                    {profile.name.replace(" Room", "")}
-                  </Link>
-                </Button>
+                {!user ? (
+                  <Button asChild variant={tier === "premium" ? "brass" : "soft"} className="mt-7 w-full">
+                    <Link to="/auth">Sign in to join</Link>
+                  </Button>
+                ) : isCurrentRoom ? (
+                  <Button variant="soft" className="mt-7 w-full" disabled>
+                    Your current room
+                  </Button>
+                ) : (
+                  <div className="mt-7 space-y-2">
+                    <Button variant={tier === "premium" ? "brass" : "soft"} className="w-full" disabled>
+                      Card/mobile money checkout coming soon
+                    </Button>
+                    <Button asChild variant="ghost" className="w-full">
+                      <Link to="/apply">
+                        {isUpgrade ? "Apply to upgrade to" : "Apply for"}{" "}
+                        {profile.name.replace(" Room", "")}
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </Card>
             );
           })}
@@ -227,6 +328,13 @@ function RoomsPage() {
             </Table>
           </div>
         </Card>
+
+        {!specialistsLoading && (allSpecialists?.length ?? 0) === 0 ? (
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            We're still onboarding vetted specialists into these rooms — seat counts will fill in
+            as approvals land.
+          </p>
+        ) : null}
       </div>
 
       <SiteFooter />

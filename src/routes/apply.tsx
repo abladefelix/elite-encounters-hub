@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { CheckCircle2, ShieldCheck } from "lucide-react";
+import { CheckCircle2, LogIn, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -19,15 +19,20 @@ import {
 } from "@/components/ui/select";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { rooms } from "@/lib/mock-data";
-import { money } from "@/lib/types";
+import { useAuth } from "@/hooks/use-auth";
+import { useApplications, useSubmitApplication } from "@/lib/queries";
 import { useServiceCatalog } from "@/lib/service-catalog";
 import { cn } from "@/lib/utils";
+
+const ROOM_TIERS: { id: "basic" | "premium" | "ultimate"; name: string }[] = [
+  { id: "basic", name: "Basic Room" },
+  { id: "premium", name: "Premium Room" },
+  { id: "ultimate", name: "Ultimate Room" },
+];
 
 const applicationSchema = z.object({
   role: z.enum(["client", "specialist"]),
   fullName: z.string().trim().min(2, "Enter your full name").max(80),
-  email: z.string().trim().email("Enter a valid email").max(255),
   phone: z.string().trim().min(7, "Enter a contact number").max(32),
   city: z.string().trim().min(2, "Enter your city").max(80),
   room: z.enum(["basic", "premium", "ultimate"]),
@@ -57,12 +62,79 @@ export const Route = createFileRoute("/apply")({
 });
 
 function ApplyPage() {
-  const [role, setRole] = useState<"client" | "specialist">("client");
-  const [room, setRoom] = useState("premium");
-  const [services, setServices] = useState<string[]>([]);
+  const { user, loading: authLoading } = useAuth();
+  const { data: applications, isLoading: applicationsLoading } = useApplications();
+  const submitApplication = useSubmitApplication();
   const { selectableServices } = useServiceCatalog();
+
+  const [role, setRole] = useState<"client" | "specialist">("client");
+  const [room, setRoom] = useState<"basic" | "premium" | "ultimate">("premium");
+  const [services, setServices] = useState<string[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [submitted, setSubmitted] = useState(false);
+
+  const existingApplication = applications?.find((app) => app.user_id === user?.id);
+
+  if (authLoading || (user && applicationsLoading)) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <div className="mx-auto max-w-xl px-5 py-24 text-center text-sm text-muted-foreground">
+          Loading…
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <div className="mx-auto max-w-xl px-5 py-24 text-center">
+          <ShieldCheck className="mx-auto size-10 text-accent" />
+          <h1 className="mt-6 font-display text-2xl font-semibold">Create an account first</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Applications are tied to your Ashnight account so we can track your vetting status.
+            Sign up, then come back here to apply.
+          </p>
+          <Button asChild variant="brass" className="mt-7">
+            <Link to="/auth">
+              <LogIn className="size-4" /> Sign in or create an account
+            </Link>
+          </Button>
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  if (existingApplication) {
+    const statusCopy: Record<string, string> = {
+      pending: "Your application is in the queue — we review every one by hand.",
+      in_review: "We're actively reviewing your application right now.",
+      approved: "You're approved! Head to your profile to finish setting up.",
+      rejected: "Your application wasn't approved this time.",
+    };
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <div className="mx-auto max-w-xl px-5 py-24 text-center">
+          <CheckCircle2 className="mx-auto size-10 text-success" />
+          <h1 className="mt-6 font-display text-2xl font-semibold">
+            Application {existingApplication.status.replace("_", " ")}
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {statusCopy[existingApplication.status] ?? "Thanks for applying."}
+          </p>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Submitted {new Date(existingApplication.created_at).toLocaleDateString()} as a{" "}
+            {existingApplication.applied_role}.
+          </p>
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,7 +143,6 @@ function ApplyPage() {
       role,
       room,
       fullName: form.get("fullName"),
-      email: form.get("email"),
       phone: form.get("phone"),
       city: form.get("city"),
       about: form.get("about"),
@@ -94,28 +165,26 @@ function ApplyPage() {
     }
 
     setErrors({});
-    setSubmitted(true);
-    toast.success("Application received — we'll be in touch within two business days");
-  }
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen">
-        <SiteHeader />
-        <div className="mx-auto max-w-xl px-5 py-24 text-center">
-          <CheckCircle2 className="mx-auto size-10 text-success" />
-          <h1 className="mt-6 font-display text-2xl font-semibold">Application received</h1>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            You're in the vetting queue. Next steps: ID verification, a background check and — for
-            specialists — reference calls and a short video interview. We review every application
-            by hand and reply within two business days.
-          </p>
-          <Button variant="soft" className="mt-7" onClick={() => setSubmitted(false)}>
-            Submit another application
-          </Button>
-        </div>
-        <SiteFooter />
-      </div>
+    const { fullName, phone, city, about } = parsed.data;
+    submitApplication.mutate(
+      {
+        user_id: user!.id,
+        applied_role: role,
+        full_name: fullName,
+        email: user!.email ?? "",
+        phone,
+        city,
+        suggested_room: room,
+        pitch: about,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Application received — we'll be in touch within two business days");
+        },
+        onError: (error) => {
+          toast.error(error instanceof Error ? error.message : "Couldn't submit your application");
+        },
+      },
     );
   }
 
@@ -127,8 +196,8 @@ function ApplyPage() {
         <div>
           <h1 className="font-display text-3xl font-semibold sm:text-4xl">Apply to join</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Ashnight is invite-and-vetting only. Tell us who you are and what you need — no
-            account is created until a human approves your application.
+            Ashnight is invite-and-vetting only. Tell us who you are and what you need — a human
+            reviews every application before you're placed in a room.
           </p>
 
           <Card className="mt-8 border-border/70 bg-surface p-6">
@@ -177,7 +246,6 @@ function ApplyPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Full name" name="fullName" error={errors.fullName} />
-                <Field label="Email" name="email" type="email" error={errors.email} />
                 <Field label="Phone" name="phone" error={errors.phone} />
                 <Field label="City" name="city" error={errors.city} />
               </div>
@@ -186,15 +254,14 @@ function ApplyPage() {
                 <Label htmlFor="room" className="text-sm">
                   {role === "client" ? "Room you'd like to join" : "Room you're aiming for"}
                 </Label>
-                <Select value={room} onValueChange={setRoom}>
+                <Select value={room} onValueChange={(value) => setRoom(value as typeof room)}>
                   <SelectTrigger id="room" className="mt-2">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {rooms.map((item) => (
+                    {ROOM_TIERS.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
                         {item.name}
-                        {role === "client" ? ` — ${money(item.priceMonthly)}/mo` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -271,7 +338,13 @@ function ApplyPage() {
                 ) : null}
               </div>
 
-              <Button type="submit" variant="brass" size="lg" className="w-full">
+              <Button
+                type="submit"
+                variant="brass"
+                size="lg"
+                className="w-full"
+                disabled={submitApplication.isPending}
+              >
                 Submit application
               </Button>
             </form>
