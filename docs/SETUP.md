@@ -359,7 +359,8 @@ video on Ultimate.
 
 ## 7. Backups & operations
 
-- **Database**: `pg_dump` nightly via cPanel cron, keep copies off-server.
+- **Database**: nightly `pg_dump` — Task Scheduler on Windows, cron/systemd timer on Linux
+  (`docker exec -t supabase-db pg_dump -U postgres postgres > backup.sql`). Keep copies off-machine.
 - **Storage**: back up the storage volume alongside the database.
 - **Secrets**: `.env` and the key vault are the only places credentials live. Rotate the
   Paystack secret in the control room; rotate the service-role key in your backend.
