@@ -1,6 +1,5 @@
 import { BrandMark } from "@/components/brand-mark";
 import { Link } from "@tanstack/react-router";
-import { Sparkle } from "lucide-react";
 
 export function SiteFooter() {
   return (
