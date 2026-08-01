@@ -104,8 +104,18 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
           label: `${booking.service_name} (${booking.hours}h @ GHS ${booking.rate}/h)`,
           quantity: Number(booking.hours),
           unitAmount: booking.rate,
-          amount: subtotal,
+          amount: labour,
         },
+        ...(extras > 0
+          ? [
+              {
+                label: `Add-ons: ${(booking.addons ?? []).join(", ")}`,
+                quantity: 1,
+                unitAmount: extras,
+                amount: extras,
+              },
+            ]
+          : []),
         { label: `Ashnight service fee (${feePct}%)`, quantity: 1, unitAmount: fee, amount: fee },
       ],
       paystackReference: ref,
