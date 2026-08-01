@@ -81,7 +81,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthRoutePage() {
   const { next, role: intendedRole } = useSearch({ from: "/auth" });
-  return <AuthPage next={next} intendedRole={intendedRole} />;
+  return <AuthPage {...(next ? { next } : {})} {...(intendedRole ? { intendedRole } : {})} />;
 }
 
 export function AuthPage({
