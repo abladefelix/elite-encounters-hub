@@ -416,7 +416,26 @@ In **Control room → Backups**: enable **Scheduled backups**, choose the run ho
 set how many snapshots to keep per destination, then press **Run backup now** once to
 verify both destinations report `uploaded`.
 
-### 7.4 Schedule it daily
+### 7.4 Automation (already on)
+
+Automation ships enabled: a database cron job named `ashnight-hourly-backup` calls the
+endpoint at five past every hour. The endpoint itself decides whether to act — it runs a
+real backup only when the current UTC hour equals the **run hour** you picked in the
+control room, and skips if a snapshot already ran that day. So changing the hour in the
+admin UI is enough; nothing needs rescheduling.
+
+Inspect or change it:
+
+```sql
+select jobname, schedule, active from cron.job;                 -- list jobs
+select * from cron.job_run_details order by start_time desc limit 20;  -- history
+select cron.unschedule('ashnight-hourly-backup');               -- turn automation off
+```
+
+Pressing **Run backup now** in the control room bypasses the hour/once-a-day gates
+(`{"force":true}`).
+
+### 7.4b Alternative: schedule it from the OS (self-hosted)
 
 Any scheduler can call the endpoint — it only needs the project publishable key in an
 `apikey` header.

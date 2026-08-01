@@ -1,5 +1,5 @@
+import { BrandMark } from "@/components/brand-mark";
 import { Link } from "@tanstack/react-router";
-import { Sparkle } from "lucide-react";
 
 export function SiteFooter() {
   return (
@@ -7,9 +7,7 @@ export function SiteFooter() {
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="grid size-7 place-items-center rounded-lg bg-brass text-primary-foreground">
-              <Sparkle className="size-3.5" />
-            </span>
+            <BrandMark className="size-7" />
             <span className="font-display text-base font-semibold">Ashnight</span>
           </div>
           <p className="mt-3 max-w-xs text-sm text-muted-foreground">

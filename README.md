@@ -23,9 +23,12 @@ Everything is administered from a private control room at `/ashnight-control`.
 
 ## Backups
 
-Daily off-site snapshots are built in. The admin sets the Dropbox and Google Drive
-accounts in **Control room → Backups**, and any scheduler calls
-`POST /api/public/hooks/backup` once a night. Snapshots are pruned to the retention count
+Daily off-site snapshots are built in and **already automated** — a database cron job
+(`ashnight-hourly-backup`) pings `POST /api/public/hooks/backup` every hour, and the
+endpoint performs the real backup only at the hour selected in **Control room → Backups**,
+never twice in the same UTC day. The admin sets the Dropbox and Google Drive accounts on
+that same page. Self-hosted installs can instead use the OS scheduler (Task Scheduler /
+cron) — see the docs. Snapshots are pruned to the retention count
 you choose, and restore steps are documented.
 
 See [docs/SETUP.md § 7](docs/SETUP.md#7-backups--operations--daily-off-site-snapshots-to-dropbox--google-drive)

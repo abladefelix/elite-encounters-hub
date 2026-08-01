@@ -230,6 +230,21 @@ async function runBackup(force: boolean) {
     return json({ ok: false, skipped: "Scheduled backups are disabled in the control room." }, 200);
   }
 
+  // The scheduler ticks hourly; only the admin's chosen UTC hour actually runs,
+  // and never twice in the same UTC day.
+  if (!force) {
+    const now = new Date();
+    const runHour = Number(config["hour"] ?? 2);
+    if (Number.isFinite(runHour) && now.getUTCHours() !== runHour) {
+      return json({ ok: true, skipped: `Not the scheduled hour (runs at ${runHour}:00 UTC).` }, 200);
+    }
+    const lastAt = (config["lastRun"] as { at?: string } | undefined)?.at;
+    if (lastAt && lastAt.slice(0, 10) === now.toISOString().slice(0, 10)) {
+      return json({ ok: true, skipped: "A backup already ran today." }, 200);
+    }
+  }
+
+
   const { data: keyRows } = await admin.from("integration_keys").select("key, value");
   const keys: Record<string, string> = {};
   for (const row of keyRows ?? []) keys[row.key] = row.value ?? "";

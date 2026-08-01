@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Menu, Sparkle } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 
+import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,9 +40,7 @@ export function SiteHeader() {
       ) : null}
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-5 md:h-16">
         <Link to="/" className="flex items-center gap-2">
-          <span className="grid size-8 place-items-center rounded-lg bg-brass text-primary-foreground">
-            <Sparkle className="size-4" />
-          </span>
+          <BrandMark />
           <span className="font-display text-lg font-semibold tracking-tight">Ashnight</span>
         </Link>
 
