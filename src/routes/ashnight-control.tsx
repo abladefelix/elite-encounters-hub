@@ -162,19 +162,39 @@ function AdminLayout() {
             </a>
             <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2">
               <span className="text-xs text-muted-foreground">Appearance</span>
-              <ThemeToggle className="size-8" />
-            </div>
-            <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3">
-              <Avatar className="size-8 border border-border">
-                <AvatarFallback className="bg-surface-strong text-[11px]">
-                  {initials(displayName)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-medium">{displayName}</p>
-                <p className="truncate text-[10px] text-muted-foreground">Administrator</p>
+              <div className="flex items-center gap-1">
+                <NotificationBell />
+                <ThemeToggle className="size-8" />
               </div>
             </div>
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3">
+              <Link to="/profile" aria-label="Your profile">
+                <Avatar className="size-8 border border-border transition-colors hover:border-primary/50">
+                  <AvatarFallback className="bg-surface-strong text-[11px]">
+                    {initials(displayName)}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium">{displayName}</p>
+                <Link
+                  to="/profile"
+                  className="truncate text-[10px] text-muted-foreground hover:text-foreground"
+                >
+                  Administrator · view profile
+                </Link>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-8"
+                aria-label="Sign out"
+                onClick={() => void handleSignOut()}
+              >
+                <LogOut className="size-4" />
+              </Button>
+            </div>
+
           </div>
         </aside>
 
