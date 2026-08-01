@@ -113,7 +113,9 @@ function collect(text: string, pattern: RegExp, kind: FindingKind, out: Finding[
     const raw = hit[0];
     const trimmed = raw.replace(/^\s+/, "");
     const start = hit.index + (raw.length - trimmed.length);
-    if (kind === "phone" && (trimmed.replace(/\D/g, "").length < 7)) continue;
+    // Numeric phone matches need 7+ digits to count; spelled-out digit runs
+    // ("zero two four …") carry no digits at all, so they are exempt.
+    if (kind === "phone" && /\d/.test(trimmed) && trimmed.replace(/\D/g, "").length < 7) continue;
     out.push({ kind, match: trimmed.trim(), start, end: start + trimmed.trim().length });
     if (regex.lastIndex === hit.index) regex.lastIndex += 1;
   }
