@@ -407,15 +407,14 @@ function VettingQueue() {
  */
 function ApplicantMedia({ profile }: { profile: ProfileRow }) {
   const extra = (profile.extra ?? {}) as Record<string, unknown>;
-  const portfolioPhotos = Array.isArray(extra.portfolio_photos)
-    ? (extra.portfolio_photos as unknown[]).filter(
+  const rawPhotos = extra["portfolio_photos"];
+  const rawVideo = extra["portfolio_video"];
+  const portfolioPhotos = Array.isArray(rawPhotos)
+    ? (rawPhotos as unknown[]).filter(
         (item): item is string => typeof item === "string" && item.length > 0,
       )
     : [];
-  const portfolioVideo =
-    typeof extra.portfolio_video === "string" && extra.portfolio_video
-      ? extra.portfolio_video
-      : null;
+  const portfolioVideo = typeof rawVideo === "string" && rawVideo ? rawVideo : null;
 
   const items = [
     ...(profile.avatar_url ? [{ bucket: "avatars" as const, value: profile.avatar_url }] : []),
