@@ -14,6 +14,7 @@ import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AshnightControlRouteImport } from './routes/ashnight-control'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-control.index'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
@@ -48,6 +49,11 @@ const HowItWorksRoute = HowItWorksRouteImport.update({
 const MessagesRoute = MessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoomsRoute = RoomsRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control': typeof AshnightControlRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
+  '/profile': typeof ProfileRoute
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/apply': typeof ApplyRoute
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
+  '/profile': typeof ProfileRoute
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/ashnight-control': typeof AshnightControlRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/messages': typeof MessagesRoute
+  '/profile': typeof ProfileRoute
   '/rooms': typeof RoomsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/ashnight-control'
     | '/how-it-works'
     | '/messages'
+    | '/profile'
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/apply'
     | '/how-it-works'
     | '/messages'
+    | '/profile'
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
@@ -194,6 +205,7 @@ export interface FileRouteTypes {
     | '/ashnight-control'
     | '/how-it-works'
     | '/messages'
+    | '/profile'
     | '/rooms'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
@@ -212,6 +224,7 @@ export interface RootRouteChildren {
   AshnightControlRoute: typeof AshnightControlRouteWithChildren
   HowItWorksRoute: typeof HowItWorksRoute
   MessagesRoute: typeof MessagesRoute
+  ProfileRoute: typeof ProfileRoute
   RoomsRoute: typeof RoomsRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       path: '/messages'
       fullPath: '/messages'
       preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rooms': {
@@ -357,6 +377,7 @@ const rootRouteChildren: RootRouteChildren = {
   AshnightControlRoute: AshnightControlRouteWithChildren,
   HowItWorksRoute: HowItWorksRoute,
   MessagesRoute: MessagesRoute,
+  ProfileRoute: ProfileRoute,
   RoomsRoute: RoomsRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,
