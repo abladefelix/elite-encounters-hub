@@ -9,6 +9,7 @@ import {
   Gift as GiftIcon,
   Image as ImageIcon,
   Lock,
+  Loader2,
   MapPin,
   Paperclip,
   Phone,
