@@ -14,7 +14,7 @@ export function BrandMark({ className }: { className?: string }) {
       viewBox="0 0 100 100"
       role="img"
       aria-label="Ashnight"
-      className={cn("size-8 shrink-0 text-brass", className)}
+      className={cn("size-8 shrink-0 text-primary", className)}
       fill="none"
     >
       <defs>
