@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { CheckCircle2, LogIn, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -43,6 +43,9 @@ const applicationSchema = z.object({
 type FieldErrors = Partial<Record<keyof z.infer<typeof applicationSchema>, string>>;
 
 export const Route = createFileRoute("/apply")({
+  validateSearch: (search: Record<string, unknown>): { role?: "client" | "specialist" } => ({
+    role: search["role"] === "specialist" ? "specialist" : "client",
+  }),
   head: () => ({
     meta: [
       { title: "Apply to Join Ashnight — Manual Vetting for Every Member" },
@@ -63,13 +66,14 @@ export const Route = createFileRoute("/apply")({
 });
 
 function ApplyPage() {
+  const { role: intendedRole } = useSearch({ from: "/apply" });
   const { user, loading: authLoading } = useAuth();
   const { data: applications, isLoading: applicationsLoading } = useApplications();
   const submitApplication = useSubmitApplication();
   const { flags } = useFeatureFlags();
   const { selectableServices } = useServiceCatalog();
 
-  const [role, setRole] = useState<"client" | "specialist">("client");
+  const [role, setRole] = useState<"client" | "specialist">(intendedRole ?? "client");
   const [room, setRoom] = useState<"basic" | "premium" | "ultimate">("premium");
   const [services, setServices] = useState<string[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -100,8 +104,11 @@ function ApplyPage() {
             Sign up, then come back here to apply.
           </p>
           <Button asChild variant="brass" className="mt-7">
-            <Link to="/auth">
-              <LogIn className="size-4" /> Sign in or create an account
+            <Link to="/auth" search={{ next: "/apply", role: intendedRole ?? "client" }}>
+              <LogIn className="size-4" />{" "}
+              {intendedRole === "specialist"
+                ? "Create your specialist account"
+                : "Sign in or create an account"}
             </Link>
           </Button>
         </div>

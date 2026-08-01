@@ -357,13 +357,138 @@ video on Ultimate.
 
 ---
 
-## 7. Backups & operations
+## 7. Backups & operations — daily off-site snapshots to Dropbox + Google Drive
 
-- **Database**: nightly `pg_dump` — Task Scheduler on Windows, cron/systemd timer on Linux
-  (`docker exec -t supabase-db pg_dump -U postgres postgres > backup.sql`). Keep copies off-machine.
-- **Storage**: back up the storage volume alongside the database.
-- **Secrets**: `.env` and the key vault are the only places credentials live. Rotate the
-  Paystack secret in the control room; rotate the service-role key in your backend.
+Ashnight ships an automated backup pipeline. A single endpoint dumps every public table
+(and, optionally, the storage object index) into one JSON snapshot and uploads it to the
+Dropbox and/or Google Drive account you configure in the control room. Old snapshots are
+pruned automatically so each destination keeps only the number of copies you allow.
+
+Endpoint: `POST /api/public/hooks/backup`
+Control room page: **Backups** (`/ashnight-control/backups`)
+
+### 7.1 Create the Dropbox account/app
+
+1. Go to <https://www.dropbox.com/developers/apps> → **Create app** → *Scoped access* →
+   *App folder* (recommended) or *Full Dropbox*.
+2. **Permissions** tab: enable `files.content.write`, `files.content.read`,
+   `files.metadata.read`. Submit.
+3. **Settings** tab: copy the **App key** and **App secret**.
+4. Get an offline refresh token (once, from any browser + terminal):
+
+```sh
+# 1. Open this URL, approve, and copy the ?code= value it returns
+https://www.dropbox.com/oauth2/authorize?client_id=<APP_KEY>&response_type=code&token_access_type=offline
+
+# 2. Exchange the code for a refresh token
+curl -u "<APP_KEY>:<APP_SECRET>" \
+  -d grant_type=authorization_code -d code=<CODE> \
+  https://api.dropbox.com/oauth2/token
+# -> { "access_token": "...", "refresh_token": "sl.u...." }
+```
+
+5. In **Control room → Backups → Dropbox account**, paste the App key, App secret and
+   Refresh token, set the folder path (e.g. `/ashnight-backups`), label the account and
+   turn **Back up to Dropbox** on.
+
+### 7.2 Create the Google Drive account/client
+
+1. <https://console.cloud.google.com/> → new project → **APIs & Services → Library** →
+   enable **Google Drive API**.
+2. **OAuth consent screen**: External, add your admin Google account as a test user.
+3. **Credentials → Create credentials → OAuth client ID → Web application**. Add
+   `https://developers.google.com/oauthplayground` as an authorised redirect URI. Copy the
+   **Client ID** and **Client secret**.
+4. Get an offline refresh token with the OAuth Playground:
+   - Open <https://developers.google.com/oauthplayground>
+   - Gear icon → *Use your own OAuth credentials* → paste client ID + secret
+   - Scope: `https://www.googleapis.com/auth/drive.file` → Authorize → **Exchange
+     authorization code for tokens** → copy the **refresh token**
+5. (Optional) Create a Drive folder for backups and copy its ID from the URL
+   (`drive.google.com/drive/folders/<FOLDER_ID>`).
+6. In **Control room → Backups → Google Drive account**, paste the client ID, client
+   secret and refresh token, set the folder ID, label the account and turn **Back up to
+   Google Drive** on.
+
+### 7.3 Turn the schedule on
+
+In **Control room → Backups**: enable **Scheduled backups**, choose the run hour (UTC),
+set how many snapshots to keep per destination, then press **Run backup now** once to
+verify both destinations report `uploaded`.
+
+### 7.4 Schedule it daily
+
+Any scheduler can call the endpoint — it only needs the project publishable key in an
+`apikey` header.
+
+**Windows (Task Scheduler / PowerShell), daily at 02:00:**
+
+```powershell
+$body = '{"force":false}'
+Invoke-RestMethod -Method Post -Uri "https://yourdomain.com/api/public/hooks/backup" `
+  -Headers @{ "apikey" = "<YOUR_PUBLISHABLE_KEY>"; "Content-Type" = "application/json" } `
+  -Body $body
+```
+
+Save as `C:\ashnight\backup.ps1`, then:
+
+```powershell
+schtasks /Create /TN "Ashnight backup" /SC DAILY /ST 02:00 `
+  /TR "powershell -ExecutionPolicy Bypass -File C:\ashnight\backup.ps1"
+```
+
+**Linux (cron), daily at 02:00:**
+
+```sh
+0 2 * * * curl -s -X POST https://yourdomain.com/api/public/hooks/backup \
+  -H "apikey: <YOUR_PUBLISHABLE_KEY>" -H "Content-Type: application/json" -d '{}'
+```
+
+**Postgres (pg_cron), if you prefer the database to drive it:**
+
+```sql
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+
+select cron.schedule('ashnight-daily-backup', '0 2 * * *', $$
+  select net.http_post(
+    url := 'https://yourdomain.com/api/public/hooks/backup',
+    headers := '{"Content-Type":"application/json","apikey":"<YOUR_PUBLISHABLE_KEY>"}'::jsonb,
+    body := '{}'::jsonb
+  );
+$$);
+```
+
+### 7.5 Restoring from a snapshot
+
+1. Download the newest `ashnight-backup-<timestamp>.json` from Dropbox or Drive.
+2. Stand up a clean backend and apply `supabase/migrations/*.sql` in filename order.
+3. Load the snapshot table by table (order matters because of foreign keys):
+   `profiles`, `user_roles`, `services`, `specialist_services`, `applications`,
+   `threads`, `messages`, `bookings`, `escrow_entries`, `memberships`, `ratings`,
+   `reports`, `moderation_hits`, `platform_settings`, `integration_keys`,
+   `admin_audit_log`.
+
+```sh
+# example: restore one table with jq + psql (repeat per table, in the order above)
+jq -c '.data.profiles[]' ashnight-backup-*.json | while read -r row; do
+  psql "$DATABASE_URL" -c "insert into public.profiles select * from jsonb_populate_record(null::public.profiles, '$row') on conflict (id) do nothing;"
+done
+```
+
+4. Storage files (avatars/attachments) are **not** inside the JSON — only their index is.
+   Back up the storage volume separately (see below) and copy it back into place.
+
+### 7.6 Belt-and-braces extras
+
+- **Full SQL dump** (schema + data, best for a like-for-like restore):
+  `docker exec -t supabase-db pg_dump -U postgres postgres > backup.sql` — schedule this
+  alongside the JSON snapshot and keep it off-machine.
+- **Storage volume**: back up the Supabase storage volume (or `volumes/storage`) with the
+  database so uploaded avatars and attachments survive a rebuild.
+- **Code**: your Git remote is the code backup — keep pushing.
+- **Secrets**: `.env` plus the control-room key vault are the only places credentials
+  live. The vault is included in the JSON snapshot, so treat snapshots as secrets.
 - **Audit**: every admin action is written to `admin_audit_log` and visible in the
   control room.
 

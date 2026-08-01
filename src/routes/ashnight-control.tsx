@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   Loader2,
+  DatabaseBackup,
   ToggleLeft,
   Users,
 } from "lucide-react";
@@ -43,6 +44,7 @@ const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] 
   { to: "/ashnight-control/signup", label: "Sign-up form", icon: ClipboardList },
   { to: "/ashnight-control/features", label: "Features", icon: ToggleLeft },
   { to: "/ashnight-control/settings", label: "Keys & security", icon: KeyRound },
+  { to: "/ashnight-control/backups", label: "Backups", icon: DatabaseBackup },
 ];
 
 function AdminLayout() {

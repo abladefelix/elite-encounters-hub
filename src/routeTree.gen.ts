@@ -20,6 +20,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-control.index'
+import { Route as AshnightControlBackupsRouteImport } from './routes/ashnight-control.backups'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
 import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
 import { Route as AshnightControlFeaturesRouteImport } from './routes/ashnight-control.features'
@@ -32,6 +33,7 @@ import { Route as AshnightControlUsersRouteImport } from './routes/ashnight-cont
 import { Route as AshnightControlVettingRouteImport } from './routes/ashnight-control.vetting'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
+import { Route as ApiPublicHooksBackupRouteImport } from './routes/api/public/hooks/backup'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -86,6 +88,11 @@ const RoomsRoute = RoomsRouteImport.update({
 const AshnightControlIndexRoute = AshnightControlIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
+const AshnightControlBackupsRoute = AshnightControlBackupsRouteImport.update({
+  id: '/backups',
+  path: '/backups',
   getParentRoute: () => AshnightControlRoute,
 } as any)
 const AshnightControlBookingsRoute = AshnightControlBookingsRouteImport.update({
@@ -149,6 +156,11 @@ const SpecialistsSpecialistIdRoute = SpecialistsSpecialistIdRouteImport.update({
   path: '/specialists/$specialistId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksBackupRoute = ApiPublicHooksBackupRouteImport.update({
+  id: '/api/public/hooks/backup',
+  path: '/api/public/hooks/backup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -161,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
@@ -174,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
+  '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -185,6 +199,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
@@ -198,6 +213,7 @@ export interface FileRoutesByTo {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control': typeof AshnightControlIndexRoute
   '/specialists': typeof SpecialistsIndexRoute
+  '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -211,6 +227,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
@@ -224,6 +241,7 @@ export interface FileRoutesById {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
+  '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -238,6 +256,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/rooms'
+    | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
@@ -251,6 +270,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
+    | '/api/public/hooks/backup'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -262,6 +282,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/rooms'
+    | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
@@ -275,6 +296,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control'
     | '/specialists'
+    | '/api/public/hooks/backup'
   id:
     | '__root__'
     | '/'
@@ -287,6 +309,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/rooms'
+    | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
@@ -300,6 +323,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
+    | '/api/public/hooks/backup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -315,6 +339,7 @@ export interface RootRouteChildren {
   RoomsRoute: typeof RoomsRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
+  ApiPublicHooksBackupRoute: typeof ApiPublicHooksBackupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -394,6 +419,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/ashnight-control/'
       preLoaderRoute: typeof AshnightControlIndexRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
+    '/ashnight-control/backups': {
+      id: '/ashnight-control/backups'
+      path: '/backups'
+      fullPath: '/ashnight-control/backups'
+      preLoaderRoute: typeof AshnightControlBackupsRouteImport
       parentRoute: typeof AshnightControlRoute
     }
     '/ashnight-control/bookings': {
@@ -480,10 +512,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpecialistsSpecialistIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/backup': {
+      id: '/api/public/hooks/backup'
+      path: '/api/public/hooks/backup'
+      fullPath: '/api/public/hooks/backup'
+      preLoaderRoute: typeof ApiPublicHooksBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AshnightControlRouteChildren {
+  AshnightControlBackupsRoute: typeof AshnightControlBackupsRoute
   AshnightControlBookingsRoute: typeof AshnightControlBookingsRoute
   AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
   AshnightControlFeaturesRoute: typeof AshnightControlFeaturesRoute
@@ -498,6 +538,7 @@ interface AshnightControlRouteChildren {
 }
 
 const AshnightControlRouteChildren: AshnightControlRouteChildren = {
+  AshnightControlBackupsRoute: AshnightControlBackupsRoute,
   AshnightControlBookingsRoute: AshnightControlBookingsRoute,
   AshnightControlEscrowRoute: AshnightControlEscrowRoute,
   AshnightControlFeaturesRoute: AshnightControlFeaturesRoute,
@@ -528,6 +569,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoomsRoute: RoomsRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,
+  ApiPublicHooksBackupRoute: ApiPublicHooksBackupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

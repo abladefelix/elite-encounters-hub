@@ -172,7 +172,7 @@ function Home() {
 
           <div className="mt-9 flex flex-wrap gap-3">
             <Button asChild size="lg" variant="brass">
-              <Link to="/apply">
+              <Link to="/apply" search={{ role: "client" }}>
                 Apply for membership <ArrowRight className="size-4" />
               </Link>
             </Button>
