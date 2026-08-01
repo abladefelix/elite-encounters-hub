@@ -498,7 +498,7 @@ export async function settleDueEscrow(): Promise<{
     released += 1;
   }
 
-  return { autoConfirmed, released, skipped: null };
+  return { autoConfirmed, released, membershipsLapsed, skipped: null };
 }
 
 /* ------------------------------------------------------------ paper trail */
