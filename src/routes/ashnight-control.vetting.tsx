@@ -33,6 +33,7 @@ import {
   useAllProfiles,
   useApplications,
   useReviewApplication,
+  useStoredMedia,
   useUpdateProfile,
   type ApplicationRow,
   type ProfileRow,
