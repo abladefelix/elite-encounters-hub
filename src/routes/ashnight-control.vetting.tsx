@@ -91,6 +91,8 @@ function VettingQueue() {
     [rows, filter],
   );
 
+  const paged = usePaged(visible, 10);
+
   const selected: ApplicationRow | undefined =
     rows.find((row) => row.id === selectedId) ?? visible[0] ?? rows[0];
 

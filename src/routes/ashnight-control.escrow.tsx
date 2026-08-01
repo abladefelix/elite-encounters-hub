@@ -145,6 +145,8 @@ function AdminEscrow() {
     });
   }, [entries, filter, search, nameById]);
 
+  const paged = usePaged(rows, 25);
+
   function submitGift() {
     const created = addGift({
       label: newGift.label,
@@ -789,6 +791,11 @@ function AdminEscrow() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+        )}
+        {rows.length ? (
+          <div className="border-t border-border p-3">
+            <DataPager paged={paged} label="escrow entries" />
           </div>
         )}
       </Card>

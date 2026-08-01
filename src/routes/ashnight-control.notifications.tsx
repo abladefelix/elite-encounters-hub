@@ -42,6 +42,7 @@ type Audience = "everyone" | "clients" | "specialists" | "room" | "user";
 
 function AdminNotifications() {
   const history = useAllNotifications();
+  const paged = usePaged(history.data ?? [], 10);
   const deleteNotification = useDeleteNotification();
   const [audience, setAudience] = useState<Audience>("everyone");
   const [room, setRoom] = useState<Tier>("basic");
