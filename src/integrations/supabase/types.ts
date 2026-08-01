@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          actor_id: string | null
+          actor_label: string
+          area: string
+          created_at: string
+          details: Json
+          event: string
+          id: string
+          ip: string
+          severity: string
+          target: string
+          user_agent: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_label?: string
+          area?: string
+          created_at?: string
+          details?: Json
+          event: string
+          id?: string
+          ip?: string
+          severity?: string
+          target?: string
+          user_agent?: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_label?: string
+          area?: string
+          created_at?: string
+          details?: Json
+          event?: string
+          id?: string
+          ip?: string
+          severity?: string
+          target?: string
+          user_agent?: string
+        }
+        Relationships: []
+      }
       admin_audit_log: {
         Row: {
           action: string
@@ -192,6 +234,177 @@ export type Database = {
             columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      complaints: {
+        Row: {
+          admin_note: string
+          body: string
+          booking_id: string | null
+          category: string
+          contact_email: string
+          created_at: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          resolution: string
+          state: Database["public"]["Enums"]["complaint_state"]
+          subject: string
+          thread_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_note?: string
+          body: string
+          booking_id?: string | null
+          category?: string
+          contact_email?: string
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          resolution?: string
+          state?: Database["public"]["Enums"]["complaint_state"]
+          subject: string
+          thread_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_note?: string
+          body?: string
+          booking_id?: string | null
+          category?: string
+          contact_email?: string
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          resolution?: string
+          state?: Database["public"]["Enums"]["complaint_state"]
+          subject?: string
+          thread_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          booking_id: string | null
+          client_id: string | null
+          created_at: string
+          currency: string
+          escrow_id: string | null
+          id: string
+          issued_at: string
+          kind: Database["public"]["Enums"]["document_kind"]
+          line_items: Json
+          notes: string
+          number: string
+          paid_at: string | null
+          paystack_reference: string | null
+          platform_fee: number
+          specialist_id: string | null
+          subtotal: number
+          title: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          escrow_id?: string | null
+          id?: string
+          issued_at?: string
+          kind: Database["public"]["Enums"]["document_kind"]
+          line_items?: Json
+          notes?: string
+          number: string
+          paid_at?: string | null
+          paystack_reference?: string | null
+          platform_fee?: number
+          specialist_id?: string | null
+          subtotal?: number
+          title?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          escrow_id?: string | null
+          id?: string
+          issued_at?: string
+          kind?: Database["public"]["Enums"]["document_kind"]
+          line_items?: Json
+          notes?: string
+          number?: string
+          paid_at?: string | null
+          paystack_reference?: string | null
+          platform_fee?: number
+          specialist_id?: string | null
+          subtotal?: number
+          title?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_escrow_id_fkey"
+            columns: ["escrow_id"]
+            isOneToOne: false
+            referencedRelation: "escrow_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -480,6 +693,53 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string
+          broadcast_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string
+          read_at: string | null
+          sent_by: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          broadcast_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string
+          read_at?: string | null
+          sent_by?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          broadcast_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string
+          read_at?: string | null
+          sent_by?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_settings: {
         Row: {
           data: Json
@@ -500,6 +760,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: Database["public"]["Enums"]["account_status"]
           address: string
           available: boolean
           avatar_url: string | null
@@ -509,6 +770,10 @@ export type Database = {
           dislikes: string[]
           display_name: string
           extra: Json
+          ghana_card_back_url: string | null
+          ghana_card_expiry: string | null
+          ghana_card_front_url: string | null
+          ghana_card_number: string | null
           headline: string
           hourly_rate: number
           id: string
@@ -522,6 +787,8 @@ export type Database = {
           rating: number
           response_minutes: number
           room: Database["public"]["Enums"]["tier"] | null
+          status_changed_at: string | null
+          status_reason: string
           suspended: boolean
           terms_accepted_at: string | null
           updated_at: string
@@ -531,6 +798,7 @@ export type Database = {
           years_experience: number
         }
         Insert: {
+          account_status?: Database["public"]["Enums"]["account_status"]
           address?: string
           available?: boolean
           avatar_url?: string | null
@@ -540,6 +808,10 @@ export type Database = {
           dislikes?: string[]
           display_name?: string
           extra?: Json
+          ghana_card_back_url?: string | null
+          ghana_card_expiry?: string | null
+          ghana_card_front_url?: string | null
+          ghana_card_number?: string | null
           headline?: string
           hourly_rate?: number
           id: string
@@ -553,6 +825,8 @@ export type Database = {
           rating?: number
           response_minutes?: number
           room?: Database["public"]["Enums"]["tier"] | null
+          status_changed_at?: string | null
+          status_reason?: string
           suspended?: boolean
           terms_accepted_at?: string | null
           updated_at?: string
@@ -562,6 +836,7 @@ export type Database = {
           years_experience?: number
         }
         Update: {
+          account_status?: Database["public"]["Enums"]["account_status"]
           address?: string
           available?: boolean
           avatar_url?: string | null
@@ -571,6 +846,10 @@ export type Database = {
           dislikes?: string[]
           display_name?: string
           extra?: Json
+          ghana_card_back_url?: string | null
+          ghana_card_expiry?: string | null
+          ghana_card_front_url?: string | null
+          ghana_card_number?: string | null
           headline?: string
           hourly_rate?: number
           id?: string
@@ -584,6 +863,8 @@ export type Database = {
           rating?: number
           response_minutes?: number
           room?: Database["public"]["Enums"]["tier"] | null
+          status_changed_at?: string | null
+          status_reason?: string
           suspended?: boolean
           terms_accepted_at?: string | null
           updated_at?: string
@@ -881,6 +1162,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      account_is_active: { Args: { _user_id: string }; Returns: boolean }
       current_room: {
         Args: never
         Returns: Database["public"]["Enums"]["tier"]
@@ -897,6 +1179,12 @@ export type Database = {
       settings_section: { Args: { _section: string }; Returns: Json }
     }
     Enums: {
+      account_status:
+        | "pending"
+        | "active"
+        | "deactivated"
+        | "suspended"
+        | "banned"
       app_role: "client" | "specialist" | "admin"
       background_check: "clear" | "pending" | "flagged"
       booking_status:
@@ -906,6 +1194,8 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "disputed"
+      complaint_state: "open" | "reviewing" | "resolved" | "dismissed"
+      document_kind: "invoice" | "receipt"
       escrow_kind: "booking" | "gift" | "membership"
       escrow_state:
         | "pending"
@@ -915,7 +1205,7 @@ export type Database = {
         | "disputed"
         | "refunded"
       membership_status: "active" | "past_due" | "cancelled"
-      message_kind: "text" | "system" | "booking" | "gift"
+      message_kind: "text" | "system" | "booking" | "gift" | "location"
       report_state: "open" | "reviewing" | "actioned" | "dismissed"
       tier: "basic" | "premium" | "ultimate"
       vetting_status: "pending" | "in_review" | "approved" | "rejected"
@@ -1046,6 +1336,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_status: [
+        "pending",
+        "active",
+        "deactivated",
+        "suspended",
+        "banned",
+      ],
       app_role: ["client", "specialist", "admin"],
       background_check: ["clear", "pending", "flagged"],
       booking_status: [
@@ -1056,6 +1353,8 @@ export const Constants = {
         "cancelled",
         "disputed",
       ],
+      complaint_state: ["open", "reviewing", "resolved", "dismissed"],
+      document_kind: ["invoice", "receipt"],
       escrow_kind: ["booking", "gift", "membership"],
       escrow_state: [
         "pending",
@@ -1066,7 +1365,7 @@ export const Constants = {
         "refunded",
       ],
       membership_status: ["active", "past_due", "cancelled"],
-      message_kind: ["text", "system", "booking", "gift"],
+      message_kind: ["text", "system", "booking", "gift", "location"],
       report_state: ["open", "reviewing", "actioned", "dismissed"],
       tier: ["basic", "premium", "ultimate"],
       vetting_status: ["pending", "in_review", "approved", "rejected"],
