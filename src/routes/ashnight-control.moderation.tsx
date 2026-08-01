@@ -108,8 +108,8 @@ function AdminModeration() {
         <Stat label="Flagged words" value={String(moderation.flaggedWords.length)} icon={MessageSquareWarning} />
         <Stat label="Hits awaiting review" value={String(open)} icon={AlertTriangle} />
         <Stat
-          label="Contact sharing"
-          value={moderation.blockContactSharing ? "Restricted" : "Allowed"}
+          label="Phone numbers"
+          value={moderation.blockPhoneNumbers ? "Blocked" : "Allowed"}
           icon={ShieldBan}
         />
       </div>
