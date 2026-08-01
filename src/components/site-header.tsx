@@ -89,7 +89,7 @@ export function SiteHeader() {
                 <Link to="/auth">Sign in</Link>
               </Button>
               <Button asChild size="sm" variant="brass" className="hidden sm:inline-flex">
-                <Link to="/apply">Apply to join</Link>
+                <Link to="/apply" search={{ role: "client" }}>Apply to join</Link>
               </Button>
             </>
           )}
