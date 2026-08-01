@@ -6,7 +6,7 @@
  * There is no mock data and no localStorage behind any of these calls.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -267,6 +267,7 @@ export function useReviewApplication() {
 
 export function useThreads(userId: string | undefined) {
   const queryClient = useQueryClient();
+  const instanceId = useId();
 
   const query = useQuery({
     queryKey: ["threads", userId],
@@ -283,7 +284,7 @@ export function useThreads(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
-      .channel(`threads-${userId}`)
+      .channel(`threads-${userId}-${instanceId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "threads" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["threads", userId] });
       })
@@ -291,13 +292,14 @@ export function useThreads(userId: string | undefined) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId, queryClient]);
+  }, [userId, queryClient, instanceId]);
 
   return query;
 }
 
 export function useMessages(threadId: string | undefined) {
   const queryClient = useQueryClient();
+  const instanceId = useId();
 
   const query = useQuery({
     queryKey: ["messages", threadId],
@@ -315,7 +317,7 @@ export function useMessages(threadId: string | undefined) {
   useEffect(() => {
     if (!threadId) return;
     const channel = supabase
-      .channel(`messages-${threadId}`)
+      .channel(`messages-${threadId}-${instanceId}`)
       .on(
         "postgres_changes",
         {
@@ -332,7 +334,7 @@ export function useMessages(threadId: string | undefined) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [threadId, queryClient]);
+  }, [threadId, queryClient, instanceId]);
 
   return query;
 }
@@ -417,6 +419,7 @@ export function useUpdateBooking() {
 
 export function useEscrowEntries(threadId?: string) {
   const queryClient = useQueryClient();
+  const instanceId = useId();
 
   const query = useQuery({
     queryKey: ["escrow", threadId ?? "all"],
@@ -432,7 +435,7 @@ export function useEscrowEntries(threadId?: string) {
 
   useEffect(() => {
     const channel = supabase
-      .channel(`escrow-${threadId ?? "all"}`)
+      .channel(`escrow-${threadId ?? "all"}-${instanceId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "escrow_entries" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["escrow"] });
       })
@@ -440,7 +443,7 @@ export function useEscrowEntries(threadId?: string) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [threadId, queryClient]);
+  }, [threadId, queryClient, instanceId]);
 
   return query;
 }

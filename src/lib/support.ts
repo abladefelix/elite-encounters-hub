@@ -5,7 +5,7 @@
  * their own rows while an admin sees everything.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -27,11 +27,14 @@ function unwrap<T>(result: { data: T | null; error: { message: string } | null }
 
 export function useNotifications(userId: string | undefined) {
   const queryClient = useQueryClient();
+  // Each hook instance needs its own channel name: reusing one name means the
+  // second subscriber gets the already-subscribed channel back and `.on()` throws.
+  const instanceId = useId();
 
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
-      .channel(`notifications-${userId}`)
+      .channel(`notifications-${userId}-${instanceId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
@@ -39,7 +42,7 @@ export function useNotifications(userId: string | undefined) {
       )
       .subscribe();
     return () => void supabase.removeChannel(channel);
-  }, [queryClient, userId]);
+  }, [queryClient, userId, instanceId]);
 
   return useQuery({
     queryKey: ["notifications", userId],
