@@ -907,6 +907,12 @@ export async function clearDemoData(
   if (manifest?.serviceIds?.length) {
     await client.from("services").delete().in("id", manifest.serviceIds);
   }
+  // Catch demo services from any interrupted run the manifest never recorded.
+  await client
+    .from("services")
+    .delete()
+    .in("name", SERVICES.map((service) => service.name));
+
   await client.from("activity_log").delete().eq("event", "demo_seed");
 
   await writeManifest(null);
