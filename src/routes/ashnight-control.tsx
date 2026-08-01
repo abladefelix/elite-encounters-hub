@@ -16,6 +16,9 @@ import {
   Loader2,
   DatabaseBackup,
   Server,
+  Mail,
+  Rocket,
+
 
   ToggleLeft,
   Users,
