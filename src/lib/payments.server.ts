@@ -271,7 +271,28 @@ export async function finalizeReference(
       })
       .eq("id", membership.id);
     if (error) throw new Error(error.message);
+
+    await issueDocument({
+      kind: "receipt",
+      clientId: membership.user_id,
+      title: `Ashnight ${membership.room} room membership`,
+      subtotal: membership.amount,
+      platformFee: 0,
+      total: membership.amount,
+      lines: [
+        {
+          label: `${membership.room} room — 30 days`,
+          quantity: 1,
+          unitAmount: membership.amount,
+          amount: membership.amount,
+        },
+      ],
+      paystackReference: ref,
+      paid: true,
+      notes: "Membership renews manually — you'll be prompted before it lapses.",
+    });
     return { applied: true, detail: `Membership ${membership.id} activated` };
+
   }
 
   return { applied: false, detail: "No matching payment on file" };
