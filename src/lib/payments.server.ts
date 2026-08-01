@@ -136,6 +136,8 @@ export interface ServerSettings {
   };
   platform: { platformFeePct?: number; membershipEnabled?: boolean };
   rooms: Record<string, { priceMonthly?: number; name?: string }>;
+  /** Admin-priced booking extras, mirrored from src/lib/addons.ts. */
+  addons: { enabled?: boolean; items?: { id: string; label: string; price?: number }[] };
 }
 
 export async function serverSettings(): Promise<ServerSettings> {
@@ -146,7 +148,23 @@ export async function serverSettings(): Promise<ServerSettings> {
     escrow: (blob["escrow"] ?? {}) as ServerSettings["escrow"],
     platform: (blob["platform"] ?? {}) as ServerSettings["platform"],
     rooms: (blob["rooms"] ?? {}) as ServerSettings["rooms"],
+    addons: (blob["addons"] ?? {}) as ServerSettings["addons"],
   };
+}
+
+/**
+ * Price of the chosen add-ons, resolved from admin settings rather than from
+ * anything the browser sent, so a member can never price their own extras.
+ */
+export function addonsAmount(settings: ServerSettings, labels: string[]): number {
+  if (settings.addons?.enabled === false) return 0;
+  const items = settings.addons?.items ?? [];
+  return labels.reduce((total, label) => {
+    const match = items.find(
+      (item) => item.label.trim().toLowerCase() === String(label).trim().toLowerCase(),
+    );
+    return total + (typeof match?.price === "number" ? Math.max(0, match.price) : 0);
+  }, 0);
 }
 
 export function hoursFromNow(hours: number) {
