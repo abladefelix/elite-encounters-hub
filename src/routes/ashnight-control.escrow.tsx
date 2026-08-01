@@ -5,7 +5,10 @@ import {
   Banknote,
   Filter,
   Gift,
+  Plus,
   RotateCcw,
+  Search,
+  Trash2,
   ShieldCheck,
   Timer,
   Undo2,
@@ -88,6 +91,7 @@ function AdminEscrow() {
     releaseNow,
     refund,
     resolveDispute,
+    openManual,
   } = useEscrow();
   const {
     gifts,
@@ -102,6 +106,16 @@ function AdminEscrow() {
   } = useRoomSettings();
   const { data: allProfiles } = useAllProfiles();
   const [filter, setFilter] = useState<EscrowState | "all">("all");
+  const [search, setSearch] = useState("");
+  const [newGift, setNewGift] = useState({ label: "", glyph: "🎁", value: 20, hint: "" });
+  const [manual, setManual] = useState({
+    clientId: "",
+    specialistId: "",
+    label: "",
+    amount: 0,
+    kind: "booking" as EscrowEntry["kind"],
+    releaseImmediately: false,
+  });
 
   const nameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -112,10 +126,77 @@ function AdminEscrow() {
   const specialistName = (entry: EscrowEntry) =>
     nameById.get(entry.specialist_id) ?? "Unknown specialist";
 
-  const rows = useMemo(
-    () => (filter === "all" ? entries : entries.filter((entry) => entry.state === filter)),
-    [entries, filter],
-  );
+  const rows = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return entries.filter((entry) => {
+      if (filter !== "all" && entry.state !== filter) return false;
+      if (!term) return true;
+      const haystack = [
+        entry.label,
+        entry.paystack_reference ?? "",
+        nameById.get(entry.specialist_id) ?? "",
+        nameById.get(entry.client_id) ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [entries, filter, search, nameById]);
+
+  function submitGift() {
+    const created = addGift({
+      label: newGift.label,
+      glyph: newGift.glyph,
+      value: newGift.value,
+      hint: newGift.hint,
+    });
+    if (!created) return;
+    toast.success(`${newGift.label.trim()} added`, {
+      description: "Switch it on for the rooms that may send it.",
+    });
+    setNewGift({ label: "", glyph: "🎁", value: 20, hint: "" });
+  }
+
+  async function submitManualEntry() {
+    if (!manual.clientId || !manual.specialistId) {
+      toast.error("Pick both the member who paid and the specialist being paid.");
+      return;
+    }
+    if (manual.clientId === manual.specialistId) {
+      toast.error("The payer and the specialist must be different people.");
+      return;
+    }
+    if (!manual.label.trim()) {
+      toast.error("Describe what this payment is for.");
+      return;
+    }
+    if (!Number.isFinite(manual.amount) || manual.amount <= 0) {
+      toast.error("Enter an amount above zero.");
+      return;
+    }
+    try {
+      await openManual({
+        kind: manual.kind,
+        clientId: manual.clientId,
+        specialistId: manual.specialistId,
+        label: manual.label.trim(),
+        amount: Math.round(manual.amount),
+        feePct: manual.kind === "gift" ? settings.tipFeePct : settings.platformFeePct ?? 0,
+        releaseImmediately: manual.releaseImmediately,
+      });
+      toast.success("Escrow entry added");
+      setManual({
+        clientId: "",
+        specialistId: "",
+        label: "",
+        amount: 0,
+        kind: "booking",
+        releaseImmediately: false,
+      });
+    } catch {
+      /* openManual already surfaced the error */
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -325,6 +406,19 @@ function AdminEscrow() {
               </div>
 
               <div className="flex flex-col justify-between gap-3 lg:items-end">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Remove ${gift.label}`}
+                    onClick={() => {
+                      removeGift(gift.id);
+                      toast(`${gift.label} removed from the catalogue`);
+                    }}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </div>
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Switch
                     checked={gift.enabled}
@@ -358,6 +452,59 @@ function AdminEscrow() {
           ))}
         </div>
 
+        <div className="mt-4 grid gap-3 rounded-xl border border-dashed border-border bg-panel/60 p-4 sm:grid-cols-[4.5rem_1fr_8rem_auto]">
+          <div>
+            <Label htmlFor="new-gift-glyph" className="text-xs">
+              Icon
+            </Label>
+            <Input
+              id="new-gift-glyph"
+              className="mt-1.5"
+              value={newGift.glyph}
+              onChange={(event) => setNewGift((prev) => ({ ...prev, glyph: event.target.value }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="new-gift-label" className="text-xs">
+              New gift name
+            </Label>
+            <Input
+              id="new-gift-label"
+              className="mt-1.5"
+              placeholder="e.g. Brass lantern"
+              value={newGift.label}
+              onChange={(event) => setNewGift((prev) => ({ ...prev, label: event.target.value }))}
+            />
+            <Input
+              aria-label="New gift description"
+              className="mt-2 text-xs"
+              placeholder="What this gift says"
+              value={newGift.hint}
+              onChange={(event) => setNewGift((prev) => ({ ...prev, hint: event.target.value }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="new-gift-value" className="text-xs">
+              Cash value (GHS)
+            </Label>
+            <Input
+              id="new-gift-value"
+              type="number"
+              min={1}
+              className="mt-1.5"
+              value={newGift.value}
+              onChange={(event) =>
+                setNewGift((prev) => ({ ...prev, value: Number(event.target.value) }))
+              }
+            />
+          </div>
+          <div className="flex items-end">
+            <Button variant="brass" onClick={submitGift}>
+              <Plus className="size-4" /> Add gift
+            </Button>
+          </div>
+        </div>
+
         <Separator className="my-6" />
 
         <h3 className="font-display text-sm font-semibold">Per-room gifting rules</h3>
@@ -379,8 +526,130 @@ function AdminEscrow() {
         </div>
       </Card>
 
+      {/* ------------------------------------------------- manual escrow entry */}
+      <Card className="p-6">
+        <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
+          <Plus className="size-4 text-primary" /> Add an escrow entry
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          For money taken outside the app — a bank transfer or cash on site. The entry follows the
+          same hold window and appears in the member's and specialist's ledgers.
+        </p>
+
+        <Separator className="my-5" />
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div>
+            <Label className="text-xs">Paid by (member)</Label>
+            <Select
+              value={manual.clientId}
+              onValueChange={(value) => setManual((prev) => ({ ...prev, clientId: value }))}
+            >
+              <SelectTrigger className="mt-1.5" aria-label="Member who paid">
+                <SelectValue placeholder="Choose a member" />
+              </SelectTrigger>
+              <SelectContent>
+                {(allProfiles ?? []).map((profile) => (
+                  <SelectItem key={profile.id} value={profile.id}>
+                    {profile.display_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Paid to (specialist)</Label>
+            <Select
+              value={manual.specialistId}
+              onValueChange={(value) => setManual((prev) => ({ ...prev, specialistId: value }))}
+            >
+              <SelectTrigger className="mt-1.5" aria-label="Specialist being paid">
+                <SelectValue placeholder="Choose a specialist" />
+              </SelectTrigger>
+              <SelectContent>
+                {(allProfiles ?? []).map((profile) => (
+                  <SelectItem key={profile.id} value={profile.id}>
+                    {profile.display_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Type</Label>
+            <Select
+              value={manual.kind}
+              onValueChange={(value) =>
+                setManual((prev) => ({ ...prev, kind: value as EscrowEntry["kind"] }))
+              }
+            >
+              <SelectTrigger className="mt-1.5" aria-label="Entry type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="booking">Booking</SelectItem>
+                <SelectItem value="gift">Gift</SelectItem>
+                <SelectItem value="membership">Membership</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="manual-label" className="text-xs">
+              What it's for
+            </Label>
+            <Input
+              id="manual-label"
+              className="mt-1.5"
+              placeholder="e.g. Deep clean — East Legon"
+              value={manual.label}
+              onChange={(event) => setManual((prev) => ({ ...prev, label: event.target.value }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="manual-amount" className="text-xs">
+              Amount (GHS)
+            </Label>
+            <Input
+              id="manual-amount"
+              type="number"
+              min={1}
+              className="mt-1.5"
+              value={manual.amount}
+              onChange={(event) =>
+                setManual((prev) => ({ ...prev, amount: Number(event.target.value) }))
+              }
+            />
+          </div>
+          <div className="flex flex-col justify-end gap-3">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Switch
+                checked={manual.releaseImmediately}
+                onCheckedChange={(value) =>
+                  setManual((prev) => ({ ...prev, releaseImmediately: value }))
+                }
+                aria-label="Deposit immediately"
+              />
+              Deposit immediately (skip the hold window)
+            </label>
+            <Button variant="brass" onClick={() => void submitManualEntry()}>
+              <Plus className="size-4" /> Add entry
+            </Button>
+          </div>
+        </div>
+      </Card>
+
       {/* --------------------------------------------------------------- ledger */}
       <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-56 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Search escrow by payment, member, specialist or reference"
+            aria-label="Search escrow ledger"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
         <Filter className="size-4 text-muted-foreground" />
         <Select value={filter} onValueChange={(value) => setFilter(value as EscrowState | "all")}>
           <SelectTrigger className="w-56" aria-label="Filter escrow by state">
@@ -398,9 +667,11 @@ function AdminEscrow() {
       </div>
 
       <Card className="overflow-hidden p-0">
-        {entries.length === 0 ? (
+        {rows.length === 0 ? (
           <p className="p-8 text-center text-sm text-muted-foreground">
-            No escrow activity yet. Payments and gifts sent from a chat thread land here.
+            {entries.length === 0
+              ? "No escrow activity yet. Payments and gifts sent from a chat thread land here."
+              : "No escrow entries match this search."}
           </p>
         ) : (
           <div className="overflow-x-auto">
