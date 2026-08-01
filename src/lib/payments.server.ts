@@ -330,6 +330,33 @@ export async function finalizeReference(
       .eq("id", membership.id);
     if (error) throw new Error(error.message);
 
+    // Paying reinstates the member immediately: back into their room and back
+    // to an active account if the lapse had switched them off.
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("account_status")
+      .eq("id", membership.user_id)
+      .maybeSingle();
+    await admin
+      .from("profiles")
+      .update({
+        room: membership.room,
+        account_status: profile?.account_status === "banned" ? "banned" : "active",
+        status_reason:
+          profile?.account_status === "banned" ? "Banned by Ashnight." : "Membership paid and active.",
+        status_changed_at: new Date().toISOString(),
+      })
+      .eq("id", membership.user_id);
+    await admin.from("notifications").insert({
+      user_id: membership.user_id,
+      kind: "membership",
+      title: "Membership active",
+      body: `Your ${membership.room} room is open again for the next 30 days.`,
+      link: "/rooms",
+    });
+
+
+
     await issueDocument({
       kind: "receipt",
       clientId: membership.user_id,
