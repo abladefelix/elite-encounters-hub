@@ -194,6 +194,9 @@ export interface ModerationVerdict {
   action: "allow" | "mask" | "block";
   /** Body to actually send (masked when action is "mask"). */
   body: string;
+  /** Phone-number hits, governed by their own admin switch. */
+  phones: Finding[];
+  /** Email, link and social-handle hits. */
   contact: Finding[];
   words: Finding[];
   findings: Finding[];
@@ -211,6 +214,7 @@ export function moderateMessage(
   const clean: ModerationVerdict = {
     action: "allow",
     body,
+    phones: [],
     contact: [],
     words: [],
     findings: [],
@@ -218,15 +222,19 @@ export function moderateMessage(
   };
   if (!settings.enabled) return clean;
 
-  const contactOn = settings.blockContactSharing && !settings.contactExemptRooms[room];
-  const contact = contactOn ? detectContact(body) : [];
+  const exempt = settings.contactExemptRooms[room];
+  const phoneOn = settings.blockPhoneNumbers && !exempt;
+  const contactOn = settings.blockContactSharing && !exempt;
+  const phones = phoneOn ? detectPhones(body) : [];
+  const contact = contactOn ? detectContact(body, { includePhones: false }) : [];
   const words = settings.flaggedWordsEnabled
     ? detectFlaggedWords(body, settings.flaggedWords)
     : [];
 
-  if (!contact.length && !words.length) return clean;
+  if (!phones.length && !contact.length && !words.length) return clean;
 
   const actions: ModerationAction[] = [];
+  if (phones.length) actions.push(settings.phoneAction);
   if (contact.length) actions.push(settings.contactAction);
   if (words.length) actions.push(settings.flaggedWordsAction);
   const action = actions.reduce<"allow" | "mask" | "block">((worst, current) => {
@@ -234,8 +242,11 @@ export function moderateMessage(
     return RANK[mapped] > RANK[worst] ? mapped : worst;
   }, "allow");
 
-  const findings = dedupe([...contact, ...words]);
+  const findings = dedupe([...phones, ...contact, ...words]);
   const reasons: string[] = [];
+  if (phones.length) {
+    reasons.push(phones.length > 1 ? "phone numbers" : "a phone number");
+  }
   if (contact.length) {
     reasons.push(
       `contact details (${[...new Set(contact.map((f) => FINDING_LABEL[f.kind].toLowerCase()))].join(", ")})`,
@@ -248,6 +259,7 @@ export function moderateMessage(
   return {
     action,
     body: action === "mask" ? maskFindings(body, findings) : body,
+    phones,
     contact,
     words,
     findings,
