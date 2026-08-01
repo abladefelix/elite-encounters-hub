@@ -135,7 +135,9 @@ function RootComponent() {
           <EscrowProvider>
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
+            <MobileTabBar />
             <Toaster position="top-center" />
+
           </EscrowProvider>
         </RoomSettingsProvider>
       </ThemeProvider>
