@@ -10,7 +10,10 @@ import {
   type ReactNode,
 } from "react";
 
+import { toast } from "sonner";
+
 import { supabase } from "@/integrations/supabase/client";
+import { isBlocked, type AccountStatus } from "@/lib/account-status";
 import type { Database } from "@/integrations/supabase/types";
 
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
@@ -86,6 +89,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.subscription.unsubscribe();
     };
   }, [loadIdentity, queryClient]);
+
+  // A member banned, suspended or deactivated mid-session loses access immediately.
+  useEffect(() => {
+    const status = profile?.account_status as AccountStatus | undefined;
+    if (!profile || !isBlocked(status)) return;
+    toast.error(`Your Ashnight account is ${status}.`, {
+      description: profile.status_reason || "Contact support if you think this is a mistake.",
+    });
+    void supabase.auth.signOut();
+  }, [profile]);
 
   const refresh = useCallback(async () => {
     const { data } = await supabase.auth.getUser();
