@@ -35,6 +35,50 @@ See [docs/SETUP.md § 7](docs/SETUP.md#7-backups--operations--daily-off-site-sna
 for the Dropbox/Drive token setup, Windows/Linux/pg_cron schedules and the restore
 procedure.
 
+## Media sharing & admin switches
+
+Everything below is toggled live in **Control room → Features** (no deploy needed) and every
+change is written to the admin audit log.
+
+### One-to-one chat attachments
+
+Yes — members can attach images and files inside a thread. Three layers must all agree before
+the paperclip and photo buttons appear:
+
+| Layer | Where | Effect |
+| --- | --- | --- |
+| `Chat attachments` | Control room → Features | Master switch for **all** attachments (photos *and* files) |
+| `Chat image sharing` | Control room → Features | Photos only — turn images off while keeping documents on |
+| Room privileges `photoSharing` / `fileSharing` | Control room → Rooms | Per-tier (basic / premium / ultimate) allowance |
+
+Images sent in chat render as inline previews; other files show as a named download link.
+Uploads land in the private `attachments` bucket under the uploader's own folder
+(`<user-id>/<thread-id>/…`) and are served through short-lived signed URLs — nothing is public.
+Turning a switch off takes effect on the next message send for everyone, and existing
+attachments stay readable to the two thread members and admins.
+
+### Specialist portfolio at sign-up
+
+| Switch | Effect |
+| --- | --- |
+| `Specialist portfolio uploads` | Shows the photo + video picker on the specialist sign-up form |
+
+Specialists can attach **up to 6 work photos** (8MB each) and **one intro video** (60MB max)
+while creating their account. Files upload only after the account has a session, into
+`attachments/<user-id>/portfolio/…`, and the stored paths are recorded on the specialist's
+profile (`profiles.extra.portfolio_photos` / `portfolio_video`) so vetting can review them
+before assigning a room.
+
+### Continue with Google
+
+| Switch | Default | Effect |
+| --- | --- | --- |
+| `Continue with Google` | **Off** | Shows/hides the Google button on both the sign-in and sign-up tabs |
+
+Google sign-in is optional and **hidden by default** — email and password is the only visible
+route until an admin enables it. Enable the Google provider on the backend auth settings before
+switching it on, otherwise the first attempt errors.
+
 ## Quick start (local development)
 
 ```sh
