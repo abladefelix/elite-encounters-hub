@@ -8,7 +8,9 @@ import {
   BadgeCheck,
   CalendarCheck,
   ClipboardList,
+  Database,
   DoorOpen,
+
   KeyRound,
   ShieldCheck,
   Sparkles,
@@ -63,7 +65,9 @@ const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] 
   { to: "/ashnight-control/email", label: "Email & domain", icon: Mail },
   { to: "/ashnight-control/backups", label: "Backups", icon: DatabaseBackup },
   { to: "/ashnight-control/server", label: "Server & DNS", icon: Server },
+  { to: "/ashnight-control/demo", label: "Demo data", icon: Database },
   { to: "/ashnight-control/deploy", label: "Deploy", icon: Rocket },
+
 ];
 
 function AdminLayout() {
