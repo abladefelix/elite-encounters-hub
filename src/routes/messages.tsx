@@ -97,6 +97,8 @@ function MessagesPage() {
   const [call, setCall] = useState<CallMode | null>(null);
   const [requestOpen, setRequestOpen] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [ratingOpen, setRatingOpen] = useState(false);
   const [showListOnMobile, setShowListOnMobile] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -104,6 +106,7 @@ function MessagesPage() {
   const member = currentClient();
   const { threadList, messages, typing, send, systemNote, bookingNote, giftNote } =
     useChat(activeThreadId);
+  const { averageFor } = useRatings();
   const {
     settings: escrow,
     open: openEscrow,
@@ -121,6 +124,59 @@ function MessagesPage() {
   const videoAllowed = canCall(member.room, "video");
   const photosAllowed = can(member.room, "photoSharing");
   const filesAllowed = can(member.room, "fileSharing");
+  const myRating = averageFor(specialist.id);
+
+  function handleReport(draft: ReportDraft) {
+    fileReport({
+      threadId: activeThread.id,
+      reporterId: CURRENT_CLIENT_ID,
+      reportedId: specialist.id,
+      reportedName: specialist.name,
+      room: member.room,
+      reason: draft.reason,
+      details: draft.details,
+      excerpt: messages
+        .slice(-4)
+        .map((message) => message.body)
+        .join(" | ")
+        .slice(0, 300),
+      blocked: draft.blocked,
+    });
+
+    systemNote(
+      activeThread.id,
+      `You reported this conversation to Ashnight trust & safety — ${REPORT_REASON_LABEL[draft.reason]}.${
+        draft.blocked ? " The member is blocked while we review." : ""
+      }`,
+    );
+    toast.success("Report sent to Ashnight trust & safety", {
+      description: "We review reports with the full thread attached, usually within a few hours.",
+    });
+  }
+
+  function handleRating(draft: RatingDraft) {
+    saveRating({
+      threadId: activeThread.id,
+      authorId: CURRENT_CLIENT_ID,
+      specialistId: specialist.id,
+      specialistName: specialist.name,
+      stars: draft.stars,
+      note: draft.note,
+      tags: draft.tags,
+    });
+
+    systemNote(
+      activeThread.id,
+      `You rated ${specialist.name.split(" ")[0]} ${draft.stars}/5${
+        draft.tags.length ? ` · ${draft.tags.join(", ")}` : ""
+      }${draft.note ? ` — “${draft.note}”` : ""}`,
+    );
+    toast.success(`${draft.stars}-star rating posted`, {
+      description: `It's on ${specialist.name.split(" ")[0]}'s Ashnight profile now.`,
+    });
+  }
+
+
 
 
   useEffect(() => {
