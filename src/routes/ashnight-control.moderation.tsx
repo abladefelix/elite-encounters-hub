@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TIERS, useRoomSettings } from "@/lib/room-settings";
+import { useRoomSettings } from "@/lib/room-settings";
 import {
   FINDING_LABEL,
   MODERATION_ACTIONS,
@@ -208,7 +208,7 @@ function AdminModeration() {
           on-platform.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {TIERS.map((tier) => (
+          {roomIds.map((tier) => (
             <div
               key={tier}
               className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-panel px-4 py-3"

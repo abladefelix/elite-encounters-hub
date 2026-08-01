@@ -43,7 +43,7 @@ import {
   type EscrowSettings,
   type EscrowState,
 } from "@/lib/escrow";
-import { TIERS, useRoomSettings } from "@/lib/room-settings";
+import { useRoomSettings } from "@/lib/room-settings";
 import type { RoomGiftRules } from "@/lib/gifts";
 import { useAllProfiles } from "@/lib/queries";
 import { money, type Tier } from "@/lib/types";
@@ -333,8 +333,8 @@ function AdminEscrow() {
                   {gift.enabled ? "Live" : "Off"}
                 </label>
                 <div className="flex flex-wrap gap-1.5">
-                  {TIERS.map((tier) => {
-                    const on = gifts.rooms[tier].giftIds.includes(gift.id);
+                  {roomIds.map((tier) => {
+                    const on = giftRulesOf(tier).giftIds.includes(gift.id);
                     return (
                       <Button
                         key={tier}
@@ -344,7 +344,7 @@ function AdminEscrow() {
                         className="h-7 px-2.5 text-[11px]"
                         onClick={() => toggleRoomGift(tier, gift.id)}
                       >
-                        {profiles[tier].name}
+                        {profileOf(tier).name}
                       </Button>
                     );
                   })}
@@ -358,15 +358,16 @@ function AdminEscrow() {
 
         <h3 className="font-display text-sm font-semibold">Per-room gifting rules</h3>
         <div className="mt-3 grid gap-4 lg:grid-cols-3">
-          {TIERS.map((tier) => (
+          {roomIds.map((tier) => (
             <RoomGiftCard
               key={tier}
               tier={tier}
-              name={profiles[tier].name}
-              rules={gifts.rooms[tier]}
+              name={profileOf(tier).name}
+              rules={giftRulesOf(tier)}
               count={
-                gifts.catalog.filter((gift) => gift.enabled && gifts.rooms[tier].giftIds.includes(gift.id))
-                  .length
+                gifts.catalog.filter(
+                  (gift) => gift.enabled && giftRulesOf(tier).giftIds.includes(gift.id),
+                ).length
               }
               onChange={setRoomGiftField}
             />

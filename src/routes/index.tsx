@@ -25,7 +25,7 @@ import { SpecialistCard } from "@/components/specialist-card";
 import { TierBadge } from "@/components/tier-badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useSpecialists, type ProfileRow } from "@/lib/queries";
-import { TIERS, useRoomSettings } from "@/lib/room-settings";
+import { useRoomSettings } from "@/lib/room-settings";
 import { initials, money, type Specialist } from "@/lib/types";
 import { AuthPage } from "@/routes/auth";
 import { useAuth } from "@/hooks/use-auth";
@@ -137,7 +137,7 @@ function useServiceNamesFor(specialistIds: string[]) {
 
 export function Home() {
   const { data: specialists, isLoading: specialistsLoading } = useSpecialists("all");
-  const { profiles: roomProfiles } = useRoomSettings();
+  const { roomIds, profileOf } = useRoomSettings();
 
   const featured = useMemo(
     () => [...(specialists ?? [])].sort((a, b) => b.rating - a.rating).slice(0, 3),
@@ -296,8 +296,8 @@ export function Home() {
         </div>
 
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
-          {TIERS.map((tier) => {
-            const room = roomProfiles[tier];
+          {roomIds.map((tier) => {
+            const room = profileOf(tier);
             return (
               <Card
                 key={tier}

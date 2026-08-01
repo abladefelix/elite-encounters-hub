@@ -27,7 +27,7 @@ import {
   formatLeadTime,
   formatSupport,
   roomAccentStyle,
-  TIERS,
+  NEW_ROOM_PRIVILEGES,
   useRoomSettings,
   type RoomPolicyMap,
   type RoomPrivileges,
@@ -95,11 +95,17 @@ function privilegeList(privileges: RoomPrivileges): string[] {
   return list;
 }
 
-function comparisonRows(policy: RoomPolicyMap) {
+interface ComparisonRow {
+  feature: string;
+  values: (string | boolean)[];
+}
+
+function comparisonRows(policy: RoomPolicyMap, roomIds: Tier[]): ComparisonRow[] {
   const value = (pick: (p: RoomPrivileges) => string | boolean) => ({
-    basic: pick(policy.basic),
-    premium: pick(policy.premium),
-    ultimate: pick(policy.ultimate),
+    values: roomIds.map((tier) => {
+      const privileges = policy[tier];
+      return privileges ? pick(privileges) : "—";
+    }),
   });
 
   return [
@@ -121,12 +127,13 @@ function comparisonRows(policy: RoomPolicyMap) {
   ];
 }
 
-const TIER_RANK: Record<Tier, number> = { basic: 0, premium: 1, ultimate: 2 };
+
 
 function RoomsPage() {
-  const { policy, profiles } = useRoomSettings();
+  const { policy, profiles, roomIds, profileOf } = useRoomSettings();
   const { user, loading: authLoading } = useAuth();
-  const rows = comparisonRows(policy);
+  const rows = comparisonRows(policy, roomIds);
+  const rank = (tier: Tier) => roomIds.indexOf(tier);
 
   const { data: allSpecialists, isLoading: specialistsLoading } = useSpecialists("all");
   const { data: membership, isLoading: membershipLoading } = useMyMembership(user?.id);
@@ -149,10 +156,12 @@ function RoomsPage() {
     }
   }
 
-  const specialistCounts: Record<Tier, number> = { basic: 0, premium: 0, ultimate: 0 };
+  const specialistCounts: Partial<Record<Tier, number>> = {};
+  for (const tier of roomIds) specialistCounts[tier] = 0;
   for (const specialist of allSpecialists ?? []) {
-    if (specialist.room && specialist.room in specialistCounts) {
-      specialistCounts[specialist.room as Tier] += 1;
+    const room = specialist.room as Tier | null;
+    if (room && room in specialistCounts) {
+      specialistCounts[room] = (specialistCounts[room] ?? 0) + 1;
     }
   }
 
@@ -205,15 +214,15 @@ function RoomsPage() {
         ) : null}
 
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
-          {TIERS.map((tier) => {
-            const privileges = policy[tier];
-            const profile = profiles[tier];
-            const specialistCount = specialistCounts[tier];
+          {roomIds.map((tier) => {
+            const privileges = policy[tier] ?? NEW_ROOM_PRIVILEGES;
+            const profile = profileOf(tier);
+            const specialistCount = specialistCounts[tier] ?? 0;
             const isCurrentRoom = activeMembership?.room === tier;
             const isUpgrade =
               Boolean(activeMembership) &&
               !isCurrentRoom &&
-              TIER_RANK[tier] > TIER_RANK[activeMembership!.room];
+              rank(tier) > rank(activeMembership!.room as Tier);
 
             return (
               <Card
@@ -333,24 +342,25 @@ function RoomsPage() {
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="min-w-56">Feature</TableHead>
-                  <TableHead className="text-center">Basic</TableHead>
-                  <TableHead className="text-center">Premium</TableHead>
-                  <TableHead className="text-center">Ultimate</TableHead>
+                  {roomIds.map((tier) => (
+                    <TableHead key={tier} className="text-center">
+                      {profileOf(tier).name.replace(" Room", "")}
+                    </TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map((row) => (
                   <TableRow key={row.feature}>
                     <TableCell className="font-medium">{row.feature}</TableCell>
-                    <TableCell className="text-center text-muted-foreground">
-                      <Cell value={row.basic} />
-                    </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
-                      <Cell value={row.premium} />
-                    </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
-                      <Cell value={row.ultimate} />
-                    </TableCell>
+                    {row.values.map((value, index) => (
+                      <TableCell
+                        key={roomIds[index] ?? index}
+                        className="text-center text-muted-foreground"
+                      >
+                        <Cell value={value} />
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))}
               </TableBody>
