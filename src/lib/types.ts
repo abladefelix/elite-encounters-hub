@@ -138,11 +138,16 @@ export interface Booking {
   platformFeePct: number;
 }
 
-export const TIER_LABEL: Record<Tier, string> = {
+export const TIER_LABEL: RoomMap<string> = {
   basic: "Basic",
   premium: "Premium",
   ultimate: "Ultimate",
 };
+
+/** Fallback label for a room the base map doesn't know (a custom room slot). */
+export function tierLabel(tier: Tier) {
+  return TIER_LABEL[tier] ?? `Room ${tier.replace("room", "")}`;
+}
 
 export function bookingTotal({
   hours,
