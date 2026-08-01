@@ -48,6 +48,42 @@ export const EXPECTED_KEYS: { key: string; label: string; description: string; s
       secret: true,
     },
     {
+      key: "dropbox_app_key",
+      label: "Dropbox app key",
+      description: "App key of the Dropbox app that receives nightly backups.",
+      secret: false,
+    },
+    {
+      key: "dropbox_app_secret",
+      label: "Dropbox app secret",
+      description: "App secret used to refresh the Dropbox access token.",
+      secret: true,
+    },
+    {
+      key: "dropbox_refresh_token",
+      label: "Dropbox refresh token",
+      description: "Offline refresh token for the Dropbox account that stores backups.",
+      secret: true,
+    },
+    {
+      key: "gdrive_client_id",
+      label: "Google Drive client ID",
+      description: "OAuth client ID of the Google Cloud project used for backups.",
+      secret: false,
+    },
+    {
+      key: "gdrive_client_secret",
+      label: "Google Drive client secret",
+      description: "OAuth client secret used to refresh the Drive access token.",
+      secret: true,
+    },
+    {
+      key: "gdrive_refresh_token",
+      label: "Google Drive refresh token",
+      description: "Offline refresh token for the Google account that stores backups.",
+      secret: true,
+    },
+    {
       key: "livekit_url",
       label: "LiveKit server URL",
       description: "wss:// media server that carries voice and video calls.",
