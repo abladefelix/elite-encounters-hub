@@ -314,23 +314,7 @@ function VettingQueue() {
               ) : null}
             </dl>
 
-            {profile && (profile.ghana_card_front_url || profile.ghana_card_back_url) ? (
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {[profile.ghana_card_front_url, profile.ghana_card_back_url]
-                  .filter((url): url is string => Boolean(url))
-                  .map((url, index) => (
-                    <a
-                      key={url}
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-lg border border-border p-2 text-center text-[11px] text-primary hover:bg-secondary/50"
-                    >
-                      View card {index === 0 ? "front" : "back"}
-                    </a>
-                  ))}
-              </div>
-            ) : null}
+            {profile ? <ApplicantMedia profile={profile} /> : null}
 
             <div className="mt-5 rounded-lg border border-border bg-panel p-4">
               <p className="flex items-center gap-2 text-xs font-medium">
