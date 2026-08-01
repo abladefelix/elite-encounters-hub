@@ -15,7 +15,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { REPORT_REASONS, type ReportReason } from "@/lib/reports";
 import { cn } from "@/lib/utils";
-import type { Specialist } from "@/lib/types";
 
 export interface ReportDraft {
   reason: ReportReason;
@@ -25,12 +24,12 @@ export interface ReportDraft {
 
 /** Lets a member report the other person in a thread to Ashnight trust & safety. */
 export function ReportDialog({
-  specialist,
+  specialistName,
   open,
   onOpenChange,
   onSubmit,
 }: {
-  specialist: Specialist;
+  specialistName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (draft: ReportDraft) => void;
@@ -53,7 +52,7 @@ export function ReportDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display">
-            <Flag className="size-4 text-destructive" /> Report {specialist.name.split(" ")[0]}
+            <Flag className="size-4 text-destructive" /> Report {specialistName.split(" ")[0]}
           </DialogTitle>
           <DialogDescription>
             Ashnight trust &amp; safety reviews every report with the thread attached. Nothing is

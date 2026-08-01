@@ -15,7 +15,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RATING_TAGS, STAR_LABEL } from "@/lib/reports";
 import { cn } from "@/lib/utils";
-import type { Specialist } from "@/lib/types";
 
 export interface RatingDraft {
   stars: number;
@@ -25,12 +24,12 @@ export interface RatingDraft {
 
 /** In-thread star rating for the specialist a member has been working with. */
 export function RatingDialog({
-  specialist,
+  specialistName,
   open,
   onOpenChange,
   onSubmit,
 }: {
-  specialist: Specialist;
+  specialistName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (draft: RatingDraft) => void;
@@ -55,7 +54,7 @@ export function RatingDialog({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display">Rate {specialist.name.split(" ")[0]}</DialogTitle>
+          <DialogTitle className="font-display">Rate {specialistName.split(" ")[0]}</DialogTitle>
           <DialogDescription>
             Ratings stay on the specialist's Ashnight profile and feed their room review.
           </DialogDescription>
