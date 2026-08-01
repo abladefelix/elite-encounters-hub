@@ -815,7 +815,7 @@ export function RoomSettingsProvider({ children }: { children: ReactNode }) {
       setContactExemptRoom,
       contactSharingAllowed: (room) =>
         !state.moderation.enabled ||
-        !state.moderation.blockContactSharing ||
+        (!state.moderation.blockContactSharing && !state.moderation.blockPhoneNumbers) ||
         state.moderation.contactExemptRooms[room],
       giftsFor: (room) => {
         const rules = state.gifts.rooms[room] ?? DEFAULT_ROOM_GIFT_RULES[room];
