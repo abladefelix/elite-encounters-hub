@@ -21,6 +21,8 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { rooms } from "@/lib/mock-data";
 import { money } from "@/lib/types";
+import { useServiceCatalog } from "@/lib/service-catalog";
+import { cn } from "@/lib/utils";
 
 const applicationSchema = z.object({
   role: z.enum(["client", "specialist"]),
@@ -57,6 +59,8 @@ export const Route = createFileRoute("/apply")({
 function ApplyPage() {
   const [role, setRole] = useState<"client" | "specialist">("client");
   const [room, setRoom] = useState("premium");
+  const [services, setServices] = useState<string[]>([]);
+  const { selectableServices } = useServiceCatalog();
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitted, setSubmitted] = useState(false);
 
@@ -81,6 +85,11 @@ function ApplyPage() {
       }
       setErrors(next);
       toast.error("Please fix the highlighted fields");
+      return;
+    }
+
+    if (role === "specialist" && services.length === 0) {
+      toast.error("Pick at least one service you render");
       return;
     }
 
@@ -197,6 +206,47 @@ function ApplyPage() {
                     : " Specialists never pay to join — you're paid per booking, minus the platform fee."}
                 </p>
               </div>
+
+              {role === "specialist" ? (
+                <div>
+                  <Label className="text-sm">Services you render</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Ashnight operations publishes this catalogue — pick everything you cover.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {selectableServices.map((service) => {
+                      const selected = services.includes(service.id);
+                      return (
+                        <button
+                          key={service.id}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() =>
+                            setServices((prev) =>
+                              prev.includes(service.id)
+                                ? prev.filter((id) => id !== service.id)
+                                : [...prev, service.id],
+                            )
+                          }
+                          className={cn(
+                            "rounded-full border px-3.5 py-1.5 text-xs transition-colors",
+                            selected
+                              ? "border-primary/50 bg-primary/10 text-foreground"
+                              : "border-border bg-background text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          {service.label}
+                        </button>
+                      );
+                    })}
+                    {selectableServices.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No services published yet — we'll follow up after review.
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
 
               <div>
                 <Label htmlFor="about" className="text-sm">
