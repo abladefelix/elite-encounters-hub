@@ -223,7 +223,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     input: Partial<Omit<MessageRowType, "id" | "created_at" | "thread_id">> & { body: string },
   ) {
     if (!activeThread) return null;
-    return sendMessage.mutateAsync({
+    try {
+      return await sendMessage.mutateAsync({
       thread_id: activeThread.id,
       author_id: input.kind === "system" ? null : userId,
       kind: input.kind ?? "text",
@@ -232,8 +233,19 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       booking_id: input.booking_id ?? null,
       attachment_url: input.attachment_url ?? null,
       attachment_name: input.attachment_name ?? null,
-      redacted: input.redacted ?? false,
-    });
+        redacted: input.redacted ?? false,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Message could not be sent";
+      if (message.includes("ASHNIGHT_MODERATION_BLOCKED")) {
+        toast.error("Message withheld", {
+          description:
+            "Ashnight keeps contact details and off-platform deals out of chat. Edit your message and try again.",
+        });
+        return null;
+      }
+      throw error;
+    }
   }
 
   function systemNote(body: string) {
