@@ -3,7 +3,7 @@ import { Sparkle } from "lucide-react";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-24 border-t border-border/70 bg-surface/50">
+    <footer className="mt-24 hidden border-t border-border/70 bg-surface/50 md:block">
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
