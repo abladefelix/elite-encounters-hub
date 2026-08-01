@@ -433,6 +433,15 @@ function ProfilePage() {
             <Save className="size-4" /> Save profile
           </Button>
         </div>
+
+        {/* account security */}
+        <TwoFactorCard
+          className="mt-8"
+          available={flags.twoFactorAvailable}
+          required={
+            flags.requireTwoFactorForSpecialists && isSpecialist
+          }
+        />
       </div>
 
       <SiteFooter />
