@@ -426,15 +426,47 @@ function MessagesPage() {
                       <p className="truncate text-sm font-semibold">{specialist.name}</p>
                       <TierBadge tier={specialist.room} className="hidden sm:inline-flex" />
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
+                    <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                       {typing
                         ? "Typing…"
                         : specialist.online
                           ? "Online now"
                           : `Replies in ~${specialist.responseMinutes}m`}
+                      {myRating ? (
+                        <span className="flex items-center gap-1 text-primary">
+                          · <Star className="size-3 fill-primary" /> {myRating.toFixed(1)} from you
+                        </span>
+                      ) : null}
                     </p>
                   </div>
                   <div className="ml-auto flex items-center gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Rate ${specialist.name}`}
+                          onClick={() => setRatingOpen(true)}
+                        >
+                          <Star className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Rate this specialist</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Report ${specialist.name}`}
+                          onClick={() => setReportOpen(true)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Flag className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Report this member to trust &amp; safety</TooltipContent>
+                    </Tooltip>
                     <CallControl
                       allowed={audioAllowed}
                       label="voice"
@@ -452,6 +484,7 @@ function MessagesPage() {
                       <Video className="size-4" />
                     </CallControl>
                   </div>
+
                 </header>
 
                 {!audioAllowed && !videoAllowed ? (
