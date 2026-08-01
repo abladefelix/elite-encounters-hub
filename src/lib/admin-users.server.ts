@@ -69,7 +69,7 @@ function clean(fields: AdminUserFields) {
     patch["ghana_card_number"] = normalizeCard(patch["ghana_card_number"] as string) || null;
   }
   if (patch["ghana_card_expiry"] === "") patch["ghana_card_expiry"] = null;
-  return patch;
+  return patch as Database["public"]["Tables"]["profiles"]["Update"];
 }
 
 async function setRoles(userId: string, roles: AppRole[]) {
