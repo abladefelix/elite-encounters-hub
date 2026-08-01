@@ -225,7 +225,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   bookingsEnabled: true,
   callsEnabled: true,
   memberThemeChoice: true,
-  defaultTheme: "dark",
+  defaultTheme: "light",
 };
 
 /* ------------------------------------------------------------------- gifts */
