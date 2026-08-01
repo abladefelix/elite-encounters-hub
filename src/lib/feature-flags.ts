@@ -17,6 +17,7 @@ export type FeatureFlagKey =
   | "bookingsEnabled"
   | "attachmentsEnabled"
   | "chatImageSharing"
+  | "chatLocationSharing"
   | "googleSignIn"
   | "specialistPortfolioUploads"
   | "ratingsEnabled"
@@ -87,6 +88,12 @@ export const FEATURE_FLAGS: FeatureFlagMeta[] = [
     key: "chatImageSharing",
     label: "Chat image sharing",
     hint: "Photos in one-to-one threads. Per-room photo privileges still apply underneath.",
+    group: "Chat & calls",
+  },
+  {
+    key: "chatLocationSharing",
+    label: "Share location in chat",
+    hint: "Lets members send their current location so a specialist can find the address.",
     group: "Chat & calls",
   },
   {
@@ -239,6 +246,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   bookingsEnabled: true,
   attachmentsEnabled: true,
   chatImageSharing: true,
+  chatLocationSharing: true,
   googleSignIn: false,
   specialistPortfolioUploads: true,
   ratingsEnabled: true,
