@@ -269,34 +269,38 @@ export function useEscrow(): EscrowContextValue {
     [update],
   );
 
+  // Member-side transitions run through secure server actions: the database no
+  // longer lets a member or specialist edit an escrow row directly.
   const confirmComplete = useCallback<EscrowContextValue["confirmComplete"]>(
-    (id) =>
-      runUpdate(
-        id,
-        {
-          state: "clearing",
-          release_at: hoursFromNow(settings.holdHours),
-          admin_note: "Member confirmed the visit — clearing window started.",
-        },
-        "Couldn't confirm the visit",
-      ),
-    [runUpdate, settings.holdHours],
+    async (id) => {
+      try {
+        await confirmEscrow({ data: { escrowId: id } });
+        await refreshEntries();
+      } catch (error) {
+        toast.error("Couldn't confirm the visit", {
+          description: error instanceof Error ? error.message : "Please try again.",
+        });
+        throw error;
+      }
+    },
+    [confirmEscrow, refreshEntries],
   );
 
   const raiseIssue = useCallback<EscrowContextValue["raiseIssue"]>(
-    (id, reason) =>
-      runUpdate(
-        id,
-        {
-          state: "disputed",
-          release_at: null,
-          dispute_reason: reason,
-          disputed_at: new Date().toISOString(),
-        },
-        "Couldn't raise the issue",
-      ),
-    [runUpdate],
+    async (id, reason) => {
+      try {
+        await raiseIssueFn({ data: { escrowId: id, reason } });
+        await refreshEntries();
+      } catch (error) {
+        toast.error("Couldn't raise the issue", {
+          description: error instanceof Error ? error.message : "Please try again.",
+        });
+        throw error;
+      }
+    },
+    [raiseIssueFn, refreshEntries],
   );
+
 
   const releaseNow = useCallback<EscrowContextValue["releaseNow"]>(
     (id, note) =>
