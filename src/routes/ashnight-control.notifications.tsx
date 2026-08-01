@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { sendNotification } from "@/lib/identity.functions";
-import { useAllNotifications } from "@/lib/support";
+import { useAllNotifications, useDeleteNotification } from "@/lib/support";
 import type { Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/ashnight-control/notifications")({
@@ -41,6 +41,7 @@ type Audience = "everyone" | "clients" | "specialists" | "room" | "user";
 
 function AdminNotifications() {
   const history = useAllNotifications();
+  const deleteNotification = useDeleteNotification();
   const [audience, setAudience] = useState<Audience>("everyone");
   const [room, setRoom] = useState<Tier>("basic");
   const [userId, setUserId] = useState("");
@@ -198,6 +199,24 @@ function AdminNotifications() {
               <div key={row.id} className="rounded-lg border border-border p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-medium">{row.title}</p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="ml-auto"
+                    aria-label={`Delete notification ${row.title}`}
+                    disabled={deleteNotification.isPending}
+                    onClick={() => {
+                      deleteNotification.mutate(row.id, {
+                        onSuccess: () => toast("Notification deleted"),
+                        onError: (error) =>
+                          toast.error(
+                            error instanceof Error ? error.message : "Could not delete notification",
+                          ),
+                      });
+                    }}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
                   <Badge variant="outline" className="text-[0.6rem] uppercase">
                     {row.kind}
                   </Badge>
