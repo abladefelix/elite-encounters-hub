@@ -119,15 +119,32 @@ function collect(text: string, pattern: RegExp, kind: FindingKind, out: Finding[
   }
 }
 
-/** Contact details a member tried to exchange. */
-export function detectContact(text: string): Finding[] {
+/**
+ * Phone numbers only — digits, spelled-out digits, and "WhatsApp me 024…"
+ * style messenger handoffs. Kept separate so admins can govern phone numbers
+ * independently of emails and links.
+ */
+export function detectPhones(text: string): Finding[] {
+  const out: Finding[] = [];
+  collect(text, MESSENGER, "phone", out);
+  collect(text, PHONE, "phone", out);
+  collect(text, SPELLED, "phone", out);
+  return dedupe(out);
+}
+
+/**
+ * Contact details a member tried to exchange. Phone numbers are included by
+ * default; pass `{ includePhones: false }` when they are handled separately.
+ */
+export function detectContact(
+  text: string,
+  options: { includePhones?: boolean } = {},
+): Finding[] {
   const out: Finding[] = [];
   collect(text, EMAIL, "email", out);
   collect(text, LINK, "link", out);
   collect(text, HANDLE, "handle", out);
-  collect(text, MESSENGER, "phone", out);
-  collect(text, PHONE, "phone", out);
-  collect(text, SPELLED, "phone", out);
+  if (options.includePhones !== false) out.push(...detectPhones(text));
   return dedupe(out);
 }
 
