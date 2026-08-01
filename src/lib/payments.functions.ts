@@ -82,6 +82,32 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
       metadata: { purpose: "booking", booking_id: booking.id, escrow_id: entry.id },
     });
 
+    // The member gets an invoice the moment checkout opens; the receipt follows
+    // once Paystack confirms the charge.
+    const { issueDocument } = await import("./payments.server");
+    await issueDocument({
+      kind: "invoice",
+      clientId: booking.client_id,
+      specialistId: booking.specialist_id,
+      bookingId: booking.id,
+      escrowId: entry.id,
+      title: `${booking.service_name} — ${booking.hours}h`,
+      subtotal,
+      platformFee: fee,
+      total,
+      lines: [
+        {
+          label: `${booking.service_name} (${booking.hours}h @ GHS ${booking.rate}/h)`,
+          quantity: Number(booking.hours),
+          unitAmount: booking.rate,
+          amount: subtotal,
+        },
+        { label: `Ashnight service fee (${feePct}%)`, quantity: 1, unitAmount: fee, amount: fee },
+      ],
+      paystackReference: ref,
+      notes: "Payable through Paystack. Funds are held in escrow until the visit is confirmed.",
+    });
+
     return { authorizationUrl: init.authorization_url, reference: ref, amount: total };
   });
 
