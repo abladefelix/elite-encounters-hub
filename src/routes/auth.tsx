@@ -383,15 +383,17 @@ export function AuthPage({
   }
 
   async function sendReset() {
-    if (!email) {
-      toast.error("Enter your email address first.");
+    // Password resets always go to an email address, never to a username.
+    const target = (isEmailShaped(identifier) ? identifier : email).trim();
+    if (!isEmailShaped(target)) {
+      toast.error("Type the email address on your account first.");
       return;
     }
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(target, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) {
-      toast.error(error.message);
+      toast.error(readableError(error, "We couldn't send that reset link."));
       return;
     }
     toast.success("Reset link sent. Check your inbox.");
