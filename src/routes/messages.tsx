@@ -195,11 +195,13 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
   const escrowEntries = activeThread ? threadEntries(activeThread.id) : [];
   const roomGifts = giftsFor(room);
-  const giftsAllowed = escrow.tipsEnabled && roomGifts.length > 0 && iAmClient;
-  const audioAllowed = canCall(room, "audio");
-  const videoAllowed = canCall(room, "video");
-  const photosAllowed = can(room, "photoSharing");
-  const filesAllowed = can(room, "fileSharing");
+  const giftsAllowed =
+    flags.giftsEnabled && escrow.tipsEnabled && roomGifts.length > 0 && iAmClient;
+  const audioAllowed = flags.callsEnabled && canCall(room, "audio");
+  const videoAllowed = flags.callsEnabled && canCall(room, "video");
+  const photosAllowed = flags.attachmentsEnabled && can(room, "photoSharing");
+  const filesAllowed = flags.attachmentsEnabled && can(room, "fileSharing");
+  const bookingsOpen = flags.bookingsEnabled && platform.bookingsEnabled;
 
   useEffect(() => {
     if (!activeThread) return;
