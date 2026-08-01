@@ -27,6 +27,25 @@ export function isEmailShaped(value: string) {
   return EMAIL_RE.test(value.trim()) && value.trim().length <= 254;
 }
 
+/**
+ * Is email verification currently enforced? Admin-owned setting, default off.
+ */
+export async function verificationRequired(): Promise<boolean> {
+  try {
+    const client = await admin();
+    const { data } = await client
+      .from("platform_settings")
+      .select("data")
+      .eq("id", true)
+      .maybeSingle();
+    const blob = (data?.data ?? {}) as Record<string, unknown>;
+    const section = (blob["email"] ?? {}) as { requireVerification?: boolean };
+    return section.requireVerification === true;
+  } catch {
+    return false;
+  }
+}
+
 /* --------------------------------------------------------------- activity log */
 
 export interface ActivityInput {
