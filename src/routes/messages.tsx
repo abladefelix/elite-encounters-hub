@@ -674,6 +674,22 @@ function MessagesPage() {
           onConfirm={handleGift}
         />
 
+        <ReportDialog
+          specialist={specialist}
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          onSubmit={handleReport}
+        />
+
+        <RatingDialog
+          specialist={specialist}
+          open={ratingOpen}
+          onOpenChange={setRatingOpen}
+          onSubmit={handleRating}
+        />
+
+
+
         {call ? (
           <CallOverlay
             specialist={specialist}
