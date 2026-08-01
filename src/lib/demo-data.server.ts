@@ -281,8 +281,10 @@ async function ensureUser(
 }
 
 export async function seedDemoData(actorId: string, actorLabel: string) {
-  const existing = await readManifest();
-  if (existing) await clearDemoData(actorId, actorLabel, { silent: true });
+  // Always clear first — even a half-finished earlier run leaves demo accounts
+  // behind, and clearDemoData finds them by their demo email domain.
+  await clearDemoData(actorId, actorLabel, { silent: true });
+
 
   const client = await admin();
   const counts: Record<string, number> = {};
