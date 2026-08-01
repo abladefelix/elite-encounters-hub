@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -53,6 +54,7 @@ function AdminLogs() {
   const [severity, setSeverity] = useState("all");
   const [search, setSearch] = useState("");
   const logs = useActivityLog({ area, severity, search: search.trim() });
+  const paged = usePaged(logs.data ?? [], 25);
 
   return (
     <div className="space-y-6">
@@ -121,7 +123,7 @@ function AdminLogs() {
                   </TableCell>
                 </TableRow>
               ) : null}
-              {(logs.data ?? []).map((row) => (
+              {paged.rows.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                     {new Date(row.created_at).toLocaleString()}
@@ -162,6 +164,9 @@ function AdminLogs() {
               ) : null}
             </TableBody>
           </Table>
+        </div>
+        <div className="border-t border-border p-3">
+          <DataPager paged={paged} label="events" />
         </div>
       </Card>
     </div>

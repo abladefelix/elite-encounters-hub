@@ -18,6 +18,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  useDocumentTemplates,
+  type DocumentTemplate,
+} from "@/lib/document-templates";
 import { money } from "@/lib/types";
 import {
   COMPLAINT_CATEGORIES,
@@ -271,9 +275,19 @@ function SupportPage() {
 }
 
 /** A printable GHS invoice or receipt. Print → "Save as PDF" gives a clean file. */
-export function DocumentCard({ row }: { row: DocumentRow }) {
+export function DocumentCard({
+  row,
+  template: templateProp,
+}: {
+  row: DocumentRow;
+  /** Preview override; otherwise the admin's active template is used. */
+  template?: DocumentTemplate | undefined;
+}) {
   const lines = useMemo(() => documentLines(row), [row]);
-  const printId = `doc-${row.id}`;
+  const { active } = useDocumentTemplates();
+  const template = templateProp ?? active;
+  const printId = `doc-${row.id}-${template.id}`;
+  const heading = row.kind === "invoice" ? template.invoiceHeading : template.receiptHeading;
 
   function print() {
     const node = document.getElementById(printId);
@@ -286,11 +300,13 @@ export function DocumentCard({ row }: { row: DocumentRow }) {
     frame.document.write(
       `<!doctype html><html><head><title>${row.number}</title><style>
         body{font-family:ui-sans-serif,system-ui,sans-serif;padding:40px;color:#171514}
-        h1{font-size:20px;margin:0 0 4px}
+        h1{font-size:20px;margin:0 0 4px;color:${template.accent}}
         table{width:100%;border-collapse:collapse;margin-top:24px;font-size:13px}
         th,td{padding:8px 6px;border-bottom:1px solid #ddd;text-align:left}
         td:last-child,th:last-child{text-align:right}
         .muted{color:#6b6560;font-size:12px}
+        .rule{border:0;border-top:2px solid ${template.accent};margin:14px 0}
+        .contact{white-space:pre-line}
       </style></head><body>${node.innerHTML}</body></html>`,
     );
     frame.document.close();
@@ -304,17 +320,27 @@ export function DocumentCard({ row }: { row: DocumentRow }) {
         <div id={printId}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="font-display text-lg font-semibold">Ashnight</h1>
+              <h1 className="font-display text-lg font-semibold" style={{ color: template.accent }}>
+                {template.businessName}
+              </h1>
+              {template.tagline ? (
+                <p className="muted text-xs text-muted-foreground">{template.tagline}</p>
+              ) : null}
               <p className="muted text-xs text-muted-foreground">
-                {row.kind === "invoice" ? "Invoice" : "Receipt"} · {row.number}
+                {heading} · {row.number}
               </p>
             </div>
             <div className="text-right text-xs text-muted-foreground">
+              {template.contact ? (
+                <p className="contact whitespace-pre-line">{template.contact}</p>
+              ) : null}
               <p>Issued {new Date(row.issued_at).toLocaleDateString()}</p>
               {row.paid_at ? <p>Paid {new Date(row.paid_at).toLocaleDateString()}</p> : null}
               {row.paystack_reference ? <p>Ref {row.paystack_reference}</p> : null}
             </div>
           </div>
+
+          <hr className="rule mt-3" style={{ borderTop: `2px solid ${template.accent}` }} />
 
           <p className="mt-3 text-sm font-medium">{row.title}</p>
 
@@ -339,14 +365,23 @@ export function DocumentCard({ row }: { row: DocumentRow }) {
                   <strong>Total ({row.currency})</strong>
                 </td>
                 <td>
-                  <strong>{money(row.total)}</strong>
+                  <strong style={{ color: template.accent }}>{money(row.total)}</strong>
                 </td>
               </tr>
             </tbody>
           </table>
 
-          {row.notes ? <p className="muted mt-3 text-xs text-muted-foreground">{row.notes}</p> : null}
+          {template.thankYouNote ? (
+            <p className="muted mt-3 text-xs text-muted-foreground">{template.thankYouNote}</p>
+          ) : null}
+          {row.notes ? <p className="muted mt-2 text-xs text-muted-foreground">{row.notes}</p> : null}
+          {template.footerNote ? (
+            <p className="muted mt-3 border-t border-border pt-2 text-[11px] text-muted-foreground">
+              {template.footerNote}
+            </p>
+          ) : null}
         </div>
+
 
         <div className="mt-4 flex gap-2">
           <Button size="sm" variant="outline" onClick={print}>

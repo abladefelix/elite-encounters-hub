@@ -1,14 +1,31 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { Copy, Globe, KeyRound, Loader2, RefreshCw, Server } from "lucide-react";
+import { Copy, Globe, KeyRound, Loader2, Plus, RefreshCw, Server, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { CredentialRow } from "@/components/credential-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRecordAudit } from "@/lib/audit-log";
+import {
+  DNS_RECORD_TYPES,
+  newDnsRecord,
+  starterRecords,
+  useDnsRecords,
+  type DnsRecord,
+  type DnsRecordType,
+} from "@/lib/dns-records";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { CREDENTIAL_GROUPS, CREDENTIAL_KEYS } from "@/lib/hosting-credentials";
 import { useIntegrationKeyMutations, useIntegrationKeys } from "@/lib/integration-keys";
@@ -89,18 +106,8 @@ function AdminServer() {
     }
   }
 
-  const dnsRows = effectiveIp
-    ? [
-        { type: "A", name: "@", value: effectiveIp, note: `Points ${domain} at this server.` },
-        { type: "A", name: "www", value: effectiveIp, note: `Points www.${domain} here too.` },
-        {
-          type: "CNAME",
-          name: "*",
-          value: `${domain}.`,
-          note: "Optional wildcard for future subdomains.",
-        },
-      ]
-    : [];
+
+
 
   return (
     <div className="space-y-8">
@@ -176,49 +183,8 @@ function AdminServer() {
         ) : null}
       </Card>
 
-      <Card className="border-border/70 bg-panel p-5 sm:p-6">
-        <div className="flex items-start gap-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-secondary">
-            <Globe className="size-4" />
-          </span>
-          <div>
-            <h2 className="font-display text-base font-semibold">DNS records</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Add these at your registrar. Set the primary domain below to see it filled in.
-            </p>
-          </div>
-        </div>
+      <DnsRecordsCard ip={effectiveIp} domain={domain} />
 
-        {dnsRows.length ? (
-          <div className="mt-5 space-y-2">
-            {dnsRows.map((row) => (
-              <div
-                key={`${row.type}-${row.name}`}
-                className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm"
-              >
-                <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
-                  {row.type}
-                </Badge>
-                <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">{row.name}</code>
-                <code className="rounded bg-secondary px-1.5 py-0.5 text-xs">{row.value}</code>
-                <span className="text-xs text-muted-foreground">{row.note}</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="ml-auto"
-                  onClick={() => copy(row.value, `${row.type} value`)}
-                >
-                  <Copy className="size-3.5" /> Copy
-                </Button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-5 text-xs text-muted-foreground">
-            No IP resolved yet — records appear as soon as one is detected or overridden.
-          </p>
-        )}
-      </Card>
 
       <Card className="border-border/70 bg-panel p-5 sm:p-6">
         <div className="flex items-start gap-3">
@@ -293,5 +259,152 @@ function Fact({
       </div>
       {hint ? <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p> : null}
     </div>
+  );
+}
+
+/**
+ * Editable DNS record sheet.
+ *
+ * The admin types the exact values their registrar and mail provider give them;
+ * "Prefill starter set" only offers a first draft based on the detected IP.
+ */
+function DnsRecordsCard({ ip, domain }: { ip: string; domain: string }) {
+  const { records, replace, loading } = useDnsRecords();
+
+  function update(id: string, patch: Partial<DnsRecord>) {
+    void replace(records.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  }
+
+  return (
+    <Card className="border-border/70 bg-panel p-5 sm:p-6">
+      <div className="flex flex-wrap items-start gap-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-secondary">
+          <Globe className="size-4" />
+        </span>
+        <div className="min-w-[16rem] flex-1">
+          <h2 className="font-display text-base font-semibold">DNS records</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Enter the records your registrar and mail provider require. They are saved for the whole
+            team and copied straight into your DNS panel.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {records.length === 0 ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => void replace(starterRecords(ip, domain))}
+            >
+              <Sparkles className="mr-2 size-3.5" /> Prefill starter set
+            </Button>
+          ) : null}
+          <Button size="sm" onClick={() => void replace([...records, newDnsRecord()])}>
+            <Plus className="mr-2 size-3.5" /> Add record
+          </Button>
+        </div>
+      </div>
+
+      {loading ? (
+        <p className="mt-5 flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="size-3.5 animate-spin" /> Loading records…
+        </p>
+      ) : records.length === 0 ? (
+        <p className="mt-5 rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
+          No records yet. Add them one by one, or prefill a starter set
+          {ip ? ` pointing at ${ip}` : ""} and edit from there.
+        </p>
+      ) : (
+        <div className="mt-5 space-y-3">
+          {records.map((row) => (
+            <div key={row.id} className="rounded-xl border border-border bg-surface p-3">
+              <div className="grid gap-3 sm:grid-cols-12">
+                <div className="sm:col-span-2">
+                  <Label className="text-[11px] text-muted-foreground">Type</Label>
+                  <Select
+                    value={row.type}
+                    onValueChange={(value) => update(row.id, { type: value as DnsRecordType })}
+                  >
+                    <SelectTrigger className="mt-1 h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DNS_RECORD_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-3">
+                  <Label className="text-[11px] text-muted-foreground">Host / name</Label>
+                  <Input
+                    className="mt-1 h-9 font-mono text-xs"
+                    value={row.name}
+                    placeholder="@"
+                    onChange={(event) => update(row.id, { name: event.target.value })}
+                  />
+                </div>
+                <div className="sm:col-span-5">
+                  <Label className="text-[11px] text-muted-foreground">Value</Label>
+                  <Input
+                    className="mt-1 h-9 font-mono text-xs"
+                    value={row.value}
+                    placeholder={row.type === "A" ? ip || "203.0.113.10" : "target or text value"}
+                    onChange={(event) => update(row.id, { value: event.target.value })}
+                  />
+                </div>
+                <div className="sm:col-span-1">
+                  <Label className="text-[11px] text-muted-foreground">TTL</Label>
+                  <Input
+                    className="mt-1 h-9 text-xs"
+                    value={row.ttl}
+                    inputMode="numeric"
+                    onChange={(event) => update(row.id, { ttl: event.target.value })}
+                  />
+                </div>
+                <div className="sm:col-span-1">
+                  <Label className="text-[11px] text-muted-foreground">Prio</Label>
+                  <Input
+                    className="mt-1 h-9 text-xs"
+                    value={row.priority}
+                    inputMode="numeric"
+                    disabled={row.type !== "MX" && row.type !== "SRV"}
+                    onChange={(event) => update(row.id, { priority: event.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-end gap-2">
+                <div className="min-w-[12rem] flex-1">
+                  <Label className="text-[11px] text-muted-foreground">Note</Label>
+                  <Input
+                    className="mt-1 h-9 text-xs"
+                    value={row.note}
+                    placeholder="What this record is for"
+                    onChange={(event) => update(row.id, { note: event.target.value })}
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => copy(row.value, `${row.type} value`)}
+                >
+                  <Copy className="mr-2 size-3.5" /> Copy
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => void replace(records.filter((item) => item.id !== row.id))}
+                >
+                  <Trash2 className="mr-2 size-3.5" /> Remove
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }

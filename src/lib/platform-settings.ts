@@ -24,6 +24,8 @@ export type SettingsSection =
   | "backups"
   | "email"
   | "addons"
+  | "documents"
+  | "dns"
   | "deployment";
 
 type SettingsBlob = Partial<Record<SettingsSection, unknown>>;

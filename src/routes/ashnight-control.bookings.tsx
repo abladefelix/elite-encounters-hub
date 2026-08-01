@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -76,6 +77,8 @@ function AdminBookings() {
       return haystack.includes(term);
     });
   }, [status, search]);
+
+  const paged = usePaged(rows, 25);
 
   const held = seedBookings
     .filter((booking) => booking.status === "paid" || booking.status === "accepted")
@@ -174,7 +177,7 @@ function AdminBookings() {
                   </TableCell>
                 </TableRow>
               ) : null}
-              {rows.map((booking) => {
+              {paged.rows.map((booking) => {
                 const specialist = getSpecialist(booking.specialistId);
                 const totals = bookingTotal(booking);
                 return (
@@ -237,6 +240,9 @@ function AdminBookings() {
               })}
             </TableBody>
           </Table>
+        </div>
+        <div className="border-t border-border p-3">
+          <DataPager paged={paged} label="bookings" />
         </div>
       </Card>
     </div>
