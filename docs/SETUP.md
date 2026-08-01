@@ -41,7 +41,7 @@ Scripts:
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | dev server with HMR on port 8080 |
-| `npm run build:selfhost` | **standalone Node build** → `.output/` (use this for cPanel/VPS) |
+| `npm run build:selfhost` | **standalone Node build** → `.output/` (use this to run on your own server) |
 | `npm start` | run the standalone build (`node .output/server/index.mjs`) |
 | `npm run lint` / `npm run format` | ESLint / Prettier |
 
@@ -49,7 +49,7 @@ Scripts:
 
 ## 3. Stand up your own backend (self-hosted Supabase)
 
-On any machine with Docker (a VPS, or your cPanel box if Docker is available):
+On any machine with Docker (your Windows PC via Docker Desktop, or a Linux server):
 
 ```sh
 git clone --depth 1 https://github.com/supabase/supabase
@@ -62,8 +62,8 @@ docker compose up -d
 ```
 
 Then put the API behind your own hostname (`api.yourdomain.com`) with a reverse proxy
-plus SSL. In cPanel you can do this with a subdomain and an Apache proxy rule, or with
-Nginx on a VPS.
+plus SSL (Caddy, Nginx or a Cloudflare Tunnel). If the app and backend share one machine
+and you are not exposing the API publicly, `http://localhost:8000` is enough.
 
 ### 3.1 Apply the schema
 
@@ -375,7 +375,7 @@ video on Ultimate.
 | --- | --- |
 | "Missing Supabase environment variable(s)" | `.env` not loaded, or `VITE_*` values changed without a rebuild |
 | Sign-in works locally, fails in production | backend Site URL / redirect allow-list doesn't include your domain |
-| 502 from cPanel | app crashed — check the Passenger log in the Node App screen, then Restart |
+| 502 / blank page behind the proxy | app process died — `pm2 logs ashnight` (Windows) or `journalctl -u ashnight -f` (Linux) |
 | Data reads return "permission denied" | migrations partly applied; re-run them so `GRANT`s and policies exist |
 | Chat doesn't update live | Realtime not enabled/reachable on your backend, or WebSockets blocked by the proxy |
 | Google sign-in "Unsupported provider" | Google provider not enabled in your backend auth settings |
