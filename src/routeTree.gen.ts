@@ -32,6 +32,7 @@ import { Route as AshnightControlUsersRouteImport } from './routes/ashnight-cont
 import { Route as AshnightControlVettingRouteImport } from './routes/ashnight-control.vetting'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
+import { Route as ApiPublicHooksBackupRouteImport } from './routes/api/public/hooks/backup'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -149,6 +150,11 @@ const SpecialistsSpecialistIdRoute = SpecialistsSpecialistIdRouteImport.update({
   path: '/specialists/$specialistId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksBackupRoute = ApiPublicHooksBackupRouteImport.update({
+  id: '/api/public/hooks/backup',
+  path: '/api/public/hooks/backup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
+  '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control': typeof AshnightControlIndexRoute
   '/specialists': typeof SpecialistsIndexRoute
+  '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/specialists/$specialistId': typeof SpecialistsSpecialistIdRoute
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
+  '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -251,6 +260,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
+    | '/api/public/hooks/backup'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control'
     | '/specialists'
+    | '/api/public/hooks/backup'
   id:
     | '__root__'
     | '/'
@@ -300,6 +311,7 @@ export interface FileRouteTypes {
     | '/specialists/$specialistId'
     | '/ashnight-control/'
     | '/specialists/'
+    | '/api/public/hooks/backup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -315,6 +327,7 @@ export interface RootRouteChildren {
   RoomsRoute: typeof RoomsRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
+  ApiPublicHooksBackupRoute: typeof ApiPublicHooksBackupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -480,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpecialistsSpecialistIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/backup': {
+      id: '/api/public/hooks/backup'
+      path: '/api/public/hooks/backup'
+      fullPath: '/api/public/hooks/backup'
+      preLoaderRoute: typeof ApiPublicHooksBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -528,6 +548,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoomsRoute: RoomsRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,
+  ApiPublicHooksBackupRoute: ApiPublicHooksBackupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

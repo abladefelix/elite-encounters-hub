@@ -296,7 +296,9 @@ async function runBackup(force: boolean) {
 
   await admin
     .from("platform_settings")
-    .update({ data: { ...settings, backups: { ...config, lastRun: summary } } })
+    .update({
+      data: { ...settings, backups: { ...config, lastRun: summary } } as unknown as never,
+    })
     .eq("id", true);
 
   return json(summary, summary.ok ? 200 : 502);
