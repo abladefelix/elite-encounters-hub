@@ -39,11 +39,11 @@ export const Route = createFileRoute("/")({
         content:
           "Sign in or create an Ashnight account to access vetted ash specialists, secure in-chat booking, and room membership.",
       },
-      { property: "og:title", content: "Sign in or Join Ashnight" },
+      { property: "og:title", content: "Sign in or Join Ashnight | Vetted Ash Services" },
       {
         property: "og:description",
         content:
-          "Members-only access to vetted ash specialists across Ghana.",
+          "Sign in or create an Ashnight account to access vetted ash specialists, secure in-chat booking, and room membership.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

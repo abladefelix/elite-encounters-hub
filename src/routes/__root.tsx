@@ -82,14 +82,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Ashnight — Vetted Private Ash" },
+      { title: "Sign in or Join Ashnight | Vetted Ash Services" },
       {
         name: "description",
         content:
-          "Ashnight is a members-only marketplace of manually vetted ash specialists, with private chat, calls and in-thread booking.",
+          "Sign in or create an Ashnight account to access vetted ash specialists, secure in-chat booking, and room membership.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "Sign in or Join Ashnight | Vetted Ash Services" },
+      { name: "twitter:title", content: "Sign in or Join Ashnight | Vetted Ash Services" },
+      { property: "og:description", content: "Sign in or create an Ashnight account to access vetted ash specialists, secure in-chat booking, and room membership." },
+      { name: "twitter:description", content: "Sign in or create an Ashnight account to access vetted ash specialists, secure in-chat booking, and room membership." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7672028a-54a8-4ddc-b591-c7b683d65f30/id-preview-f13108f6--096f4ff4-b70d-4e08-b046-a55bbecfece0.lovable.app-1785621743275.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7672028a-54a8-4ddc-b591-c7b683d65f30/id-preview-f13108f6--096f4ff4-b70d-4e08-b046-a55bbecfece0.lovable.app-1785621743275.png" },
     ],
     links: [
       {
