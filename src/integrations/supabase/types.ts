@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          area: string
+          created_at: string
+          details: Json
+          id: string
+          note: string
+          target: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          area: string
+          created_at?: string
+          details?: Json
+          id?: string
+          note?: string
+          target?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          area?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          note?: string
+          target?: string
+        }
+        Relationships: []
+      }
       applications: {
         Row: {
           admin_note: string
@@ -266,6 +299,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      integration_keys: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          is_secret: boolean
+          key: string
+          label: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_secret?: boolean
+          key: string
+          label?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_secret?: boolean
+          key?: string
+          label?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: []
       }
       memberships: {
         Row: {
