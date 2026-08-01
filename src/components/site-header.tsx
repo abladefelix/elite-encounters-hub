@@ -51,9 +51,10 @@ export function SiteHeader() {
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
             <Link to="/admin">Admin</Link>
           </Button>
-          <Button asChild size="sm" variant="brass">
+          <Button asChild size="sm" variant="brass" className="hidden sm:inline-flex">
             <Link to="/apply">Apply to join</Link>
           </Button>
+
           <Avatar className="hidden size-9 border border-border sm:flex">
             <AvatarFallback className="bg-surface-strong text-xs">
               {initials(me.name)}
