@@ -47,6 +47,8 @@ function AdminLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { loading, session, profile, isAdmin } = useAuth();
   const applicationsQuery = useApplications();
+  const { flags } = useFeatureFlags();
+  const twoFactor = useTwoFactor();
   const pendingVetting = (applicationsQuery.data ?? []).filter(
     (row) => row.status === "pending" || row.status === "in_review",
   ).length;
@@ -72,6 +74,21 @@ function AdminLayout() {
             Your account doesn't have admin access to the Ashnight control room.
           </p>
         </Card>
+      </div>
+    );
+  }
+
+  // Policy gate: when Ashnight requires 2FA for admins, enrol before anything else.
+  if (flags.requireTwoFactorForAdmins && !twoFactor.loading && !twoFactor.enrolled) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+        <div className="w-full max-w-lg">
+          <p className="eyebrow mb-3 text-center text-muted-foreground">Ashnight control room</p>
+          <TwoFactorCard required available />
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Admin access unlocks as soon as your authenticator app is verified.
+          </p>
+        </div>
       </div>
     );
   }
