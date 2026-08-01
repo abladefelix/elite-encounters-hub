@@ -92,7 +92,7 @@ export function AuthPage({
   intendedRole?: "client" | "specialist";
 }) {
   const navigate = useNavigate();
-  const { session, loading } = useAuth();
+  const { session, loading, isAdmin } = useAuth();
 
   const { flags } = useFeatureFlags();
   const { config } = useSignupConfig();
