@@ -33,7 +33,7 @@ import {
   type RoomPrivileges,
 } from "@/lib/room-settings";
 import { startMembershipCheckout } from "@/lib/payments.functions";
-import { money, TIER_LABEL, type Tier } from "@/lib/types";
+import { money, tierLabel, type Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/rooms")({
   head: () => ({
@@ -140,7 +140,7 @@ function RoomsPage() {
         data: { room, callbackUrl: `${window.location.origin}/payment/return` },
       });
       toast.success("Taking you to Paystack…", {
-        description: `${money(checkout.amount)} monthly membership for the ${TIER_LABEL[room]} room.`,
+        description: `${money(checkout.amount)} monthly membership for the ${tierLabel(room)} room.`,
       });
       window.location.href = checkout.authorizationUrl;
     } catch (error) {
@@ -191,7 +191,7 @@ function RoomsPage() {
           <Card className="mt-6 border-border/70 bg-panel p-5">
             <p className="text-sm text-muted-foreground">You're currently in</p>
             <p className="mt-1 font-display text-lg font-semibold">
-              {TIER_LABEL[activeMembership.room]} Room
+              {tierLabel(activeMembership.room)} Room
             </p>
           </Card>
         ) : null}

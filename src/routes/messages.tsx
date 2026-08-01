@@ -74,7 +74,7 @@ import {
   useEscrow,
   type EscrowEntry,
 } from "@/lib/escrow";
-import { TIER_LABEL, initials, money, type Tier } from "@/lib/types";
+import { tierLabel, initials, money, type Tier } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/messages")({
@@ -307,7 +307,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     if (!file || !activeThread) return;
     const allowed = kindLabel === "photo" ? photosAllowed : filesAllowed;
     if (!allowed) {
-      toast(`${kindLabel === "photo" ? "Photo" : "File"} sharing isn't included in the ${TIER_LABEL[room]} room`);
+      toast(`${kindLabel === "photo" ? "Photo" : "File"} sharing isn't included in the ${tierLabel(room)} room`);
       return;
     }
     try {
@@ -364,7 +364,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     const allowed = mode === "video" ? videoAllowed : audioAllowed;
     if (!allowed) {
       toast.error(
-        `${mode === "video" ? "Video" : "Voice"} calls are switched off for the ${TIER_LABEL[room]} room`,
+        `${mode === "video" ? "Video" : "Voice"} calls are switched off for the ${tierLabel(room)} room`,
         { description: "Upgrade your room or ask support to enable it." },
       );
       return;
@@ -503,7 +503,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       return;
     }
     if (!giftsAllowed) {
-      toast(`Cash gifts aren't included in the ${TIER_LABEL[room]} room`);
+      toast(`Cash gifts aren't included in the ${tierLabel(room)} room`);
       return;
     }
     setGiftOpen(true);
@@ -535,7 +535,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                 <div className="border-b border-border/70 p-4">
                   <h1 className="font-display text-base font-semibold">Messages</h1>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {threadList.length} conversations · {TIER_LABEL[room]} room
+                    {threadList.length} conversations · {tierLabel(room)} room
                   </p>
                 </div>
                 <ScrollArea className="min-h-0 flex-1">
@@ -674,7 +674,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         <CallControl
                           allowed={audioAllowed}
                           label="voice"
-                          room={TIER_LABEL[room]}
+                          room={tierLabel(room)}
                           onClick={() => startCall("audio")}
                         >
                           <Phone className="size-4" />
@@ -682,7 +682,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         <CallControl
                           allowed={videoAllowed}
                           label="video"
-                          room={TIER_LABEL[room]}
+                          room={tierLabel(room)}
                           onClick={() => startCall("video")}
                         >
                           <Video className="size-4" />
@@ -693,7 +693,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                     {!audioAllowed && !videoAllowed ? (
                       <p className="flex items-center gap-2 border-b border-border/70 bg-background/50 px-4 py-2 text-[11px] text-muted-foreground">
                         <Lock className="size-3.5 shrink-0" />
-                        Calling is disabled for the {TIER_LABEL[room]} room. Chat and booking stay open.
+                        Calling is disabled for the {tierLabel(room)} room. Chat and booking stay open.
                       </p>
                     ) : null}
 
@@ -817,7 +817,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           onClick={() =>
                             filesAllowed
                               ? fileRef.current?.click()
-                              : toast(`File sharing isn't included in the ${TIER_LABEL[room]} room`)
+                              : toast(`File sharing isn't included in the ${tierLabel(room)} room`)
                           }
                         >
                           {filesAllowed ? (
@@ -834,7 +834,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           onClick={() =>
                             photosAllowed
                               ? photoRef.current?.click()
-                              : toast(`Photo sharing isn't included in the ${TIER_LABEL[room]} room`)
+                              : toast(`Photo sharing isn't included in the ${tierLabel(room)} room`)
                           }
                         >
                           {photosAllowed ? (

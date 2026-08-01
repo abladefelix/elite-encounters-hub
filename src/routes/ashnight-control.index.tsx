@@ -25,7 +25,7 @@ import {
   useMemberships,
   useReports,
 } from "@/lib/queries";
-import { TIER_LABEL, money, type Tier } from "@/lib/types";
+import { tierLabel, money, type Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/ashnight-control/")({
   head: () => ({
@@ -107,7 +107,7 @@ function AdminOverview() {
   const distribution = (["basic", "premium", "ultimate"] as Tier[]).map((tier) => {
     const inRoom = profiles.filter((row) => row.room === tier);
     return {
-      room: TIER_LABEL[tier],
+      room: tierLabel(tier),
       specialists: inRoom.filter((row) => (roleMap[row.id] ?? []).includes("specialist")).length,
       members: inRoom.filter((row) => !(roleMap[row.id] ?? []).includes("specialist")).length,
     };

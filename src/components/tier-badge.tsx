@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { TIER_LABEL, type Tier } from "@/lib/types";
+import { tierLabel, type Tier } from "@/lib/types";
 import { ROOM_ACCENTS, useRoomAccent } from "@/lib/room-settings";
 import { Crown, Gem, Star } from "lucide-react";
 
@@ -44,7 +44,7 @@ export function TierBadge({
           style={{ backgroundColor: entry.color }}
         />
       )}
-      {TIER_LABEL[tier]}
+      {tierLabel(tier)}
       {withRoom ? " Room" : ""}
     </span>
   );

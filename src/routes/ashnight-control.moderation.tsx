@@ -35,7 +35,7 @@ import {
   type ModerationAction,
 } from "@/lib/moderation";
 import { relativeTime } from "@/lib/escrow";
-import { TIER_LABEL } from "@/lib/types";
+import { tierLabel } from "@/lib/types";
 import {
   REPORT_REASON_LABEL,
   useRatings,
@@ -214,7 +214,7 @@ function AdminModeration() {
               className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-panel px-4 py-3"
             >
               <div>
-                <p className="text-sm font-medium">{profiles[tier]?.name ?? TIER_LABEL[tier]}</p>
+                <p className="text-sm font-medium">{profiles[tier]?.name ?? tierLabel(tier)}</p>
                 <p className="text-xs text-muted-foreground">
                   {moderation.contactExemptRooms[tier] ? "May share contacts" : "Contacts blocked"}
                 </p>
@@ -222,7 +222,7 @@ function AdminModeration() {
               <Switch
                 checked={moderation.contactExemptRooms[tier]}
                 onCheckedChange={(value) => setContactExemptRoom(tier, value)}
-                aria-label={`Allow contact sharing in ${TIER_LABEL[tier]}`}
+                aria-label={`Allow contact sharing in ${tierLabel(tier)}`}
               />
             </div>
           ))}
@@ -387,7 +387,7 @@ function AdminModeration() {
                     </Badge>
                   ) : null}
                   <span className="ml-auto text-xs text-muted-foreground">
-                    {TIER_LABEL[report.room]} · {relativeTime(report.at)}
+                    {tierLabel(report.room)} · {relativeTime(report.at)}
                   </span>
                 </div>
                 <p className="mt-2">
@@ -498,7 +498,7 @@ function AdminModeration() {
                       {relativeTime(hit.at)}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">{hit.threadLabel}</TableCell>
-                    <TableCell className="whitespace-nowrap">{TIER_LABEL[hit.room]}</TableCell>
+                    <TableCell className="whitespace-nowrap">{tierLabel(hit.room)}</TableCell>
                     <TableCell className="whitespace-nowrap text-xs">
                       {hit.kinds.map((kind) => FINDING_LABEL[kind]).join(", ")}
                     </TableCell>
