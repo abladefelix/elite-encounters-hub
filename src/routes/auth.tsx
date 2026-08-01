@@ -81,7 +81,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthRoutePage() {
   const { next, role: intendedRole } = useSearch({ from: "/auth" });
-  return <AuthPage next={next} intendedRole={intendedRole} />;
+  return <AuthPage {...(next ? { next } : {})} {...(intendedRole ? { intendedRole } : {})} />;
 }
 
 export function AuthPage({
@@ -664,6 +664,13 @@ export function AuthPage({
           </Link>
           .
         </span>
+      </p>
+
+      <p className="mt-3 text-center text-xs text-muted-foreground">
+        New here?{" "}
+        <Link to="/welcome" className="underline underline-offset-4">
+          See how Ashnight works
+        </Link>
       </p>
     </main>
   );

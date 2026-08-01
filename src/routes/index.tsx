@@ -54,7 +54,8 @@ export const Route = createFileRoute("/")({
 
 function AuthHome() {
   const { session, loading, isAdmin } = useAuth();
-  // Signed-in members get the real landing page; the auth form is for guests only.
+  // "/" is the sign-in page, full stop. Anyone already signed in is moved on:
+  // admins into the control room, members into their rooms.
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -62,10 +63,10 @@ function AuthHome() {
       </div>
     );
   }
-  // Admins land straight in the control room; the public site stays one click
-  // away from the header.
-  if (session && isAdmin) return <Navigate to="/ashnight-control" replace />;
-  return session ? <Home /> : <AuthPage />;
+  if (session) {
+    return <Navigate to={isAdmin ? "/ashnight-control" : "/rooms"} replace />;
+  }
+  return <AuthPage />;
 }
 
 /** Maps a live profile row (plus its service names) onto the presentational Specialist shape. */
@@ -134,7 +135,7 @@ function useServiceNamesFor(specialistIds: string[]) {
   });
 }
 
-function Home() {
+export function Home() {
   const { data: specialists, isLoading: specialistsLoading } = useSpecialists("all");
   const { profiles: roomProfiles } = useRoomSettings();
 
