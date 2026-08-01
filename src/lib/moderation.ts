@@ -29,7 +29,13 @@ export const MODERATION_ACTIONS: { id: ModerationAction; label: string; hint: st
 export interface ModerationSettings {
   /** Master switch for all chat moderation. */
   enabled: boolean;
-  /** Detect and act on phone numbers, emails, links and social handles. */
+  /**
+   * Phone numbers get their own switch, because they are the single most
+   * common way a deal walks off-platform. On by default and set to "block".
+   */
+  blockPhoneNumbers: boolean;
+  phoneAction: ModerationAction;
+  /** Detect and act on emails, links and social handles. */
   blockContactSharing: boolean;
   contactAction: ModerationAction;
   /** Act on the flagged-word list below. */
@@ -57,6 +63,8 @@ export const DEFAULT_FLAGGED_WORDS = [
 
 export const DEFAULT_MODERATION_SETTINGS: ModerationSettings = {
   enabled: true,
+  blockPhoneNumbers: true,
+  phoneAction: "block",
   blockContactSharing: true,
   contactAction: "mask",
   flaggedWordsEnabled: true,
