@@ -19,6 +19,8 @@ import { SignupFieldsForm, type SignupValues } from "@/components/signup-fields-
 import { PortfolioPicker } from "@/components/portfolio-picker";
 import { BrandMark } from "@/components/brand-mark";
 import { BUILTIN_FIELDS, appliesTo, useSignupConfig } from "@/lib/signup-fields";
+import { useBranding } from "@/lib/branding";
+import { sendWelcomeMessage } from "@/lib/welcome.functions";
 
 /** Only same-origin relative paths are ever used as a post-login destination. */
 function safeNext(value: unknown) {
@@ -96,6 +98,7 @@ export function AuthPage({
   const { session, loading, isAdmin } = useAuth();
 
   const { flags } = useFeatureFlags();
+  const { branding } = useBranding();
   const { config } = useSignupConfig();
   const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
@@ -357,11 +360,23 @@ export function AuthPage({
       }
     }
 
-    setBusy(false);
     if (error) {
+      setBusy(false);
       toast.error(signUpErrorMessage(error.message));
       return;
     }
+
+    // Welcome message: written by an admin in the control room, delivered to the
+    // new member's inbox. Never block sign-up on it.
+    if (data.session) {
+      try {
+        await sendWelcomeMessage();
+      } catch {
+        /* the account exists; a missing welcome note is not worth an error */
+      }
+    }
+
+    setBusy(false);
     if (!data.session) {
       setCheckEmail(true);
       return;
@@ -414,7 +429,8 @@ export function AuthPage({
             </div>
             <CardTitle className="mt-3">Confirm your email</CardTitle>
             <CardDescription>
-              We sent a confirmation link to {email}. Open it to activate your Ashnight account.
+              We sent a confirmation link to {email}. Open it to activate your {branding.name}
+              account.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -431,10 +447,8 @@ export function AuthPage({
     <main className="mx-auto flex min-h-[80svh] max-w-md flex-col justify-center px-4 py-10">
       <div className="mb-6 text-center">
         <BrandMark className="mx-auto mb-4 size-16" />
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Ashnight</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Members-only access to vetted ash specialists.
-        </p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight">{branding.name}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{branding.tagline}</p>
       </div>
 
       <Tabs value={authMode} onValueChange={(value) => setAuthMode(value as "signin" | "signup")}>

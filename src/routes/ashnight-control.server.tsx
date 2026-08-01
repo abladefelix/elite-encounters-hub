@@ -1,7 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
-import { Copy, Globe, KeyRound, Loader2, Plus, RefreshCw, Server, Sparkles, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Copy,
+  Globe,
+  KeyRound,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Save,
+  Server,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { CredentialRow } from "@/components/credential-row";
@@ -270,9 +281,29 @@ function Fact({
  */
 function DnsRecordsCard({ ip, domain }: { ip: string; domain: string }) {
   const { records, replace, loading } = useDnsRecords();
+  // Edited locally and saved on demand: writing on every keystroke raced the
+  // realtime refresh and dropped characters.
+  const [draft, setDraft] = useState<DnsRecord[]>(records);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => setDraft(records), [records]);
+
+  const dirty = JSON.stringify(draft) !== JSON.stringify(records);
 
   function update(id: string, patch: Partial<DnsRecord>) {
-    void replace(records.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+    setDraft((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  }
+
+  async function persist(next: DnsRecord[]) {
+    setSaving(true);
+    try {
+      await replace(next);
+      setDraft(next);
+      toast.success("DNS records saved");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the DNS records");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -289,16 +320,16 @@ function DnsRecordsCard({ ip, domain }: { ip: string; domain: string }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {records.length === 0 ? (
+          {draft.length === 0 ? (
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => void replace(starterRecords(ip, domain))}
+              onClick={() => void persist(starterRecords(ip, domain))}
             >
               <Sparkles className="mr-2 size-3.5" /> Prefill starter set
             </Button>
           ) : null}
-          <Button size="sm" onClick={() => void replace([...records, newDnsRecord()])}>
+          <Button size="sm" onClick={() => setDraft((prev) => [...prev, newDnsRecord()])}>
             <Plus className="mr-2 size-3.5" /> Add record
           </Button>
         </div>
@@ -308,14 +339,14 @@ function DnsRecordsCard({ ip, domain }: { ip: string; domain: string }) {
         <p className="mt-5 flex items-center gap-2 text-xs text-muted-foreground">
           <Loader2 className="size-3.5 animate-spin" /> Loading records…
         </p>
-      ) : records.length === 0 ? (
+      ) : draft.length === 0 ? (
         <p className="mt-5 rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
           No records yet. Add them one by one, or prefill a starter set
           {ip ? ` pointing at ${ip}` : ""} and edit from there.
         </p>
       ) : (
         <div className="mt-5 space-y-3">
-          {records.map((row) => (
+          {draft.map((row) => (
             <div key={row.id} className="rounded-xl border border-border bg-surface p-3">
               <div className="grid gap-3 sm:grid-cols-12">
                 <div className="sm:col-span-2">
@@ -396,13 +427,31 @@ function DnsRecordsCard({ ip, domain }: { ip: string; domain: string }) {
                   size="sm"
                   variant="ghost"
                   className="text-destructive hover:text-destructive"
-                  onClick={() => void replace(records.filter((item) => item.id !== row.id))}
+                  onClick={() => setDraft((prev) => prev.filter((item) => item.id !== row.id))}
                 >
                   <Trash2 className="mr-2 size-3.5" /> Remove
                 </Button>
               </div>
             </div>
           ))}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" disabled={saving || !dirty} onClick={() => void persist(draft)}>
+              {saving ? (
+                <Loader2 className="mr-2 size-3.5 animate-spin" />
+              ) : (
+                <Save className="mr-2 size-3.5" />
+              )}
+              Save records
+            </Button>
+            {dirty ? (
+              <Button size="sm" variant="ghost" onClick={() => setDraft(records)}>
+                Discard changes
+              </Button>
+            ) : (
+              <span className="text-xs text-muted-foreground">All changes saved.</span>
+            )}
+          </div>
         </div>
       )}
     </Card>

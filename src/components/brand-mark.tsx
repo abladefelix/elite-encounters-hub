@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useBranding } from "@/lib/branding";
 
 /**
  * The Ashnight mark — two interlocking discs in brass, one large and one small.
@@ -6,14 +7,39 @@ import { cn } from "@/lib/utils";
  * separated from the larger disc by a thin knock-out gap so the interlock reads
  * at any size. No frame, no plate — the mark sits directly on the surface.
  *
- * Single source of truth so the logo can be swapped in one place.
+ * When an admin uploads/pastes a logo URL in the control room, that image is
+ * rendered instead — this stays the single swap point for the logo.
  */
-export function BrandMark({ className }: { className?: string }) {
+export function BrandMark({
+  className,
+  logoUrl,
+  alt,
+}: {
+  className?: string;
+  /** Overrides the admin setting; used by the control-room preview. */
+  logoUrl?: string;
+  alt?: string;
+}) {
+  const { branding } = useBranding();
+  const src = (logoUrl ?? branding.logoUrl ?? "").trim();
+  const label = (alt ?? branding.logoAlt ?? "").trim() || branding.name || "Ashnight";
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={label}
+        loading="lazy"
+        className={cn("size-8 shrink-0 object-contain", className)}
+      />
+    );
+  }
+
   return (
     <svg
       viewBox="0 0 100 100"
       role="img"
-      aria-label="Ashnight"
+      aria-label={label}
       className={cn("size-8 shrink-0 text-primary", className)}
       fill="none"
     >

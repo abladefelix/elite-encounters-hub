@@ -11,18 +11,22 @@ import { NotificationBell } from "@/components/notification-bell";
 import { useRoomSettings } from "@/lib/room-settings";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
+import { useBranding } from "@/lib/branding";
+import { useCopy } from "@/lib/locale";
 
 const NAV = [
-  { to: "/specialists", label: "Specialists" },
-  { to: "/rooms", label: "Rooms" },
-  { to: "/messages", label: "Messages" },
-  { to: "/how-it-works", label: "How it works" },
+  { to: "/specialists", copyKey: "nav.specialists" },
+  { to: "/rooms", copyKey: "nav.rooms" },
+  { to: "/messages", copyKey: "nav.messages" },
+  { to: "/how-it-works", copyKey: "nav.howItWorks" },
 ] as const;
 
 export function SiteHeader() {
   const { platform } = useRoomSettings();
   const { flags } = useFeatureFlags();
   const { user, profile, signOut } = useAuth();
+  const { branding } = useBranding();
+  const { t } = useCopy();
   const navigate = useNavigate();
 
   const displayName = profile?.display_name ?? user?.email ?? "";
@@ -36,13 +40,15 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
       {flags.maintenanceMode ? (
         <p className="bg-destructive px-5 py-1.5 text-center text-[11px] font-medium text-destructive-foreground">
-          Ashnight is in maintenance — bookings, payments and calls may be briefly unavailable.
+          {branding.name} is in maintenance — bookings, payments and calls may be briefly unavailable.
         </p>
       ) : null}
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-5 md:h-16">
         <Link to="/" className="flex items-center gap-2">
           <BrandMark />
-          <span className="font-display text-lg font-semibold tracking-tight">Ashnight</span>
+          <span className="font-display text-lg font-semibold tracking-tight">
+            {branding.name}
+          </span>
         </Link>
 
         <nav className="ml-6 hidden items-center gap-1 md:flex">
@@ -53,7 +59,7 @@ export function SiteHeader() {
               className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               activeProps={{ className: "bg-secondary text-foreground" }}
             >
-              {item.label}
+              {t(item.copyKey)}
             </Link>
           ))}
         </nav>
@@ -107,19 +113,19 @@ export function SiteHeader() {
                 {[
                   ...NAV,
                   ...(user
-                    ? ([{ to: "/profile", label: "Your profile" }] as const)
+                    ? ([{ to: "/profile", copyKey: "nav.profile" }] as const)
                     : ([
-                        { to: "/auth", label: "Sign in" },
-                        { to: "/apply", label: "Apply to join" },
+                        { to: "/auth", copyKey: "action.signIn" },
+                        { to: "/apply", copyKey: "nav.apply" },
                       ] as const)),
                 ].map((item) => (
                   <Link
-                    key={item.label}
+                    key={item.to}
                     to={item.to}
                     className="rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
                     activeProps={{ className: "bg-secondary text-foreground" }}
                   >
-                    {item.label}
+                    {t(item.copyKey, item.copyKey === "nav.profile" ? "Your profile" : "Apply to join")}
                   </Link>
                 ))}
                 {user ? (
