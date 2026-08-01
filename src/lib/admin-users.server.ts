@@ -103,7 +103,7 @@ export interface CreateUserInput {
   password: string;
   roles: AppRole[];
   fields: AdminUserFields;
-  notifyUser?: boolean;
+  notifyUser?: boolean | undefined;
   actorId: string;
 }
 
@@ -175,9 +175,9 @@ export async function createUser(input: CreateUserInput) {
 export interface UpdateUserInput {
   userId: string;
   fields: AdminUserFields;
-  email?: string;
-  password?: string;
-  roles?: AppRole[];
+  email?: string | undefined;
+  password?: string | undefined;
+  roles?: AppRole[] | undefined;
   actorId: string;
 }
 
