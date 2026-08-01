@@ -52,7 +52,7 @@ function AdminLogs() {
   const [area, setArea] = useState("all");
   const [severity, setSeverity] = useState("all");
   const [search, setSearch] = useState("");
-  const logs = useActivityLog({ area, severity, search: search.trim() || undefined });
+  const logs = useActivityLog({ area, severity, search: search.trim() });
 
   return (
     <div className="space-y-6">
