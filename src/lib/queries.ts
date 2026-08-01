@@ -115,6 +115,47 @@ export async function uploadAvatar(userId: string, file: File) {
   return data.signedUrl;
 }
 
+/**
+ * Turns a stored media reference into something an <img>/<video> can load.
+ * Values saved during sign-up are bucket paths; values saved later are already
+ * signed URLs, so those are passed straight through.
+ */
+export async function resolveStoredMedia(
+  bucket: "avatars" | "attachments",
+  value: string,
+  expiresIn = 60 * 60,
+) {
+  if (/^https?:\/\//i.test(value)) return value;
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(value, expiresIn);
+  if (error) throw new Error(error.message);
+  return data.signedUrl;
+}
+
+/** Signs a batch of stored media references, dropping any that fail. */
+export function useStoredMedia(
+  items: { bucket: "avatars" | "attachments"; value: string }[],
+) {
+  const key = items.map((item) => `${item.bucket}:${item.value}`).sort();
+  return useQuery({
+    queryKey: ["stored-media", key],
+    enabled: items.length > 0,
+    staleTime: 30 * 60 * 1000,
+    queryFn: async () => {
+      const resolved: Record<string, string> = {};
+      await Promise.all(
+        items.map(async (item) => {
+          try {
+            resolved[item.value] = await resolveStoredMedia(item.bucket, item.value);
+          } catch {
+            /* unreadable media is simply not shown */
+          }
+        }),
+      );
+      return resolved;
+    },
+  });
+}
+
 /** Looks up several members at once — used to name the other side of a thread. */
 export function useProfilesByIds(ids: string[]) {
   const key = [...new Set(ids)].sort();
