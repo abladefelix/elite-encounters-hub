@@ -19,6 +19,8 @@ import { SignupFieldsForm, type SignupValues } from "@/components/signup-fields-
 import { PortfolioPicker } from "@/components/portfolio-picker";
 import { BrandMark } from "@/components/brand-mark";
 import { BUILTIN_FIELDS, appliesTo, useSignupConfig } from "@/lib/signup-fields";
+import { useBranding } from "@/lib/branding";
+import { sendWelcomeMessage } from "@/lib/welcome.functions";
 
 /** Only same-origin relative paths are ever used as a post-login destination. */
 function safeNext(value: unknown) {
@@ -96,6 +98,7 @@ export function AuthPage({
   const { session, loading, isAdmin } = useAuth();
 
   const { flags } = useFeatureFlags();
+  const { branding } = useBranding();
   const { config } = useSignupConfig();
   const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
