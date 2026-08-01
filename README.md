@@ -1,29 +1,83 @@
-# Welcome to your Lovable project
+# Ashnight
 
-This project was built with [Lovable](https://lovable.dev).
+Ashnight is a members-only marketplace for vetted premium **ash (cleaning) specialists**.
+Clients pay a membership to enter a room (Basic / Premium / Ultimate), talk to vetted
+specialists in real-time chat, book visits, pay through Paystack, and every payment is
+held in built-in escrow until the job clears. Specialists join free and earn per booking.
 
-## Build with Lovable
+Everything is administered from a private control room at `/ashnight-control`.
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+- **Stack**: TanStack Start (React 19 + Vite 7 SSR), TypeScript, Tailwind CSS v4, shadcn/ui
+- **Backend**: PostgreSQL + Supabase (self-hostable: Auth, Postgres/RLS, Storage, Realtime)
+- **Payments**: Paystack (GHS)
+- **Currency**: Ghanaian Cedi (GHS) everywhere
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+## Documentation
 
-## Development
+| Guide | Who it's for |
+| --- | --- |
+| [docs/SETUP.md](docs/SETUP.md) | Developers / operators — local dev, self-hosted backend, **cPanel deployment** |
+| [docs/ADMIN-GUIDE.md](docs/ADMIN-GUIDE.md) | Platform administrators — control room, vetting, rooms, pricing, escrow, moderation, keys |
+| [docs/CLIENT-GUIDE.md](docs/CLIENT-GUIDE.md) | Clients (members who book ash services) |
+| [docs/SPECIALIST-GUIDE.md](docs/SPECIALIST-GUIDE.md) | Specialists (vetted professionals who earn) |
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## Quick start (local development)
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+git clone <your-repository-url> ashnight
+cd ashnight
+npm install
+cp .env.example .env      # fill in your backend URL + keys
+npm run dev               # http://localhost:8080
 ```
 
-## Built with
+## Quick start (production build for your own server)
 
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+```sh
+npm ci
+npm run build:selfhost    # standalone Node build -> .output/
+npm start                 # serves on $PORT (default 3000)
+```
+
+Full server, database and cPanel instructions: [docs/SETUP.md](docs/SETUP.md).
+
+## Project layout
+
+```
+src/
+  routes/                     file-based routes (URL == filename)
+    index.tsx                 landing / discovery
+    rooms.tsx                 membership rooms & pricing
+    specialists.*             specialist directory + profile
+    messages.tsx              realtime chat, calls, booking, gifts, reports, ratings
+    profile.tsx               member profile, likes/dislikes, services, 2FA
+    apply.tsx                 specialist application (vetting intake)
+    auth.tsx                  sign in / sign up / password reset
+    ashnight-control*.tsx     PRIVATE admin control room
+  lib/                        domain logic (escrow, moderation, gifts, settings, queries)
+  components/                 UI + chat components, theme provider, tab bar
+  integrations/supabase/      generated database/auth clients (do not hand-edit)
+supabase/migrations/          SQL schema, RLS policies and grants (run in order)
+docs/                         setup + user guides
+```
+
+## Security model in one paragraph
+
+Every table has Row Level Security enabled with explicit grants. Roles live in a
+separate `user_roles` table checked by the `has_role()` security-definer function, so
+role escalation through a profile update is impossible. Admin-only surfaces are gated
+both by RLS and by the `/ashnight-control` route guard. Secrets (Paystack secret key,
+call-service credentials) live in the admin key vault and are never shipped to the
+browser. Optional TOTP two-factor authentication is available to every account and can
+be *required* for admins.
+
+## Note on build tooling
+
+The app code, database schema and docs are vendor-neutral — no editor or hosting SDK is
+imported anywhere in `src/`. The only remaining editor-specific pieces are the *build
+tooling* used while the project is still developed in the online editor
+(`vite.config.ts` and the `@lovable.dev/vite-tanstack-config` devDependency in
+`package.json`). Self-hosted builds do not use them: `npm run build:selfhost` uses
+`vite.config.selfhost.ts`, which is plain open-source Vite + TanStack Start + Nitro. Once
+you no longer edit online, you can delete `vite.config.ts`, drop that devDependency, and
+rename `vite.config.selfhost.ts` to `vite.config.ts`.

@@ -1,5 +1,5 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "ashnight",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -9,11 +9,12 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "build:selfhost": "vite build --config vite.config.selfhost.ts",
+    "start": "node .output/server/index.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@lovable.dev/cloud-auth-js": "^1.1.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",
