@@ -299,6 +299,7 @@ export function useThreads(userId: string | undefined) {
 
 export function useMessages(threadId: string | undefined) {
   const queryClient = useQueryClient();
+  const instanceId = useId();
 
   const query = useQuery({
     queryKey: ["messages", threadId],
@@ -418,6 +419,7 @@ export function useUpdateBooking() {
 
 export function useEscrowEntries(threadId?: string) {
   const queryClient = useQueryClient();
+  const instanceId = useId();
 
   const query = useQuery({
     queryKey: ["escrow", threadId ?? "all"],
