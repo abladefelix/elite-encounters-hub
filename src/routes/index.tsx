@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -53,7 +53,7 @@ export const Route = createFileRoute("/")({
 });
 
 function AuthHome() {
-  const { session, loading } = useAuth();
+  const { session, loading, isAdmin } = useAuth();
   // Signed-in members get the real landing page; the auth form is for guests only.
   if (loading) {
     return (
@@ -62,6 +62,9 @@ function AuthHome() {
       </div>
     );
   }
+  // Admins land straight in the control room; the public site stays one click
+  // away from the header.
+  if (session && isAdmin) return <Navigate to="/ashnight-control" replace />;
   return session ? <Home /> : <AuthPage />;
 }
 
