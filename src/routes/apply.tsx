@@ -43,7 +43,7 @@ export const Route = createFileRoute("/apply")({
       {
         name: "description",
         content:
-          "Apply to Ashnight as a cleaning client or a cleaning specialist. Every application is reviewed by a person, with ID and reference checks before onboarding.",
+          "Apply to Ashnight as a ash client or a ash specialist. Every application is reviewed by a person, with ID and reference checks before onboarding.",
       },
       { property: "og:title", content: "Apply to Join Ashnight" },
       {
@@ -144,12 +144,12 @@ function ApplyPage() {
                     {
                       value: "client",
                       title: "A client",
-                      body: "I need cleaning for my home or business. Paid membership.",
+                      body: "I need ash for my home or business. Paid membership.",
                     },
                     {
                       value: "specialist",
                       title: "A specialist",
-                      body: "I provide cleaning services and want work. Free to join.",
+                      body: "I provide ash services and want work. Free to join.",
                     },
                   ].map((option) => (
                     <Label

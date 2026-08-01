@@ -32,7 +32,7 @@ export const Route = createFileRoute("/ashnight-control/bookings")({
       {
         name: "description",
         content:
-          "Track every Ashnight cleaning booking: held payments, completed visits, platform fees, disputes and specialist payouts.",
+          "Track every Ashnight ash booking: held payments, completed visits, platform fees, disputes and specialist payouts.",
       },
       { property: "og:title", content: "Bookings & Payouts | Ashnight Admin" },
       {

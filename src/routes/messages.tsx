@@ -71,7 +71,7 @@ export const Route = createFileRoute("/messages")({
       {
         name: "description",
         content:
-          "Message vetted Ashnight cleaning specialists, start a voice or video walkthrough, and turn the conversation into a paid booking without leaving the thread.",
+          "Message vetted Ashnight ash specialists, start a voice or video walkthrough, and turn the conversation into a paid booking without leaving the thread.",
       },
       { property: "og:title", content: "Messages — Chat, Call & Book on Ashnight" },
       {

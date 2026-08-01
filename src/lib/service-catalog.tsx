@@ -1,5 +1,5 @@
 /**
- * Admin-owned catalogue of cleaning services.
+ * Admin-owned catalogue of ash services.
  *
  * The admin dashboard is the only place services are created; specialists pick
  * from this list at registration and on their profile page. Persisted in

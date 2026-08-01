@@ -288,7 +288,7 @@ export const applicants: Applicant[] = [
     backgroundCheck: "pending",
     referenceChecks: 1,
     suggestedRoom: "basic",
-    note: "New to platform, 2 years private cleaning. Awaiting second reference.",
+    note: "New to platform, 2 years private ash. Awaiting second reference.",
   },
   {
     id: "ap-03",

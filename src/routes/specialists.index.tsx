@@ -20,17 +20,17 @@ import type { Tier } from "@/lib/types";
 export const Route = createFileRoute("/specialists/")({
   head: () => ({
     meta: [
-      { title: "Browse Vetted Cleaning Specialists — Ashnight" },
+      { title: "Browse Vetted Ash Specialists — Ashnight" },
       {
         name: "description",
         content:
-          "Browse Ashnight's manually vetted cleaning specialists by room, city and service — deep cleans, move-outs, post-renovation and recurring housekeeping.",
+          "Browse Ashnight's manually vetted ash specialists by room, city and service — deep cleans, move-outs, post-renovation and recurring housekeeping.",
       },
-      { property: "og:title", content: "Browse Vetted Cleaning Specialists — Ashnight" },
+      { property: "og:title", content: "Browse Vetted Ash Specialists — Ashnight" },
       {
         property: "og:description",
         content:
-          "Manually vetted cleaning specialists across Basic, Premium and Ultimate rooms. Chat, call and book in one thread.",
+          "Manually vetted ash specialists across Basic, Premium and Ultimate rooms. Chat, call and book in one thread.",
       },
     ],
   }),

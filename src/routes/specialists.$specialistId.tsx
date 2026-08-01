@@ -39,9 +39,9 @@ export const Route = createFileRoute("/specialists/$specialistId")({
     const description = `${specialist.name} — ${specialist.headline}. ${specialist.rating.toFixed(2)}★ across ${specialist.jobsCompleted} completed cleans on Ashnight.`;
     return {
       meta: [
-        { title: `${specialist.name} — Cleaning Specialist on Ashnight` },
+        { title: `${specialist.name} — Ash Specialist on Ashnight` },
         { name: "description", content: description },
-        { property: "og:title", content: `${specialist.name} — Cleaning Specialist` },
+        { property: "og:title", content: `${specialist.name} — Ash Specialist` },
         { property: "og:description", content: description },
       ],
     };
