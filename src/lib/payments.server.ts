@@ -307,3 +307,84 @@ export async function settleDueEscrow(): Promise<{
 
   return { autoConfirmed, released, skipped: null };
 }
+
+/* ------------------------------------------------------------ paper trail */
+
+type DocumentKind = Database["public"]["Enums"]["document_kind"];
+
+export interface DocumentLineInput {
+  label: string;
+  quantity: number;
+  unitAmount: number;
+  amount: number;
+}
+
+/** Sequential, human-readable document number: ASH-INV-2026-000123. */
+async function documentNumber(kind: DocumentKind) {
+  const admin = await adminClient();
+  const year = new Date().getFullYear();
+  const { count } = await admin
+    .from("documents")
+    .select("id", { count: "exact", head: true })
+    .eq("kind", kind);
+  const seq = String((count ?? 0) + 1).padStart(6, "0");
+  return `ASH-${kind === "invoice" ? "INV" : "RCT"}-${year}-${seq}`;
+}
+
+/**
+ * Issues an invoice or receipt. Amounts are always the server-computed ones, so
+ * the document can be trusted as the record of what was actually charged.
+ */
+export async function issueDocument(input: {
+  kind: DocumentKind;
+  clientId: string;
+  specialistId?: string | null;
+  bookingId?: string | null;
+  escrowId?: string | null;
+  title: string;
+  subtotal: number;
+  platformFee: number;
+  total: number;
+  lines: DocumentLineInput[];
+  paystackReference?: string | null;
+  notes?: string;
+  paid?: boolean;
+}) {
+  const admin = await adminClient();
+
+  if (input.paystackReference) {
+    const { data: existing } = await admin
+      .from("documents")
+      .select("id")
+      .eq("kind", input.kind)
+      .eq("paystack_reference", input.paystackReference)
+      .maybeSingle();
+    if (existing) return existing.id;
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await admin
+    .from("documents")
+    .insert({
+      number: await documentNumber(input.kind),
+      kind: input.kind,
+      client_id: input.clientId,
+      specialist_id: input.specialistId ?? null,
+      booking_id: input.bookingId ?? null,
+      escrow_id: input.escrowId ?? null,
+      title: input.title,
+      currency: "GHS",
+      subtotal: input.subtotal,
+      platform_fee: input.platformFee,
+      total: input.total,
+      line_items: input.lines as never,
+      paystack_reference: input.paystackReference ?? null,
+      notes: input.notes ?? "",
+      issued_at: now,
+      paid_at: input.paid ? now : null,
+    })
+    .select("id")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.id ?? null;
+}
