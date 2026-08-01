@@ -210,6 +210,46 @@ export function AuthPage({
       }
     }
 
+    // Specialist portfolio: work photos plus one intro video, stored privately
+    // under the new member's own folder and recorded on their profile.
+    if (!error && data.session && portfolioEnabled && (portfolioPhotos.length || portfolioVideo)) {
+      const uid = data.session.user.id;
+      const photoPaths: string[] = [];
+      let videoPath: string | null = null;
+      for (const [index, file] of portfolioPhotos.entries()) {
+        const path = `${uid}/portfolio/photo-${Date.now()}-${index}-${file.name.replace(/[^\w.-]+/g, "_")}`;
+        const upload = await supabase.storage
+          .from("attachments")
+          .upload(path, file, { contentType: file.type });
+        if (!upload.error) photoPaths.push(path);
+      }
+      if (portfolioVideo) {
+        const path = `${uid}/portfolio/video-${Date.now()}-${portfolioVideo.name.replace(/[^\w.-]+/g, "_")}`;
+        const upload = await supabase.storage
+          .from("attachments")
+          .upload(path, portfolioVideo, { contentType: portfolioVideo.type });
+        if (!upload.error) videoPath = path;
+      }
+      if (photoPaths.length || videoPath) {
+        const { data: current } = await supabase
+          .from("profiles")
+          .select("extra")
+          .eq("id", uid)
+          .maybeSingle();
+        const extra = (current?.extra ?? {}) as Record<string, unknown>;
+        await supabase
+          .from("profiles")
+          .update({
+            extra: {
+              ...extra,
+              portfolio_photos: photoPaths,
+              portfolio_video: videoPath,
+            },
+          })
+          .eq("id", uid);
+      }
+    }
+
     setBusy(false);
     if (error) {
       toast.error(error.message);
