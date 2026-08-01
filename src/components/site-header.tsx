@@ -70,9 +70,13 @@ export function SiteHeader() {
             </SheetTrigger>
             <SheetContent side="right" className="w-72 bg-surface">
               <nav className="mt-8 flex flex-col gap-1">
-                {[...NAV, { to: "/admin", label: "Admin dashboard" } as const].map((item) => (
+                {[
+                  ...NAV,
+                  { to: "/admin", label: "Admin dashboard" } as const,
+                  { to: "/apply", label: "Apply to join" } as const,
+                ].map((item) => (
                   <Link
-                    key={item.to}
+                    key={item.label}
                     to={item.to}
                     className="rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
                     activeProps={{ className: "bg-secondary text-foreground" }}
@@ -81,6 +85,7 @@ export function SiteHeader() {
                   </Link>
                 ))}
               </nav>
+
               {platform.memberThemeChoice ? (
                 <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2.5">
                   <span className="text-sm text-muted-foreground">Appearance</span>
