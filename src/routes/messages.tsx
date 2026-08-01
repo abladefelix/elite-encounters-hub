@@ -272,7 +272,7 @@ function MessagesPage() {
               {/* thread list */}
               <aside
                 className={cn(
-                  "flex-col border-r border-border/70 bg-background/40 md:flex",
+                  "min-h-0 flex-col border-r border-border/70 bg-background/40 md:flex",
                   showListOnMobile ? "flex" : "hidden",
                 )}
               >
@@ -334,7 +334,7 @@ function MessagesPage() {
               {/* conversation */}
               <section
                 className={cn(
-                  "flex min-w-0 flex-col",
+                  "flex min-h-0 min-w-0 flex-col",
                   showListOnMobile ? "hidden md:flex" : "flex",
                 )}
               >
