@@ -1,8 +1,9 @@
 # Ashnight — Setup & Self-Hosting Guide
 
-This guide takes you from a fresh clone to Ashnight running on your own cPanel
-server, with your own database, under your total control. No third-party build
-platform is required — the app builds and runs with plain Node.js.
+This guide takes you from a fresh clone to Ashnight running on a machine you own —
+**Windows (Option A, section 4)** or a **Linux server (Option B, section 4b)** — with your
+own database, under your total control. No third-party build or hosting platform is
+required: the app builds and runs with plain Node.js.
 
 ---
 
@@ -10,16 +11,18 @@ platform is required — the app builds and runs with plain Node.js.
 
 | Piece | Why | Notes |
 | --- | --- | --- |
-| Node.js 20+ and npm | build & run the app | cPanel: "Setup Node.js App" |
-| A PostgreSQL 15+ database | all data | comes with self-hosted Supabase |
+| Node.js 20+ and npm | build & run the app | Windows installer or NodeSource on Linux |
+| Docker | runs the backend stack | Docker Desktop (WSL2) on Windows, Docker Engine on Linux |
+| A PostgreSQL 15+ database | all data | comes with the self-hosted backend stack |
 | A Supabase-compatible backend | Auth, RLS, Storage, Realtime | self-host with Docker (below) |
 | A Paystack account | payments in GHS | keys entered in the admin UI, not in code |
-| A domain + SSL | production | cPanel AutoSSL is fine |
+| A domain + SSL | production | Cloudflare Tunnel or Caddy gives you free TLS |
 
-The app talks to the backend over HTTPS using three env vars only
+The app talks to the backend using three env vars only
 (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and their server twins), so the
-backend can live anywhere: the same cPanel box (if it allows Docker), a VPS you own, or
-a managed Supabase project. Nothing is hard-wired.
+backend can live anywhere: the same machine as the app (recommended), another server you
+own, or a managed Supabase project. Nothing is hard-wired.
+
 
 ---
 
