@@ -8,6 +8,7 @@ import {
   Phone,
   Plus,
   Unlock,
+  Trash2,
   Video,
   type LucideIcon,
 } from "lucide-react";
@@ -21,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { rooms, roomDistribution } from "@/lib/mock-data";
+import { roomDistribution } from "@/lib/mock-data";
 import {
   PRIVILEGE_GROUPS,
   ROOM_ACCENTS,
@@ -31,10 +32,11 @@ import {
   formatLeadTime,
   roomAccentStyle,
   useRoomSettings,
+  NEW_ROOM_PRIVILEGES,
   type RoomAccentId,
 } from "@/lib/room-settings";
 
-import { money, type Tier } from "@/lib/types";
+import { BASE_TIERS, money, tierLabel, type Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/ashnight-control/rooms")({
   head: () => ({
@@ -57,6 +59,16 @@ export const Route = createFileRoute("/ashnight-control/rooms")({
   component: AdminRooms,
 });
 
+const NEW_ROOM_PROFILE_FALLBACK = {
+  name: "New Room",
+  tagline: "",
+  priceMonthly: 0,
+  visitFeeMin: 0,
+  visitFeeMax: 0,
+  seatsLeft: 25,
+  intakeOpen: false,
+};
+
 const ICONS: Partial<Record<string, LucideIcon>> = {
   audio: Phone,
   video: Video,
@@ -64,8 +76,30 @@ const ICONS: Partial<Record<string, LucideIcon>> = {
 
 function AdminRooms() {
   const distribution = roomDistribution();
-  const { policy, profiles, platform, setPrivilege, setProfileField, setPlatformField, resetPolicy } =
-    useRoomSettings();
+  const {
+    policy,
+    profiles,
+    platform,
+    roomIds,
+    createRoom,
+    deleteRoom,
+    setPrivilege,
+    setProfileField,
+    setPlatformField,
+    resetPolicy,
+  } = useRoomSettings();
+  const [newRoomName, setNewRoomName] = useState("");
+  const [newRoomPrice, setNewRoomPrice] = useState(0);
+
+  function addRoom() {
+    const created = createRoom({ name: newRoomName, priceMonthly: newRoomPrice });
+    if (!created) return;
+    setNewRoomName("");
+    setNewRoomPrice(0);
+    toast.success(`${newRoomName.trim() || "New room"} created`, {
+      description: "Set its privileges, seats and colour below, then open intake.",
+    });
+  }
 
   function adjust(room: Tier, delta: number) {
     setProfileField(room, "seatsLeft", Math.max(0, (profiles[room]?.seatsLeft ?? 0) + delta));
@@ -85,16 +119,46 @@ function AdminRooms() {
             every member in that room.
           </p>
         </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            resetPolicy();
-            toast("All room settings reset to defaults");
-          }}
-        >
-          Reset to defaults
-        </Button>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="space-y-1">
+            <Label htmlFor="new-room-name" className="text-xs text-muted-foreground">
+              New room name
+            </Label>
+            <Input
+              id="new-room-name"
+              value={newRoomName}
+              placeholder="e.g. Platinum"
+              className="h-9 w-40"
+              onChange={(event) => setNewRoomName(event.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="new-room-price" className="text-xs text-muted-foreground">
+              Monthly price
+            </Label>
+            <Input
+              id="new-room-price"
+              type="number"
+              min={0}
+              value={newRoomPrice}
+              className="h-9 w-28"
+              onChange={(event) => setNewRoomPrice(Number(event.target.value))}
+            />
+          </div>
+          <Button variant="brass" size="sm" onClick={addRoom}>
+            <Plus className="size-4" /> Add room
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              resetPolicy();
+              toast("All room settings reset to defaults");
+            }}
+          >
+            Reset to defaults
+          </Button>
+        </div>
       </header>
 
       <Card className="p-6">
@@ -176,16 +240,17 @@ function AdminRooms() {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {rooms.map((room) => {
-          const profile = profiles[room.id];
+        {roomIds.map((tier) => {
+          const profile = profiles[tier] ?? { ...NEW_ROOM_PROFILE_FALLBACK, name: tierLabel(tier) };
           const stats = distribution.find(
-            (item) => item.room === room.name.replace(" Room", ""),
+            (item) => item.room === profile.name.replace(" Room", ""),
           );
-          const privileges = policy[room.id];
+          const privileges = policy[tier] ?? NEW_ROOM_PRIVILEGES;
+          const isCore = (BASE_TIERS as string[]).includes(tier);
           const filled = Math.max(0, 100 - Math.min(100, profile.seatsLeft * 4));
           return (
             <Card
-              key={room.id}
+              key={tier}
               className="flex flex-col border-t-2 p-6"
               style={{ ...roomAccentStyle(privileges.accent), borderTopColor: "var(--room-accent)" }}
             >
@@ -197,6 +262,19 @@ function AdminRooms() {
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">{profile.tagline}</p>
                 </div>
+                {isCore ? null : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Remove ${profile.name}`}
+                    onClick={() => {
+                      deleteRoom(tier);
+                      toast(`${profile.name} removed`);
+                    }}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                )}
                 <Badge
                   variant="outline"
                   className={
@@ -216,39 +294,39 @@ function AdminRooms() {
                   Room details
                 </p>
                 <TextField
-                  id={`${room.id}-name`}
+                  id={`${tier}-name`}
                   label="Room name"
                   value={profile.name}
-                  onChange={(value) => setProfileField(room.id, "name", value)}
+                  onChange={(value) => setProfileField(tier, "name", value)}
                 />
                 <TextField
-                  id={`${room.id}-tagline`}
+                  id={`${tier}-tagline`}
                   label="Tagline"
                   value={profile.tagline}
-                  onChange={(value) => setProfileField(room.id, "tagline", value)}
+                  onChange={(value) => setProfileField(tier, "tagline", value)}
                 />
                 <NumberField
-                  id={`${room.id}-price`}
+                  id={`${tier}-price`}
                   label="Membership (GH₵ / mo)"
                   value={profile.priceMonthly}
                   step={5}
                   onChange={(value) =>
-                    setProfileField(room.id, "priceMonthly", Math.max(0, value))
+                    setProfileField(tier, "priceMonthly", Math.max(0, value))
                   }
                 />
                 <NumberField
-                  id={`${room.id}-fee-min`}
+                  id={`${tier}-fee-min`}
                   label="Visit fee min (GH₵)"
                   value={profile.visitFeeMin}
                   step={5}
-                  onChange={(value) => setProfileField(room.id, "visitFeeMin", Math.max(0, value))}
+                  onChange={(value) => setProfileField(tier, "visitFeeMin", Math.max(0, value))}
                 />
                 <NumberField
-                  id={`${room.id}-fee-max`}
+                  id={`${tier}-fee-max`}
                   label="Visit fee max (GH₵)"
                   value={profile.visitFeeMax}
                   step={5}
-                  onChange={(value) => setProfileField(room.id, "visitFeeMax", Math.max(0, value))}
+                  onChange={(value) => setProfileField(tier, "visitFeeMax", Math.max(0, value))}
                 />
               </div>
 
@@ -273,7 +351,7 @@ function AdminRooms() {
                 <Button
                   variant="secondary"
                   size="icon"
-                  onClick={() => adjust(room.id, -1)}
+                  onClick={() => adjust(tier, -1)}
                   aria-label={`Remove a seat from ${profile.name}`}
                 >
                   <Minus className="size-4" />
@@ -281,7 +359,7 @@ function AdminRooms() {
                 <Button
                   variant="secondary"
                   size="icon"
-                  onClick={() => adjust(room.id, 1)}
+                  onClick={() => adjust(tier, 1)}
                   aria-label={`Add a seat to ${profile.name}`}
                 >
                   <Plus className="size-4" />
@@ -295,7 +373,7 @@ function AdminRooms() {
                   <Switch
                     checked={profile.intakeOpen}
                     onCheckedChange={(checked) => {
-                      setProfileField(room.id, "intakeOpen", checked);
+                      setProfileField(tier, "intakeOpen", checked);
                       toast(
                         checked
                           ? `${profile.name} intake opened`
@@ -325,7 +403,7 @@ function AdminRooms() {
                         hint={item.hint}
                         checked={privileges[item.key]}
                         onChange={(checked) => {
-                          setPrivilege(room.id, item.key, checked);
+                          setPrivilege(tier, item.key, checked);
                           toast(
                             `${item.label} ${checked ? "enabled" : "disabled"} for ${profile.name}`,
                           );
@@ -341,36 +419,36 @@ function AdminRooms() {
                   Limits
                 </p>
                 <NumberField
-                  id={`${room.id}-bookings`}
+                  id={`${tier}-bookings`}
                   label="Bookings / month"
                   suffix="0 = unlimited"
                   value={privileges.bookingLimit ?? 0}
                   onChange={(value) =>
-                    setPrivilege(room.id, "bookingLimit", value <= 0 ? null : value)
+                    setPrivilege(tier, "bookingLimit", value <= 0 ? null : value)
                   }
                 />
                 <NumberField
-                  id={`${room.id}-lead`}
+                  id={`${tier}-lead`}
                   label="Booking lead time (h)"
                   value={privileges.leadTimeHours}
                   min={1}
-                  onChange={(value) => setPrivilege(room.id, "leadTimeHours", Math.max(1, value))}
+                  onChange={(value) => setPrivilege(tier, "leadTimeHours", Math.max(1, value))}
                 />
                 <NumberField
-                  id={`${room.id}-support`}
+                  id={`${tier}-support`}
                   label="Support response (h)"
                   value={privileges.supportResponseHours}
                   min={1}
                   onChange={(value) =>
-                    setPrivilege(room.id, "supportResponseHours", Math.max(1, value))
+                    setPrivilege(tier, "supportResponseHours", Math.max(1, value))
                   }
                 />
                 <NumberField
-                  id={`${room.id}-cover`}
+                  id={`${tier}-cover`}
                   label="Damage cover (GH₵)"
                   value={privileges.damageCover}
                   step={500}
-                  onChange={(value) => setPrivilege(room.id, "damageCover", Math.max(0, value))}
+                  onChange={(value) => setPrivilege(tier, "damageCover", Math.max(0, value))}
                 />
               </div>
 
@@ -387,7 +465,7 @@ function AdminRooms() {
                       accent={accent}
                       active={privileges.accent === accent}
                       onSelect={() => {
-                        setPrivilege(room.id, "accent", accent);
+                        setPrivilege(tier, "accent", accent);
                         toast(`${profile.name} theme set to ${ROOM_ACCENTS[accent].label}`);
                       }}
                     />
