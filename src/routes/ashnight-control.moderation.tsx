@@ -36,6 +36,13 @@ import {
 } from "@/lib/moderation";
 import { relativeTime } from "@/lib/escrow";
 import { TIER_LABEL } from "@/lib/types";
+import {
+  REPORT_REASON_LABEL,
+  useRatings,
+  useReports,
+  type ReportStatus,
+} from "@/lib/reports";
+
 
 export const Route = createFileRoute("/ashnight-control/moderation")({
   head: () => ({
