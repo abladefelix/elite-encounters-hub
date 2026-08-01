@@ -193,12 +193,13 @@ function AdminSignupForm() {
               <div key={meta.key} className="flex flex-wrap items-center gap-4 p-4">
                 <GripVertical className="size-4 shrink-0 text-muted-foreground/60" />
                 <div className="min-w-48 flex-1">
-                  <p className="text-sm font-medium">
-                    {value.label || meta.label}{" "}
-                    <Badge variant="outline" className="ml-1 text-[10px] uppercase">
+                  <div className="flex items-center gap-1.5 text-sm font-medium">
+                    <span>{value.label || meta.label}</span>
+                    <Badge variant="outline" className="text-[10px] uppercase">
                       {meta.type}
                     </Badge>
-                  </p>
+                  </div>
+
                   <p className="text-xs text-muted-foreground">{meta.hint}</p>
                 </div>
                 <Input
