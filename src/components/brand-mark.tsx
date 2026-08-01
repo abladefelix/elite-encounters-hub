@@ -1,9 +1,9 @@
-import logo from "@/assets/ashnight-logo.png";
+import logo from "@/assets/ashnight-mark.png";
 import { cn } from "@/lib/utils";
 
 /**
- * The Ashnight mark — an abstract brass letter A. Single source of truth so the
- * logo can be swapped in one place.
+ * The Ashnight mark — three tapered brass arcs turning around a hollow centre.
+ * Single source of truth so the logo can be swapped in one place.
  */
 export function BrandMark({ className }: { className?: string }) {
   return (
@@ -18,7 +18,7 @@ export function BrandMark({ className }: { className?: string }) {
         alt="Ashnight"
         width={1024}
         height={1024}
-        className="size-[68%] object-contain"
+        className="size-[74%] object-contain"
       />
     </span>
   );
