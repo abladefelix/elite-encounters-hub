@@ -6,7 +6,7 @@
  * Each feature area owns one key inside the row.
  */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useId } from "react";
+import { useCallback, useEffect, useId, useMemo } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
@@ -71,8 +71,14 @@ export function useSettingsSection<T extends object>(section: SettingsSection, f
     };
   }, [queryClient, channelId]);
 
-  const stored = (query.data?.[section] as Partial<T> | undefined) ?? undefined;
-  const value = { ...fallback, ...(stored ?? {}) } as T;
+  const stored = query.data?.[section] as Partial<T> | undefined;
+  // Memoised on the stored slice: consumers put `value` in effect dependency
+  // arrays, and a fresh object every render would spin them forever.
+  const value = useMemo(
+    () => ({ ...fallback, ...(stored ?? {}) }) as T,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stored],
+  );
 
   const save = useCallback(
     async (next: T) => {
