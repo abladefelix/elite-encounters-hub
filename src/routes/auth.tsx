@@ -73,6 +73,8 @@ export function AuthPage({
   const [values, setValues] = useState<SignupValues>({});
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [portfolioPhotos, setPortfolioPhotos] = useState<File[]>([]);
+  const [portfolioVideo, setPortfolioVideo] = useState<File | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [acceptMarketing, setAcceptMarketing] = useState(false);
