@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -195,7 +196,7 @@ function VettingQueue() {
               Nothing in this bucket.
             </p>
           ) : (
-            visible.map((applicant) => (
+            paged.rows.map((applicant) => (
               <button
                 key={applicant.id}
                 onClick={() => setSelectedId(applicant.id)}

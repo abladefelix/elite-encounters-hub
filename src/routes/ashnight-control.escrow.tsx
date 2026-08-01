@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -689,7 +690,7 @@ function AdminEscrow() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((entry) => (
+                {paged.rows.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className="font-medium">
                       <span className="flex items-center gap-1.5">

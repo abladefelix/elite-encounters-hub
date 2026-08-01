@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -195,7 +196,8 @@ function AdminNotifications() {
             {history.isLoading ? (
               <Loader2 className="size-5 animate-spin text-muted-foreground" />
             ) : null}
-            {(history.data ?? []).map((row) => (
+            <DataPager paged={paged} label="notifications" />
+            {paged.rows.map((row) => (
               <div key={row.id} className="rounded-lg border border-border p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-medium">{row.title}</p>
