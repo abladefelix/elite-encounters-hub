@@ -93,6 +93,7 @@ function toFields(row: {
 
 function ProfilePage() {
   const { user, profile, loading, isSpecialist, refresh } = useAuth();
+  const { flags } = useFeatureFlags();
   const { selectableServices, labelOf, isLoading: catalogLoading } = useServiceCatalog();
   const updateProfile = useUpdateProfile();
   const { data: specialistServiceRows } = useSpecialistServices(user?.id);
