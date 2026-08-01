@@ -28,7 +28,7 @@ import { TierBadge } from "@/components/tier-badge";
 import { clients, specialists } from "@/lib/mock-data";
 import { money, type Tier } from "@/lib/types";
 
-export const Route = createFileRoute("/admin/users")({
+export const Route = createFileRoute("/ashnight-control/users")({
   head: () => ({
     meta: [
       { title: "Members & Specialists | Ashnight Admin" },

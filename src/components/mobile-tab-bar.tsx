@@ -10,7 +10,7 @@ const TABS = [
   { to: "/specialists", label: "Specialists", icon: Sparkles },
   { to: "/messages", label: "Chats", icon: MessageCircle },
   { to: "/rooms", label: "Rooms", icon: Layers },
-  { to: "/admin", label: "Admin", icon: ShieldCheck },
+  { to: "/ashnight-control", label: "Admin", icon: ShieldCheck },
 ] as const;
 
 export function MobileTabBar() {

@@ -49,7 +49,7 @@ export function SiteHeader() {
         <div className="ml-auto flex items-center gap-2">
           {platform.memberThemeChoice ? <ThemeToggle /> : null}
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-            <Link to="/admin">Admin</Link>
+            <Link to="/ashnight-control">Admin</Link>
           </Button>
           <Button asChild size="sm" variant="brass" className="hidden sm:inline-flex">
             <Link to="/apply">Apply to join</Link>
@@ -72,7 +72,7 @@ export function SiteHeader() {
               <nav className="mt-8 flex flex-col gap-1">
                 {[
                   ...NAV,
-                  { to: "/admin", label: "Admin dashboard" } as const,
+                  { to: "/ashnight-control", label: "Admin dashboard" } as const,
                   { to: "/apply", label: "Apply to join" } as const,
                 ].map((item) => (
                   <Link

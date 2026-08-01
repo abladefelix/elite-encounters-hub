@@ -16,18 +16,18 @@ import { adminMetrics } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/ashnight-control")({
   component: AdminLayout,
 });
 
 const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] = [
-  { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
-  { to: "/admin/vetting", label: "Vetting queue", icon: BadgeCheck },
-  { to: "/admin/users", label: "Users", icon: Users },
-  { to: "/admin/rooms", label: "Rooms", icon: DoorOpen },
-  { to: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
-  { to: "/admin/escrow", label: "Escrow & gifts", icon: ShieldCheck },
-  { to: "/admin/moderation", label: "Moderation", icon: ShieldBan },
+  { to: "/ashnight-control", label: "Overview", icon: LayoutDashboard, exact: true },
+  { to: "/ashnight-control/vetting", label: "Vetting queue", icon: BadgeCheck },
+  { to: "/ashnight-control/users", label: "Users", icon: Users },
+  { to: "/ashnight-control/rooms", label: "Rooms", icon: DoorOpen },
+  { to: "/ashnight-control/bookings", label: "Bookings", icon: CalendarCheck },
+  { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck },
+  { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan },
 ];
 
 function AdminLayout() {
@@ -63,7 +63,7 @@ function AdminLayout() {
                 >
                   <item.icon className="size-4" />
                   {item.label}
-                  {item.to === "/admin/vetting" && metrics.pendingVetting ? (
+                  {item.to === "/ashnight-control/vetting" && metrics.pendingVetting ? (
                     <Badge className="ml-auto h-5 min-w-5 justify-center rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">
                       {metrics.pendingVetting}
                     </Badge>

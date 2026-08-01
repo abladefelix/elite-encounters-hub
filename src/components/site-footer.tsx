@@ -38,9 +38,9 @@ export function SiteFooter() {
         <FooterColumn
           title="Operations"
           links={[
-            { to: "/admin", label: "Admin dashboard" },
-            { to: "/admin/vetting", label: "Vetting queue" },
-            { to: "/admin/bookings", label: "Bookings & payouts" },
+            { to: "/ashnight-control", label: "Admin dashboard" },
+            { to: "/ashnight-control/vetting", label: "Vetting queue" },
+            { to: "/ashnight-control/bookings", label: "Bookings & payouts" },
           ]}
         />
       </div>

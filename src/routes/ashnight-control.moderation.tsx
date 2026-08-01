@@ -37,7 +37,7 @@ import {
 import { relativeTime } from "@/lib/escrow";
 import { TIER_LABEL } from "@/lib/types";
 
-export const Route = createFileRoute("/admin/moderation")({
+export const Route = createFileRoute("/ashnight-control/moderation")({
   head: () => ({
     meta: [
       { title: "Chat Moderation & Word Filters | Ashnight Admin" },
