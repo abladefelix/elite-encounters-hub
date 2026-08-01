@@ -177,9 +177,9 @@ export function split(amountGhs: number, feePct: number) {
 }
 
 export function roomPrice(settings: ServerSettings, room: Tier): number {
-  const fallback: Record<Tier, number> = { basic: 150, premium: 350, ultimate: 900 };
+  const fallback: Partial<Record<Tier, number>> = { basic: 150, premium: 350, ultimate: 900 };
   const configured = settings.rooms?.[room]?.priceMonthly;
-  return typeof configured === "number" && configured > 0 ? configured : fallback[room];
+  return typeof configured === "number" && configured > 0 ? configured : (fallback[room] ?? 0);
 }
 
 /* ---------------------------------------------------------------- finalising */

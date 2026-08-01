@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { Tier } from "./types";
+import type { RoomMap, Tier } from "./types";
 
 /**
  * Chat moderation.
@@ -47,7 +47,7 @@ export interface ModerationSettings {
   /** Write every hit to the admin review log. */
   logHits: boolean;
   /** Rooms allowed to exchange contact details anyway. */
-  contactExemptRooms: Record<Tier, boolean>;
+  contactExemptRooms: RoomMap<boolean>;
 }
 
 export const DEFAULT_FLAGGED_WORDS = [
@@ -224,7 +224,7 @@ export function moderateMessage(
   };
   if (!settings.enabled) return clean;
 
-  const exempt = settings.contactExemptRooms[room];
+  const exempt = settings.contactExemptRooms[room] ?? false;
   const phoneOn = settings.blockPhoneNumbers && !exempt;
   const contactOn = settings.blockContactSharing && !exempt;
   const phones = phoneOn ? detectPhones(body) : [];
