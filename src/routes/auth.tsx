@@ -665,6 +665,13 @@ export function AuthPage({
           .
         </span>
       </p>
+
+      <p className="mt-3 text-center text-xs text-muted-foreground">
+        New here?{" "}
+        <Link to="/welcome" className="underline underline-offset-4">
+          See how Ashnight works
+        </Link>
+      </p>
     </main>
   );
 }
