@@ -43,6 +43,15 @@ import {
 import { GiftDialog, type GiftDraft } from "@/components/chat/gift-dialog";
 import { CURRENT_CLIENT_ID, currentClient, getSpecialist, threads } from "@/lib/mock-data";
 import { paystackChannel } from "@/lib/paystack";
+import { ReportDialog, type ReportDraft } from "@/components/chat/report-dialog";
+import { RatingDialog, type RatingDraft } from "@/components/chat/rating-dialog";
+import {
+  REPORT_REASON_LABEL,
+  fileReport,
+  saveRating,
+  useRatings,
+} from "@/lib/reports";
+
 import { useRoomSettings } from "@/lib/room-settings";
 import { logModerationHit, moderateMessage } from "@/lib/moderation";
 import {
