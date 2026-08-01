@@ -68,7 +68,17 @@ const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] 
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const { loading, session, profile, isAdmin } = useAuth();
+  const { loading, session, profile, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  async function handleSignOut() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await signOut();
+    void navigate({ to: "/auth", replace: true });
+  }
+
   const applicationsQuery = useApplications();
   const { flags } = useFeatureFlags();
   const twoFactor = useTwoFactor();
