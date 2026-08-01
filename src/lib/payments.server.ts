@@ -265,7 +265,7 @@ export async function finalizeReference(
         user_id: entry.specialist_id,
         kind: "booking",
         title: "Payment approved — job confirmed",
-        body: `${booking?.service_name ?? entry.label || "An ash service"}${
+        body: `${booking?.service_name ?? (entry.label || "An ash service")}${
           booking?.hours ? ` · ${booking.hours}h` : ""
         } for ${when}. GHS ${entry.payout_amount.toLocaleString()} is waiting in escrow — go ahead and complete the visit.`,
         link: "/messages",
