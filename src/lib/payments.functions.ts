@@ -23,6 +23,7 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
   .validator((input) => checkoutBase.extend({ bookingId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const {
+      addonsAmount,
       adminClient,
       initializeTransaction,
       reference,
@@ -45,7 +46,10 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
 
     const settings = await serverSettings();
     const feePct = booking.platform_fee_pct ?? settings.platform.platformFeePct ?? 12;
-    const subtotal = Number(booking.hours) * booking.rate;
+    const labour = Number(booking.hours) * booking.rate;
+    // Add-on prices come from the admin catalogue, matched on the stored labels.
+    const extras = addonsAmount(settings, booking.addons ?? []);
+    const subtotal = labour + extras;
     const fee = Math.round(subtotal * (feePct / 100));
     const total = subtotal + fee;
     if (!(total > 0)) throw new Error("That booking has no payable amount.");
