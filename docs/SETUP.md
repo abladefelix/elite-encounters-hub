@@ -1,8 +1,9 @@
 # Ashnight — Setup & Self-Hosting Guide
 
-This guide takes you from a fresh clone to Ashnight running on your own cPanel
-server, with your own database, under your total control. No third-party build
-platform is required — the app builds and runs with plain Node.js.
+This guide takes you from a fresh clone to Ashnight running on a machine you own —
+**Windows (Option A, section 4)** or a **Linux server (Option B, section 4b)** — with your
+own database, under your total control. No third-party build or hosting platform is
+required: the app builds and runs with plain Node.js.
 
 ---
 
@@ -10,16 +11,18 @@ platform is required — the app builds and runs with plain Node.js.
 
 | Piece | Why | Notes |
 | --- | --- | --- |
-| Node.js 20+ and npm | build & run the app | cPanel: "Setup Node.js App" |
-| A PostgreSQL 15+ database | all data | comes with self-hosted Supabase |
+| Node.js 20+ and npm | build & run the app | Windows installer or NodeSource on Linux |
+| Docker | runs the backend stack | Docker Desktop (WSL2) on Windows, Docker Engine on Linux |
+| A PostgreSQL 15+ database | all data | comes with the self-hosted backend stack |
 | A Supabase-compatible backend | Auth, RLS, Storage, Realtime | self-host with Docker (below) |
 | A Paystack account | payments in GHS | keys entered in the admin UI, not in code |
-| A domain + SSL | production | cPanel AutoSSL is fine |
+| A domain + SSL | production | Cloudflare Tunnel or Caddy gives you free TLS |
 
-The app talks to the backend over HTTPS using three env vars only
+The app talks to the backend using three env vars only
 (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and their server twins), so the
-backend can live anywhere: the same cPanel box (if it allows Docker), a VPS you own, or
-a managed Supabase project. Nothing is hard-wired.
+backend can live anywhere: the same machine as the app (recommended), another server you
+own, or a managed Supabase project. Nothing is hard-wired.
+
 
 ---
 
@@ -38,7 +41,7 @@ Scripts:
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | dev server with HMR on port 8080 |
-| `npm run build:selfhost` | **standalone Node build** → `.output/` (use this for cPanel/VPS) |
+| `npm run build:selfhost` | **standalone Node build** → `.output/` (use this to run on your own server) |
 | `npm start` | run the standalone build (`node .output/server/index.mjs`) |
 | `npm run lint` / `npm run format` | ESLint / Prettier |
 
@@ -46,7 +49,7 @@ Scripts:
 
 ## 3. Stand up your own backend (self-hosted Supabase)
 
-On any machine with Docker (a VPS, or your cPanel box if Docker is available):
+On any machine with Docker (your Windows PC via Docker Desktop, or a Linux server):
 
 ```sh
 git clone --depth 1 https://github.com/supabase/supabase
@@ -59,8 +62,8 @@ docker compose up -d
 ```
 
 Then put the API behind your own hostname (`api.yourdomain.com`) with a reverse proxy
-plus SSL. In cPanel you can do this with a subdomain and an Apache proxy rule, or with
-Nginx on a VPS.
+plus SSL (Caddy, Nginx or a Cloudflare Tunnel). If the app and backend share one machine
+and you are not exposing the API publicly, `http://localhost:8000` is enough.
 
 ### 3.1 Apply the schema
 
@@ -112,78 +115,210 @@ Sign out and back in — `/ashnight-control` is now available to you.
 
 ---
 
-## 4. Deploy on cPanel
+## 4. Deploy — Option A: everything on one Windows machine
 
-### 4.1 Build
+This is the recommended path: app **and** backend run on the same standard Windows PC
+(Windows 10/11 is fine — Windows Server is not required).
 
-Build on your machine (or over SSH on the server — same commands):
+### 4.0 Prerequisites
 
-```sh
+Install, in this order:
+
+1. **Node.js 20 LTS or newer** — https://nodejs.org (check "Add to PATH").
+2. **Git for Windows** — https://git-scm.com/download/win
+3. **Docker Desktop** with the **WSL2 backend** — needed for the Supabase stack
+   (Settings → General → "Use WSL 2 based engine"). Enable
+   Settings → General → "Start Docker Desktop when you log in".
+
+Verify in PowerShell:
+
+```powershell
+node -v
+git --version
+docker version
+```
+
+### 4.1 Backend on the same machine
+
+Follow **section 3** in this file, but run the Docker commands from PowerShell:
+
+```powershell
+cd C:\ashnight
+git clone --depth 1 https://github.com/supabase/supabase supabase-src
+cd supabase-src\docker
+Copy-Item .env.example .env
+notepad .env          # set POSTGRES_PASSWORD, JWT_SECRET, ANON_KEY, SERVICE_ROLE_KEY, SITE_URL...
+docker compose up -d
+```
+
+Then apply the migrations (section 3.1), create the `avatars` and `attachments` private
+buckets (3.2), configure auth URLs (3.3) and grant yourself admin (3.4).
+
+Because everything is local, the app talks to the backend over
+`http://localhost:8000` (Kong). If you expose the site publicly, set
+`SITE_URL` / `API_EXTERNAL_URL` to your public HTTPS hostname instead — the
+browser must be able to reach the API URL you put in `VITE_SUPABASE_URL`.
+
+### 4.2 Build and run the app
+
+```powershell
+cd C:\ashnight\app
+git clone <your-repo-url> .
 npm ci
+Copy-Item .env.example .env
+notepad .env          # VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY / SUPABASE_* / SERVICE_ROLE
 npm run build:selfhost
+$env:PORT=3000; node .output\server\index.mjs
 ```
 
-Output:
-
-- `.output/server/index.mjs` — the Node SSR server
-- `.output/public/` — static assets
-
-### 4.2 Upload
-
-Upload to `/home/<user>/ashnight` (File Manager or `rsync`/Git). You need:
-
-```
-ashnight/
-  .output/          <- build output (required)
-  app.js            <- Passenger startup file (in the repo)
-  package.json
-  package-lock.json
-  .env              <- your production env values
-```
-
-`node_modules` is only needed if you build on the server; the standalone build bundles
-its own server dependencies.
-
-### 4.3 Register the Node app
-
-cPanel → **Setup Node.js App** → *Create Application*:
-
-| Field | Value |
-| --- | --- |
-| Node.js version | 20 or newer |
-| Application mode | Production |
-| Application root | `ashnight` |
-| Application URL | `yourdomain.com` |
-| Application startup file | `app.js` |
-
-Add environment variables in the same screen (or keep them in `.env`):
-`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`,
-`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID`,
-`SUPABASE_SERVICE_ROLE_KEY`.
+Open `http://localhost:3000`. That's the whole app.
 
 > The `VITE_*` values are baked into the client bundle **at build time**. If you change
 > them, rebuild — restarting is not enough.
 
-Click **Restart** after any upload. Then enable AutoSSL for the domain.
+### 4.3 Keep it running as a Windows service
 
-### 4.4 Update routine
+Use PM2 (simplest) so it survives reboots and crashes:
 
-```sh
+```powershell
+npm install -g pm2 pm2-windows-startup
+pm2-startup install
+pm2 start C:\ashnight\app\.output\server\index.mjs --name ashnight --env production
+pm2 save
+pm2 logs ashnight        # tail logs
+pm2 restart ashnight     # after a rebuild
+```
+
+Alternative: **NSSM** (https://nssm.cc) if you prefer a native service entry:
+
+```powershell
+nssm install Ashnight "C:\Program Files\nodejs\node.exe" "C:\ashnight\app\.output\server\index.mjs"
+nssm set Ashnight AppDirectory C:\ashnight\app
+nssm set Ashnight AppEnvironmentExtra PORT=3000 NODE_ENV=production
+nssm start Ashnight
+```
+
+### 4.4 Public access + HTTPS
+
+Pick one:
+
+- **Cloudflare Tunnel (easiest, no open ports, free SSL)**
+  ```powershell
+  winget install --id Cloudflare.cloudflared
+  cloudflared tunnel login
+  cloudflared tunnel create ashnight
+  cloudflared tunnel route dns ashnight yourdomain.com
+  cloudflared tunnel run --url http://localhost:3000 ashnight
+  cloudflared service install    # run it on boot
+  ```
+- **Caddy reverse proxy** (needs ports 80/443 forwarded to the machine):
+  `Caddyfile` → `yourdomain.com { reverse_proxy localhost:3000 }` then
+  `caddy run` — Caddy fetches the certificate automatically.
+
+Also allow the port through Windows Firewall if you serve directly:
+
+```powershell
+New-NetFirewallRule -DisplayName "Ashnight" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
+```
+
+### 4.5 Update routine (Windows)
+
+```powershell
+cd C:\ashnight\app
 git pull
 npm ci
 npm run build:selfhost
-# upload .output/ , then hit Restart in cPanel
+pm2 restart ashnight
 ```
 
-### 4.5 Alternative: any VPS
+Backend updates: `cd C:\ashnight\supabase-src\docker; docker compose pull; docker compose up -d`.
+
+---
+
+## 4b. Option B: Linux server (for future reference)
+
+Ubuntu 22.04/24.04 or Debian 12. Same two pieces, nicer tooling.
+
+### 4b.1 Base packages
 
 ```sh
-npm ci && npm run build:selfhost
-PORT=3000 node .output/server/index.mjs
+sudo apt update && sudo apt install -y git curl ca-certificates
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER && newgrp docker
 ```
 
-Keep it alive with `pm2 start .output/server/index.mjs --name ashnight` (or a systemd
-unit) and put Nginx in front for SSL.
+### 4b.2 Backend
+
+```sh
+git clone --depth 1 https://github.com/supabase/supabase ~/supabase-src
+cd ~/supabase-src/docker && cp .env.example .env
+nano .env            # same values as section 3
+docker compose up -d
+```
+
+Apply migrations, buckets, auth config and the admin grant exactly as in section 3.
+
+### 4b.3 App
+
+```sh
+git clone <your-repo-url> /srv/ashnight && cd /srv/ashnight
+npm ci
+cp .env.example .env && nano .env
+npm run build:selfhost
+```
+
+Run it under systemd — `/etc/systemd/system/ashnight.service`:
+
+```ini
+[Unit]
+Description=Ashnight
+After=network.target docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/ashnight
+EnvironmentFile=/srv/ashnight/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+ExecStart=/usr/bin/node /srv/ashnight/.output/server/index.mjs
+Restart=always
+RestartSec=3
+User=www-data
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now ashnight
+sudo journalctl -u ashnight -f
+```
+
+### 4b.4 HTTPS with Caddy
+
+```sh
+sudo apt install -y caddy
+sudo tee /etc/caddy/Caddyfile >/dev/null <<'EOF'
+yourdomain.com {
+  reverse_proxy localhost:3000
+}
+EOF
+sudo systemctl reload caddy
+```
+
+(Nginx + certbot works equally well; proxy `/` to `localhost:3000` and pass
+`Upgrade`/`Connection` headers so realtime websockets work.)
+
+### 4b.5 Update routine (Linux)
+
+```sh
+cd /srv/ashnight && git pull && npm ci && npm run build:selfhost
+sudo systemctl restart ashnight
+```
+
 
 ---
 
@@ -224,7 +359,8 @@ video on Ultimate.
 
 ## 7. Backups & operations
 
-- **Database**: `pg_dump` nightly via cPanel cron, keep copies off-server.
+- **Database**: nightly `pg_dump` — Task Scheduler on Windows, cron/systemd timer on Linux
+  (`docker exec -t supabase-db pg_dump -U postgres postgres > backup.sql`). Keep copies off-machine.
 - **Storage**: back up the storage volume alongside the database.
 - **Secrets**: `.env` and the key vault are the only places credentials live. Rotate the
   Paystack secret in the control room; rotate the service-role key in your backend.
@@ -239,7 +375,7 @@ video on Ultimate.
 | --- | --- |
 | "Missing Supabase environment variable(s)" | `.env` not loaded, or `VITE_*` values changed without a rebuild |
 | Sign-in works locally, fails in production | backend Site URL / redirect allow-list doesn't include your domain |
-| 502 from cPanel | app crashed — check the Passenger log in the Node App screen, then Restart |
+| 502 / blank page behind the proxy | app process died — `pm2 logs ashnight` (Windows) or `journalctl -u ashnight -f` (Linux) |
 | Data reads return "permission denied" | migrations partly applied; re-run them so `GRANT`s and policies exist |
 | Chat doesn't update live | Realtime not enabled/reachable on your backend, or WebSockets blocked by the proxy |
 | Google sign-in "Unsupported provider" | Google provider not enabled in your backend auth settings |

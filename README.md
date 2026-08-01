@@ -16,7 +16,7 @@ Everything is administered from a private control room at `/ashnight-control`.
 
 | Guide | Who it's for |
 | --- | --- |
-| [docs/SETUP.md](docs/SETUP.md) | Developers / operators — local dev, self-hosted backend, **cPanel deployment** |
+| [docs/SETUP.md](docs/SETUP.md) | Developers / operators — local dev, self-hosted backend, **Windows deployment (Option A)** and **Linux server deployment** |
 | [docs/ADMIN-GUIDE.md](docs/ADMIN-GUIDE.md) | Platform administrators — control room, vetting, rooms, pricing, escrow, moderation, keys |
 | [docs/CLIENT-GUIDE.md](docs/CLIENT-GUIDE.md) | Clients (members who book ash services) |
 | [docs/SPECIALIST-GUIDE.md](docs/SPECIALIST-GUIDE.md) | Specialists (vetted professionals who earn) |
@@ -39,7 +39,19 @@ npm run build:selfhost    # standalone Node build -> .output/
 npm start                 # serves on $PORT (default 3000)
 ```
 
-Full server, database and cPanel instructions: [docs/SETUP.md](docs/SETUP.md).
+## Self-hosting options
+
+Both pieces — the app (plain Node.js) and the backend (Supabase via Docker) — can live on
+the same machine. No hosting platform is required.
+
+| Option | Machine | Keep-alive | HTTPS |
+| --- | --- | --- | --- |
+| **A — Windows (recommended for you)** | Standard Windows 10/11 + Docker Desktop (WSL2) | PM2 with `pm2-windows-startup`, or NSSM service | Cloudflare Tunnel or Caddy |
+| **B — Linux server** | Ubuntu 22.04/24.04 or Debian 12 + Docker | `systemd` unit | Caddy (auto-TLS) or Nginx + certbot |
+
+Step-by-step commands for both, plus backend setup, migrations, storage buckets and the
+first-admin grant: [docs/SETUP.md](docs/SETUP.md) — section 4 (Windows) and 4b (Linux).
+
 
 ## Project layout
 
