@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useFeatureFlags } from "@/lib/feature-flags";
+import { isEmailShaped, isGhanaCardShaped, GHANA_CARD_HINT } from "@/lib/account-status";
+import { checkAvailability, signInWithIdentifier } from "@/lib/identity.functions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SignupFieldsForm, type SignupValues } from "@/components/signup-fields-form";
 import { PortfolioPicker } from "@/components/portfolio-picker";
@@ -22,6 +24,32 @@ function safeNext(value: unknown) {
   if (typeof value !== "string") return "/";
   if (!value.startsWith("/") || value.startsWith("//")) return "/";
   return value;
+}
+
+/** Turns any thrown value — including an empty object — into something readable. */
+function readableError(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+  if (error && typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    for (const key of ["message", "error_description", "error", "detail"]) {
+      const value = record[key];
+      if (typeof value === "string" && value.trim()) return value;
+    }
+  }
+  return fallback;
+}
+
+/** Database constraint names are useless to a member — translate them. */
+function signUpErrorMessage(raw: string) {
+  const text = (raw || "").toLowerCase();
+  if (text.includes("username")) return "That username is already taken. Try another one.";
+  if (text.includes("phone")) return "That phone number is already registered.";
+  if (text.includes("ghana_card")) return "That Ghana Card number is already registered.";
+  if (text.includes("already registered") || text.includes("already exists"))
+    return "An account already uses that email address. Try signing in instead.";
+  if (text.includes("password")) return "Choose a stronger password (at least 8 characters).";
+  return raw || "We couldn't create that account. Try again.";
 }
 
 export const Route = createFileRoute("/auth")({
@@ -68,6 +96,7 @@ export function AuthPage({
 
   const { flags } = useFeatureFlags();
   const { config } = useSignupConfig();
+  const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"client" | "specialist">(intendedRole ?? "client");
@@ -99,6 +128,9 @@ export function AuthPage({
   const googleEnabled = flags.googleSignIn;
   const portfolioEnabled = flags.specialistPortfolioUploads && role === "specialist";
 
+  const fieldText = (key: string) =>
+    typeof values[key] === "string" ? (values[key] as string).trim() : "";
+
   function setValue(key: string, value: string | boolean) {
     setValues((current) => ({ ...current, [key]: value }));
   }
@@ -108,16 +140,32 @@ export function AuthPage({
     setAvatarPreview(file ? URL.createObjectURL(file) : null);
   }
 
+  /**
+   * Members sign in with their username or their email address. The lookup and
+   * the account-status check both happen on the server, so a blocked account
+   * never receives a usable session.
+   */
   async function signIn(event: React.FormEvent) {
     event.preventDefault();
-    setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
+    const who = identifier.trim();
+    if (who.length < 3) {
+      toast.error("Enter your username or email address.");
       return;
     }
-    toast.success("Welcome back.");
+    setBusy(true);
+    try {
+      const tokens = await signInWithIdentifier({ data: { identifier: who, password } });
+      const { error } = await supabase.auth.setSession({
+        access_token: tokens.accessToken,
+        refresh_token: tokens.refreshToken,
+      });
+      if (error) throw new Error(error.message);
+      toast.success("Welcome back.");
+    } catch (error) {
+      toast.error(readableError(error, "We couldn't sign you in."));
+    } finally {
+      setBusy(false);
+    }
   }
 
   /** Turns the configured answers into auth metadata the profile trigger reads. */
@@ -146,6 +194,8 @@ export function AuthPage({
       years_experience: text("yearsExperience"),
       languages: text("languages"),
       hourly_rate: text("hourlyRate"),
+      ghana_card_number: text("ghanaCard").replace(/[^A-Za-z0-9]/g, "").toUpperCase(),
+      ghana_card_expiry: text("ghanaCardExpiry"),
       extra,
       accepted_terms: acceptTerms || !config.legal.requireTerms ? "true" : "false",
       accepted_privacy: acceptPrivacy || !config.legal.requirePrivacy ? "true" : "false",
@@ -193,8 +243,55 @@ export function AuthPage({
       toast.error(`Please confirm you read the ${config.legal.privacyTitle}.`);
       return;
     }
+    if (!isEmailShaped(email)) {
+      toast.error("That email address doesn't look right.", {
+        description: "Use a full address such as name@example.com.",
+      });
+      return;
+    }
+    if (password.length < 8) {
+      toast.error("Choose a password with at least 8 characters.");
+      return;
+    }
+
+    const username = fieldText("username");
+    const phone = fieldText("phone");
+    const ghanaCard = fieldText("ghanaCard");
+    if (ghanaCard && !isGhanaCardShaped(ghanaCard)) {
+      toast.error("That Ghana Card number doesn't look right.", { description: GHANA_CARD_HINT });
+      return;
+    }
 
     setBusy(true);
+
+    // Ask the server first so a clash is reported in plain English instead of a
+    // raw database constraint error.
+    try {
+      const availability = await checkAvailability({
+        data: { username, email, phone, ghanaCard },
+      });
+      const problems: string[] = [];
+      if (availability.username === "taken") problems.push("that username is already taken");
+      if (availability.username === "invalid")
+        problems.push("usernames use 3-32 letters, numbers, dots or underscores");
+      if (availability.email === "taken") problems.push("that email already has an account");
+      if (availability.phone === "taken") problems.push("that phone number is already registered");
+      if (availability.phone === "invalid") problems.push("that phone number is too short");
+      if (availability.ghanaCard === "taken")
+        problems.push("that Ghana Card number is already registered");
+      if (availability.ghanaCard === "invalid") problems.push(GHANA_CARD_HINT.toLowerCase());
+      if (problems.length) {
+        setBusy(false);
+        toast.error("We couldn't create that account", {
+          description: `${problems.join(", ")}.`,
+        });
+        return;
+      }
+    } catch (error) {
+      setBusy(false);
+      toast.error(readableError(error, "We couldn't check those details. Try again."));
+      return;
+    }
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -257,7 +354,7 @@ export function AuthPage({
 
     setBusy(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(signUpErrorMessage(error.message));
       return;
     }
     if (!data.session) {
