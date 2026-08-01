@@ -852,7 +852,20 @@ export async function clearDemoData(
 ) {
   const manifest = await readManifest();
   const client = await admin();
-  const userIds = manifest?.userIds ?? [];
+
+  // Demo accounts are identified by their email domain as well as the manifest,
+  // so an interrupted seed still gets cleaned up completely.
+  const found = new Set(manifest?.userIds ?? []);
+  for (let page = 1; page <= 20; page += 1) {
+    const list = await client.auth.admin.listUsers({ page, perPage: 200 });
+    const users = list.data?.users ?? [];
+    users
+      .filter((u) => (u.email ?? "").toLowerCase().endsWith(`@${DEMO_DOMAIN}`))
+      .forEach((u) => found.add(u.id));
+    if (users.length < 200) break;
+  }
+  const userIds = [...found];
+
 
   if (userIds.length) {
     const both = (table: "threads" | "bookings" | "escrow_entries") =>
