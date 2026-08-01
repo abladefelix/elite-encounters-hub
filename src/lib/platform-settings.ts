@@ -11,7 +11,15 @@ import { useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 
-export type SettingsSection = "rooms" | "escrow" | "gifts" | "moderation" | "platform";
+export type SettingsSection =
+  | "rooms"
+  | "escrow"
+  | "gifts"
+  | "moderation"
+  | "platform"
+  | "features"
+  | "integrations"
+  | "security";
 
 type SettingsBlob = Partial<Record<SettingsSection, unknown>>;
 
