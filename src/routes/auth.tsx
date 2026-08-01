@@ -242,26 +242,45 @@ function AuthPage() {
                 <div className="absolute inset-x-0 top-1/2 -z-10 border-t border-border" />
               </div>
               <form className="space-y-4" onSubmit={signUp}>
+                {config.roleChoice ? (
+                  <div className="space-y-2">
+                    <Label>I am joining as</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["client", "specialist"] as const).map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => setRole(option)}
+                          className={
+                            "rounded-lg border px-3 py-2 text-sm capitalize transition-colors " +
+                            (role === option
+                              ? "border-primary bg-secondary font-medium text-foreground"
+                              : "border-border text-muted-foreground hover:text-foreground")
+                          }
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {role === "client" ? config.clientIntro : config.specialistIntro}
+                    </p>
+                  </div>
+                ) : null}
+
+                <SignupFieldsForm
+                  config={config}
+                  role={role}
+                  values={values}
+                  onChange={setValue}
+                  avatarPreview={avatarPreview}
+                  onAvatarPick={pickAvatar}
+                />
+
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full name</Label>
-                  <Input
-                    id="signup-name"
-                    required
-                    value={displayName}
-                    onChange={(event) => setDisplayName(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-city">City</Label>
-                  <Input
-                    id="signup-city"
-                    placeholder="Accra"
-                    value={city}
-                    onChange={(event) => setCity(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">
+                    Email<span className="text-primary"> *</span>
+                  </Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -272,7 +291,9 @@ function AuthPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">
+                    Password<span className="text-primary"> *</span>
+                  </Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -283,10 +304,54 @@ function AuthPage() {
                     onChange={(event) => setPassword(event.target.value)}
                   />
                 </div>
+
+                <div className="space-y-3 rounded-lg border border-border/70 bg-secondary/40 p-3">
+                  {config.legal.requireTerms ? (
+                    <label className="flex items-start gap-3 text-xs">
+                      <Checkbox
+                        checked={acceptTerms}
+                        onCheckedChange={(next) => setAcceptTerms(next === true)}
+                      />
+                      <span>
+                        I accept the{" "}
+                        <Link to="/legal" className="underline underline-offset-4">
+                          {config.legal.termsTitle}
+                        </Link>
+                        .
+                      </span>
+                    </label>
+                  ) : null}
+                  {config.legal.requirePrivacy ? (
+                    <label className="flex items-start gap-3 text-xs">
+                      <Checkbox
+                        checked={acceptPrivacy}
+                        onCheckedChange={(next) => setAcceptPrivacy(next === true)}
+                      />
+                      <span>
+                        I have read the{" "}
+                        <Link to="/legal" className="underline underline-offset-4">
+                          {config.legal.privacyTitle}
+                        </Link>
+                        .
+                      </span>
+                    </label>
+                  ) : null}
+                  {config.legal.marketingOptIn ? (
+                    <label className="flex items-start gap-3 text-xs">
+                      <Checkbox
+                        checked={acceptMarketing}
+                        onCheckedChange={(next) => setAcceptMarketing(next === true)}
+                      />
+                      <span>Send me Ashnight updates and offers.</span>
+                    </label>
+                  ) : null}
+                </div>
+
                 <Button type="submit" className="w-full" disabled={busy}>
                   {busy ? <Loader2 className="size-4 animate-spin" /> : "Create account"}
                 </Button>
               </form>
+
             </CardContent>
           </Card>
         </TabsContent>
