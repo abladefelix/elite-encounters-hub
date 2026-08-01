@@ -34,7 +34,7 @@ export const Route = createFileRoute("/ashnight-control/notifications")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: AdminNotifications;
+  component: AdminNotifications,
 });
 
 type Audience = "everyone" | "clients" | "specialists" | "room" | "user";
