@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { Loader2, Mail, ShieldCheck } from "lucide-react";
+import { Info, Loader2, Mail, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -445,6 +446,12 @@ export function AuthPage({
         <TabsContent value="signin">
           <Card>
             <CardContent className="space-y-4 pt-6">
+              <Alert className="border-border/70 bg-secondary/40">
+                <Info className="size-4" />
+                <AlertDescription>
+                  Create an account or sign in to view and book vetted specialists.
+                </AlertDescription>
+              </Alert>
               {googleEnabled ? (
                 <>
                   <Button
