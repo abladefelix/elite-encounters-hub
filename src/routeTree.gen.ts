@@ -20,6 +20,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-control.index'
 import { Route as AshnightControlBackupsRouteImport } from './routes/ashnight-control.backups'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
@@ -100,6 +101,11 @@ const RoomsRoute = RoomsRouteImport.update({
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AshnightControlIndexRoute = AshnightControlIndexRouteImport.update({
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/support': typeof SupportRoute
+  '/welcome': typeof WelcomeRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
@@ -288,6 +295,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/support': typeof SupportRoute
+  '/welcome': typeof WelcomeRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
@@ -328,6 +336,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/support': typeof SupportRoute
+  '/welcome': typeof WelcomeRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/complaints': typeof AshnightControlComplaintsRoute
@@ -369,6 +378,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/support'
+    | '/welcome'
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
@@ -407,6 +417,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/support'
+    | '/welcome'
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
@@ -446,6 +457,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/support'
+    | '/welcome'
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/complaints'
@@ -486,6 +498,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
   SupportRoute: typeof SupportRoute
+  WelcomeRoute: typeof WelcomeRoute
   PaymentReturnRoute: typeof PaymentReturnRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
   SpecialistsIndexRoute: typeof SpecialistsIndexRoute
@@ -572,6 +585,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ashnight-control/': {
@@ -819,6 +839,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
   SupportRoute: SupportRoute,
+  WelcomeRoute: WelcomeRoute,
   PaymentReturnRoute: PaymentReturnRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
   SpecialistsIndexRoute: SpecialistsIndexRoute,
@@ -830,3 +851,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
