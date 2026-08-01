@@ -23,7 +23,7 @@ import {
   type ModerationSettings,
 } from "./moderation";
 import { rooms } from "./mock-data";
-import type { Tier } from "./types";
+import { ALL_TIERS, BASE_TIERS, CUSTOM_TIER_SLOTS, isTier, type CustomTier, type RoomMap, type Tier } from "./types";
 
 /**
  * Room capability layer.
@@ -81,7 +81,7 @@ export interface RoomPrivileges {
   accent: RoomAccentId;
 }
 
-export type RoomPolicyMap = Record<Tier, RoomPrivileges>;
+export type RoomPolicyMap = RoomMap<RoomPrivileges>;
 
 export const DEFAULT_ROOM_POLICY: RoomPolicyMap = {
   basic: {
@@ -161,7 +161,32 @@ export const PRIVILEGE_GROUPS: {
   },
 ];
 
-export const TIERS: Tier[] = ["basic", "premium", "ultimate"];
+export const TIERS: Tier[] = [...BASE_TIERS];
+
+/** Privileges a freshly created room starts with — deliberately conservative. */
+export const NEW_ROOM_PRIVILEGES: RoomPrivileges = {
+  audio: true,
+  video: false,
+  photoSharing: true,
+  fileSharing: false,
+  addOns: false,
+  recurringSchedules: false,
+  keyHandling: false,
+  dedicatedManager: false,
+  bookingLimit: 2,
+  leadTimeHours: 48,
+  supportResponseHours: 24,
+  damageCover: 0,
+  accent: "emerald",
+};
+
+export const NEW_ROOM_GIFT_RULES: RoomGiftRules = {
+  enabled: true,
+  giftIds: [],
+  allowCustom: false,
+  minGift: 5,
+  maxGift: 200,
+};
 
 /* ------------------------------------------------------ editable room profile */
 
@@ -176,7 +201,7 @@ export interface RoomProfile {
   intakeOpen: boolean;
 }
 
-export type RoomProfileMap = Record<Tier, RoomProfile>;
+export type RoomProfileMap = RoomMap<RoomProfile>;
 
 function profileFromMock(tier: Tier): RoomProfile {
   const room = rooms.find((item) => item.id === tier);
@@ -195,6 +220,17 @@ export const DEFAULT_ROOM_PROFILES: RoomProfileMap = {
   basic: profileFromMock("basic"),
   premium: profileFromMock("premium"),
   ultimate: profileFromMock("ultimate"),
+};
+
+/** Starting point for a room an admin creates in the control room. */
+export const NEW_ROOM_PROFILE: RoomProfile = {
+  name: "New Room",
+  tagline: "",
+  priceMonthly: 0,
+  visitFeeMin: 0,
+  visitFeeMax: 0,
+  seatsLeft: 25,
+  intakeOpen: false,
 };
 
 /* -------------------------------------------------- platform-wide admin knobs */
@@ -310,7 +346,7 @@ function sanitizeModeration(value: unknown): ModerationSettings {
 
   const exempt = record["contactExemptRooms"];
   if (exempt && typeof exempt === "object") {
-    for (const tier of TIERS) {
+    for (const tier of ALL_TIERS) {
       const flag = (exempt as Record<string, unknown>)[tier];
       if (typeof flag === "boolean") next.contactExemptRooms[tier] = flag;
     }
@@ -322,19 +358,21 @@ function clampNumber(value: unknown, fallback: number, min = 0) {
   return typeof value === "number" && Number.isFinite(value) ? Math.max(min, value) : fallback;
 }
 
-function sanitizePolicy(value: unknown): RoomPolicyMap {
+function sanitizePolicy(value: unknown, customTiers: CustomTier[] = []): RoomPolicyMap {
   const next: RoomPolicyMap = {
     basic: { ...DEFAULT_ROOM_POLICY.basic },
     premium: { ...DEFAULT_ROOM_POLICY.premium },
     ultimate: { ...DEFAULT_ROOM_POLICY.ultimate },
   };
+  for (const tier of customTiers) next[tier] = { ...NEW_ROOM_PRIVILEGES };
   if (!value || typeof value !== "object") return next;
 
-  for (const tier of TIERS) {
+  for (const tier of [...BASE_TIERS, ...customTiers]) {
     const entry = (value as Record<string, unknown>)[tier];
     if (!entry || typeof entry !== "object") continue;
     const record = entry as Record<string, unknown>;
     const target = next[tier];
+    if (!target) continue;
 
     for (const group of PRIVILEGE_GROUPS) {
       for (const item of group.items) {
@@ -364,19 +402,31 @@ function sanitizePolicy(value: unknown): RoomPolicyMap {
   return next;
 }
 
-function sanitizeProfiles(value: unknown): RoomProfileMap {
+/** Custom room slots an admin has already created, in slot order. */
+function storedCustomTiers(profilesValue: unknown): CustomTier[] {
+  if (!profilesValue || typeof profilesValue !== "object") return [];
+  const record = profilesValue as Record<string, unknown>;
+  return CUSTOM_TIER_SLOTS.filter((slot) => {
+    const entry = record[slot];
+    return Boolean(entry) && typeof entry === "object";
+  });
+}
+
+function sanitizeProfiles(value: unknown, customTiers: CustomTier[] = []): RoomProfileMap {
   const next: RoomProfileMap = {
     basic: { ...DEFAULT_ROOM_PROFILES.basic },
     premium: { ...DEFAULT_ROOM_PROFILES.premium },
     ultimate: { ...DEFAULT_ROOM_PROFILES.ultimate },
   };
+  for (const tier of customTiers) next[tier] = { ...NEW_ROOM_PROFILE };
   if (!value || typeof value !== "object") return next;
 
-  for (const tier of TIERS) {
+  for (const tier of [...BASE_TIERS, ...customTiers]) {
     const entry = (value as Record<string, unknown>)[tier];
     if (!entry || typeof entry !== "object") continue;
     const record = entry as Record<string, unknown>;
     const target = next[tier];
+    if (!target) continue;
 
     if (typeof record["name"] === "string" && record["name"].trim()) {
       target.name = record["name"] as string;
@@ -408,7 +458,7 @@ function sanitizePlatform(value: unknown): PlatformSettings {
   return next;
 }
 
-function sanitizeGifts(value: unknown): GiftSettings {
+function sanitizeGifts(value: unknown, customTiers: CustomTier[] = []): GiftSettings {
   const catalog: Gift[] = DEFAULT_GIFT_CATALOG.map((gift) => ({ ...gift }));
   const roomsRules: RoomGiftRulesMap = {
     basic: { ...DEFAULT_ROOM_GIFT_RULES.basic, giftIds: [...DEFAULT_ROOM_GIFT_RULES.basic.giftIds] },
@@ -421,17 +471,35 @@ function sanitizeGifts(value: unknown): GiftSettings {
       giftIds: [...DEFAULT_ROOM_GIFT_RULES.ultimate.giftIds],
     },
   };
+  for (const tier of customTiers) roomsRules[tier] = { ...NEW_ROOM_GIFT_RULES, giftIds: [] };
   const next: GiftSettings = { catalog, rooms: roomsRules };
   if (!value || typeof value !== "object") return next;
   const record = value as Record<string, unknown>;
 
   const storedCatalog = record["catalog"];
   if (Array.isArray(storedCatalog)) {
+    // Once the admin has saved a catalogue, it is the source of truth: gifts
+    // they removed must not reappear from the shipping defaults.
+    const keepIds = new Set(
+      storedCatalog
+        .map((raw) => (raw && typeof raw === "object" ? (raw as Record<string, unknown>)["id"] : null))
+        .filter((id): id is string => typeof id === "string"),
+    );
+    for (let index = catalog.length - 1; index >= 0; index -= 1) {
+      const gift = catalog[index];
+      if (gift && !keepIds.has(gift.id)) catalog.splice(index, 1);
+    }
     for (const raw of storedCatalog) {
       if (!raw || typeof raw !== "object") continue;
       const entry = raw as Record<string, unknown>;
-      const target = catalog.find((gift) => gift.id === entry["id"]);
-      if (!target) continue;
+      const id = typeof entry["id"] === "string" ? (entry["id"] as string) : "";
+      if (!id) continue;
+      let target = catalog.find((gift) => gift.id === id);
+      if (!target) {
+        // Admin-created gift — keep it, seeded from a sane default.
+        target = { id, label: id, glyph: "🎁", value: 10, hint: "", enabled: true };
+        catalog.push(target);
+      }
       if (typeof entry["label"] === "string" && entry["label"].trim()) {
         target.label = entry["label"] as string;
       }
@@ -446,11 +514,12 @@ function sanitizeGifts(value: unknown): GiftSettings {
 
   const storedRooms = record["rooms"];
   if (storedRooms && typeof storedRooms === "object") {
-    for (const tier of TIERS) {
+    for (const tier of [...BASE_TIERS, ...customTiers]) {
       const raw = (storedRooms as Record<string, unknown>)[tier];
       if (!raw || typeof raw !== "object") continue;
       const entry = raw as Record<string, unknown>;
       const target = roomsRules[tier];
+      if (!target) continue;
       if (typeof entry["enabled"] === "boolean") target.enabled = entry["enabled"] as boolean;
       if (typeof entry["allowCustom"] === "boolean") {
         target.allowCustom = entry["allowCustom"] as boolean;
@@ -469,12 +538,18 @@ function sanitizeGifts(value: unknown): GiftSettings {
 
 function sanitizeRoomsSection(value: unknown): RoomsSection {
   const record = (value ?? {}) as Record<string, unknown>;
+  const customTiers = storedCustomTiers(record["profiles"]);
   return {
-    policy: sanitizePolicy(record["policy"]),
-    profiles: sanitizeProfiles(record["profiles"]),
-    gifts: sanitizeGifts(record["gifts"]),
+    policy: sanitizePolicy(record["policy"], customTiers),
+    profiles: sanitizeProfiles(record["profiles"], customTiers),
+    gifts: sanitizeGifts(record["gifts"], customTiers),
     moderation: sanitizeModeration(record["moderation"]),
   };
+}
+
+/** Rooms that exist right now, base rooms first then custom rooms in slot order. */
+export function roomIdsOf(profiles: RoomProfileMap): Tier[] {
+  return [...BASE_TIERS, ...CUSTOM_TIER_SLOTS.filter((slot) => Boolean(profiles[slot]))];
 }
 
 /* ------------------------------------------------- default-theme fast path */
