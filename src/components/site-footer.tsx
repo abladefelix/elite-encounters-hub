@@ -1,27 +1,30 @@
 import { BrandMark } from "@/components/brand-mark";
 import { Link } from "@tanstack/react-router";
 
+import { useBranding } from "@/lib/branding";
+import { useCopy } from "@/lib/locale";
+
 export function SiteFooter() {
+  const { branding } = useBranding();
+  const { t } = useCopy();
+
   return (
     <footer className="mt-24 hidden border-t border-border/70 bg-surface/50 md:block">
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
             <BrandMark className="size-7" />
-            <span className="font-display text-base font-semibold">Ashnight</span>
+            <span className="font-display text-base font-semibold">{branding.name}</span>
           </div>
-          <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-            A members-only ash services platform. Every specialist and every client is
-            manually vetted before onboarding.
-          </p>
+          <p className="mt-3 max-w-xs text-sm text-muted-foreground">{branding.description}</p>
         </div>
 
         <FooterColumn
           title="Platform"
           links={[
-            { to: "/specialists", label: "Browse specialists" },
-            { to: "/rooms", label: "Membership rooms" },
-            { to: "/messages", label: "Messages" },
+            { to: "/specialists", label: `Browse ${t("specialists").toLowerCase()}` },
+            { to: "/rooms", label: `Membership ${t("rooms").toLowerCase()}` },
+            { to: "/messages", label: t("nav.messages") },
             { to: "/how-it-works", label: "How it works" },
           ]}
         />
@@ -48,8 +51,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-border/70 px-5 py-6">
         <p className="mx-auto max-w-6xl text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Ashnight. Residential and commercial ash services
-          only. All bookings, scheduling and payments happen on-platform.
+          © {new Date().getFullYear()} {branding.name}. {branding.legalLine}
         </p>
       </div>
     </footer>

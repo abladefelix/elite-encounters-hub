@@ -120,7 +120,7 @@ export function SiteHeader() {
                       ] as const)),
                 ].map((item) => (
                   <Link
-                    key={item.label}
+                    key={item.to}
                     to={item.to}
                     className="rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
                     activeProps={{ className: "bg-secondary text-foreground" }}
