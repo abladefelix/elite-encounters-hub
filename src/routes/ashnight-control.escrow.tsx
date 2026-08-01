@@ -95,6 +95,7 @@ function AdminEscrow() {
   } = useEscrow();
   const {
     gifts,
+    platform,
     roomIds,
     profileOf,
     giftRulesOf,
@@ -181,7 +182,7 @@ function AdminEscrow() {
         specialistId: manual.specialistId,
         label: manual.label.trim(),
         amount: Math.round(manual.amount),
-        feePct: manual.kind === "gift" ? settings.tipFeePct : settings.platformFeePct ?? 0,
+        feePct: manual.kind === "gift" ? settings.tipFeePct : platform.platformFeePct,
         releaseImmediately: manual.releaseImmediately,
       });
       toast.success("Escrow entry added");
