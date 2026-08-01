@@ -86,11 +86,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Ashnight — Vetted Private Cleaning" },
+      { title: "Ashnight — Vetted Private Ash" },
       {
         name: "description",
         content:
-          "Ashnight is a members-only marketplace of manually vetted cleaning specialists, with private chat, calls and in-thread booking.",
+          "Ashnight is a members-only marketplace of manually vetted ash specialists, with private chat, calls and in-thread booking.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

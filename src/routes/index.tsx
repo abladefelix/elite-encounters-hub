@@ -24,17 +24,17 @@ import { money } from "@/lib/types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Ashnight — Members-Only Vetted Cleaning Services" },
+      { title: "Ashnight — Members-Only Vetted Ash Services" },
       {
         name: "description",
         content:
-          "Ashnight is a members-only cleaning platform. Manually vetted specialists, tiered membership rooms, in-chat booking, calls and secure payments.",
+          "Ashnight is a members-only ash platform. Manually vetted specialists, tiered membership rooms, in-chat booking, calls and secure payments.",
       },
-      { property: "og:title", content: "Ashnight — Members-Only Vetted Cleaning Services" },
+      { property: "og:title", content: "Ashnight — Members-Only Vetted Ash Services" },
       {
         property: "og:description",
         content:
-          "Manually vetted cleaning specialists, tiered rooms, in-chat booking, video walkthroughs and secure on-platform payments.",
+          "Manually vetted ash specialists, tiered rooms, in-chat booking, video walkthroughs and secure on-platform payments.",
       },
     ],
   }),
@@ -58,12 +58,12 @@ function Home() {
           </Badge>
 
           <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-[1.05] sm:text-6xl">
-            Cleaning specialists you'd actually{" "}
+            Ash specialists you'd actually{" "}
             <span className="text-brass">trust with your keys.</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Ashnight is a members-only platform for residential and commercial cleaning. We
+            Ashnight is a members-only platform for residential and commercial ash. We
             interview, ID-check and reference-check every specialist by hand, then place them in
             a room that matches their standard of work.
           </p>

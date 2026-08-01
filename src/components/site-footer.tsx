@@ -13,7 +13,7 @@ export function SiteFooter() {
             <span className="font-display text-base font-semibold">Ashnight</span>
           </div>
           <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-            A members-only cleaning services platform. Every specialist and every client is
+            A members-only ash services platform. Every specialist and every client is
             manually vetted before onboarding.
           </p>
         </div>
@@ -46,7 +46,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-border/70 px-5 py-6">
         <p className="mx-auto max-w-6xl text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Ashnight. Residential and commercial cleaning services
+          © {new Date().getFullYear()} Ashnight. Residential and commercial ash services
           only. All bookings, scheduling and payments happen on-platform.
         </p>
       </div>

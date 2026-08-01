@@ -41,7 +41,7 @@ export const Route = createFileRoute("/rooms")({
       {
         property: "og:description",
         content:
-          "Three membership rooms with the same vetting bar and different levels of access to Ashnight's cleaning specialists.",
+          "Three membership rooms with the same vetting bar and different levels of access to Ashnight's ash specialists.",
       },
     ],
   }),

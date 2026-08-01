@@ -5,6 +5,7 @@ import {
   Banknote,
   Check,
   CheckCheck,
+  Flag,
   Gift as GiftIcon,
   Image as ImageIcon,
   Lock,
@@ -14,8 +15,10 @@ import {
   ShieldAlert,
   Send,
   ShieldCheck,
+  Star,
   Video,
 } from "lucide-react";
+
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -40,6 +43,15 @@ import {
 import { GiftDialog, type GiftDraft } from "@/components/chat/gift-dialog";
 import { CURRENT_CLIENT_ID, currentClient, getSpecialist, threads } from "@/lib/mock-data";
 import { paystackChannel } from "@/lib/paystack";
+import { ReportDialog, type ReportDraft } from "@/components/chat/report-dialog";
+import { RatingDialog, type RatingDraft } from "@/components/chat/rating-dialog";
+import {
+  REPORT_REASON_LABEL,
+  fileReport,
+  saveRating,
+  useRatings,
+} from "@/lib/reports";
+
 import { useRoomSettings } from "@/lib/room-settings";
 import { logModerationHit, moderateMessage } from "@/lib/moderation";
 import {
@@ -59,7 +71,7 @@ export const Route = createFileRoute("/messages")({
       {
         name: "description",
         content:
-          "Message vetted Ashnight cleaning specialists, start a voice or video walkthrough, and turn the conversation into a paid booking without leaving the thread.",
+          "Message vetted Ashnight ash specialists, start a voice or video walkthrough, and turn the conversation into a paid booking without leaving the thread.",
       },
       { property: "og:title", content: "Messages — Chat, Call & Book on Ashnight" },
       {
@@ -85,6 +97,8 @@ function MessagesPage() {
   const [call, setCall] = useState<CallMode | null>(null);
   const [requestOpen, setRequestOpen] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [ratingOpen, setRatingOpen] = useState(false);
   const [showListOnMobile, setShowListOnMobile] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -92,6 +106,7 @@ function MessagesPage() {
   const member = currentClient();
   const { threadList, messages, typing, send, systemNote, bookingNote, giftNote } =
     useChat(activeThreadId);
+  const { averageFor } = useRatings();
   const {
     settings: escrow,
     open: openEscrow,
@@ -109,6 +124,59 @@ function MessagesPage() {
   const videoAllowed = canCall(member.room, "video");
   const photosAllowed = can(member.room, "photoSharing");
   const filesAllowed = can(member.room, "fileSharing");
+  const myRating = averageFor(specialist.id);
+
+  function handleReport(draft: ReportDraft) {
+    fileReport({
+      threadId: activeThread.id,
+      reporterId: CURRENT_CLIENT_ID,
+      reportedId: specialist.id,
+      reportedName: specialist.name,
+      room: member.room,
+      reason: draft.reason,
+      details: draft.details,
+      excerpt: messages
+        .slice(-4)
+        .map((message) => message.body)
+        .join(" | ")
+        .slice(0, 300),
+      blocked: draft.blocked,
+    });
+
+    systemNote(
+      activeThread.id,
+      `You reported this conversation to Ashnight trust & safety — ${REPORT_REASON_LABEL[draft.reason]}.${
+        draft.blocked ? " The member is blocked while we review." : ""
+      }`,
+    );
+    toast.success("Report sent to Ashnight trust & safety", {
+      description: "We review reports with the full thread attached, usually within a few hours.",
+    });
+  }
+
+  function handleRating(draft: RatingDraft) {
+    saveRating({
+      threadId: activeThread.id,
+      authorId: CURRENT_CLIENT_ID,
+      specialistId: specialist.id,
+      specialistName: specialist.name,
+      stars: draft.stars,
+      note: draft.note,
+      tags: draft.tags,
+    });
+
+    systemNote(
+      activeThread.id,
+      `You rated ${specialist.name.split(" ")[0]} ${draft.stars}/5${
+        draft.tags.length ? ` · ${draft.tags.join(", ")}` : ""
+      }${draft.note ? ` — “${draft.note}”` : ""}`,
+    );
+    toast.success(`${draft.stars}-star rating posted`, {
+      description: `It's on ${specialist.name.split(" ")[0]}'s Ashnight profile now.`,
+    });
+  }
+
+
 
 
   useEffect(() => {
@@ -358,15 +426,47 @@ function MessagesPage() {
                       <p className="truncate text-sm font-semibold">{specialist.name}</p>
                       <TierBadge tier={specialist.room} className="hidden sm:inline-flex" />
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
+                    <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                       {typing
                         ? "Typing…"
                         : specialist.online
                           ? "Online now"
                           : `Replies in ~${specialist.responseMinutes}m`}
+                      {myRating ? (
+                        <span className="flex items-center gap-1 text-primary">
+                          · <Star className="size-3 fill-primary" /> {myRating.toFixed(1)} from you
+                        </span>
+                      ) : null}
                     </p>
                   </div>
                   <div className="ml-auto flex items-center gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Rate ${specialist.name}`}
+                          onClick={() => setRatingOpen(true)}
+                        >
+                          <Star className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Rate this specialist</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Report ${specialist.name}`}
+                          onClick={() => setReportOpen(true)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Flag className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Report this member to trust &amp; safety</TooltipContent>
+                    </Tooltip>
                     <CallControl
                       allowed={audioAllowed}
                       label="voice"
@@ -384,6 +484,7 @@ function MessagesPage() {
                       <Video className="size-4" />
                     </CallControl>
                   </div>
+
                 </header>
 
                 {!audioAllowed && !videoAllowed ? (
@@ -572,6 +673,22 @@ function MessagesPage() {
           onOpenChange={setGiftOpen}
           onConfirm={handleGift}
         />
+
+        <ReportDialog
+          specialist={specialist}
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          onSubmit={handleReport}
+        />
+
+        <RatingDialog
+          specialist={specialist}
+          open={ratingOpen}
+          onOpenChange={setRatingOpen}
+          onSubmit={handleRating}
+        />
+
+
 
         {call ? (
           <CallOverlay

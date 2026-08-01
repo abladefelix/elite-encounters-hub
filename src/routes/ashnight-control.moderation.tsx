@@ -36,6 +36,13 @@ import {
 } from "@/lib/moderation";
 import { relativeTime } from "@/lib/escrow";
 import { TIER_LABEL } from "@/lib/types";
+import {
+  REPORT_REASON_LABEL,
+  useRatings,
+  useReports,
+  type ReportStatus,
+} from "@/lib/reports";
+
 
 export const Route = createFileRoute("/ashnight-control/moderation")({
   head: () => ({
@@ -69,6 +76,9 @@ function AdminModeration() {
     profiles,
   } = useRoomSettings();
   const { hits, markReviewed, remove, clear } = useModerationLog();
+  const { reports, setStatus, remove: removeReport } = useReports();
+  const { ratings } = useRatings();
+
 
   const [newWord, setNewWord] = useState("");
   const [bulk, setBulk] = useState("");
@@ -326,7 +336,117 @@ function AdminModeration() {
         </div>
       </Card>
 
+      {/* --------------------------------------------------- member reports */}
+      <Card className="p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold tracking-tight">Member reports</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Reports raised from the chat thread, newest first.{" "}
+              {reports.filter((report) => report.status === "open").length} awaiting triage.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 space-y-3">
+          {reports.length ? (
+            reports.map((report) => (
+              <div
+                key={report.id}
+                className="rounded-lg border border-border/70 bg-background/50 p-3 text-sm"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="soft" className="rounded-full font-normal">
+                    {REPORT_REASON_LABEL[report.reason]}
+                  </Badge>
+                  <Badge
+                    variant={report.status === "open" ? "destructive" : "secondary"}
+                    className="rounded-full font-normal capitalize"
+                  >
+                    {report.status}
+                  </Badge>
+                  {report.blocked ? (
+                    <Badge variant="outline" className="rounded-full font-normal">
+                      Member blocked
+                    </Badge>
+                  ) : null}
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {TIER_LABEL[report.room]} · {relativeTime(report.at)}
+                  </span>
+                </div>
+                <p className="mt-2">
+                  <span className="font-medium">{report.reportedName}</span> reported in thread{" "}
+                  {report.threadId}
+                </p>
+                {report.details ? (
+                  <p className="mt-1 text-muted-foreground">{report.details}</p>
+                ) : null}
+                {report.excerpt ? (
+                  <p className="mt-1 text-xs text-muted-foreground">Thread: {report.excerpt}</p>
+                ) : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(["reviewing", "actioned", "dismissed"] as ReportStatus[]).map((status) => (
+                    <Button
+                      key={status}
+                      size="sm"
+                      variant={report.status === status ? "soft" : "ghost"}
+                      onClick={() => {
+                        setStatus(report.id, status);
+                        toast.success(`Report marked ${status}`);
+                      }}
+                      className="capitalize"
+                    >
+                      {status === "actioned" ? <Check className="size-3.5" /> : null}
+                      {status}
+                    </Button>
+                  ))}
+                  <Button size="sm" variant="ghost" onClick={() => removeReport(report.id)}>
+                    <Trash2 className="size-3.5" /> Delete
+                  </Button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">No reports yet.</p>
+          )}
+        </div>
+      </Card>
+
+      {/* -------------------------------------------------------- chat ratings */}
+      <Card className="p-5">
+        <h2 className="font-display text-lg font-semibold tracking-tight">Chat star ratings</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Ratings members posted from their threads.
+        </p>
+        <div className="mt-4 space-y-2">
+          {ratings.length ? (
+            ratings.map((rating) => (
+              <div
+                key={rating.id}
+                className="flex flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-background/50 p-3 text-sm"
+              >
+                <span className="font-medium">{rating.specialistName}</span>
+                <Badge variant="soft" className="rounded-full font-normal">
+                  {rating.stars}/5
+                </Badge>
+                {rating.tags.length ? (
+                  <span className="text-xs text-muted-foreground">{rating.tags.join(" · ")}</span>
+                ) : null}
+                {rating.note ? (
+                  <span className="text-muted-foreground">“{rating.note}”</span>
+                ) : null}
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {relativeTime(rating.at)}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">No ratings yet.</p>
+          )}
+        </div>
+      </Card>
+
       {/* -------------------------------------------------------- review log */}
+
       <Card className="p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

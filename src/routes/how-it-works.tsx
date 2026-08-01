@@ -19,7 +19,7 @@ const CLIENT_STEPS = [
   {
     icon: FileCheck2,
     title: "Apply",
-    body: "Tell us about your property, the cleaning you need and how often. Upload a government ID for verification.",
+    body: "Tell us about your property, the ash you need and how often. Upload a government ID for verification.",
   },
   {
     icon: UserCheck,

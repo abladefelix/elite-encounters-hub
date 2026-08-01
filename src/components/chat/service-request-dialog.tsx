@@ -122,7 +122,7 @@ export function ServiceRequestDialog({
       <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto border-border/70 bg-surface">
         <DialogHeader>
           <DialogTitle className="font-display">
-            {step === "scope" ? "Request a cleaning service" : "Review & pay"}
+            {step === "scope" ? "Request an ash service" : "Review & pay"}
           </DialogTitle>
           <DialogDescription>
             {step === "scope"
