@@ -8,9 +8,11 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Database, Loader2, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 
+import { DangerConfirmDialog } from "@/components/admin/danger-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -85,6 +87,7 @@ function AdminDemoData() {
   const status = statusQuery.data;
   const busy = seed.isPending || clear.isPending;
   const counts = Object.entries(status?.counts ?? {});
+  const [confirming, setConfirming] = useState<"seed" | "clear" | null>(null);
 
   return (
     <div className="space-y-6">
@@ -122,7 +125,7 @@ function AdminDemoData() {
             <Button variant="ghost" size="sm" onClick={() => void statusQuery.refetch()}>
               <RefreshCw className="mr-2 size-4" /> Refresh
             </Button>
-            <Button size="sm" disabled={busy} onClick={() => seed.mutate()}>
+            <Button size="sm" disabled={busy} onClick={() => setConfirming("seed")}>
               {seed.isPending ? (
                 <Loader2 className="mr-2 size-4 animate-spin" />
               ) : (
@@ -134,7 +137,7 @@ function AdminDemoData() {
               size="sm"
               variant="destructive"
               disabled={busy || !status?.seeded}
-              onClick={() => clear.mutate()}
+              onClick={() => setConfirming("clear")}
             >
               {clear.isPending ? (
                 <Loader2 className="mr-2 size-4 animate-spin" />
@@ -187,6 +190,39 @@ function AdminDemoData() {
           </p>
         </Card>
       </div>
+
+      <DangerConfirmDialog
+        open={confirming === "seed"}
+        onOpenChange={(open) => setConfirming(open ? "seed" : null)}
+        title={status?.seeded ? "Repopulate demo data?" : "Populate demo data?"}
+        warning="This writes a large demo dataset into the live database. Confirm with your second factor before it runs."
+        bullets={[
+          status?.seeded
+            ? "The existing demo set is deleted first, so demo counts never double up."
+            : "Demo members, bookings, escrow entries and documents are created immediately.",
+          "Real member accounts, bookings and escrow entries are never touched.",
+          "Members signed in right now will see the demo rows appear.",
+        ]}
+        phrase="POPULATE"
+        confirmLabel="Populate demo data"
+        onConfirm={() => seed.mutateAsync()}
+      />
+
+      <DangerConfirmDialog
+        open={confirming === "clear"}
+        onOpenChange={(open) => setConfirming(open ? "clear" : null)}
+        title="Remove all demo data?"
+        warning="This permanently deletes every row and account created by the demo seeder. It cannot be undone."
+        bullets={[
+          "Demo accounts are deleted from authentication as well as the database.",
+          "Only rows recorded in the seeder manifest are removed — real data stays.",
+          "Anything you edited on a demo record is lost with it.",
+        ]}
+        phrase="DELETE DEMO"
+        confirmLabel="Remove demo data"
+        destructive
+        onConfirm={() => clear.mutateAsync()}
+      />
     </div>
   );
 }
