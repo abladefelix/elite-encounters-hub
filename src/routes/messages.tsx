@@ -59,6 +59,7 @@ import { useAuth } from "@/hooks/use-auth";
 import {
   markThreadRead,
   uploadAttachment,
+  useBookings,
   useCreateBooking,
   useLogModerationHit,
   useMessages,
