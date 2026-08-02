@@ -183,10 +183,12 @@ function SpecialistsPage() {
               <SelectValue placeholder="Room" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All rooms</SelectItem>
-              <SelectItem value="basic">Basic</SelectItem>
-              <SelectItem value="premium">Premium</SelectItem>
-              <SelectItem value="ultimate">Ultimate</SelectItem>
+              <SelectItem value="all">All my rooms</SelectItem>
+              {allowedRooms.map((tier) => (
+                <SelectItem key={tier} value={tier}>
+                  {tierLabel(tier)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
