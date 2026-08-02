@@ -304,8 +304,7 @@ function PermissionEditor({ entry }: { entry: AdminRosterEntry }) {
                   className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2 text-sm"
                 >
                   <Checkbox
-                    checked={superAdmin || areas.includes(area.key)}
-                    disabled={superAdmin}
+                    checked={areas.includes(area.key)}
                     onCheckedChange={(value) => toggle(area.key, value === true)}
                   />
                   {area.label}
