@@ -18,6 +18,7 @@ import { initials } from "@/lib/types";
 export type CallMode = "audio" | "video";
 
 type SignalPayload =
+  | { kind: "ready"; from: string }
   | { kind: "offer"; sdp: RTCSessionDescriptionInit; from: string }
   | { kind: "answer"; sdp: RTCSessionDescriptionInit; from: string }
   | { kind: "ice"; candidate: RTCIceCandidateInit; from: string }
