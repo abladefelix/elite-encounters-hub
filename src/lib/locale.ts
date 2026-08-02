@@ -54,6 +54,7 @@ export const COPY_GROUPS = [
       { key: "nav.specialists", label: "Browse specialists link", value: "Specialists" },
       { key: "nav.rooms", label: "Rooms link", value: "Rooms" },
       { key: "nav.messages", label: "Messages link", value: "Messages" },
+      { key: "nav.wallet", label: "Money / wallet link", value: "Money" },
       { key: "nav.howItWorks", label: "How it works link", value: "How it works" },
       { key: "action.signIn", label: "Sign in", value: "Sign in" },
       { key: "action.signUp", label: "Create account", value: "Create account" },
