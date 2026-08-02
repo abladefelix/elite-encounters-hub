@@ -44,16 +44,22 @@ import {
   ServiceRequestDialog,
   type ServiceRequestDraft,
 } from "@/components/chat/service-request-dialog";
+import { QuoteDialog, type QuoteDraft } from "@/components/chat/quote-dialog";
 import { GiftDialog, type GiftDraft } from "@/components/chat/gift-dialog";
 import { ReportDialog, type ReportDraft } from "@/components/chat/report-dialog";
 import { RatingDialog, type RatingDraft } from "@/components/chat/rating-dialog";
 import { REPORT_REASON_LABEL } from "@/lib/reports";
 import { paystackChannel } from "@/lib/paystack";
-import { startBookingCheckout, startGiftCheckout } from "@/lib/payments.functions";
+import {
+  createSpecialistQuote,
+  startBookingCheckout,
+  startGiftCheckout,
+} from "@/lib/payments.functions";
 import { useAuth } from "@/hooks/use-auth";
 import {
   markThreadRead,
   uploadAttachment,
+  useBookings,
   useCreateBooking,
   useLogModerationHit,
   useMessages,
@@ -63,6 +69,7 @@ import {
   useSendMessage,
   useSubmitRating,
   useThreads,
+  type BookingRow,
   type MessageRow as MessageRowType,
   type ProfileRow,
   type ThreadRow,
@@ -143,6 +150,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [call, setCall] = useState<CallMode | null>(null);
   const [locating, setLocating] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [payingBookingId, setPayingBookingId] = useState("");
   const [giftOpen, setGiftOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [ratingOpen, setRatingOpen] = useState(false);
@@ -173,7 +182,14 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const messages = useMemo(() => messagesQuery.data ?? [], [messagesQuery.data]);
   const sendMessage = useSendMessage();
   const createBooking = useCreateBooking();
+  const bookingsQuery = useBookings();
+  const bookingsById = useMemo(() => {
+    const map = new Map<string, BookingRow>();
+    for (const booking of bookingsQuery.data ?? []) map.set(booking.id, booking);
+    return map;
+  }, [bookingsQuery.data]);
   const bookingCheckout = useServerFn(startBookingCheckout);
+  const sendQuote = useServerFn(createSpecialistQuote);
   const giftCheckout = useServerFn(startGiftCheckout);
   const logHit = useLogModerationHit();
   const reports = useReportMutations();
@@ -384,6 +400,63 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     });
     systemNote(`${mode === "video" ? "Video" : "Voice"} call started — Ashnight never records calls.`);
   }
+
+  /** Specialist prices the visit; the client pays from the thread. */
+  async function handleQuote(quote: QuoteDraft) {
+    if (!activeThread) return;
+    try {
+      const result = await sendQuote({
+        data: {
+          threadId: activeThread.id,
+          serviceId: quote.serviceId,
+          serviceName: quote.serviceName,
+          hours: quote.hours,
+          rate: quote.rate,
+          addons: quote.addons,
+          scheduledForIso: quote.scheduledForIso,
+          notes: quote.notes,
+        },
+      });
+
+      await post({
+        kind: "booking",
+        booking_id: result.bookingId,
+        body: `Payment request · ${quote.serviceName} · ${quote.hours}h at ${money(
+          quote.rate,
+        )}/h${quote.addons.length ? ` · Add-ons: ${quote.addons.join(", ")}` : ""} · ${money(
+          result.total,
+        )} to pay${quote.notes ? ` — ${quote.notes}` : ""}`,
+      });
+
+      setQuoteOpen(false);
+      toast.success("Payment request sent", {
+        description: `${firstName} can pay ${money(result.total)} straight into escrow.`,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Payment request could not be sent");
+    }
+  }
+
+  /** Client pays an outstanding booking (their own request, or a specialist quote). */
+  async function payBooking(bookingId: string) {
+    try {
+      setPayingBookingId(bookingId);
+      const checkout = await bookingCheckout({
+        data: {
+          bookingId,
+          callbackUrl: `${window.location.origin}/payment/return`,
+        },
+      });
+      toast.success("Taking you to Paystack…", {
+        description: `${money(checkout.amount)} will be held in Ashnight escrow.`,
+      });
+      window.location.href = checkout.authorizationUrl;
+    } catch (error) {
+      setPayingBookingId("");
+      toast.error(error instanceof Error ? error.message : "Payment could not be started");
+    }
+  }
+
 
   async function handleBooking(request: ServiceRequestDraft) {
     if (!activeThread || !peerId) return;
@@ -723,6 +796,14 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                                 : undefined
                             }
                             canResolve={iAmClient}
+                            booking={
+                              message.booking_id ? bookingsById.get(message.booking_id) : undefined
+                            }
+                            canPay={iAmClient && bookingsOpen}
+                            paying={
+                              !!message.booking_id && payingBookingId === message.booking_id
+                            }
+                            onPay={(id) => void payBooking(id)}
                             onConfirm={(id) => void confirmComplete(id)}
                             onDispute={(id, reason) => void raiseIssue(id, reason)}
                           />
@@ -744,7 +825,27 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                             </>
                           )}
                         </Button>
-                      ) : null}
+                      ) : (
+                        <Button
+                          variant="brass"
+                          className="w-full"
+                          onClick={() =>
+                            bookingsOpen
+                              ? setQuoteOpen(true)
+                              : toast("Booking requests are paused by Ashnight right now.")
+                          }
+                        >
+                          {bookingsOpen ? (
+                            <>
+                              <Banknote className="size-4" /> Request payment for a job
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="size-4" /> Payment requests paused
+                            </>
+                          )}
+                        </Button>
+                      )}
 
                       <form
                         className="mt-3 flex items-center gap-2"
@@ -907,6 +1008,15 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
               onConfirm={(request) => void handleBooking(request)}
             />
 
+            <QuoteDialog
+              clientName={firstName}
+              defaultRate={profile?.hourly_rate ?? 0}
+              open={quoteOpen}
+              onOpenChange={setQuoteOpen}
+              onConfirm={(quote) => void handleQuote(quote)}
+            />
+
+
             <GiftDialog
               specialistName={peerName}
               room={room}
@@ -988,6 +1098,10 @@ function MessageBubble({
   peerFirstName,
   escrow,
   canResolve,
+  booking,
+  canPay,
+  paying,
+  onPay,
   onConfirm,
   onDispute,
 }: {
@@ -996,6 +1110,10 @@ function MessageBubble({
   peerFirstName: string;
   escrow?: EscrowEntry | undefined;
   canResolve: boolean;
+  booking?: BookingRow | undefined;
+  canPay: boolean;
+  paying: boolean;
+  onPay: (id: string) => void;
   onConfirm: (id: string) => void;
   onDispute: (id: string, reason: string) => void;
 }) {
@@ -1046,10 +1164,17 @@ function MessageBubble({
   }
 
   if (message.kind === "booking") {
+    const unpaid = !escrow && (!booking || booking.status === "requested");
+    const due = booking ? Number(booking.hours) * booking.rate : 0;
+    const dueWithFee = booking
+      ? due + Math.round(due * (Number(booking.platform_fee_pct ?? 0) / 100))
+      : 0;
     return (
       <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
         <div className="max-w-sm rounded-xl border border-primary/30 bg-primary/10 p-4">
-          <p className="eyebrow text-primary">Service requested · funds in escrow</p>
+          <p className="eyebrow text-primary">
+            {escrow ? "Service requested · funds in escrow" : "Payment request · awaiting payment"}
+          </p>
           <p className="mt-2 text-sm leading-relaxed">{message.body}</p>
 
           {escrow ? (
@@ -1072,9 +1197,29 @@ function MessageBubble({
                 </div>
               ) : null}
             </>
+          ) : unpaid && canPay && message.booking_id ? (
+            <div className="mt-3">
+              <Button
+                size="sm"
+                variant="brass"
+                disabled={paying}
+                onClick={() => onPay(message.booking_id!)}
+              >
+                {paying ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Banknote className="size-3.5" />
+                )}
+                {dueWithFee ? `Pay ${money(dueWithFee)} into escrow` : "Pay into escrow"}
+              </Button>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Ashnight holds the money until you confirm the visit.
+              </p>
+            </div>
           ) : (
             <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <CheckCheck className="size-3.5" /> Awaiting confirmation from {peerFirstName}
+              <CheckCheck className="size-3.5" /> Awaiting {unpaid ? "payment" : "confirmation"} from{" "}
+              {peerFirstName}
             </p>
           )}
         </div>

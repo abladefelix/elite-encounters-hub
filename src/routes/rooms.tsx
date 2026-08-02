@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SiteHeader } from "@/components/site-header";
+import { MemberDashboardStrip } from "@/components/member-dashboard-strip";
 import { SiteFooter } from "@/components/site-footer";
 import { TierBadge } from "@/components/tier-badge";
 import { useAuth } from "@/hooks/use-auth";
@@ -180,6 +181,9 @@ function RoomsPage() {
           Specialists never pay to join — they're placed free of charge by experience, quality
           record and the type of work they're cleared for, and earn from each booking.
         </p>
+
+        {user ? <MemberDashboardStrip /> : null}
+
 
         {!authLoading && !user ? (
           <Card className="mt-6 border-primary/25 bg-panel p-5">

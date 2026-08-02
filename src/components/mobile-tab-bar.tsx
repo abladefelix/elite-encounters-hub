@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Home, MessageCircle, Sparkles, Layers, User } from "lucide-react";
+import { Home, MessageCircle, Sparkles, Wallet, User } from "lucide-react";
 
 /**
  * App-style bottom tab bar. Mobile only (hidden from md up), where the
@@ -9,7 +9,7 @@ const TABS = [
   { to: "/", label: "Home", icon: Home },
   { to: "/specialists", label: "Specialists", icon: Sparkles },
   { to: "/messages", label: "Chats", icon: MessageCircle },
-  { to: "/rooms", label: "Rooms", icon: Layers },
+  { to: "/wallet", label: "Money", icon: Wallet },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
