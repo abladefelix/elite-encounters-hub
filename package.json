@@ -11,7 +11,12 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "build:selfhost": "vite build --config vite.config.selfhost.ts",
-    "start": "node .output/server/index.mjs"
+    "start": "node .output/server/index.mjs",
+    "mobile:add:ios": "cap add ios",
+    "mobile:add:android": "cap add android",
+    "mobile:sync": "cap sync",
+    "mobile:open:ios": "cap open ios",
+    "mobile:open:android": "cap open android"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",
