@@ -37,7 +37,7 @@ import {
   useStoredMedia,
   useUpdateProfile,
   type ApplicationRow,
-  type ProfileRow,
+  type ProfileFullRow,
 } from "@/lib/queries";
 import { money, type Tier } from "@/lib/types";
 import type { Database } from "@/integrations/supabase/types";
@@ -103,7 +103,7 @@ function VettingQueue() {
     setNote(selected.admin_note ?? "");
   }, [selected?.id]);
 
-  const profile: ProfileRow | undefined = selected?.user_id
+  const profile: ProfileFullRow | undefined = selected?.user_id
     ? profiles.find((row) => row.id === selected.user_id)
     : undefined;
 
@@ -411,7 +411,7 @@ function VettingQueue() {
  * Everything the applicant uploaded — profile photo, Ghana Card scans, work
  * photos and the intro video — resolved into viewable links for the reviewer.
  */
-function ApplicantMedia({ profile }: { profile: ProfileRow }) {
+function ApplicantMedia({ profile }: { profile: ProfileFullRow }) {
   const extra = (profile.extra ?? {}) as Record<string, unknown>;
   const rawPhotos = extra["portfolio_photos"];
   const rawVideo = extra["portfolio_video"];

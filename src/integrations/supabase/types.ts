@@ -285,6 +285,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bookings_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -296,6 +310,20 @@ export type Database = {
             columns: ["specialist_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
             referencedColumns: ["id"]
           },
           {
@@ -381,6 +409,20 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "complaints_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
         ]
       }
       documents: {
@@ -463,6 +505,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "documents_escrow_id_fkey"
             columns: ["escrow_id"]
             isOneToOne: false
@@ -474,6 +530,20 @@ export type Database = {
             columns: ["specialist_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
             referencedColumns: ["id"]
           },
         ]
@@ -567,10 +637,38 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "escrow_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "escrow_entries_specialist_id_fkey"
             columns: ["specialist_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_entries_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_entries_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
             referencedColumns: ["id"]
           },
           {
@@ -919,6 +1017,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_thread_id_fkey"
             columns: ["thread_id"]
             isOneToOne: false
@@ -967,6 +1079,20 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_hits_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_hits_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
             referencedColumns: ["id"]
           },
           {
@@ -1021,6 +1147,20 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
             referencedColumns: ["id"]
           },
         ]
@@ -1210,10 +1350,38 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ratings_rated_id_fkey"
+            columns: ["rated_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_rated_id_fkey"
+            columns: ["rated_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ratings_rater_id_fkey"
             columns: ["rater_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_rater_id_fkey"
+            columns: ["rater_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_rater_id_fkey"
+            columns: ["rater_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
             referencedColumns: ["id"]
           },
           {
@@ -1277,10 +1445,38 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reports_reported_id_fkey"
+            columns: ["reported_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reported_id_fkey"
+            columns: ["reported_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "reports_reporter_id_fkey"
             columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
             referencedColumns: ["id"]
           },
           {
@@ -1362,6 +1558,20 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "specialist_services_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_services_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
         ]
       }
       threads: {
@@ -1413,10 +1623,38 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "threads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "threads_specialist_id_fkey"
             columns: ["specialist_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
             referencedColumns: ["id"]
           },
         ]
@@ -1444,7 +1682,157 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      platform_settings_public: {
+        Row: {
+          data: Json | null
+        }
+        Relationships: []
+      }
+      profiles_full: {
+        Row: {
+          account_status: Database["public"]["Enums"]["account_status"] | null
+          address: string | null
+          available: boolean | null
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          created_at: string | null
+          dislikes: string[] | null
+          display_name: string | null
+          extra: Json | null
+          ghana_card_back_url: string | null
+          ghana_card_expiry: string | null
+          ghana_card_front_url: string | null
+          ghana_card_number: string | null
+          headline: string | null
+          hourly_rate: number | null
+          id: string | null
+          jobs_completed: number | null
+          languages: string[] | null
+          last_seen_at: string | null
+          likes: string[] | null
+          locality: string | null
+          phone: string | null
+          privacy_accepted_at: string | null
+          rating: number | null
+          response_minutes: number | null
+          room: Database["public"]["Enums"]["tier"] | null
+          status_changed_at: string | null
+          status_reason: string | null
+          suspended: boolean | null
+          terms_accepted_at: string | null
+          updated_at: string | null
+          username: string | null
+          verified: boolean | null
+          vetting: Database["public"]["Enums"]["vetting_status"] | null
+          years_experience: number | null
+        }
+        Insert: {
+          account_status?: Database["public"]["Enums"]["account_status"] | null
+          address?: string | null
+          available?: boolean | null
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          dislikes?: string[] | null
+          display_name?: string | null
+          extra?: Json | null
+          ghana_card_back_url?: string | null
+          ghana_card_expiry?: string | null
+          ghana_card_front_url?: string | null
+          ghana_card_number?: string | null
+          headline?: string | null
+          hourly_rate?: number | null
+          id?: string | null
+          jobs_completed?: number | null
+          languages?: string[] | null
+          last_seen_at?: string | null
+          likes?: string[] | null
+          locality?: string | null
+          phone?: string | null
+          privacy_accepted_at?: string | null
+          rating?: number | null
+          response_minutes?: number | null
+          room?: Database["public"]["Enums"]["tier"] | null
+          status_changed_at?: string | null
+          status_reason?: string | null
+          suspended?: boolean | null
+          terms_accepted_at?: string | null
+          updated_at?: string | null
+          username?: string | null
+          verified?: boolean | null
+          vetting?: Database["public"]["Enums"]["vetting_status"] | null
+          years_experience?: number | null
+        }
+        Update: {
+          account_status?: Database["public"]["Enums"]["account_status"] | null
+          address?: string | null
+          available?: boolean | null
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          dislikes?: string[] | null
+          display_name?: string | null
+          extra?: Json | null
+          ghana_card_back_url?: string | null
+          ghana_card_expiry?: string | null
+          ghana_card_front_url?: string | null
+          ghana_card_number?: string | null
+          headline?: string | null
+          hourly_rate?: number | null
+          id?: string | null
+          jobs_completed?: number | null
+          languages?: string[] | null
+          last_seen_at?: string | null
+          likes?: string[] | null
+          locality?: string | null
+          phone?: string | null
+          privacy_accepted_at?: string | null
+          rating?: number | null
+          response_minutes?: number | null
+          room?: Database["public"]["Enums"]["tier"] | null
+          status_changed_at?: string | null
+          status_reason?: string | null
+          suspended?: boolean | null
+          terms_accepted_at?: string | null
+          updated_at?: string | null
+          username?: string | null
+          verified?: boolean | null
+          vetting?: Database["public"]["Enums"]["vetting_status"] | null
+          years_experience?: number | null
+        }
+        Relationships: []
+      }
+      specialist_directory: {
+        Row: {
+          available: boolean | null
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          created_at: string | null
+          dislikes: string[] | null
+          display_name: string | null
+          headline: string | null
+          hourly_rate: number | null
+          id: string | null
+          jobs_completed: number | null
+          languages: string[] | null
+          last_seen_at: string | null
+          likes: string[] | null
+          rating: number | null
+          response_minutes: number | null
+          room: Database["public"]["Enums"]["tier"] | null
+          suspended: boolean | null
+          updated_at: string | null
+          username: string | null
+          verified: boolean | null
+          vetting: Database["public"]["Enums"]["vetting_status"] | null
+          years_experience: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       account_is_active: { Args: { _user_id: string }; Returns: boolean }
@@ -1467,6 +1855,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: { _user_id?: string }; Returns: boolean }
       settings_section: { Args: { _section: string }; Returns: Json }
+      storage_thread_participant: { Args: { _name: string }; Returns: boolean }
     }
     Enums: {
       account_status:

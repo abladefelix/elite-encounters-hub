@@ -21,21 +21,28 @@ import { SiteFooter } from "@/components/site-footer";
 import { TierBadge } from "@/components/tier-badge";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { openThread, useRatings, useServices, useSpecialistServices } from "@/lib/queries";
+import {
+  openThread,
+  useRatings,
+  useServices,
+  useSpecialistServices,
+  type ProfileRow,
+} from "@/lib/queries";
 import { useRoomSettings } from "@/lib/room-settings";
 import { initials, money } from "@/lib/types";
 
 export const Route = createFileRoute("/specialists/$specialistId")({
   loader: async ({ params }) => {
     const { data, error } = await supabase
-      .from("profiles")
+      .from("specialist_directory")
       .select("*")
       .eq("id", params.specialistId)
       .eq("vetting", "approved")
       .eq("suspended", false)
       .maybeSingle();
     if (error || !data) throw notFound();
-    return { specialist: data };
+    // View columns are typed nullable, but they mirror the not-null table.
+    return { specialist: data as ProfileRow };
   },
   head: ({ loaderData }) => {
     if (!loaderData) {

@@ -12,7 +12,23 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
 type Tables = Database["public"]["Tables"];
-export type ProfileRow = Tables["profiles"]["Row"];
+/** Complete profile record — only readable for yourself or as an admin. */
+export type ProfileFullRow = Tables["profiles"]["Row"];
+/** Contact and ID columns are blocked for other members by column privileges. */
+export type ProfileRow = Omit<
+  ProfileFullRow,
+  | "phone"
+  | "address"
+  | "locality"
+  | "extra"
+  | "ghana_card_number"
+  | "ghana_card_expiry"
+  | "ghana_card_front_url"
+  | "ghana_card_back_url"
+>;
+/** The exact column set a signed-in member is allowed to read on `profiles`. */
+export const PUBLIC_PROFILE_COLUMNS =
+  "id, display_name, city, headline, bio, avatar_url, likes, dislikes, languages, hourly_rate, years_experience, response_minutes, room, vetting, rating, jobs_completed, verified, available, suspended, last_seen_at, created_at, updated_at, username, account_status, status_reason, status_changed_at, terms_accepted_at, privacy_accepted_at";
 export type ServiceRow = Tables["services"]["Row"];
 export type ApplicationRow = Tables["applications"]["Row"];
 export type ThreadRow = Tables["threads"]["Row"];
@@ -37,16 +53,17 @@ export function useSpecialists(room?: Tier | "all") {
     queryKey: ["specialists", room ?? "all"],
     queryFn: async () => {
       // Clients also hold a room (their membership tier), so the directory is
-      // scoped to accounts that actually carry the specialist role.
-      const roles = unwrap<{ user_id: string }[]>(
-        await supabase.from("user_roles").select("user_id").eq("role", "specialist"),
+      // scoped through the curated `specialist_directory` view, which only
+      // lists approved, placed specialists.
+      const roles = unwrap<{ id: string }[]>(
+        await supabase.from("specialist_directory").select("id"),
       );
-      const ids = roles.map((row) => row.user_id);
+      const ids = roles.map((row) => row.id).filter((id): id is string => Boolean(id));
       if (!ids.length) return [] as ProfileRow[];
 
       let query = supabase
         .from("profiles")
-        .select("*")
+        .select(PUBLIC_PROFILE_COLUMNS)
         .in("id", ids)
         .eq("vetting", "approved")
         .eq("suspended", false)
@@ -66,24 +83,36 @@ export function useProfile(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select(PUBLIC_PROFILE_COLUMNS)
         .eq("id", id!)
         .maybeSingle();
       if (error) throw new Error(error.message);
-      return data;
+      return data as ProfileRow | null;
     },
   });
 }
 
+/**
+ * Admin/self read of complete records, including contact and ID columns.
+ * The `profiles_full` view only ever returns your own row or, for admins,
+ * every row — other members cannot reach the sensitive columns at all.
+ */
 export function useAllProfiles() {
   return useQuery({
     queryKey: ["profiles", "all"],
     queryFn: async () =>
-      unwrap<ProfileRow[]>(
-        await supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      unwrap<ProfileFullRow[]>(
+        (await supabase
+          .from("profiles_full")
+          .select("*")
+          .order("created_at", { ascending: false })) as unknown as {
+          data: ProfileFullRow[] | null;
+          error: { message: string } | null;
+        },
       ),
   });
 }
+
 
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
@@ -163,7 +192,9 @@ export function useProfilesByIds(ids: string[]) {
     queryKey: ["profiles", "by-ids", key.join(",")],
     enabled: key.length > 0,
     queryFn: async () =>
-      unwrap<ProfileRow[]>(await supabase.from("profiles").select("*").in("id", key)),
+      unwrap<ProfileRow[]>(
+        await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).in("id", key),
+      ),
   });
 }
 
