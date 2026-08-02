@@ -4,6 +4,8 @@ import { Languages, Loader2, MessageSquareHeart, Palette, RotateCcw, Save } from
 import { toast } from "sonner";
 
 import { BrandMark } from "@/components/brand-mark";
+import { LogoPicker } from "@/components/logo-picker";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
