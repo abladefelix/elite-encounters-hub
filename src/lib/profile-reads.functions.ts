@@ -11,7 +11,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
-export type FullProfile = Database["public"]["Tables"]["profiles"]["Row"];
+export type FullProfile = Database["public"]["Tables"]["profiles"]["Row"] & {
+  /** Roles held by the account, so the admin roster can split clients from specialists. */
+  roles?: Database["public"]["Enums"]["app_role"][];
+};
 
 /** The caller's own record, including their contact and identity columns. */
 export const getMyFullProfile = createServerFn({ method: "POST" })
@@ -44,5 +47,13 @@ export const listFullProfiles = createServerFn({ method: "POST" })
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return data ?? [];
+
+    const { data: allRoles } = await supabaseAdmin.from("user_roles").select("user_id, role");
+    const byUser = new Map<string, Database["public"]["Enums"]["app_role"][]>();
+    for (const row of allRoles ?? []) {
+      const list = byUser.get(row.user_id) ?? [];
+      list.push(row.role);
+      byUser.set(row.user_id, list);
+    }
+    return (data ?? []).map((row) => ({ ...row, roles: byUser.get(row.id) ?? [] }));
   });

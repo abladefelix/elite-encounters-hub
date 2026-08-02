@@ -14,7 +14,9 @@ import { listFullProfiles } from "./profile-reads.functions";
 
 type Tables = Database["public"]["Tables"];
 /** Complete profile record — only readable for yourself or as an admin. */
-export type ProfileFullRow = Tables["profiles"]["Row"];
+export type ProfileFullRow = Tables["profiles"]["Row"] & {
+  roles?: Database["public"]["Enums"]["app_role"][];
+};
 /** Contact and ID columns are blocked for other members by column privileges. */
 export type ProfileRow = Omit<
   ProfileFullRow,

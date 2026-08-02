@@ -83,6 +83,20 @@ type Segment = "clients" | "specialists";
 
 const TIERS: Tier[] = ["basic", "premium", "ultimate"];
 
+/** A specialist is decided by the role record, with a legacy fallback. */
+function isSpecialistRow(row: ProfileFullRow) {
+  if (row.roles?.length) return row.roles.includes("specialist");
+  return !!row.room || row.hourly_rate > 0;
+}
+
+/** Portfolio media a specialist has uploaded, stored on `extra`. */
+function mediaCounts(row: ProfileFullRow) {
+  const extra = (row.extra ?? {}) as Record<string, unknown>;
+  const photos = Array.isArray(extra["portfolio_photos"]) ? extra["portfolio_photos"].length : 0;
+  const video = typeof extra["portfolio_video"] === "string" && extra["portfolio_video"] ? 1 : 0;
+  return { photos, video };
+}
+
 function AdminUsers() {
   const profilesQuery = useAllProfiles();
   const updateProfile = useUpdateProfile();
@@ -119,7 +133,9 @@ function AdminUsers() {
     const all = profilesQuery.data ?? [];
     const term = query.trim().toLowerCase();
     return all
-      .filter((row) => (segment === "specialists" ? !!row.room || row.hourly_rate > 0 : true))
+      .filter((row) =>
+        segment === "specialists" ? isSpecialistRow(row) : !isSpecialistRow(row),
+      )
       .filter((row) =>
         statusFilter === "all" ? true : (row.account_status as AccountStatus) === statusFilter,
       )
@@ -201,15 +217,16 @@ function AdminUsers() {
           Members &amp; specialists
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          {(profilesQuery.data ?? []).length} accounts on file. Banning or suspending someone kills
-          their live sessions immediately and notifies them with your reason.
+          {(profilesQuery.data ?? []).length} accounts on file, split by role. Clients carry a single
+          profile photo; specialists carry a bio, rate, work photos and an intro video. Banning or
+          suspending someone kills their live sessions immediately and notifies them with your reason.
         </p>
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
         <Tabs value={segment} onValueChange={(value) => setSegment(value as Segment)}>
           <TabsList>
-            <TabsTrigger value="clients">Everyone</TabsTrigger>
+            <TabsTrigger value="clients">Clients</TabsTrigger>
             <TabsTrigger value="specialists">Specialists</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -247,18 +264,31 @@ function AdminUsers() {
         </Button>
 
         <ExportMenu
-          filename="ashnight-members"
-          title="Members"
+          filename={segment === "specialists" ? "ashnight-specialists" : "ashnight-clients"}
+          title={segment === "specialists" ? "Specialists" : "Clients"}
           columns={[
             { label: "Name", value: (row: (typeof rows)[number]) => row.display_name },
             { label: "Username", value: (row: (typeof rows)[number]) => row.username ?? "" },
             { label: "City", value: (row: (typeof rows)[number]) => row.city },
             { label: "Phone", value: (row: (typeof rows)[number]) => row.phone ?? "" },
             { label: "Room", value: (row: (typeof rows)[number]) => row.room ?? "" },
-            { label: "Vetting", value: (row: (typeof rows)[number]) => row.vetting },
             { label: "Status", value: (row: (typeof rows)[number]) => row.account_status },
-            { label: "Rating", value: (row: (typeof rows)[number]) => Number(row.rating) },
-            { label: "Jobs", value: (row: (typeof rows)[number]) => row.jobs_completed },
+            ...(segment === "specialists"
+              ? [
+                  { label: "Vetting", value: (row: (typeof rows)[number]) => row.vetting },
+                  { label: "Rate", value: (row: (typeof rows)[number]) => row.hourly_rate },
+                  { label: "Rating", value: (row: (typeof rows)[number]) => Number(row.rating) },
+                  { label: "Jobs", value: (row: (typeof rows)[number]) => row.jobs_completed },
+                  {
+                    label: "Work photos",
+                    value: (row: (typeof rows)[number]) => mediaCounts(row).photos,
+                  },
+                  {
+                    label: "Intro video",
+                    value: (row: (typeof rows)[number]) => (mediaCounts(row).video ? "yes" : "no"),
+                  },
+                ]
+              : []),
             { label: "Joined", value: (row: (typeof rows)[number]) => row.created_at.slice(0, 10) },
           ]}
           rows={rows}
@@ -267,7 +297,7 @@ function AdminUsers() {
 
         <Button onClick={() => setEditor({ open: true, profile: null })}>
           <UserPlus className="size-4" />
-          Add member
+          {segment === "specialists" ? "Add specialist" : "Add client"}
         </Button>
       </div>
 
@@ -276,8 +306,9 @@ function AdminUsers() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Member</TableHead>
+                <TableHead>{segment === "specialists" ? "Specialist" : "Client"}</TableHead>
                 <TableHead>Identity</TableHead>
+                {segment === "specialists" ? <TableHead>Profile &amp; media</TableHead> : null}
                 <TableHead>Room</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -286,7 +317,7 @@ function AdminUsers() {
             <TableBody>
               {profilesQuery.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center">
+                  <TableCell colSpan={segment === "specialists" ? 6 : 5} className="py-10 text-center">
                     <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
@@ -322,8 +353,22 @@ function AdminUsers() {
                           ? formatGhanaCard(row.ghana_card_number)
                           : "no Ghana Card"}
                       </p>
-                      {row.hourly_rate > 0 ? <p>{money(row.hourly_rate)}/h</p> : null}
                     </TableCell>
+
+                    {segment === "specialists" ? (
+                      <TableCell className="text-xs text-muted-foreground">
+                        <p>
+                          {row.hourly_rate > 0 ? `${money(row.hourly_rate)}/h` : "no rate"} ·{" "}
+                          {row.years_experience} yr
+                        </p>
+                        <p>{row.bio?.trim() ? "bio on file" : "no bio yet"}</p>
+                        <p>
+                          {mediaCounts(row).photos} work photo
+                          {mediaCounts(row).photos === 1 ? "" : "s"} ·{" "}
+                          {mediaCounts(row).video ? "intro video" : "no video"}
+                        </p>
+                      </TableCell>
+                    ) : null}
 
                     <TableCell>{row.room ? <TierBadge tier={row.room} /> : "—"}</TableCell>
 
@@ -394,7 +439,7 @@ function AdminUsers() {
 
               {profilesQuery.isError ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-sm">
+                  <TableCell colSpan={segment === "specialists" ? 6 : 5} className="py-10 text-center text-sm">
                     <p className="font-medium text-destructive">
                       {profilesQuery.error instanceof Error &&
                       /unauthor|authorization|admin access/i.test(profilesQuery.error.message)
@@ -418,10 +463,12 @@ function AdminUsers() {
 
               {!profilesQuery.isLoading && !profilesQuery.isError && rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={segment === "specialists" ? 6 : 5} className="py-10 text-center text-sm text-muted-foreground">
                     {(profilesQuery.data ?? []).length === 0
                       ? "No accounts on file yet."
-                      : "No accounts match that search."}
+                      : segment === "specialists"
+                        ? "No specialists match that search."
+                        : "No clients match that search."}
                   </TableCell>
                 </TableRow>
               ) : null}
@@ -458,6 +505,7 @@ function AdminUsers() {
         open={editor.open}
         onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))}
         profile={editor.profile}
+        defaultRoles={segment === "specialists" ? ["specialist"] : ["client"]}
         onSaved={() => profilesQuery.refetch()}
       />
 
