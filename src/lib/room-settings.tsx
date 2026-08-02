@@ -588,14 +588,22 @@ function initThemeCache() {
     }
   };
 
-  void supabase
-    .from("platform_settings")
-    .select("data")
-    .eq("id", true)
-    .maybeSingle()
-    .then(({ data, error }) => {
-      if (!error) applyPlatform(data?.data);
-    });
+  // Signed-out visitors read the public settings slice instead of the full row.
+  const readPlatform = async () => {
+    const { data, error } = await supabase
+      .from("platform_settings")
+      .select("data")
+      .eq("id", true)
+      .maybeSingle();
+    if (!error && data) return data.data;
+    const { data: publicData } = await supabase
+      .from("platform_settings_public")
+      .select("data")
+      .maybeSingle();
+    return publicData?.data ?? null;
+  };
+
+  void readPlatform().then((data) => applyPlatform(data));
 
   supabase
     .channel("platform-settings-theme")
@@ -603,12 +611,7 @@ function initThemeCache() {
       "postgres_changes",
       { event: "*", schema: "public", table: "platform_settings" },
       async () => {
-        const { data, error } = await supabase
-          .from("platform_settings")
-          .select("data")
-          .eq("id", true)
-          .maybeSingle();
-        if (!error) applyPlatform(data?.data);
+        applyPlatform(await readPlatform());
       },
     )
     .subscribe();
