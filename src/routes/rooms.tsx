@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SiteHeader } from "@/components/site-header";
+import { MemberDashboardStrip } from "@/components/member-dashboard-strip";
 import { SiteFooter } from "@/components/site-footer";
 import { TierBadge } from "@/components/tier-badge";
 import { useAuth } from "@/hooks/use-auth";
