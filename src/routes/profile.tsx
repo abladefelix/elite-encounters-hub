@@ -20,11 +20,13 @@ import { TwoFactorCard } from "@/components/two-factor-card";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
 import {
+  resolveStoredMedia,
   useSetSpecialistServices,
   useSpecialistServices,
   useUpdateProfile,
   uploadAvatar,
 } from "@/lib/queries";
+
 import { useServiceCatalog } from "@/lib/service-catalog";
 import { initials, money } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -108,11 +110,22 @@ function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile) {
-      setFields(toFields(profile));
-      setAvatarUrl(profile.avatar_url ?? null);
+    if (!profile) return;
+    setFields(toFields(profile));
+    const stored = profile.avatar_url;
+    if (!stored) {
+      setAvatarUrl(null);
+      return;
     }
+    let active = true;
+    resolveStoredMedia("avatars", stored)
+      .then((url) => active && setAvatarUrl(url))
+      .catch(() => active && setAvatarUrl(null));
+    return () => {
+      active = false;
+    };
   }, [profile]);
+
 
   useEffect(() => {
     if (specialistServiceRows) setServiceIds(specialistServiceRows.map((row) => row.service_id));
@@ -169,9 +182,10 @@ function ProfilePage() {
     }
     setUploading(true);
     try {
-      const url = await uploadAvatar(user.id, file);
-      setAvatarUrl(url);
-      await updateProfile.mutateAsync({ id: user.id, patch: { avatar_url: url } });
+      const path = await uploadAvatar(user.id, file);
+      setAvatarUrl(await resolveStoredMedia("avatars", path));
+      await updateProfile.mutateAsync({ id: user.id, patch: { avatar_url: path } });
+
       await refresh();
       toast.success("Profile photo updated");
     } catch (error) {

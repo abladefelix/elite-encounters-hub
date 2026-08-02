@@ -36,7 +36,10 @@ const fields = z
     ghana_card_expiry: z.string().trim().max(20).nullable(),
     account_status: z.enum(["pending", "active", "deactivated", "suspended", "banned"]),
     status_reason: z.string().trim().max(500),
+    portfolio_photos: z.array(z.string().trim().max(500)).max(6),
+    portfolio_video: z.string().trim().max(500).nullable(),
   })
+
   .partial();
 
 /** Email, verification state and roles for one account. */
