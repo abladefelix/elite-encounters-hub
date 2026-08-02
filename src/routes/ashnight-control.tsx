@@ -330,8 +330,19 @@ function AdminLayout() {
           </div>
 
           <div className="px-5 py-8 sm:px-8">
-            <Outlet />
+            {access.loading || areaAllowed ? (
+              <Outlet />
+            ) : (
+              <Card className="mx-auto max-w-md p-8 text-center">
+                <ShieldBan className="mx-auto size-6 text-muted-foreground" />
+                <h1 className="mt-3 font-display text-lg font-semibold">Area not available</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  A super admin hasn't given your account access to this part of the control room.
+                </p>
+              </Card>
+            )}
           </div>
+
         </main>
       </div>
     </div>
