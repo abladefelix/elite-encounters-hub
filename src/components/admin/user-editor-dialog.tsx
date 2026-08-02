@@ -151,6 +151,13 @@ function fromProfile(profile: ProfileFullRow): FormState {
     verified: Boolean(profile.verified),
     available: Boolean(profile.available),
     suspended: Boolean(profile.suspended),
+    portfolio_photos: Array.isArray(rawPhotos)
+      ? (rawPhotos as unknown[]).filter(
+          (item): item is string => typeof item === "string" && item.length > 0,
+        )
+      : [],
+    portfolio_video: typeof rawVideo === "string" && rawVideo ? rawVideo : null,
+
   };
 }
 
