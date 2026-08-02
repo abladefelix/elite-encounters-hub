@@ -182,7 +182,7 @@ function AdminLayout() {
             </span>
           </Link>
 
-          <nav className="mt-8 space-y-1">
+          <nav className="mt-8 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
             {nav.map((item) => {
               const active = item.exact
                 ? pathname === item.to
@@ -210,7 +210,7 @@ function AdminLayout() {
             })}
           </nav>
 
-          <div className="mt-auto space-y-4">
+          <div className="mt-6 shrink-0 space-y-4">
             <a
               href="mailto:trust@ashnight.example"
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -273,11 +273,12 @@ function AdminLayout() {
                     <Menu className="size-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[17rem] p-0">
-                  <SheetHeader className="border-b border-border/70 px-4 py-4 text-left">
+                <SheetContent side="right" className="flex w-[17rem] flex-col p-0">
+                  <SheetHeader className="shrink-0 border-b border-border/70 px-4 py-4 text-left">
                     <SheetTitle className="font-display text-base">Control room</SheetTitle>
                   </SheetHeader>
-                  <nav className="max-h-[calc(100svh-8.5rem)] space-y-1 overflow-y-auto px-3 py-3">
+                  <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-3">
+
                     {nav.map((item) => {
                       const active = item.exact
                         ? pathname === item.to
@@ -305,7 +306,7 @@ function AdminLayout() {
                       );
                     })}
                   </nav>
-                  <div className="flex items-center gap-3 border-t border-border/70 px-4 py-3">
+                  <div className="flex shrink-0 items-center gap-3 border-t border-border/70 px-4 py-3">
                     <Link to="/profile" aria-label="Your profile" onClick={() => setMenuOpen(false)}>
                       <Avatar className="size-8 border border-border">
                         <AvatarFallback className="bg-surface-strong text-[11px]">

@@ -115,6 +115,9 @@ export interface AdminRosterEntry {
   displayName: string;
   username: string | null;
   avatarUrl: string | null;
+  accountStatus: Database["public"]["Enums"]["account_status"] | null;
+  suspended: boolean;
+  roles: Database["public"]["Enums"]["app_role"][];
   permissions: AdminPermissionRow | null;
 }
 
@@ -125,14 +128,17 @@ export function useAdminRoster() {
     queryFn: async (): Promise<AdminRosterEntry[]> => {
       const { data: roleRows, error } = await supabase
         .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
+        .select("user_id, role");
       if (error) throw new Error(error.message);
-      const ids = [...new Set((roleRows ?? []).map((row) => row.user_id))];
+      const rows = roleRows ?? [];
+      const ids = [...new Set(rows.filter((row) => row.role === "admin").map((row) => row.user_id))];
       if (!ids.length) return [];
 
       const [profiles, permissions] = await Promise.all([
-        supabase.from("profiles").select("id, display_name, username, avatar_url").in("id", ids),
+        supabase
+          .from("profiles")
+          .select("id, display_name, username, avatar_url, account_status, suspended")
+          .in("id", ids),
         supabase.from("admin_permissions").select("*").in("user_id", ids),
       ]);
 
@@ -144,12 +150,16 @@ export function useAdminRoster() {
           displayName: profile?.display_name || "Unnamed admin",
           username: profile?.username ?? null,
           avatarUrl: profile?.avatar_url ?? null,
+          accountStatus: profile?.account_status ?? null,
+          suspended: Boolean(profile?.suspended),
+          roles: rows.filter((row) => row.user_id === id).map((row) => row.role),
           permissions: byId.get(id) ?? null,
         };
       });
     },
   });
 }
+
 
 export interface SavePermissionsInput {
   userId: string;
