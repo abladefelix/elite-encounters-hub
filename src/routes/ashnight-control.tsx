@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   Bell,
   ReceiptText,
+  Calculator,
   ScrollText,
   BadgeCheck,
   CalendarCheck,
@@ -68,6 +69,7 @@ const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] 
   { to: "/ashnight-control/complaints", label: "Complaints", icon: LifeBuoy },
   { to: "/ashnight-control/notifications", label: "Notifications", icon: Bell },
   { to: "/ashnight-control/documents", label: "Invoices & receipts", icon: ReceiptText },
+  { to: "/ashnight-control/finance", label: "Finance & accounting", icon: Calculator },
   { to: "/ashnight-control/logs", label: "Activity log", icon: ScrollText },
   { to: "/ashnight-control/signup", label: "Sign-up form", icon: ClipboardList },
   { to: "/ashnight-control/features", label: "Features", icon: ToggleLeft },

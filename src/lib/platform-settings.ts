@@ -29,7 +29,8 @@ export type SettingsSection =
   | "deployment"
   | "branding"
   | "locale"
-  | "welcome";
+  | "welcome"
+  | "finance";
 
 type SettingsBlob = Partial<Record<SettingsSection, unknown>>;
 
