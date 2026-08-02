@@ -102,6 +102,10 @@ export function useAllProfiles() {
   return useQuery({
     queryKey: ["profiles", "all"],
     queryFn: async () => (await listFullProfiles()) as unknown as ProfileFullRow[],
+    // The bearer token is attached from the browser session; retry so a page
+    // loaded before the session hydrates still fills the roster.
+    retry: 2,
+    retryDelay: 600,
   });
 }
 

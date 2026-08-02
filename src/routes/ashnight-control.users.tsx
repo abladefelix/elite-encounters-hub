@@ -392,10 +392,36 @@ function AdminUsers() {
                 );
               })}
 
-              {!profilesQuery.isLoading && rows.length === 0 ? (
+              {profilesQuery.isError ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-10 text-center text-sm">
+                    <p className="font-medium text-destructive">
+                      {profilesQuery.error instanceof Error &&
+                      /unauthor|authorization|admin access/i.test(profilesQuery.error.message)
+                        ? "Your admin session expired — sign in again to load the roster."
+                        : "The member roster couldn't be loaded."}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {profilesQuery.error instanceof Error ? profilesQuery.error.message : ""}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => void profilesQuery.refetch()}
+                    >
+                      Try again
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ) : null}
+
+              {!profilesQuery.isLoading && !profilesQuery.isError && rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
-                    No accounts match that search.
+                    {(profilesQuery.data ?? []).length === 0
+                      ? "No accounts on file yet."
+                      : "No accounts match that search."}
                   </TableCell>
                 </TableRow>
               ) : null}
