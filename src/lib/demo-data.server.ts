@@ -413,15 +413,20 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
   must(await client.from("specialist_services").insert(links), "specialist_services");
   counts["specialist_services"] = links.length;
 
-  /* vetting queue */
-  const applications = [
+  /* vetting queue — every applicant gets a real linked account with uploads,
+     so the review panel can show photos, ID scans and (for specialists) a
+     work portfolio instead of an empty media notice. */
+  const APPLICANTS = [
     {
+      username: "abena.sarpong",
       full_name: "Abena Sarpong",
-      email: `abena.sarpong@${DEMO_DOMAIN}`,
       phone: "0244050505",
       city: "Accra",
+      locality: "Airport City",
       applied_role: "specialist" as const,
       pitch: "Six years hotel housekeeping in Airport City. Available weekdays.",
+      headline: "Hotel-trained deep ash for apartments and short-lets",
+      bio: "Six years on an Airport City hotel housekeeping floor. I work to a written checklist and hand over photos of every room I finish.",
       years_experience: 6,
       id_verified: true,
       background_check: "clear" as const,
@@ -429,14 +434,20 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       suggested_room: "premium" as Tier,
       status: "in_review" as const,
       admin_note: "Strong references. Confirm weekend availability.",
+      card: "GHA-700500505-5",
+      avatar: AVATARS[4]!,
+      portfolio: [AVATARS[0]!, AVATARS[1]!, AVATARS[2]!],
     },
     {
+      username: "comfort.anaba",
       full_name: "Comfort Anaba",
-      email: `comfort.anaba@${DEMO_DOMAIN}`,
       phone: "0244060606",
       city: "Tamale",
+      locality: "Vittin",
       applied_role: "specialist" as const,
       pitch: "Two years private household ash work, looking to go full time.",
+      headline: "Private household upkeep, moving to full time",
+      bio: "Two years keeping two family homes in Tamale steady — laundry, linens, floors and kitchens.",
       years_experience: 2,
       id_verified: true,
       background_check: "pending" as const,
@@ -444,14 +455,20 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       suggested_room: "basic" as Tier,
       status: "pending" as const,
       admin_note: "Awaiting second reference.",
+      card: "GHA-700600606-6",
+      avatar: AVATARS[5]!,
+      portfolio: [AVATARS[3]!, AVATARS[6]!],
     },
     {
+      username: "samuel.ofori",
       full_name: "Samuel Ofori",
-      email: `samuel.ofori@${DEMO_DOMAIN}`,
       phone: "0201050505",
       city: "Accra",
+      locality: "Airport Hills",
       applied_role: "client" as const,
       pitch: "Four-bedroom house in Airport Hills, want a recurring crew.",
+      headline: "",
+      bio: "",
       years_experience: 0,
       id_verified: true,
       background_check: "clear" as const,
@@ -459,14 +476,20 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       suggested_room: "ultimate" as Tier,
       status: "pending" as const,
       admin_note: "Ultimate deposit paid.",
+      card: "GHA-700700707-7",
+      avatar: AVATARS[6]!,
+      portfolio: [] as string[],
     },
     {
+      username: "ibrahim.fuseini",
       full_name: "Ibrahim Fuseini",
-      email: `ibrahim.fuseini@${DEMO_DOMAIN}`,
       phone: "0201060606",
       city: "Kumasi",
+      locality: "Asokwa",
       applied_role: "client" as const,
       pitch: "Two-bedroom flat, monthly deep ash.",
+      headline: "",
+      bio: "",
       years_experience: 0,
       id_verified: false,
       background_check: "flagged" as const,
@@ -474,10 +497,88 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       suggested_room: "basic" as Tier,
       status: "rejected" as const,
       admin_note: "Ghana Card upload unreadable and check flagged.",
+      card: "GHA-700800808-8",
+      avatar: AVATARS[7]!,
+      portfolio: [] as string[],
     },
   ];
+
+  const applicantIds: string[] = [];
+  for (const person of APPLICANTS) {
+    const email = `${person.username}@${DEMO_DOMAIN}`;
+    const id = await ensureUser(email, {
+      display_name: person.full_name,
+      username: person.username,
+      role: person.applied_role,
+    });
+    applicantIds.push(id);
+
+    must(await client.from("profiles").upsert(
+      {
+        id,
+        display_name: person.full_name,
+        username: person.username,
+        city: person.city,
+        locality: person.locality,
+        address: `${person.locality}, ${person.city}`,
+        headline: person.headline,
+        bio: person.bio,
+        avatar_url: person.avatar,
+        phone: person.phone,
+        room: null,
+        vetting: person.status === "rejected" ? "rejected" : person.status,
+        verified: false,
+        available: false,
+        suspended: false,
+        account_status: person.status === "rejected" ? "deactivated" : "pending",
+        status_reason:
+          person.status === "rejected" ? "Application declined at vetting" : "Awaiting vetting",
+        hourly_rate: person.applied_role === "specialist" ? 90 : 0,
+        years_experience: person.years_experience,
+        response_minutes: 12,
+        languages: ["English", "Twi"],
+        likes: person.applied_role === "specialist" ? ["Checklists", "Early starts"] : [],
+        dislikes: person.applied_role === "specialist" ? ["Rushed handovers"] : [],
+        ghana_card_number: person.card,
+        ghana_card_expiry: "2032-03-31",
+        ghana_card_front_url: person.avatar,
+        ghana_card_back_url: person.avatar,
+        terms_accepted_at: hoursAgo(60),
+        privacy_accepted_at: hoursAgo(60),
+        last_seen_at: hoursAgo(4),
+        extra: {
+          demo: true,
+          portfolio_photos: person.portfolio,
+          portfolio_video: null,
+        } as never,
+      },
+      { onConflict: "id" },
+    ), "applicant profiles");
+
+    await client
+      .from("user_roles")
+      .upsert({ user_id: id, role: person.applied_role }, { onConflict: "user_id,role" });
+  }
+
+  const applications = APPLICANTS.map((person, index) => ({
+    user_id: applicantIds[index]!,
+    full_name: person.full_name,
+    email: `${person.username}@${DEMO_DOMAIN}`,
+    phone: person.phone,
+    city: person.city,
+    applied_role: person.applied_role,
+    pitch: person.pitch,
+    years_experience: person.years_experience,
+    id_verified: person.id_verified,
+    background_check: person.background_check,
+    reference_checks: person.reference_checks,
+    suggested_room: person.suggested_room,
+    status: person.status,
+    admin_note: person.admin_note,
+  }));
   must(await client.from("applications").insert(applications), "applications");
   counts["applications"] = applications.length;
+
 
   /* threads */
   const pairs: { client: number; specialist: number; room: Tier; exempt: boolean }[] = [
