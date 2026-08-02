@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, ShieldCheck, ShieldX, UserCog, UserPlus } from "lucide-react";
+import { Loader2, Search, ShieldCheck, ShieldX, UserCog, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { ExportMenu } from "@/components/admin/export-menu";
@@ -11,6 +11,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -274,7 +283,7 @@ function PermissionEditor({ entry }: { entry: AdminRosterEntry }) {
             Areas they can open
             {superAdmin ? (
               <span className="ml-2 text-xs font-normal text-muted-foreground">
-                locked — turn off “Super admin” to choose areas
+                super admin already opens everything — these stay saved for when you turn it off
               </span>
             ) : null}
           </h3>
@@ -284,18 +293,11 @@ function PermissionEditor({ entry }: { entry: AdminRosterEntry }) {
               type="button"
               size="sm"
               variant="ghost"
-              disabled={superAdmin}
               onClick={() => setAreas(ADMIN_AREAS.map((area) => area.key))}
             >
               Select all
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={superAdmin}
-              onClick={() => setAreas([])}
-            >
+            <Button type="button" size="sm" variant="ghost" onClick={() => setAreas([])}>
               Clear
             </Button>
           </div>
@@ -311,8 +313,7 @@ function PermissionEditor({ entry }: { entry: AdminRosterEntry }) {
                   className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2 text-sm"
                 >
                   <Checkbox
-                    checked={superAdmin || areas.includes(area.key)}
-                    disabled={superAdmin}
+                    checked={areas.includes(area.key)}
                     onCheckedChange={(value) => toggle(area.key, value === true)}
                   />
                   {area.label}
@@ -355,6 +356,7 @@ function GrantAdminCard({ existing }: { existing: string[] }) {
   const readAccount = useServerFn(getUserAccount);
   const saveAccount = useServerFn(updateUserAccount);
   const [userId, setUserId] = useState("");
+  const [open, setOpen] = useState(false);
 
   const candidates = useMemo(
     () =>
@@ -380,25 +382,58 @@ function GrantAdminCard({ existing }: { existing: string[] }) {
       toast.error(error instanceof Error ? error.message : "Could not add that administrator."),
   });
 
+  const selectedRow = candidates.find((row) => row.id === userId) ?? null;
+
   return (
     <Card className="flex flex-wrap items-end gap-3 p-5">
       <div className="min-w-[16rem] flex-1 space-y-2">
         <Label>Add an administrator</Label>
-        <Select value={userId} onValueChange={setUserId}>
-          <SelectTrigger>
-            <SelectValue
-              placeholder={profiles.isLoading ? "Loading members…" : "Choose a member"}
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {candidates.map((row) => (
-              <SelectItem key={row.id} value={row.id}>
-                {row.display_name}
-                {row.username ? ` · @${row.username}` : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between font-normal"
+            >
+              <span className={selectedRow ? "" : "text-muted-foreground"}>
+                {selectedRow
+                  ? `${selectedRow.display_name}${selectedRow.username ? ` · @${selectedRow.username}` : ""}`
+                  : profiles.isLoading
+                    ? "Loading members…"
+                    : "Search members by name or username"}
+              </span>
+              <Search className="ml-2 size-4 shrink-0 opacity-60" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[min(28rem,90vw)] p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Type a name or @username…" />
+              <CommandList>
+                <CommandEmpty>No matching member.</CommandEmpty>
+                <CommandGroup>
+                  {candidates.map((row) => (
+                    <CommandItem
+                      key={row.id}
+                      value={`${row.display_name ?? ""} ${row.username ?? ""}`}
+                      onSelect={() => {
+                        setUserId(row.id);
+                        setOpen(false);
+                      }}
+                    >
+                      <span className="truncate">{row.display_name}</span>
+                      {row.username ? (
+                        <span className="ml-2 truncate text-xs text-muted-foreground">
+                          @{row.username}
+                        </span>
+                      ) : null}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
         <p className="text-xs text-muted-foreground">
           The member keeps their existing roles and gains control-room access. Set their areas below
           after adding them.
