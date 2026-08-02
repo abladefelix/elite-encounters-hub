@@ -47,7 +47,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TierBadge } from "@/components/tier-badge";
 import { UserEditorDialog } from "@/components/admin/user-editor-dialog";
 import { deleteUserAccount } from "@/lib/admin-users.functions";
-import { useAllProfiles, useUpdateProfile, type ProfileRow } from "@/lib/queries";
+import { useAllProfiles, useUpdateProfile, type ProfileFullRow } from "@/lib/queries";
 import { releaseAbandonedSignups, setAccountStatus } from "@/lib/identity.functions";
 import {
   ACCOUNT_STATUSES,
@@ -89,15 +89,15 @@ function AdminUsers() {
   const [segment, setSegment] = useState<Segment>("clients");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<AccountStatus | "all">("all");
-  const [target, setTarget] = useState<{ profile: ProfileRow; status: AccountStatus } | null>(null);
+  const [target, setTarget] = useState<{ profile: ProfileFullRow; status: AccountStatus } | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [releasing, setReleasing] = useState(false);
-  const [editor, setEditor] = useState<{ open: boolean; profile: ProfileRow | null }>({
+  const [editor, setEditor] = useState<{ open: boolean; profile: ProfileFullRow | null }>({
     open: false,
     profile: null,
   });
-  const [removing, setRemoving] = useState<ProfileRow | null>(null);
+  const [removing, setRemoving] = useState<ProfileFullRow | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   async function removeAccount() {
@@ -161,7 +161,7 @@ function AdminUsers() {
     }
   }
 
-  function move(row: ProfileRow, tier: Tier) {
+  function move(row: ProfileFullRow, tier: Tier) {
     updateProfile.mutate(
       { id: row.id, patch: { room: tier } },
       {

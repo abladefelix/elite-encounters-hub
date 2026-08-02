@@ -35,7 +35,7 @@ import {
   updateUserAccount,
 } from "@/lib/admin-users.functions";
 import { ACCOUNT_STATUSES, ACCOUNT_STATUS_META } from "@/lib/account-status";
-import type { ProfileRow } from "@/lib/queries";
+import type { ProfileFullRow } from "@/lib/queries";
 
 type AppRole = "client" | "specialist" | "admin";
 
@@ -104,7 +104,7 @@ const EMPTY: FormState = {
   suspended: false,
 };
 
-function fromProfile(profile: ProfileRow): FormState {
+function fromProfile(profile: ProfileFullRow): FormState {
   return {
     ...EMPTY,
     display_name: profile.display_name ?? "",
@@ -150,7 +150,7 @@ export interface UserEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Omit to create a brand-new account. */
-  profile?: ProfileRow | null;
+  profile?: ProfileFullRow | null;
   onSaved: () => void | Promise<unknown>;
 }
 
