@@ -65,6 +65,7 @@ function clean(fields: AdminUserFields) {
   const patch: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(fields)) {
     if (value === undefined) continue;
+    if (key === "portfolio_photos" || key === "portfolio_video") continue;
     patch[key] = typeof value === "string" && key !== "status_reason" ? value.trim() : value;
   }
   if (typeof patch["username"] === "string") {
@@ -76,6 +77,23 @@ function clean(fields: AdminUserFields) {
   if (patch["ghana_card_expiry"] === "") patch["ghana_card_expiry"] = null;
   return patch as Database["public"]["Tables"]["profiles"]["Update"];
 }
+
+/**
+ * Portfolio media lives inside `profiles.extra`, so it is merged separately
+ * from the flat column patch. Only specialists carry photos and a video;
+ * clients keep a single profile picture and nothing else.
+ */
+async function savePortfolio(userId: string, fields: AdminUserFields) {
+  if (fields.portfolio_photos === undefined && fields.portfolio_video === undefined) return;
+  const client = await admin();
+  const { data } = await client.from("profiles").select("extra").eq("id", userId).maybeSingle();
+  const extra = { ...((data?.extra ?? {}) as Record<string, unknown>) };
+  if (fields.portfolio_photos !== undefined) extra["portfolio_photos"] = fields.portfolio_photos;
+  if (fields.portfolio_video !== undefined) extra["portfolio_video"] = fields.portfolio_video;
+  const { error } = await client.from("profiles").update({ extra }).eq("id", userId);
+  if (error) throw new Error(error.message);
+}
+
 
 async function setRoles(userId: string, roles: AppRole[]) {
   const client = await admin();
