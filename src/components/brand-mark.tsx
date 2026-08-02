@@ -14,11 +14,14 @@ export function BrandMark({
   className,
   logoUrl,
   alt,
+  style,
 }: {
   className?: string;
   /** Overrides the admin setting; used by the control-room preview. */
   logoUrl?: string;
   alt?: string;
+  /** Inline sizing/colour — used by printable documents where classes are absent. */
+  style?: React.CSSProperties;
 }) {
   const { branding } = useBranding();
   const src = (logoUrl ?? branding.logoUrl ?? "").trim();
@@ -30,6 +33,7 @@ export function BrandMark({
         src={src}
         alt={label}
         loading="lazy"
+        style={style}
         className={cn("size-8 shrink-0 object-contain", className)}
       />
     );
@@ -40,9 +44,11 @@ export function BrandMark({
       viewBox="0 0 100 100"
       role="img"
       aria-label={label}
+      style={style}
       className={cn("size-8 shrink-0 text-primary", className)}
       fill="none"
     >
+
       <defs>
         {/* Knock a gap out of the large disc where the small one crosses it. */}
         <mask id="ashnight-mark-gap">
