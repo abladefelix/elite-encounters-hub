@@ -119,15 +119,18 @@ function AdminRoles() {
         />
       </header>
 
+      <GrantAdminCard existing={entries.map((entry) => entry.userId)} />
+
       {roster.isLoading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" /> Loading administrators…
         </div>
       ) : entries.length === 0 ? (
         <Card className="p-8 text-center text-sm text-muted-foreground">
-          No admin accounts yet. Give a member the admin role from the Users page.
+          No admin accounts yet — use “Add an administrator” above.
         </Card>
       ) : (
+
         <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
           <Card className="divide-y divide-border/70 p-0">
             {entries.map((entry) => {
