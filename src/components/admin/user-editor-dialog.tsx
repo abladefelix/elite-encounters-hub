@@ -114,6 +114,9 @@ const EMPTY: FormState = {
   verified: false,
   available: true,
   suspended: false,
+  portfolio_photos: [],
+  portfolio_video: null,
+
 };
 
 function fromProfile(profile: ProfileFullRow): FormState {
