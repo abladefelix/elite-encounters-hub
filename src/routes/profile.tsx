@@ -110,11 +110,22 @@ function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile) {
-      setFields(toFields(profile));
-      setAvatarUrl(profile.avatar_url ?? null);
+    if (!profile) return;
+    setFields(toFields(profile));
+    const stored = profile.avatar_url;
+    if (!stored) {
+      setAvatarUrl(null);
+      return;
     }
+    let active = true;
+    resolveStoredMedia("avatars", stored)
+      .then((url) => active && setAvatarUrl(url))
+      .catch(() => active && setAvatarUrl(null));
+    return () => {
+      active = false;
+    };
   }, [profile]);
+
 
   useEffect(() => {
     if (specialistServiceRows) setServiceIds(specialistServiceRows.map((row) => row.service_id));
