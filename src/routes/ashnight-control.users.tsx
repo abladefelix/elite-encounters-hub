@@ -264,18 +264,31 @@ function AdminUsers() {
         </Button>
 
         <ExportMenu
-          filename="ashnight-members"
-          title="Members"
+          filename={segment === "specialists" ? "ashnight-specialists" : "ashnight-clients"}
+          title={segment === "specialists" ? "Specialists" : "Clients"}
           columns={[
             { label: "Name", value: (row: (typeof rows)[number]) => row.display_name },
             { label: "Username", value: (row: (typeof rows)[number]) => row.username ?? "" },
             { label: "City", value: (row: (typeof rows)[number]) => row.city },
             { label: "Phone", value: (row: (typeof rows)[number]) => row.phone ?? "" },
             { label: "Room", value: (row: (typeof rows)[number]) => row.room ?? "" },
-            { label: "Vetting", value: (row: (typeof rows)[number]) => row.vetting },
             { label: "Status", value: (row: (typeof rows)[number]) => row.account_status },
-            { label: "Rating", value: (row: (typeof rows)[number]) => Number(row.rating) },
-            { label: "Jobs", value: (row: (typeof rows)[number]) => row.jobs_completed },
+            ...(segment === "specialists"
+              ? [
+                  { label: "Vetting", value: (row: (typeof rows)[number]) => row.vetting },
+                  { label: "Rate", value: (row: (typeof rows)[number]) => row.hourly_rate },
+                  { label: "Rating", value: (row: (typeof rows)[number]) => Number(row.rating) },
+                  { label: "Jobs", value: (row: (typeof rows)[number]) => row.jobs_completed },
+                  {
+                    label: "Work photos",
+                    value: (row: (typeof rows)[number]) => mediaCounts(row).photos,
+                  },
+                  {
+                    label: "Intro video",
+                    value: (row: (typeof rows)[number]) => (mediaCounts(row).video ? "yes" : "no"),
+                  },
+                ]
+              : []),
             { label: "Joined", value: (row: (typeof rows)[number]) => row.created_at.slice(0, 10) },
           ]}
           rows={rows}
@@ -284,7 +297,7 @@ function AdminUsers() {
 
         <Button onClick={() => setEditor({ open: true, profile: null })}>
           <UserPlus className="size-4" />
-          Add member
+          {segment === "specialists" ? "Add specialist" : "Add client"}
         </Button>
       </div>
 
@@ -293,8 +306,9 @@ function AdminUsers() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Member</TableHead>
+                <TableHead>{segment === "specialists" ? "Specialist" : "Client"}</TableHead>
                 <TableHead>Identity</TableHead>
+                {segment === "specialists" ? <TableHead>Profile &amp; media</TableHead> : null}
                 <TableHead>Room</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
