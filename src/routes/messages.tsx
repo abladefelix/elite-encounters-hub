@@ -69,6 +69,7 @@ import {
   useSendMessage,
   useSubmitRating,
   useThreads,
+  type BookingRow,
   type MessageRow as MessageRowType,
   type ProfileRow,
   type ThreadRow,
