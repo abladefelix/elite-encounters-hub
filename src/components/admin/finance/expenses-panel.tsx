@@ -42,6 +42,8 @@ import {
   type ExpenseRow,
   type LedgerAccount,
 } from "@/lib/finance";
+import { formatStamp } from "@/lib/utils";
+
 
 function emptyDraft(): DraftExpense {
   return {
