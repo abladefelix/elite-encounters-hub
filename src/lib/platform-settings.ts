@@ -42,8 +42,7 @@ async function readSettings(): Promise<SettingsBlob> {
     .select("data")
     .eq("id", true)
     .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (data) return (data.data as SettingsBlob | null) ?? {};
+  if (!error && data) return (data.data as SettingsBlob | null) ?? {};
 
   // Signed-out visitors cannot read the full settings row, so fall back to the
   // public slice (branding, wording, sign-up form, feature flags, rooms).
