@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
 import { ExportMenu } from "@/components/admin/export-menu";
 import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card } from "@/components/ui/card";
