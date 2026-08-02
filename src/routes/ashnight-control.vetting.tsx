@@ -93,8 +93,13 @@ function VettingQueue() {
 
   const paged = usePaged(visible, 10);
 
+  /**
+   * The open applicant must always belong to the tab being viewed — otherwise
+   * switching to "In review" kept a pending applicant open and the panel still
+   * offered "Start review".
+   */
   const selected: ApplicationRow | undefined =
-    rows.find((row) => row.id === selectedId) ?? visible[0] ?? rows[0];
+    visible.find((row) => row.id === selectedId) ?? visible[0];
 
   useEffect(() => {
     if (!selected) return;
@@ -102,6 +107,7 @@ function VettingQueue() {
     setRoom(selected.suggested_room);
     setNote(selected.admin_note ?? "");
   }, [selected?.id]);
+
 
   const profile: ProfileFullRow | undefined = selected?.user_id
     ? profiles.find((row) => row.id === selected.user_id)
