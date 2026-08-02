@@ -92,7 +92,7 @@ async function savePortfolio(userId: string, fields: AdminUserFields) {
   if (fields.portfolio_video !== undefined) extra["portfolio_video"] = fields.portfolio_video;
   const { error } = await client
     .from("profiles")
-    .update({ extra: extra as Database["public"]["Tables"]["profiles"]["Update"]["extra"] })
+    .update({ extra: extra as Database["public"]["Tables"]["profiles"]["Row"]["extra"] })
     .eq("id", userId);
 
   if (error) throw new Error(error.message);
