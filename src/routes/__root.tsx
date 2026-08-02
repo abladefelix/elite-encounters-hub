@@ -15,6 +15,7 @@ import { Toaster } from "../components/ui/sonner";
 import { ThemeProvider } from "../components/theme-provider";
 import { MobileTabBar } from "../components/mobile-tab-bar";
 import { IncomingCallWatcher } from "../components/chat/incoming-call-watcher";
+import { NativeShell } from "../components/native-shell";
 
 import { AuthProvider } from "../hooks/use-auth";
 import { RoomSettingsProvider } from "../lib/room-settings";
@@ -151,6 +152,8 @@ function RootComponent() {
                 {isAdmin ? null : <MobileTabBar />}
                 {/* Rings anywhere in the app, so calls reach members who don't have the thread open. */}
                 <IncomingCallWatcher />
+                {/* Native-only shell behaviour (status bar, keyboard, back button). No-op on web. */}
+                <NativeShell />
                 <Toaster position="top-center" />
               </EscrowProvider>
             </ServiceCatalogProvider>
