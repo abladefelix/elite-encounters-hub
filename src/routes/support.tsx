@@ -23,6 +23,8 @@ import {
   type DocumentTemplate,
 } from "@/lib/document-templates";
 import { money } from "@/lib/types";
+import { formatStamp } from "@/lib/utils";
+
 import {
   COMPLAINT_CATEGORIES,
   documentLines,
