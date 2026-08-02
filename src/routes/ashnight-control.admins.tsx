@@ -356,6 +356,7 @@ function GrantAdminCard({ existing }: { existing: string[] }) {
   const readAccount = useServerFn(getUserAccount);
   const saveAccount = useServerFn(updateUserAccount);
   const [userId, setUserId] = useState("");
+  const [open, setOpen] = useState(false);
 
   const candidates = useMemo(
     () =>
