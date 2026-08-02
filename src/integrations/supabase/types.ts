@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          id: string
+          note: string
+          period: string
+          status: Database["public"]["Enums"]["period_status"]
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          period: string
+          status?: Database["public"]["Enums"]["period_status"]
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          period?: string
+          status?: Database["public"]["Enums"]["period_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       activity_log: {
         Row: {
           actor_id: string | null
@@ -513,6 +546,81 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          entry_id: string | null
+          expense_date: string
+          id: string
+          memo: string
+          payment_method: string
+          receipt_url: string | null
+          reference: string
+          status: Database["public"]["Enums"]["expense_status"]
+          tax_amount: number
+          updated_at: string
+          vendor: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          entry_id?: string | null
+          expense_date?: string
+          id?: string
+          memo?: string
+          payment_method?: string
+          receipt_url?: string | null
+          reference?: string
+          status?: Database["public"]["Enums"]["expense_status"]
+          tax_amount?: number
+          updated_at?: string
+          vendor?: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          entry_id?: string | null
+          expense_date?: string
+          id?: string
+          memo?: string
+          payment_method?: string
+          receipt_url?: string | null
+          reference?: string
+          status?: Database["public"]["Enums"]["expense_status"]
+          tax_amount?: number
+          updated_at?: string
+          vendor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_keys: {
         Row: {
           created_at: string
@@ -546,6 +654,147 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           value?: string
+        }
+        Relationships: []
+      }
+      journal_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          entry_date: string
+          entry_no: string
+          id: string
+          memo: string
+          period: string
+          posted_at: string | null
+          reference: string
+          source: string
+          source_id: string | null
+          status: Database["public"]["Enums"]["journal_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          entry_date?: string
+          entry_no: string
+          id?: string
+          memo?: string
+          period?: string
+          posted_at?: string | null
+          reference?: string
+          source?: string
+          source_id?: string | null
+          status?: Database["public"]["Enums"]["journal_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          entry_date?: string
+          entry_no?: string
+          id?: string
+          memo?: string
+          period?: string
+          posted_at?: string | null
+          reference?: string
+          source?: string
+          source_id?: string | null
+          status?: Database["public"]["Enums"]["journal_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      journal_lines: {
+        Row: {
+          account_id: string
+          created_at: string
+          credit: number
+          debit: number
+          description: string
+          entry_id: string
+          id: string
+          line_no: number
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          credit?: number
+          debit?: number
+          description?: string
+          entry_id: string
+          id?: string
+          line_no?: number
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          credit?: number
+          debit?: number
+          description?: string
+          entry_id?: string
+          id?: string
+          line_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_lines_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ledger_accounts: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string
+          id: string
+          is_system: boolean
+          name: string
+          sort_order: number
+          subtype: string
+          type: Database["public"]["Enums"]["account_type"]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_system?: boolean
+          name: string
+          sort_order?: number
+          subtype?: string
+          type: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_system?: boolean
+          name?: string
+          sort_order?: number
+          subtype?: string
+          type?: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1185,6 +1434,7 @@ export type Database = {
         | "deactivated"
         | "suspended"
         | "banned"
+      account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
       app_role: "client" | "specialist" | "admin"
       background_check: "clear" | "pending" | "flagged"
       booking_status:
@@ -1204,8 +1454,11 @@ export type Database = {
         | "released"
         | "disputed"
         | "refunded"
+      expense_status: "recorded" | "paid"
+      journal_status: "draft" | "posted" | "void"
       membership_status: "active" | "past_due" | "cancelled"
       message_kind: "text" | "system" | "booking" | "gift" | "location"
+      period_status: "open" | "closed"
       report_state: "open" | "reviewing" | "actioned" | "dismissed"
       tier:
         | "basic"
@@ -1351,6 +1604,7 @@ export const Constants = {
         "suspended",
         "banned",
       ],
+      account_type: ["asset", "liability", "equity", "revenue", "expense"],
       app_role: ["client", "specialist", "admin"],
       background_check: ["clear", "pending", "flagged"],
       booking_status: [
@@ -1372,8 +1626,11 @@ export const Constants = {
         "disputed",
         "refunded",
       ],
+      expense_status: ["recorded", "paid"],
+      journal_status: ["draft", "posted", "void"],
       membership_status: ["active", "past_due", "cancelled"],
       message_kind: ["text", "system", "booking", "gift", "location"],
+      period_status: ["open", "closed"],
       report_state: ["open", "reviewing", "actioned", "dismissed"],
       tier: [
         "basic",

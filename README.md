@@ -194,6 +194,44 @@ Google sign-in is optional and **hidden by default** — email and password is t
 route until an admin enables it. Enable the Google provider on the backend auth settings before
 switching it on, otherwise the first attempt errors.
 
+
+## Finance &amp; accounting (`/ashnight-control/finance`)
+
+Ashnight keeps real double-entry books in the database — no spreadsheets, no simulated figures.
+
+| Table | Holds |
+| --- | --- |
+| `ledger_accounts` | Chart of accounts (seeded: Paystack cash, bank, MoMo, escrow held, payouts payable, VAT & levies, commission / membership / gift revenue, processing fees, refunds, marketing, payroll, hosting, equity) |
+| `journal_entries` / `journal_lines` | Balanced transactions; a database trigger rejects a line that carries both a debit and a credit, or neither |
+| `expenses` | Business costs; each one posts its own journal entry automatically |
+| `accounting_periods` | Monthly books that can be closed — closed months reject every new posting |
+
+Admin-only via RLS (`is_admin()`); members have no access to any accounting table.
+
+**Tabs**
+
+1. **Statements** — trial balance, income statement (with gross profit and margin), balance sheet
+   (cumulative, with retained earnings rolled in), direct-method cash flow across all `cash`
+   accounts, and the Ghana VAT + NHIL/GETFund/COVID levy position. Every statement respects the
+   date range at the top of the page and exports to CSV.
+2. **Journal** — every entry with its lines, plus **Sync from platform activity**: books each
+   escrow payment (Paystack cash debited, escrow liability and commission revenue credited), each
+   released payout and each refund. It is idempotent — entries are tagged with `source` +
+   `source_id`, so re-running only books what is missing. Manual entries are validated to balance
+   before they post, and can be saved as drafts, posted or voided.
+3. **Chart of accounts** — add, edit, deactivate or delete accounts. Use subtype `cash` so an
+   account appears in the cash-flow statement and `cogs` so it reduces gross profit. System
+   accounts are wired into the automatic postings and can't be deleted.
+4. **Expenses** — record a cost with vendor, category, recoverable VAT, funding account and
+   receipt reference; the matching journal entry is posted and removed with it. Choose *Accounts
+   payable* as the funding account for supplier invoices not yet paid.
+5. **Close &amp; settings** — open or close monthly periods, and set VAT rate, levy rate,
+   withholding rate, financial-year start, registered name and GRA TIN.
+
+Statutory rates default to Ghana's current standard: **15% VAT**, **6% combined levies**, **7.5%
+withholding** on service payouts. Change them in Close &amp; settings whenever the law changes —
+no code edit needed.
+
 ## Quick start (local development)
 
 ```sh
