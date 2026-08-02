@@ -47,6 +47,11 @@ export interface AdminUserFields {
   ghana_card_expiry?: string | null | undefined;
   account_status?: AccountStatus | undefined;
   status_reason?: string | undefined;
+  /** Specialist work photos — bucket paths in `attachments`. */
+  portfolio_photos?: string[] | undefined;
+  /** Specialist intro video — bucket path in `attachments`, or null to clear. */
+  portfolio_video?: string | null | undefined;
+
 }
 
 export interface AdminUserAccount {
