@@ -65,7 +65,13 @@ export const listFullProfiles = createServerFn({ method: "POST" })
       .from("profiles")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (isClockDrift(error.message)) {
+        await sleep(500);
+        return listFullProfiles();
+      }
+      throw new Error(error.message);
+    }
 
     const { data: allRoles } = await supabaseAdmin.from("user_roles").select("user_id, role");
     const byUser = new Map<string, Database["public"]["Enums"]["app_role"][]>();
