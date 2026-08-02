@@ -372,25 +372,58 @@ function GrantAdminCard({ existing }: { existing: string[] }) {
       toast.error(error instanceof Error ? error.message : "Could not add that administrator."),
   });
 
+  const selectedRow = candidates.find((row) => row.id === userId) ?? null;
+
   return (
     <Card className="flex flex-wrap items-end gap-3 p-5">
       <div className="min-w-[16rem] flex-1 space-y-2">
         <Label>Add an administrator</Label>
-        <Select value={userId} onValueChange={setUserId}>
-          <SelectTrigger>
-            <SelectValue
-              placeholder={profiles.isLoading ? "Loading members…" : "Choose a member"}
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {candidates.map((row) => (
-              <SelectItem key={row.id} value={row.id}>
-                {row.display_name}
-                {row.username ? ` · @${row.username}` : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between font-normal"
+            >
+              <span className={selectedRow ? "" : "text-muted-foreground"}>
+                {selectedRow
+                  ? `${selectedRow.display_name}${selectedRow.username ? ` · @${selectedRow.username}` : ""}`
+                  : profiles.isLoading
+                    ? "Loading members…"
+                    : "Search members by name or username"}
+              </span>
+              <Search className="ml-2 size-4 shrink-0 opacity-60" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[min(28rem,90vw)] p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Type a name or @username…" />
+              <CommandList>
+                <CommandEmpty>No matching member.</CommandEmpty>
+                <CommandGroup>
+                  {candidates.map((row) => (
+                    <CommandItem
+                      key={row.id}
+                      value={`${row.display_name ?? ""} ${row.username ?? ""}`}
+                      onSelect={() => {
+                        setUserId(row.id);
+                        setOpen(false);
+                      }}
+                    >
+                      <span className="truncate">{row.display_name}</span>
+                      {row.username ? (
+                        <span className="ml-2 truncate text-xs text-muted-foreground">
+                          @{row.username}
+                        </span>
+                      ) : null}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
         <p className="text-xs text-muted-foreground">
           The member keeps their existing roles and gains control-room access. Set their areas below
           after adding them.
