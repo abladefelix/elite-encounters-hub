@@ -825,7 +825,27 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                             </>
                           )}
                         </Button>
-                      ) : null}
+                      ) : (
+                        <Button
+                          variant="brass"
+                          className="w-full"
+                          onClick={() =>
+                            bookingsOpen
+                              ? setQuoteOpen(true)
+                              : toast("Booking requests are paused by Ashnight right now.")
+                          }
+                        >
+                          {bookingsOpen ? (
+                            <>
+                              <Banknote className="size-4" /> Request payment for a job
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="size-4" /> Payment requests paused
+                            </>
+                          )}
+                        </Button>
+                      )}
 
                       <form
                         className="mt-3 flex items-center gap-2"
