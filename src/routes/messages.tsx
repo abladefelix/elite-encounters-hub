@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/tooltip";
 import { SiteHeader } from "@/components/site-header";
 import { TierBadge } from "@/components/tier-badge";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { CallOverlay, type CallMode } from "@/components/chat/call-overlay";
 import { sendRing } from "@/lib/call-ring";
 import {
