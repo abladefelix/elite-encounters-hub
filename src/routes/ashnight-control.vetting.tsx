@@ -316,11 +316,54 @@ function VettingQueue() {
                   />
                   <Row label="Hourly rate" value={money(profile.hourly_rate)} />
                   <Row label="Account status" value={profile.account_status} />
+                  <Row label="Username" value={profile.username ? `@${profile.username}` : "—"} />
+                  <Row label="Phone on profile" value={profile.phone || "—"} />
+                  <Row label="Address" value={profile.address || "—"} />
+                  <Row label="Locality" value={profile.locality || "—"} />
+                  <Row label="Headline" value={profile.headline || "—"} />
+                  <Row label="Room" value={profile.room ?? "Not placed"} />
+                  <Row
+                    label="Languages"
+                    value={profile.languages?.length ? profile.languages.join(", ") : "—"}
+                  />
+                  <Row
+                    label="Likes"
+                    value={profile.likes?.length ? profile.likes.join(", ") : "—"}
+                  />
+                  <Row
+                    label="Dislikes"
+                    value={profile.dislikes?.length ? profile.dislikes.join(", ") : "—"}
+                  />
+                  <Row
+                    label="Reply time"
+                    value={`${profile.response_minutes} min average`}
+                  />
+                  <Row label="Available now" value={profile.available ? "Yes" : "No"} />
+                  <Row label="Verified badge" value={profile.verified ? "Yes" : "No"} />
+                  <Row
+                    label="Terms accepted"
+                    value={
+                      profile.terms_accepted_at
+                        ? new Date(profile.terms_accepted_at).toLocaleString("en-US")
+                        : "Not accepted"
+                    }
+                  />
+                  <Row
+                    label="Privacy accepted"
+                    value={
+                      profile.privacy_accepted_at
+                        ? new Date(profile.privacy_accepted_at).toLocaleString("en-US")
+                        : "Not accepted"
+                    }
+                  />
                 </>
               ) : null}
             </dl>
 
+            {profile ? <ExtraFields extra={profile.extra} /> : null}
+
             {profile ? <ApplicantMedia profile={profile} /> : null}
+
 
             <div className="mt-5 rounded-lg border border-border bg-panel p-4">
               <p className="flex items-center gap-2 text-xs font-medium">
@@ -372,30 +415,66 @@ function VettingQueue() {
               </p>
             </div>
 
-            <div className="mt-6 grid gap-2 sm:grid-cols-2">
-              <Button
-                variant="brass"
-                disabled={review.isPending}
-                onClick={() => void decide(selected, "approved")}
-              >
-                <Check className="size-4" /> Approve
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={review.isPending}
-                onClick={() => void decide(selected, "in_review")}
-              >
-                <ShieldAlert className="size-4" /> Hold
-              </Button>
-              <Button
-                variant="ghost"
-                className="sm:col-span-2"
-                disabled={review.isPending}
-                onClick={() => void decide(selected, "rejected")}
-              >
-                <X className="size-4" /> Decline application
-              </Button>
+            <div className="mt-6 space-y-3">
+              <StageTrail status={selected.status} />
+              {selected.status === "pending" ? (
+                <>
+                  <Button
+                    variant="brass"
+                    className="w-full"
+                    disabled={review.isPending}
+                    onClick={() => void decide(selected, "in_review")}
+                  >
+                    <ShieldAlert className="size-4" /> Start review
+                  </Button>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Applicants move pending → in review → approved or declined. Start the review to
+                    unlock the approve and decline decisions.
+                  </p>
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    disabled={review.isPending}
+                    onClick={() => void decide(selected, "rejected")}
+                  >
+                    <X className="size-4" /> Decline without review
+                  </Button>
+                </>
+              ) : selected.status === "in_review" ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Button
+                    variant="brass"
+                    disabled={review.isPending}
+                    onClick={() => void decide(selected, "approved")}
+                  >
+                    <Check className="size-4" /> Approve
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={review.isPending}
+                    onClick={() => void decide(selected, "rejected")}
+                  >
+                    <X className="size-4" /> Decline
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    This application is {selected.status === "approved" ? "approved" : "declined"}.
+                    Reopen it to change the decision.
+                  </p>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    disabled={review.isPending}
+                    onClick={() => void decide(selected, "in_review")}
+                  >
+                    <ShieldAlert className="size-4" /> Reopen review
+                  </Button>
+                </>
+              )}
             </div>
+
           </Card>
         ) : (
           <Card className="h-fit p-6 text-sm text-muted-foreground">
@@ -545,7 +624,77 @@ function ApplicantMedia({ profile }: { profile: ProfileFullRow }) {
   );
 }
 
+/** Renders every custom sign-up field the applicant filled in. */
+function ExtraFields({ extra }: { extra: ProfileFullRow["extra"] }) {
+  const record = (extra ?? {}) as Record<string, unknown>;
+  const entries = Object.entries(record).filter(
+    ([key, value]) =>
+      key !== "portfolio_photos" &&
+      key !== "portfolio_video" &&
+      value !== null &&
+      value !== undefined &&
+      value !== "",
+  );
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="mt-5 rounded-lg border border-border bg-panel p-4">
+      <p className="text-xs font-medium">Other submitted fields</p>
+      <dl className="mt-3 space-y-2 text-xs">
+        {entries.map(([key, value]) => (
+          <div key={key} className="flex items-start justify-between gap-3">
+            <dt className="capitalize text-muted-foreground">{key.replace(/[_-]+/g, " ")}</dt>
+            <dd className="max-w-[60%] break-words text-right font-medium">
+              {typeof value === "boolean"
+                ? value
+                  ? "Yes"
+                  : "No"
+                : Array.isArray(value)
+                  ? value.join(", ")
+                  : typeof value === "object"
+                    ? JSON.stringify(value)
+                    : String(value)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+/** Shows where the applicant sits in the pending → review → decision flow. */
+function StageTrail({ status }: { status: VettingStatus }) {
+  const steps: { key: VettingStatus; label: string }[] = [
+    { key: "pending", label: "Pending" },
+    { key: "in_review", label: "In review" },
+    { key: status === "rejected" ? "rejected" : "approved", label: status === "rejected" ? "Declined" : "Approved" },
+  ];
+  const index = status === "pending" ? 0 : status === "in_review" ? 1 : 2;
+
+  return (
+    <div className="flex items-center gap-2 text-[11px]">
+      {steps.map((step, i) => (
+        <div key={step.key} className="flex items-center gap-2">
+          <span
+            className={`rounded-full border px-2 py-0.5 ${
+              i <= index
+                ? status === "rejected" && i === 2
+                  ? "border-destructive/40 text-destructive"
+                  : "border-primary/40 text-primary"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            {step.label}
+          </span>
+          {i < steps.length - 1 ? <span className="text-muted-foreground">→</span> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ContactLine({
+
   icon: Icon,
   value,
 }: {
