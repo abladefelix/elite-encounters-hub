@@ -401,6 +401,63 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     systemNote(`${mode === "video" ? "Video" : "Voice"} call started — Ashnight never records calls.`);
   }
 
+  /** Specialist prices the visit; the client pays from the thread. */
+  async function handleQuote(quote: QuoteDraft) {
+    if (!activeThread) return;
+    try {
+      const result = await sendQuote({
+        data: {
+          threadId: activeThread.id,
+          serviceId: quote.serviceId,
+          serviceName: quote.serviceName,
+          hours: quote.hours,
+          rate: quote.rate,
+          addons: quote.addons,
+          scheduledForIso: quote.scheduledForIso,
+          notes: quote.notes,
+        },
+      });
+
+      await post({
+        kind: "booking",
+        booking_id: result.bookingId,
+        body: `Payment request · ${quote.serviceName} · ${quote.hours}h at ${money(
+          quote.rate,
+        )}/h${quote.addons.length ? ` · Add-ons: ${quote.addons.join(", ")}` : ""} · ${money(
+          result.total,
+        )} to pay${quote.notes ? ` — ${quote.notes}` : ""}`,
+      });
+
+      setQuoteOpen(false);
+      toast.success("Payment request sent", {
+        description: `${firstName} can pay ${money(result.total)} straight into escrow.`,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Payment request could not be sent");
+    }
+  }
+
+  /** Client pays an outstanding booking (their own request, or a specialist quote). */
+  async function payBooking(bookingId: string) {
+    try {
+      setPayingBookingId(bookingId);
+      const checkout = await bookingCheckout({
+        data: {
+          bookingId,
+          callbackUrl: `${window.location.origin}/payment/return`,
+        },
+      });
+      toast.success("Taking you to Paystack…", {
+        description: `${money(checkout.amount)} will be held in Ashnight escrow.`,
+      });
+      window.location.href = checkout.authorizationUrl;
+    } catch (error) {
+      setPayingBookingId("");
+      toast.error(error instanceof Error ? error.message : "Payment could not be started");
+    }
+  }
+
+
   async function handleBooking(request: ServiceRequestDraft) {
     if (!activeThread || !peerId) return;
     try {
