@@ -369,7 +369,17 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       );
       return;
     }
+    if (!activeThread || !peerId) return;
     setCall(mode);
+    // Ring the other member wherever they are in Ashnight, so they can answer
+    // without having this thread already open.
+    void sendRing(peerId, {
+      kind: "invite",
+      threadId: activeThread.id,
+      mode,
+      fromId: userId,
+      fromName: profile?.display_name ?? "An Ashnight member",
+    });
     systemNote(`${mode === "video" ? "Video" : "Voice"} call started — Ashnight never records calls.`);
   }
 
