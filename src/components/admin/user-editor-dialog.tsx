@@ -80,6 +80,9 @@ interface FormState {
   verified: boolean;
   available: boolean;
   suspended: boolean;
+  portfolio_photos: string[];
+  portfolio_video: string | null;
+
 }
 
 const EMPTY: FormState = {
