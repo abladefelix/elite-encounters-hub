@@ -1,0 +1,151 @@
+# Ashnight on iOS and Android
+
+Ashnight ships as a native app on both stores using **Capacitor**. There is no
+second codebase: the app is a thin native shell around the same live Ashnight
+deployment, so every feature you already have — rooms, chat, calls, escrow,
+Paystack, gifts, wallet — behaves identically.
+
+The **control room (`/ashnight-control`) is intentionally web only.** Opening it
+inside the app shows a "Admin is web only" notice. Run admin work from a desktop
+browser.
+
+---
+
+## 1. How the shell works
+
+`capacitor.config.ts` sets `server.url` to the production site. The native app
+opens that URL inside a secure in-app web view rather than bundling a static
+copy of the site — required, because Ashnight uses server functions for auth,
+escrow and payments.
+
+- **Live URL** — defaults to `https://ashnight.caymanirs.com`. Override without
+  editing the file: `ASHNIGHT_APP_URL=https://your-domain.com npm run mobile:sync`.
+- **`mobile-shell/index.html`** — the offline screen shown when the device has no
+  connection.
+- **`src/components/native-shell.tsx`** — native-only status bar colour, keyboard
+  inset handling for the chat composer, and Android hardware back button.
+- **`src/lib/native.ts`** — `isNativeApp()` / `useIsNativeApp()` detection. The
+  browser build is unaffected; every native call is behind these guards.
+- **`allowNavigation`** — only the Ashnight domain, Paystack checkout and Google
+  sign-in stay inside the app. Everything else opens in the system browser.
+
+---
+
+## 2. One-time machine setup
+
+| Platform | Requirements |
+| --- | --- |
+| Android | Android Studio (latest), JDK 21, Play Console account ($25 one-off) |
+| iOS | macOS, Xcode 16+, CocoaPods, Apple Developer Program ($99/year) |
+
+You cannot build native binaries from the Lovable editor — export the repo to
+GitHub, clone it locally, then run the steps below.
+
+```bash
+git clone <your-repo-url> ashnight
+cd ashnight
+npm install
+```
+
+---
+
+## 3. Add the platforms
+
+```bash
+npm run build              # produces the web assets / offline shell
+npm run mobile:add:android
+npm run mobile:add:ios     # macOS only
+npm run mobile:sync        # copies config + plugins into both projects
+```
+
+This creates `android/` and `ios/` folders. Commit them — they hold your signing
+config, icons and permission strings.
+
+Re-run `npm run mobile:sync` after every dependency change or config edit.
+
+---
+
+## 4. Required permissions (calls, photos, location)
+
+Audio/video calls, portfolio uploads and location sharing need explicit
+permissions. Add them once after `cap add`.
+
+### iOS — `ios/App/App/Info.plist`
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>Ashnight uses your camera for video calls and to add photos to your profile.</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Ashnight uses your microphone for audio and video calls with specialists.</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Ashnight lets you attach photos to your profile and to chats.</string>
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Ashnight shares your location in chat so a specialist can find the address.</string>
+```
+
+### Android — `android/app/src/main/AndroidManifest.xml`
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+```
+
+Android web views also need the call permission bridge. In
+`android/app/src/main/java/.../MainActivity.java`, WebRTC permission prompts are
+handled by Capacitor's default bridge; if a call fails to get the mic, confirm
+the runtime permission dialog was accepted in **Settings → Apps → Ashnight**.
+
+---
+
+## 5. Icons and splash screen
+
+Export your Ashnight logo (the two interconnected brass circles) at 1024×1024 PNG
+with no transparency, then generate every size:
+
+```bash
+npx @capacitor/assets generate --iconBackgroundColor "#0b0d12" --splashBackgroundColor "#0b0d12"
+```
+
+Place the source at `assets/icon.png` and `assets/splash.png` before running it.
+Updating the logo in **Admin → Brand & wording** changes the in-app logo
+immediately; store icons must be regenerated and resubmitted.
+
+---
+
+## 6. Build and release
+
+```bash
+npm run mobile:open:android   # Android Studio → Build → Generate Signed Bundle (.aab)
+npm run mobile:open:ios       # Xcode → Product → Archive → Distribute App
+```
+
+Keep the Android keystore and its passwords somewhere safe — losing it means you
+can never update the listing.
+
+---
+
+## 7. Store review notes
+
+- **Apple in-app purchase:** Apple requires IAP for digital-only subscriptions.
+  Client memberships are safest sold on the website; the app then unlocks the
+  rooms tied to the account. Bookings and escrow payments for real-world cleaning
+  services are physical services and may stay on Paystack.
+- **Account deletion:** both stores require in-app deletion. Members request it
+  from Profile; admins action it in the control room.
+- **Admin panel:** excluded from the app on purpose — apps that are mostly
+  dashboards get rejected under Apple guideline 4.2.
+- **Login for reviewers:** provide a demo client account in App Store Connect
+  and Play Console review notes.
+
+---
+
+## 8. Shipping web updates to the app
+
+Because the shell loads the live site, any web change you publish reaches every
+installed app on the next launch — no store review needed. You only resubmit
+when you change native config: app name, icons, permissions, plugins or the
+`server.url` domain.
