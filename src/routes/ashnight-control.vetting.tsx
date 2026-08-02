@@ -624,7 +624,77 @@ function ApplicantMedia({ profile }: { profile: ProfileFullRow }) {
   );
 }
 
+/** Renders every custom sign-up field the applicant filled in. */
+function ExtraFields({ extra }: { extra: ProfileFullRow["extra"] }) {
+  const record = (extra ?? {}) as Record<string, unknown>;
+  const entries = Object.entries(record).filter(
+    ([key, value]) =>
+      key !== "portfolio_photos" &&
+      key !== "portfolio_video" &&
+      value !== null &&
+      value !== undefined &&
+      value !== "",
+  );
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="mt-5 rounded-lg border border-border bg-panel p-4">
+      <p className="text-xs font-medium">Other submitted fields</p>
+      <dl className="mt-3 space-y-2 text-xs">
+        {entries.map(([key, value]) => (
+          <div key={key} className="flex items-start justify-between gap-3">
+            <dt className="capitalize text-muted-foreground">{key.replace(/[_-]+/g, " ")}</dt>
+            <dd className="max-w-[60%] break-words text-right font-medium">
+              {typeof value === "boolean"
+                ? value
+                  ? "Yes"
+                  : "No"
+                : Array.isArray(value)
+                  ? value.join(", ")
+                  : typeof value === "object"
+                    ? JSON.stringify(value)
+                    : String(value)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+/** Shows where the applicant sits in the pending → review → decision flow. */
+function StageTrail({ status }: { status: VettingStatus }) {
+  const steps: { key: VettingStatus; label: string }[] = [
+    { key: "pending", label: "Pending" },
+    { key: "in_review", label: "In review" },
+    { key: status === "rejected" ? "rejected" : "approved", label: status === "rejected" ? "Declined" : "Approved" },
+  ];
+  const index = status === "pending" ? 0 : status === "in_review" ? 1 : 2;
+
+  return (
+    <div className="flex items-center gap-2 text-[11px]">
+      {steps.map((step, i) => (
+        <div key={step.key} className="flex items-center gap-2">
+          <span
+            className={`rounded-full border px-2 py-0.5 ${
+              i <= index
+                ? status === "rejected" && i === 2
+                  ? "border-destructive/40 text-destructive"
+                  : "border-primary/40 text-primary"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            {step.label}
+          </span>
+          {i < steps.length - 1 ? <span className="text-muted-foreground">→</span> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ContactLine({
+
   icon: Icon,
   value,
 }: {
