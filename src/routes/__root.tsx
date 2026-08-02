@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { Toaster } from "../components/ui/sonner";
 import { ThemeProvider } from "../components/theme-provider";
 import { MobileTabBar } from "../components/mobile-tab-bar";
+import { IncomingCallWatcher } from "../components/chat/incoming-call-watcher";
 
 import { AuthProvider } from "../hooks/use-auth";
 import { RoomSettingsProvider } from "../lib/room-settings";
@@ -148,6 +149,8 @@ function RootComponent() {
                 {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
                 <Outlet />
                 {isAdmin ? null : <MobileTabBar />}
+                {/* Rings anywhere in the app, so calls reach members who don't have the thread open. */}
+                <IncomingCallWatcher />
                 <Toaster position="top-center" />
               </EscrowProvider>
             </ServiceCatalogProvider>
