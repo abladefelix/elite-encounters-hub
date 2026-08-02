@@ -337,3 +337,71 @@ export const raiseEscrowIssue = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+/**
+ * Specialist proposes work in a thread ("payment request").
+ *
+ * Specialists cannot insert bookings directly (RLS restricts inserts to the
+ * paying client), so the quote is created here after we confirm the caller is
+ * the specialist on that thread. Nothing is charged — the client still has to
+ * tap "Pay now", which runs startBookingCheckout.
+ */
+export const createSpecialistQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input) =>
+    z
+      .object({
+        threadId: z.string().uuid(),
+        serviceId: z.string().uuid().nullable().optional(),
+        serviceName: z.string().trim().min(2).max(120),
+        hours: z.number().min(0.5).max(24),
+        rate: z.number().int().min(1).max(100000),
+        addons: z.array(z.string().trim().max(120)).max(12).optional(),
+        scheduledForIso: z.string().datetime().nullable().optional(),
+        notes: z.string().trim().max(600).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { adminClient, addonsAmount, serverSettings } = await import("./payments.server");
+    const admin = await adminClient();
+
+    const { data: thread, error: threadError } = await admin
+      .from("threads")
+      .select("id, client_id, specialist_id")
+      .eq("id", data.threadId)
+      .maybeSingle();
+    if (threadError) throw new Error(threadError.message);
+    if (!thread) throw new Error("That conversation no longer exists.");
+    if (thread.specialist_id !== context.userId) {
+      throw new Error("Only the specialist on this thread can send a payment request.");
+    }
+
+    const settings = await serverSettings();
+    const feePct = settings.platform.platformFeePct ?? 12;
+    const addons = data.addons ?? [];
+    const subtotal = data.hours * data.rate + addonsAmount(settings, addons);
+    const fee = Math.round(subtotal * (feePct / 100));
+
+    const { data: booking, error } = await admin
+      .from("bookings")
+      .insert({
+        thread_id: thread.id,
+        client_id: thread.client_id,
+        specialist_id: context.userId,
+        service_id: data.serviceId ?? null,
+        service_name: data.serviceName,
+        hours: data.hours,
+        rate: data.rate,
+        addons,
+        platform_fee_pct: feePct,
+        scheduled_for: data.scheduledForIso ?? null,
+        notes: data.notes ?? "",
+        status: "requested",
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    return { bookingId: booking.id, subtotal, fee, total: subtotal + fee, feePct };
+  });
