@@ -53,6 +53,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { areaFromPath, useAdminAccess } from "@/lib/admin-permissions";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useTwoFactor } from "@/lib/two-factor";
+import { useIsNativeApp } from "@/lib/native";
 
 
 export const Route = createFileRoute("/ashnight-control")({
