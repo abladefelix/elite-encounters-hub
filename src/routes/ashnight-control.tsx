@@ -210,7 +210,7 @@ function AdminLayout() {
             })}
           </nav>
 
-          <div className="mt-auto space-y-4">
+          <div className="mt-6 shrink-0 space-y-4">
             <a
               href="mailto:trust@ashnight.example"
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
