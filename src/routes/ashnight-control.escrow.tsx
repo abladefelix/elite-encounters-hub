@@ -709,7 +709,14 @@ function AdminEscrow() {
                         {entry.dispute_reason ? ` · ${entry.dispute_reason}` : ""}
                       </span>
                     </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {formatStamp(entry.created_at)}
+                      <span className="block">
+                        {entry.paid_at ? `paid ${formatStamp(entry.paid_at)}` : "awaiting payment"}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{specialistName(entry)}</TableCell>
+
                     <TableCell>
                       <Badge
                         variant="outline"
