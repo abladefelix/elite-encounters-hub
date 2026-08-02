@@ -306,7 +306,7 @@ function AdminLayout() {
                       );
                     })}
                   </nav>
-                  <div className="flex items-center gap-3 border-t border-border/70 px-4 py-3">
+                  <div className="flex shrink-0 items-center gap-3 border-t border-border/70 px-4 py-3">
                     <Link to="/profile" aria-label="Your profile" onClick={() => setMenuOpen(false)}>
                       <Avatar className="size-8 border border-border">
                         <AvatarFallback className="bg-surface-strong text-[11px]">
