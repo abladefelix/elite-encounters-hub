@@ -13,7 +13,6 @@ import {
 import {
   ACCOUNT_TYPE_LABEL,
   cedis,
-  downloadCsv,
   type AccountBalance,
   type BalanceSheet,
   type CashFlow,
