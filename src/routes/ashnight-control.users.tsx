@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ExportMenu } from "@/components/admin/export-menu";
 import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -244,6 +245,25 @@ function AdminUsers() {
         <Button variant="outline" onClick={() => void reclaim()} disabled={releasing}>
           {releasing ? <Loader2 className="size-4 animate-spin" /> : "Release abandoned sign-ups"}
         </Button>
+
+        <ExportMenu
+          filename="ashnight-members"
+          title="Members"
+          columns={[
+            { label: "Name", value: (row: (typeof rows)[number]) => row.display_name },
+            { label: "Username", value: (row: (typeof rows)[number]) => row.username ?? "" },
+            { label: "City", value: (row: (typeof rows)[number]) => row.city },
+            { label: "Phone", value: (row: (typeof rows)[number]) => row.phone ?? "" },
+            { label: "Room", value: (row: (typeof rows)[number]) => row.room ?? "" },
+            { label: "Vetting", value: (row: (typeof rows)[number]) => row.vetting },
+            { label: "Status", value: (row: (typeof rows)[number]) => row.account_status },
+            { label: "Rating", value: (row: (typeof rows)[number]) => Number(row.rating) },
+            { label: "Jobs", value: (row: (typeof rows)[number]) => row.jobs_completed },
+            { label: "Joined", value: (row: (typeof rows)[number]) => row.created_at.slice(0, 10) },
+          ]}
+          rows={rows}
+          size="default"
+        />
 
         <Button onClick={() => setEditor({ open: true, profile: null })}>
           <UserPlus className="size-4" />
