@@ -316,11 +316,54 @@ function VettingQueue() {
                   />
                   <Row label="Hourly rate" value={money(profile.hourly_rate)} />
                   <Row label="Account status" value={profile.account_status} />
+                  <Row label="Username" value={profile.username ? `@${profile.username}` : "—"} />
+                  <Row label="Phone on profile" value={profile.phone || "—"} />
+                  <Row label="Address" value={profile.address || "—"} />
+                  <Row label="Locality" value={profile.locality || "—"} />
+                  <Row label="Headline" value={profile.headline || "—"} />
+                  <Row label="Room" value={profile.room ?? "Not placed"} />
+                  <Row
+                    label="Languages"
+                    value={profile.languages?.length ? profile.languages.join(", ") : "—"}
+                  />
+                  <Row
+                    label="Likes"
+                    value={profile.likes?.length ? profile.likes.join(", ") : "—"}
+                  />
+                  <Row
+                    label="Dislikes"
+                    value={profile.dislikes?.length ? profile.dislikes.join(", ") : "—"}
+                  />
+                  <Row
+                    label="Reply time"
+                    value={`${profile.response_minutes} min average`}
+                  />
+                  <Row label="Available now" value={profile.available ? "Yes" : "No"} />
+                  <Row label="Verified badge" value={profile.verified ? "Yes" : "No"} />
+                  <Row
+                    label="Terms accepted"
+                    value={
+                      profile.terms_accepted_at
+                        ? new Date(profile.terms_accepted_at).toLocaleString("en-US")
+                        : "Not accepted"
+                    }
+                  />
+                  <Row
+                    label="Privacy accepted"
+                    value={
+                      profile.privacy_accepted_at
+                        ? new Date(profile.privacy_accepted_at).toLocaleString("en-US")
+                        : "Not accepted"
+                    }
+                  />
                 </>
               ) : null}
             </dl>
 
+            {profile ? <ExtraFields extra={profile.extra} /> : null}
+
             {profile ? <ApplicantMedia profile={profile} /> : null}
+
 
             <div className="mt-5 rounded-lg border border-border bg-panel p-4">
               <p className="flex items-center gap-2 text-xs font-medium">
