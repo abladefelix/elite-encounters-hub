@@ -149,6 +149,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [call, setCall] = useState<CallMode | null>(null);
   const [locating, setLocating] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [payingBookingId, setPayingBookingId] = useState("");
   const [giftOpen, setGiftOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [ratingOpen, setRatingOpen] = useState(false);
