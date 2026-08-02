@@ -168,6 +168,117 @@ export function useJournal(range?: { from?: string; to?: string }) {
   });
 }
 
+/* -------------------------------------------------- one entry, in full detail */
+
+export interface JournalParty {
+  id: string;
+  role: string;
+  name: string;
+  username: string | null;
+  city: string | null;
+  accountStatus: string | null;
+}
+
+export interface JournalEntryDetail {
+  entry: JournalEntry;
+  /** Members this transaction concerns — payer, specialist, recording admin. */
+  parties: JournalParty[];
+  /** The escrow movement that produced this entry, when there is one. */
+  escrow:
+    | (Tables["escrow_entries"]["Row"] & {
+        booking: Pick<
+          Tables["bookings"]["Row"],
+          "id" | "service_name" | "scheduled_for" | "status" | "hours" | "rate"
+        > | null;
+      })
+    | null;
+  /** The expense record that produced this entry, when there is one. */
+  expense: ExpenseRow | null;
+}
+
+async function loadParties(ids: (string | null | undefined)[], roles: Record<string, string>) {
+  const unique = [...new Set(ids.filter((id): id is string => Boolean(id)))];
+  if (!unique.length) return [] as JournalParty[];
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, display_name, username, city, account_status")
+    .in("id", unique);
+  return unique.map((id) => {
+    const row = (data ?? []).find((profile) => profile.id === id);
+    return {
+      id,
+      role: roles[id] ?? "member",
+      name: row?.display_name ?? "Unknown member",
+      username: row?.username ?? null,
+      city: row?.city ?? null,
+      accountStatus: row?.account_status ?? null,
+    } satisfies JournalParty;
+  });
+}
+
+export function useJournalEntryDetail(id: string) {
+  return useQuery({
+    queryKey: [...JOURNAL_KEY, "detail", id],
+    queryFn: async (): Promise<JournalEntryDetail> => {
+      const { data, error } = await supabase
+        .from("journal_entries")
+        .select("*, lines:journal_lines(*, account:ledger_accounts(*))")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("That journal entry no longer exists.");
+      const entry: JournalEntry = {
+        ...(data as unknown as JournalEntry),
+        lines: [...(((data as unknown as JournalEntry).lines) ?? [])].sort(
+          (a, b) => a.line_no - b.line_no,
+        ),
+      };
+
+      let escrow: JournalEntryDetail["escrow"] = null;
+      let expense: ExpenseRow | null = null;
+      const roles: Record<string, string> = {};
+      const ids: (string | null)[] = [entry.created_by];
+      if (entry.created_by) roles[entry.created_by] = "recorded by";
+
+      if (entry.source_id && entry.source.startsWith("escrow")) {
+        const { data: row } = await supabase
+          .from("escrow_entries")
+          .select(
+            "*, booking:bookings(id, service_name, scheduled_for, status, hours, rate)",
+          )
+          .eq("id", entry.source_id)
+          .maybeSingle();
+        if (row) {
+          escrow = row as unknown as JournalEntryDetail["escrow"];
+          roles[row.client_id] = "member (payer)";
+          roles[row.specialist_id] = "specialist (payee)";
+          ids.push(row.client_id, row.specialist_id);
+        }
+      }
+
+      if (entry.source === "expense") {
+        const { data: row } = await supabase
+          .from("expenses")
+          .select("*")
+          .eq("entry_id", entry.id)
+          .maybeSingle();
+        if (row) {
+          expense = row as ExpenseRow;
+          if (row.created_by) {
+            roles[row.created_by] = roles[row.created_by] ?? "recorded by";
+            ids.push(row.created_by);
+          }
+        }
+      }
+
+      return { entry, escrow, expense, parties: await loadParties(ids, roles) };
+    },
+    enabled: Boolean(id),
+  });
+}
+
+
+
 export interface DraftLine {
   accountId: string;
   debit: number;
