@@ -182,9 +182,10 @@ function ProfilePage() {
     }
     setUploading(true);
     try {
-      const url = await uploadAvatar(user.id, file);
-      setAvatarUrl(url);
-      await updateProfile.mutateAsync({ id: user.id, patch: { avatar_url: url } });
+      const path = await uploadAvatar(user.id, file);
+      setAvatarUrl(await resolveStoredMedia("avatars", path));
+      await updateProfile.mutateAsync({ id: user.id, patch: { avatar_url: path } });
+
       await refresh();
       toast.success("Profile photo updated");
     } catch (error) {
