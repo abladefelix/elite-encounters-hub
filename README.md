@@ -20,6 +20,33 @@ Everything is administered from a private control room at `/ashnight-control`.
 | [docs/ADMIN-GUIDE.md](docs/ADMIN-GUIDE.md) | Platform administrators — control room, vetting, rooms, pricing, escrow, moderation, keys |
 | [docs/CLIENT-GUIDE.md](docs/CLIENT-GUIDE.md) | Clients (members who book ash services) |
 | [docs/SPECIALIST-GUIDE.md](docs/SPECIALIST-GUIDE.md) | Specialists (vetted professionals who earn) |
+| [docs/MOBILE.md](docs/MOBILE.md) | Shipping Ashnight to the **App Store and Google Play** (Capacitor native shell) |
+
+## Mobile apps (iOS + Android)
+
+Ashnight builds into real native apps with **Capacitor** — same codebase, no
+rewrite. The native shell loads the live deployment in a secure web view, so
+chat, calls, escrow, Paystack and the wallet all work as-is, and any web update
+you publish reaches installed apps on next launch without store review.
+
+```bash
+npm install
+npm run build
+npm run mobile:add:android      # and: npm run mobile:add:ios (macOS only)
+npm run mobile:sync
+npm run mobile:open:android     # build/sign in Android Studio
+npm run mobile:open:ios         # archive/upload in Xcode
+```
+
+- Live URL comes from `capacitor.config.ts`; override with
+  `ASHNIGHT_APP_URL=https://your-domain.com npm run mobile:sync`.
+- **The control room is web only.** `/ashnight-control` is blocked inside the app
+  and shows an "Admin is web only" notice — run admin work in a desktop browser.
+- Native binaries must be built on your own machine (Xcode / Android Studio), not
+  in the Lovable editor. Full walkthrough, permission strings, icons and store
+  review notes: [docs/MOBILE.md](docs/MOBILE.md).
+
+
 
 ## First sign-in (default admin)
 
