@@ -18,6 +18,7 @@ const NAV = [
   { to: "/specialists", copyKey: "nav.specialists" },
   { to: "/rooms", copyKey: "nav.rooms" },
   { to: "/messages", copyKey: "nav.messages" },
+  { to: "/wallet", copyKey: "nav.wallet" },
   { to: "/how-it-works", copyKey: "nav.howItWorks" },
 ] as const;
 
