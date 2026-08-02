@@ -81,25 +81,22 @@ export function ReportsPanel({
             <Badge variant={trial.balanced ? "default" : "destructive"}>
               {trial.balanced ? "Books balance" : "Out of balance"}
             </Badge>
-            <Button
-              variant="outline"
-              onClick={() =>
-                downloadCsv("ashnight-trial-balance.csv", [
-                  ["Code", "Account", "Type", "Debit", "Credit", "Balance"],
-                  ...trial.rows.map((row) => [
-                    row.account.code,
-                    row.account.name,
-                    row.account.type,
-                    row.debit,
-                    row.credit,
-                    row.balance,
-                  ]),
-                  ["", "Totals", "", trial.debit, trial.credit, ""],
-                ])
-              }
-            >
-              Export CSV
-            </Button>
+            <ExportMenu
+              filename="ashnight-trial-balance"
+              title="Trial balance"
+              subtitle={rangeLabel}
+              columns={[
+                { label: "Code", value: (row: AccountBalance) => row.account.code },
+                { label: "Account", value: (row) => row.account.name },
+                { label: "Type", value: (row) => ACCOUNT_TYPE_LABEL[row.account.type] },
+                { label: "Debit", value: (row) => row.debit },
+                { label: "Credit", value: (row) => row.credit },
+                { label: "Balance", value: (row) => row.balance },
+              ]}
+              rows={trial.rows}
+              size="default"
+            />
+
           </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
