@@ -177,6 +177,8 @@ export async function createUser(input: CreateUserInput) {
     if (profileError) throw new Error(profileError.message);
   }
   await setRoles(userId, input.roles.length ? input.roles : ["client"]);
+  await savePortfolio(userId, input.fields);
+
 
   if (input.notifyUser !== false) {
     await notify([userId], {
