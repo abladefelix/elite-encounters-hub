@@ -789,7 +789,14 @@ export function UserEditorDialog({
                     name={form.display_name}
                     onChange={(next) => set("avatar_url", next)}
                   />
+                  {isSpecialist ? null : (
+                    <p className="text-xs text-muted-foreground">
+                      Clients carry one profile picture only — no work photos or intro video.
+                    </p>
+                  )}
                 </div>
+
+
 
               </div>
             </section>
