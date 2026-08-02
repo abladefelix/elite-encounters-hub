@@ -20,11 +20,13 @@ import { TwoFactorCard } from "@/components/two-factor-card";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
 import {
+  resolveStoredMedia,
   useSetSpecialistServices,
   useSpecialistServices,
   useUpdateProfile,
   uploadAvatar,
 } from "@/lib/queries";
+
 import { useServiceCatalog } from "@/lib/service-catalog";
 import { initials, money } from "@/lib/types";
 import { cn } from "@/lib/utils";
