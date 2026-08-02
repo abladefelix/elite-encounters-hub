@@ -37,7 +37,14 @@ import {
   updateUserAccount,
 } from "@/lib/admin-users.functions";
 import { ACCOUNT_STATUSES, ACCOUNT_STATUS_META } from "@/lib/account-status";
-import { resolveStoredMedia, uploadAvatar, type ProfileFullRow } from "@/lib/queries";
+import {
+  resolveStoredMedia,
+  uploadAvatar,
+  uploadPortfolioFile,
+  useStoredMedia,
+  type ProfileFullRow,
+} from "@/lib/queries";
+
 
 type AppRole = "client" | "specialist" | "admin";
 
