@@ -796,6 +796,14 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                                 : undefined
                             }
                             canResolve={iAmClient}
+                            booking={
+                              message.booking_id ? bookingsById.get(message.booking_id) : undefined
+                            }
+                            canPay={iAmClient && bookingsOpen}
+                            paying={
+                              !!message.booking_id && payingBookingId === message.booking_id
+                            }
+                            onPay={(id) => void payBooking(id)}
                             onConfirm={(id) => void confirmComplete(id)}
                             onDispute={(id, reason) => void raiseIssue(id, reason)}
                           />
