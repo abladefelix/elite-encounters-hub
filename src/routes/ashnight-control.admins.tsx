@@ -234,6 +234,10 @@ function PermissionEditor({ entry }: { entry: AdminRosterEntry }) {
         </Badge>
       </div>
 
+      <AccountControls entry={entry} />
+
+
+
       <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
         <label className="flex items-start justify-between gap-4">
           <span>
