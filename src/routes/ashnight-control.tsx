@@ -57,31 +57,41 @@ export const Route = createFileRoute("/ashnight-control")({
   component: AdminLayout,
 });
 
-const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] = [
-  { to: "/ashnight-control", label: "Overview", icon: LayoutDashboard, exact: true },
-  { to: "/ashnight-control/vetting", label: "Vetting queue", icon: BadgeCheck },
-  { to: "/ashnight-control/users", label: "Users", icon: Users },
-  { to: "/ashnight-control/rooms", label: "Rooms", icon: DoorOpen },
-  { to: "/ashnight-control/services", label: "Services", icon: Sparkles },
-  { to: "/ashnight-control/bookings", label: "Bookings", icon: CalendarCheck },
-  { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck },
-  { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan },
-  { to: "/ashnight-control/complaints", label: "Complaints", icon: LifeBuoy },
-  { to: "/ashnight-control/notifications", label: "Notifications", icon: Bell },
-  { to: "/ashnight-control/documents", label: "Invoices & receipts", icon: ReceiptText },
-  { to: "/ashnight-control/finance", label: "Finance & accounting", icon: Calculator },
-  { to: "/ashnight-control/logs", label: "Activity log", icon: ScrollText },
-  { to: "/ashnight-control/signup", label: "Sign-up form", icon: ClipboardList },
-  { to: "/ashnight-control/features", label: "Features", icon: ToggleLeft },
-  { to: "/ashnight-control/branding", label: "Brand & wording", icon: Palette },
-  { to: "/ashnight-control/settings", label: "Keys & security", icon: KeyRound },
-  { to: "/ashnight-control/email", label: "Email & domain", icon: Mail },
-  { to: "/ashnight-control/backups", label: "Backups", icon: DatabaseBackup },
-  { to: "/ashnight-control/server", label: "Server & DNS", icon: Server },
-  { to: "/ashnight-control/demo", label: "Demo data", icon: Database },
-  { to: "/ashnight-control/deploy", label: "Deploy", icon: Rocket },
-
+const NAV: {
+  to: string;
+  label: string;
+  icon: typeof Users;
+  /** Permission key from ADMIN_AREAS. */
+  area: string;
+  exact?: boolean;
+  /** Only super admins ever see this. */
+  superOnly?: boolean;
+}[] = [
+  { to: "/ashnight-control", label: "Overview", icon: LayoutDashboard, area: "overview", exact: true },
+  { to: "/ashnight-control/vetting", label: "Vetting queue", icon: BadgeCheck, area: "vetting" },
+  { to: "/ashnight-control/users", label: "Users", icon: Users, area: "users" },
+  { to: "/ashnight-control/admins", label: "Admin roles", icon: UserCog, area: "admins", superOnly: true },
+  { to: "/ashnight-control/rooms", label: "Rooms", icon: DoorOpen, area: "rooms" },
+  { to: "/ashnight-control/services", label: "Services", icon: Sparkles, area: "services" },
+  { to: "/ashnight-control/bookings", label: "Bookings", icon: CalendarCheck, area: "bookings" },
+  { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck, area: "escrow" },
+  { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan, area: "moderation" },
+  { to: "/ashnight-control/complaints", label: "Complaints", icon: LifeBuoy, area: "complaints" },
+  { to: "/ashnight-control/notifications", label: "Notifications", icon: Bell, area: "notifications" },
+  { to: "/ashnight-control/documents", label: "Invoices & receipts", icon: ReceiptText, area: "documents" },
+  { to: "/ashnight-control/finance", label: "Finance & accounting", icon: Calculator, area: "finance" },
+  { to: "/ashnight-control/logs", label: "Activity log", icon: ScrollText, area: "logs" },
+  { to: "/ashnight-control/signup", label: "Sign-up form", icon: ClipboardList, area: "signup" },
+  { to: "/ashnight-control/features", label: "Features", icon: ToggleLeft, area: "features" },
+  { to: "/ashnight-control/branding", label: "Brand & wording", icon: Palette, area: "branding" },
+  { to: "/ashnight-control/settings", label: "Keys & security", icon: KeyRound, area: "settings" },
+  { to: "/ashnight-control/email", label: "Email & domain", icon: Mail, area: "email" },
+  { to: "/ashnight-control/backups", label: "Backups", icon: DatabaseBackup, area: "backups" },
+  { to: "/ashnight-control/server", label: "Server & DNS", icon: Server, area: "server" },
+  { to: "/ashnight-control/demo", label: "Demo data", icon: Database, area: "demo" },
+  { to: "/ashnight-control/deploy", label: "Deploy", icon: Rocket, area: "deploy" },
 ];
+
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
