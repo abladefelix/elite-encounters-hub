@@ -51,6 +51,8 @@ import { useRoomSettings } from "@/lib/room-settings";
 import type { RoomGiftRules } from "@/lib/gifts";
 import { useAllProfiles } from "@/lib/queries";
 import { money, type Tier } from "@/lib/types";
+import { formatStamp } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/ashnight-control/escrow")({
   head: () => ({
