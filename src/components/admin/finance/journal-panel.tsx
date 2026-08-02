@@ -199,17 +199,39 @@ export function JournalPanel({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs">{entry.entry_no}</span>
+                      <Link
+                        to="/ashnight-control/journal/$entryId"
+                        params={{ entryId: entry.id }}
+                        className="font-mono text-xs underline decoration-dotted underline-offset-4 hover:text-primary"
+                      >
+                        {entry.entry_no}
+                      </Link>
                       <Badge variant={STATUS_TONE[entry.status]}>{entry.status}</Badge>
                       <Badge variant="outline">{entry.source}</Badge>
                     </div>
-                    <p className="mt-1 text-sm font-medium">{entry.memo || "—"}</p>
+                    <Link
+                      to="/ashnight-control/journal/$entryId"
+                      params={{ entryId: entry.id }}
+                      className="mt-1 block text-sm font-medium hover:text-primary"
+                    >
+                      {entry.memo || "—"}
+                    </Link>
                     <p className="text-xs text-muted-foreground">
                       {entry.entry_date}
                       {entry.reference ? ` · ${entry.reference}` : ""}
                     </p>
+                    <p className="text-xs text-muted-foreground">
+                      Recorded {formatStamp(entry.created_at)}
+                      {entry.posted_at ? ` · posted ${formatStamp(entry.posted_at)}` : ""}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button asChild variant="outline" size="sm">
+                      <Link to="/ashnight-control/journal/$entryId" params={{ entryId: entry.id }}>
+                        <ArrowUpRight className="size-4" /> Open
+                      </Link>
+                    </Button>
+
                     <span className="font-mono text-sm">{cedis(entryTotal.debit)}</span>
                     {entry.status === "posted" ? (
                       <Button
