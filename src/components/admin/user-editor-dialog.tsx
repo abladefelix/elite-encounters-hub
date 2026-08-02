@@ -598,7 +598,12 @@ export function UserEditorDialog({
       verified: form.verified,
       available: form.available,
       suspended: form.suspended,
+      // Specialists carry work photos plus one intro video; clients keep a
+      // single profile picture, so their portfolio is cleared on save.
+      portfolio_photos: isSpecialist ? form.portfolio_photos : [],
+      portfolio_video: isSpecialist ? form.portfolio_video : null,
     };
+
   }
 
   async function save() {
