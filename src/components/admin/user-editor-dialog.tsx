@@ -527,6 +527,8 @@ export interface UserEditorDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Omit to create a brand-new account. */
   profile?: ProfileFullRow | null;
+  /** Roles pre-selected when creating a new account (matches the tab you're on). */
+  defaultRoles?: AppRole[];
   onSaved: () => void | Promise<unknown>;
 }
 
@@ -534,6 +536,7 @@ export function UserEditorDialog({
   open,
   onOpenChange,
   profile,
+  defaultRoles,
   onSaved,
 }: UserEditorDialogProps) {
   const editing = Boolean(profile);
@@ -544,7 +547,7 @@ export function UserEditorDialog({
   useEffect(() => {
     if (!open) return;
     if (!profile) {
-      setForm(EMPTY);
+      setForm({ ...EMPTY, roles: defaultRoles?.length ? defaultRoles : EMPTY.roles });
       return;
     }
     setForm(fromProfile(profile));
