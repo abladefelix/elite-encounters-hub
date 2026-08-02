@@ -165,7 +165,13 @@ export function ExpensesPanel({
             <TableBody>
               {paged.rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="text-sm">{row.expense_date}</TableCell>
+                  <TableCell className="text-sm">
+                    {row.expense_date}
+                    <span className="block text-xs text-muted-foreground">
+                      recorded {formatStamp(row.created_at)}
+                    </span>
+                  </TableCell>
+
                   <TableCell>
                     <div className="font-medium">{row.vendor || "—"}</div>
                     <div className="text-xs text-muted-foreground">{row.memo || row.reference}</div>
