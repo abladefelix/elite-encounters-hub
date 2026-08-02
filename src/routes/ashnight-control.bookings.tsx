@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ExportMenu } from "@/components/admin/export-menu";
 import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -132,6 +133,27 @@ function AdminBookings() {
             aria-label="Search bookings"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
+        <div>
+          <ExportMenu
+            filename="ashnight-bookings"
+            title="Bookings & payouts"
+            columns={[
+              { label: "Booking", value: (row: (typeof rows)[number]) => row.id },
+              { label: "Service", value: (row: (typeof rows)[number]) => row.service },
+              { label: "Client", value: (row: (typeof rows)[number]) => getClient(row.clientId)?.name ?? "" },
+              {
+                label: "Specialist",
+                value: (row: (typeof rows)[number]) => getSpecialist(row.specialistId)?.name ?? "",
+              },
+              { label: "Add-ons", value: (row: (typeof rows)[number]) => row.addons.join(" | ") },
+              { label: "Status", value: (row: (typeof rows)[number]) => row.status },
+              { label: "Total", value: (row: (typeof rows)[number]) => bookingTotal(row).total },
+              { label: "Platform fee", value: (row: (typeof rows)[number]) => bookingTotal(row).fee },
+            ]}
+            rows={rows}
+            size="default"
           />
         </div>
         <Filter className="size-4 text-muted-foreground" />
