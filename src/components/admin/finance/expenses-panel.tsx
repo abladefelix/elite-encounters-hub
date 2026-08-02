@@ -118,6 +118,8 @@ export function ExpensesPanel({
             title="Expenses & payables"
             columns={[
               { label: "Date", value: (row: ExpenseRow) => row.expense_date },
+              { label: "Recorded", value: (row: ExpenseRow) => formatStamp(row.created_at) },
+
               { label: "Vendor", value: (row: ExpenseRow) => row.vendor },
               { label: "Category", value: (row: ExpenseRow) => row.category },
               { label: "Amount", value: (row: ExpenseRow) => Number(row.amount) },
