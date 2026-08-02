@@ -28,7 +28,7 @@ import { initials, money } from "@/lib/types";
 export const Route = createFileRoute("/specialists/$specialistId")({
   loader: async ({ params }) => {
     const { data, error } = await supabase
-      .from("profiles")
+      .from("specialist_directory")
       .select("*")
       .eq("id", params.specialistId)
       .eq("vetting", "approved")
