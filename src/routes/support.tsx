@@ -321,17 +321,29 @@ export function DocumentCard({
       <CardContent className="py-4">
         <div id={printId}>
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 className="font-display text-lg font-semibold" style={{ color: template.accent }}>
-                {template.businessName}
-              </h1>
-              {template.tagline ? (
-                <p className="muted text-xs text-muted-foreground">{template.tagline}</p>
+            <div className="flex items-start gap-3">
+              {template.showLogo ? (
+                <BrandMark
+                  className="mt-0.5"
+                  style={{ width: 44, height: 44, color: template.accent }}
+                />
               ) : null}
-              <p className="muted text-xs text-muted-foreground">
-                {heading} · {row.number}
-              </p>
+              <div>
+                <h1
+                  className="font-display text-lg font-semibold"
+                  style={{ color: template.accent }}
+                >
+                  {template.businessName}
+                </h1>
+                {template.tagline ? (
+                  <p className="muted text-xs text-muted-foreground">{template.tagline}</p>
+                ) : null}
+                <p className="muted text-xs text-muted-foreground">
+                  {heading} · {row.number}
+                </p>
+              </div>
             </div>
+
             <div className="text-right text-xs text-muted-foreground">
               {template.contact ? (
                 <p className="contact whitespace-pre-line">{template.contact}</p>
