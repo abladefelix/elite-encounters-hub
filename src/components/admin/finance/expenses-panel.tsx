@@ -42,6 +42,8 @@ import {
   type ExpenseRow,
   type LedgerAccount,
 } from "@/lib/finance";
+import { formatStamp } from "@/lib/utils";
+
 
 function emptyDraft(): DraftExpense {
   return {
@@ -118,6 +120,8 @@ export function ExpensesPanel({
             title="Expenses & payables"
             columns={[
               { label: "Date", value: (row: ExpenseRow) => row.expense_date },
+              { label: "Recorded", value: (row: ExpenseRow) => formatStamp(row.created_at) },
+
               { label: "Vendor", value: (row: ExpenseRow) => row.vendor },
               { label: "Category", value: (row: ExpenseRow) => row.category },
               { label: "Amount", value: (row: ExpenseRow) => Number(row.amount) },
@@ -161,7 +165,13 @@ export function ExpensesPanel({
             <TableBody>
               {paged.rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="text-sm">{row.expense_date}</TableCell>
+                  <TableCell className="text-sm">
+                    {row.expense_date}
+                    <span className="block text-xs text-muted-foreground">
+                      recorded {formatStamp(row.created_at)}
+                    </span>
+                  </TableCell>
+
                   <TableCell>
                     <div className="font-medium">{row.vendor || "—"}</div>
                     <div className="text-xs text-muted-foreground">{row.memo || row.reference}</div>

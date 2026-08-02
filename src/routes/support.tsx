@@ -23,6 +23,8 @@ import {
   type DocumentTemplate,
 } from "@/lib/document-templates";
 import { money } from "@/lib/types";
+import { formatStamp } from "@/lib/utils";
+
 import {
   COMPLAINT_CATEGORIES,
   documentLines,
@@ -334,8 +336,9 @@ export function DocumentCard({
               {template.contact ? (
                 <p className="contact whitespace-pre-line">{template.contact}</p>
               ) : null}
-              <p>Issued {new Date(row.issued_at).toLocaleDateString()}</p>
-              {row.paid_at ? <p>Paid {new Date(row.paid_at).toLocaleDateString()}</p> : null}
+              <p>Issued {formatStamp(row.issued_at)}</p>
+              {row.paid_at ? <p>Paid {formatStamp(row.paid_at)}</p> : null}
+
               {row.paystack_reference ? <p>Ref {row.paystack_reference}</p> : null}
             </div>
           </div>

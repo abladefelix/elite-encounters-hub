@@ -51,6 +51,8 @@ import { useRoomSettings } from "@/lib/room-settings";
 import type { RoomGiftRules } from "@/lib/gifts";
 import { useAllProfiles } from "@/lib/queries";
 import { money, type Tier } from "@/lib/types";
+import { formatStamp } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/ashnight-control/escrow")({
   head: () => ({
@@ -683,7 +685,9 @@ function AdminEscrow() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Payment</TableHead>
+                  <TableHead>Recorded</TableHead>
                   <TableHead>Specialist</TableHead>
+
                   <TableHead>State</TableHead>
                   <TableHead>Deposits</TableHead>
                   <TableHead className="text-right">Gross</TableHead>
@@ -705,7 +709,14 @@ function AdminEscrow() {
                         {entry.dispute_reason ? ` · ${entry.dispute_reason}` : ""}
                       </span>
                     </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {formatStamp(entry.created_at)}
+                      <span className="block">
+                        {entry.paid_at ? `paid ${formatStamp(entry.paid_at)}` : "awaiting payment"}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{specialistName(entry)}</TableCell>
+
                     <TableCell>
                       <Badge
                         variant="outline"
