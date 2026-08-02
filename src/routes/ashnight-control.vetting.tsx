@@ -93,8 +93,13 @@ function VettingQueue() {
 
   const paged = usePaged(visible, 10);
 
+  /**
+   * The open applicant must always belong to the tab being viewed — otherwise
+   * switching to "In review" kept a pending applicant open and the panel still
+   * offered "Start review".
+   */
   const selected: ApplicationRow | undefined =
-    rows.find((row) => row.id === selectedId) ?? visible[0] ?? rows[0];
+    visible.find((row) => row.id === selectedId) ?? visible[0];
 
   useEffect(() => {
     if (!selected) return;
@@ -102,6 +107,7 @@ function VettingQueue() {
     setRoom(selected.suggested_room);
     setNote(selected.admin_note ?? "");
   }, [selected?.id]);
+
 
   const profile: ProfileFullRow | undefined = selected?.user_id
     ? profiles.find((row) => row.id === selected.user_id)
@@ -148,6 +154,12 @@ function VettingQueue() {
           });
         }
       }
+
+      // Follow the applicant into their new stage so the reviewer keeps context
+      // instead of silently landing on the next pending application.
+      setFilter(status);
+      setSelectedId(applicant.id);
+
 
       if (status === "approved") {
         toast.success(`${applicant.full_name} approved into the ${room} room`);
@@ -360,9 +372,20 @@ function VettingQueue() {
               ) : null}
             </dl>
 
-            {profile ? <ExtraFields extra={profile.extra} /> : null}
+            {profile ? (
+              <>
+                <ExtraFields extra={profile.extra} />
+                <ApplicantMedia profile={profile} />
+              </>
+            ) : (
+              <p className="mt-5 rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
+                {selected.user_id
+                  ? "This applicant's account record hasn't loaded yet — Ghana Card details, profile photo and portfolio media appear here once it does."
+                  : "No account is linked to this application, so there are no Ghana Card scans, profile photo or portfolio media to review."}
+              </p>
+            )}
 
-            {profile ? <ApplicantMedia profile={profile} /> : null}
+
 
 
             <div className="mt-5 rounded-lg border border-border bg-panel p-4">
