@@ -6,27 +6,13 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdminArea(context: {
-  supabase: {
-    from: (table: "user_roles") => {
-      select: (columns: string) => {
-        eq: (
-          column: string,
-          value: string,
-        ) => { eq: (column: string, value: string) => Promise<{ data: unknown[] | null }> };
-      };
-    };
-  };
-  userId: string;
-}) {
-  // Role is read from `user_roles` under the caller's own session — the helper
-  // functions behind RLS are no longer callable over the API.
-  const { data } = await context.supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", context.userId)
-    .eq("role", "admin");
-  if (!data?.length) throw new Error("Admins only.");
+/**
+ * Admin gate for this area. Holding the admin role is not enough — the caller's
+ * assigned areas and read-only flag are enforced server-side as well.
+ */
+async function assertAdminArea(context: { userId: string }) {
+  const { assertAdminArea: gate } = await import("./identity.server");
+  await gate(context.userId, "deploy");
 }
 
 export const getDeployStatus = createServerFn({ method: "POST" })
