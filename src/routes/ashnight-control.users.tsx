@@ -83,6 +83,20 @@ type Segment = "clients" | "specialists";
 
 const TIERS: Tier[] = ["basic", "premium", "ultimate"];
 
+/** A specialist is decided by the role record, with a legacy fallback. */
+function isSpecialistRow(row: ProfileFullRow) {
+  if (row.roles?.length) return row.roles.includes("specialist");
+  return !!row.room || row.hourly_rate > 0;
+}
+
+/** Portfolio media a specialist has uploaded, stored on `extra`. */
+function mediaCounts(row: ProfileFullRow) {
+  const extra = (row.extra ?? {}) as Record<string, unknown>;
+  const photos = Array.isArray(extra.portfolio_photos) ? extra.portfolio_photos.length : 0;
+  const video = typeof extra.portfolio_video === "string" && extra.portfolio_video ? 1 : 0;
+  return { photos, video };
+}
+
 function AdminUsers() {
   const profilesQuery = useAllProfiles();
   const updateProfile = useUpdateProfile();
