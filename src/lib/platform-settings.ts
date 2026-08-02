@@ -10,6 +10,7 @@ import { useCallback, useEffect, useId, useMemo } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
+import { getPublicSettings } from "./public-settings.functions";
 
 export type SettingsSection =
   | "rooms"
@@ -44,14 +45,9 @@ async function readSettings(): Promise<SettingsBlob> {
     .maybeSingle();
   if (!error && data) return (data.data as SettingsBlob | null) ?? {};
 
-  // Signed-out visitors cannot read the full settings row, so fall back to the
-  // public slice (branding, wording, sign-up form, feature flags, rooms).
-  const { data: publicData, error: publicError } = await supabase
-    .from("platform_settings_public")
-    .select("data")
-    .maybeSingle();
-  if (publicError) throw new Error(publicError.message);
-  return (publicData?.data as SettingsBlob | null) ?? {};
+  // Signed-out visitors cannot read the settings row, so a server function
+  // hands back only the public slice (brand, wording, sign-up form, flags).
+  return (await getPublicSettings()) as SettingsBlob;
 }
 
 /**

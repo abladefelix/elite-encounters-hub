@@ -10,6 +10,7 @@ import { useEffect, useId } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { listFullProfiles } from "./profile-reads.functions";
 
 type Tables = Database["public"]["Tables"];
 /** Complete profile record — only readable for yourself or as an admin. */
@@ -93,23 +94,14 @@ export function useProfile(id: string | undefined) {
 }
 
 /**
- * Admin/self read of complete records, including contact and ID columns.
- * The `profiles_full` view only ever returns your own row or, for admins,
- * every row — other members cannot reach the sensitive columns at all.
+ * Admin roster with the complete records, including contact and ID columns.
+ * The read happens in a server function that re-checks the admin role, so
+ * ordinary members cannot reach those columns at all.
  */
 export function useAllProfiles() {
   return useQuery({
     queryKey: ["profiles", "all"],
-    queryFn: async () =>
-      unwrap<ProfileFullRow[]>(
-        (await supabase
-          .from("profiles_full")
-          .select("*")
-          .order("created_at", { ascending: false })) as unknown as {
-          data: ProfileFullRow[] | null;
-          error: { message: string } | null;
-        },
-      ),
+    queryFn: async () => (await listFullProfiles()) as unknown as ProfileFullRow[],
   });
 }
 

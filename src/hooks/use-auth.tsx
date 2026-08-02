@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { isBlocked, type AccountStatus } from "@/lib/account-status";
 import type { Database } from "@/integrations/supabase/types";
+import { getMyFullProfile } from "@/lib/profile-reads.functions";
 
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 export type AppRole = Database["public"]["Enums"]["app_role"];
@@ -47,14 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     const [profileResult, rolesResult] = await Promise.all([
-      // `profiles_full` only ever returns your own row (or every row for
-      // admins), so contact and ID columns stay unreachable for other members.
-      supabase.from("profiles_full").select("*").eq("id", userId).maybeSingle(),
+      // Contact and ID columns are not readable from the browser at all; the
+      // server function returns your own record only.
+      getMyFullProfile().catch(() => null),
       supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
-    // The view mirrors the table one-for-one; generated view types are just
-    // nullable because Postgres cannot prove not-null through a view.
-    setProfile((profileResult.data as ProfileRow | null) ?? null);
+    setProfile((profileResult as ProfileRow | null) ?? null);
     setRoles((rolesResult.data ?? []).map((row) => row.role));
   }, []);
 

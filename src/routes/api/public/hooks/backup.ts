@@ -7,7 +7,7 @@
  * retention count are pruned in each destination.
  *
  * Callers: pg_cron (or any scheduler) with the project publishable key in an
- * `apikey` header, or a signed-in admin pressing "Run backup now".
+ * job secret header, or a signed-in admin pressing "Run backup now".
  */
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -48,12 +48,30 @@ async function getAdminClient() {
   return supabaseAdmin;
 }
 
-/** Either a valid project apikey header, or a bearer token belonging to an admin. */
+/**
+ * Confirms the scheduler knows the platform job secret. The publishable key is
+ * public knowledge and is deliberately not accepted here.
+ */
+async function schedulerIsTrusted(request: Request) {
+  const presented = request.headers.get("x-ashnight-job-secret") ?? "";
+  if (!presented) return false;
+
+  const envSecret = process.env["ASHNIGHT_JOB_SECRET"] ?? "";
+  if (envSecret && presented === envSecret) return true;
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("integration_keys")
+    .select("value")
+    .eq("key", "job_trigger_secret")
+    .maybeSingle();
+  const stored = (data?.value ?? "").trim();
+  return stored.length > 0 && presented === stored;
+}
+
+/** Either the scheduler's job secret, or a bearer token belonging to an admin. */
 async function authorize(request: Request) {
-  const expected =
-    process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"] ?? "";
-  const apikey = request.headers.get("apikey");
-  if (expected && apikey && apikey === expected) return true;
+  if (await schedulerIsTrusted(request)) return true;
 
   const bearer = request.headers.get("authorization")?.replace(/^Bearer /i, "");
   if (!bearer) return false;

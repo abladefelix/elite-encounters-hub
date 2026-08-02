@@ -168,7 +168,6 @@ interface EscrowContextValue {
   entriesLoading: boolean;
   /** Escrow rows for a chat thread, newest first. */
   threadEntries: (threadId: string) => EscrowEntry[];
-  open: (input: NewEscrowInput) => Promise<EscrowEntry>;
   /** Admin-created ledger row — used when money was taken outside the app. */
   openManual: (input: ManualEscrowInput) => Promise<EscrowEntry>;
   confirmComplete: (id: string) => Promise<void>;
@@ -226,53 +225,6 @@ export function useEscrow(): EscrowContextValue {
   const threadEntries = useCallback(
     (threadId: string) => entries.filter((entry) => entry.thread_id === threadId),
     [entries],
-  );
-
-  const open = useCallback<EscrowContextValue["open"]>(
-    async (input) => {
-      if (!user) throw new Error("Sign in required to move money into escrow.");
-      const { amount, fee, net } = escrowSplit(input.amount, input.feePct);
-      const escrowed =
-        settings.escrowEnabled && (input.kind === "booking" || settings.tipsEscrowed);
-      const now = new Date().toISOString();
-
-      const insert: Database["public"]["Tables"]["escrow_entries"]["Insert"] = {
-        kind: input.kind,
-        thread_id: input.threadId ?? null,
-        booking_id: input.bookingId ?? null,
-        client_id: user.id,
-        specialist_id: input.specialistId,
-        label: input.label,
-        gift_key: input.giftKey ?? null,
-        amount,
-        platform_fee: fee,
-        payout_amount: net,
-        hold_hours: settings.holdHours,
-        paystack_reference: input.paystackReference ?? null,
-        paid_at: now,
-        state: "held",
-        release_at: null,
-      };
-
-      if (!escrowed) {
-        insert.state = "released";
-        insert.released_at = now;
-        insert.admin_note = "Paid straight through — escrow not applied to this payment type.";
-      } else if (!settings.requireClientConfirm) {
-        insert.state = "clearing";
-        insert.release_at = hoursFromNow(settings.holdHours);
-      }
-
-      try {
-        return await create.mutateAsync(insert);
-      } catch (error) {
-        toast.error("Payment couldn't be secured in escrow", {
-          description: error instanceof Error ? error.message : "Please try again.",
-        });
-        throw error;
-      }
-    },
-    [create, settings, user],
   );
 
   const openManual = useCallback<EscrowContextValue["openManual"]>(
@@ -442,7 +394,6 @@ export function useEscrow(): EscrowContextValue {
     entries,
     entriesLoading: entriesQuery.isLoading,
     threadEntries,
-    open,
     openManual,
     confirmComplete,
     raiseIssue,

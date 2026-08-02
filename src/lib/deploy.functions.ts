@@ -6,21 +6,19 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdmin(context: {
-  supabase: { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown }> };
-  userId: string;
-}) {
-  const { data } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "admin",
-  });
-  if (data !== true) throw new Error("Admins only.");
+/**
+ * Admin gate for this area. Holding the admin role is not enough — the caller's
+ * assigned areas and read-only flag are enforced server-side as well.
+ */
+async function assertAdminArea(context: { userId: string }) {
+  const { assertAdminArea: gate } = await import("./identity.server");
+  await gate(context.userId, "deploy");
 }
 
 export const getDeployStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminArea(context as never);
     const { deployStatus } = await import("./deploy.server");
     return deployStatus();
   });
@@ -28,7 +26,7 @@ export const getDeployStatus = createServerFn({ method: "POST" })
 export const syncFromGithub = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminArea(context as never);
     const { runDeploySync } = await import("./deploy.server");
     const claims = (context as { claims?: { email?: string } }).claims;
     return runDeploySync({

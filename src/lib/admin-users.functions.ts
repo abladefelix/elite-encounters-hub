@@ -44,9 +44,9 @@ export const getUserAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { assertAdmin } = await import("./identity.server");
+    const { assertAdminArea } = await import("./identity.server");
     const { getAccount } = await import("./admin-users.server");
-    await assertAdmin(context.userId);
+    await assertAdminArea(context.userId, "users", "read");
     return getAccount(data.userId);
   });
 
@@ -64,9 +64,9 @@ export const createUserAccount = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { assertAdmin } = await import("./identity.server");
+    const { assertAdminArea } = await import("./identity.server");
     const { createUser } = await import("./admin-users.server");
-    await assertAdmin(context.userId);
+    await assertAdminArea(context.userId, "users");
     return createUser({ ...data, actorId: context.userId });
   });
 
@@ -84,9 +84,9 @@ export const updateUserAccount = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { assertAdmin } = await import("./identity.server");
+    const { assertAdminArea } = await import("./identity.server");
     const { updateUser } = await import("./admin-users.server");
-    await assertAdmin(context.userId);
+    await assertAdminArea(context.userId, "users");
     return updateUser({ ...data, actorId: context.userId });
   });
 
@@ -94,9 +94,9 @@ export const deleteUserAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { assertAdmin } = await import("./identity.server");
+    const { assertAdminArea } = await import("./identity.server");
     const { deleteUser } = await import("./admin-users.server");
-    await assertAdmin(context.userId);
+    await assertAdminArea(context.userId, "users");
     if (data.userId === context.userId) throw new Error("You can't delete your own admin account.");
     return deleteUser(data.userId, context.userId);
   });

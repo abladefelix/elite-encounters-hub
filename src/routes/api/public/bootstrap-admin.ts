@@ -1,16 +1,22 @@
 /**
  * One-time control-room bootstrap.
  *
- * Ashnight ships with no admin account. The first call to this endpoint creates
- * the default admin below; every later call is refused, so the window closes as
- * soon as the account exists. Change the password from Control room → Email &
- * domain → Admin account straight after the first sign-in.
+ * Ashnight ships with no admin account. This endpoint creates the first one, but
+ * it is not open to the world: the caller must present the platform's job
+ * trigger secret, and the password is generated fresh each time rather than
+ * baked into the source. Every later call is refused once the account exists.
  */
 import { createFileRoute } from "@tanstack/react-router";
 
 const DEFAULT_EMAIL = "admin@ashnight.app";
 const DEFAULT_USERNAME = "ashnight.admin";
-const DEFAULT_PASSWORD = "AshnightControl2026!";
+
+/** Random, printable, and long enough that guessing is hopeless. */
+function generatePassword() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*-_";
+  const bytes = crypto.getRandomValues(new Uint32Array(24));
+  return Array.from(bytes, (n) => alphabet[n % alphabet.length]).join("");
+}
 
 async function findByEmail(
   admin: Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"],
@@ -25,7 +31,32 @@ async function findByEmail(
   return null;
 }
 
-async function bootstrap() {
+/**
+ * Confirms the caller knows the platform job secret. The secret lives in the
+ * integration vault and is never shipped to the browser.
+ */
+async function callerIsTrusted(request: Request) {
+  const presented = request.headers.get("x-ashnight-job-secret") ?? "";
+  if (!presented) return false;
+
+  const envSecret = process.env["ASHNIGHT_JOB_SECRET"] ?? "";
+  if (envSecret && presented === envSecret) return true;
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("integration_keys")
+    .select("value")
+    .eq("key", "job_trigger_secret")
+    .maybeSingle();
+  const stored = (data?.value ?? "").trim();
+  return stored.length > 0 && presented === stored;
+}
+
+async function bootstrap(request: Request) {
+  if (!(await callerIsTrusted(request))) {
+    return Response.json({ created: false, reason: "Not authorised." }, { status: 401 });
+  }
+
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const existing = await findByEmail(supabaseAdmin);
@@ -36,9 +67,10 @@ async function bootstrap() {
     );
   }
 
+  const password = generatePassword();
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email: DEFAULT_EMAIL,
-    password: DEFAULT_PASSWORD,
+    password,
     email_confirm: true,
     user_metadata: { display_name: "Ashnight Admin", username: DEFAULT_USERNAME, role: "client" },
   });
@@ -75,14 +107,15 @@ async function bootstrap() {
     created: true,
     email: DEFAULT_EMAIL,
     username: DEFAULT_USERNAME,
-    note: "Sign in at / then open /ashnight-control and change this password immediately.",
+    password,
+    note: "This password is shown once. Sign in at / then change it from the control room immediately.",
   });
 }
 
 export const Route = createFileRoute("/api/public/bootstrap-admin")({
   server: {
     handlers: {
-      POST: () => bootstrap(),
+      POST: ({ request }) => bootstrap(request),
     },
   },
 });

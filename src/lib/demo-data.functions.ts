@@ -6,15 +6,13 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdmin(context: {
-  supabase: { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown }> };
-  userId: string;
-}) {
-  const { data } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "admin",
-  });
-  if (data !== true) throw new Error("Admins only.");
+/**
+ * Admin gate for this area. Holding the admin role is not enough — the caller's
+ * assigned areas and read-only flag are enforced server-side as well.
+ */
+async function assertAdminArea(context: { userId: string }) {
+  const { assertAdminArea: gate } = await import("./identity.server");
+  await gate(context.userId, "demo");
 }
 
 const actor = (context: unknown) => {
@@ -25,7 +23,7 @@ const actor = (context: unknown) => {
 export const getDemoStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminArea(context as never);
     const { demoStatus } = await import("./demo-data.server");
     return demoStatus();
   });
@@ -33,7 +31,7 @@ export const getDemoStatus = createServerFn({ method: "POST" })
 export const populateDemoData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminArea(context as never);
     const { seedDemoData } = await import("./demo-data.server");
     const who = actor(context);
     return seedDemoData(who.id, who.label);
@@ -42,7 +40,7 @@ export const populateDemoData = createServerFn({ method: "POST" })
 export const removeDemoData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminArea(context as never);
     const { clearDemoData } = await import("./demo-data.server");
     const who = actor(context);
     return clearDemoData(who.id, who.label);

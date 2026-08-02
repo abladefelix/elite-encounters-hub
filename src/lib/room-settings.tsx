@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useSettingsSection } from "./platform-settings";
+import { getPublicSettings } from "./public-settings.functions";
 import {
   DEFAULT_GIFT_CATALOG,
   DEFAULT_ROOM_GIFT_RULES,
@@ -596,11 +597,7 @@ function initThemeCache() {
       .eq("id", true)
       .maybeSingle();
     if (!error && data) return data.data;
-    const { data: publicData } = await supabase
-      .from("platform_settings_public")
-      .select("data")
-      .maybeSingle();
-    return publicData?.data ?? null;
+    return ((await getPublicSettings()) as unknown) ?? null;
   };
 
   void readPlatform().then((data) => applyPlatform(data));
