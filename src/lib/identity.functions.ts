@@ -80,8 +80,8 @@ export const setAccountStatus = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { assertAdmin, setAccountStatus: run } = await import("./identity.server");
-    await assertAdmin(context.userId);
+    const { assertAdminArea, setAccountStatus: run } = await import("./identity.server");
+    await assertAdminArea(context.userId, "users");
     return run({
       userId: data.userId,
       status: data.status,
@@ -107,8 +107,8 @@ export const sendNotification = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { admin, assertAdmin, notify, logActivity } = await import("./identity.server");
-    await assertAdmin(context.userId);
+    const { admin, assertAdminArea, notify, logActivity } = await import("./identity.server");
+    await assertAdminArea(context.userId, "notifications");
     const client = await admin();
 
     let ids: string[] = [];
@@ -150,7 +150,7 @@ export const releaseAbandonedSignups = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => z.object({ hours: z.number().min(1).max(720) }).parse(input))
   .handler(async ({ data, context }) => {
-    const { assertAdmin, releaseAbandonedSignups: run } = await import("./identity.server");
-    await assertAdmin(context.userId);
+    const { assertAdminArea, releaseAbandonedSignups: run } = await import("./identity.server");
+    await assertAdminArea(context.userId, "users");
     return run(data.hours);
   });
