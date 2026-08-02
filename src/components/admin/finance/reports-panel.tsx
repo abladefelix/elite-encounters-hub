@@ -21,6 +21,13 @@ import {
   type TaxSummary,
 } from "@/lib/finance";
 
+interface StatementLine {
+  section: string;
+  code: string;
+  account: string;
+  amount: number;
+}
+
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div
@@ -166,32 +173,35 @@ export function ReportsPanel({
               value={cedis(pnl.netProfit)}
               strong
             />
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() =>
-                downloadCsv("ashnight-income-statement.csv", [
-                  ["Section", "Code", "Account", "Amount"],
-                  ...pnl.revenue.map((row) => [
-                    "Revenue",
-                    row.account.code,
-                    row.account.name,
-                    row.balance,
-                  ]),
-                  ["", "", "Total revenue", pnl.totalRevenue],
-                  ...pnl.expenses.map((row) => [
-                    "Expense",
-                    row.account.code,
-                    row.account.name,
-                    row.balance,
-                  ]),
-                  ["", "", "Total expenses", pnl.totalExpenses],
-                  ["", "", "Net profit", pnl.netProfit],
-                ])
-              }
-            >
-              Export income statement
-            </Button>
+            <ExportMenu
+              filename="ashnight-income-statement"
+              title="Income statement"
+              subtitle={rangeLabel}
+              label="Export income statement"
+              columns={[
+                { label: "Section", value: (row: StatementLine) => row.section },
+                { label: "Code", value: (row: StatementLine) => row.code },
+                { label: "Account", value: (row: StatementLine) => row.account },
+                { label: "Amount", value: (row: StatementLine) => row.amount },
+              ]}
+              rows={[
+                ...pnl.revenue.map((row) => ({
+                  section: "Revenue",
+                  code: row.account.code,
+                  account: row.account.name,
+                  amount: row.balance,
+                })),
+                { section: "Revenue", code: "", account: "Total revenue", amount: pnl.totalRevenue },
+                ...pnl.expenses.map((row) => ({
+                  section: "Expense",
+                  code: row.account.code,
+                  account: row.account.name,
+                  amount: row.balance,
+                })),
+                { section: "Expense", code: "", account: "Total expenses", amount: pnl.totalExpenses },
+                { section: "Result", code: "", account: "Net profit", amount: pnl.netProfit },
+              ]}
+            />
           </CardContent>
         </Card>
 
