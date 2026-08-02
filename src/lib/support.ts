@@ -243,7 +243,13 @@ export interface ActivityFilters {
   area?: string;
   severity?: string;
   search?: string;
+  /** Inclusive start date, `YYYY-MM-DD`. */
+  from?: string;
+  /** Inclusive end date, `YYYY-MM-DD` — the whole day is included. */
+  to?: string;
 }
+
+
 
 export function useActivityLog(filters: ActivityFilters = {}) {
   return useQuery({
