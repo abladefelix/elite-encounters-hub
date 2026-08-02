@@ -163,7 +163,7 @@ function JournalEntryDetailPage() {
                     {party.accountStatus ? ` · ${party.accountStatus}` : ""}
                   </p>
                   <Button asChild variant="ghost" size="sm" className="mt-2 px-0">
-                    <Link to="/ashnight-control/users" search={{ q: party.id } as never}>
+                    <Link to="/ashnight-control/users">
                       Open in members
                     </Link>
                   </Button>
