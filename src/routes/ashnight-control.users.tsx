@@ -133,7 +133,9 @@ function AdminUsers() {
     const all = profilesQuery.data ?? [];
     const term = query.trim().toLowerCase();
     return all
-      .filter((row) => (segment === "specialists" ? !!row.room || row.hourly_rate > 0 : true))
+      .filter((row) =>
+        segment === "specialists" ? isSpecialistRow(row) : !isSpecialistRow(row),
+      )
       .filter((row) =>
         statusFilter === "all" ? true : (row.account_status as AccountStatus) === statusFilter,
       )
