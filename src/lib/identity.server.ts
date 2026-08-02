@@ -515,3 +515,61 @@ export async function assertAdmin(userId: string) {
     .eq("role", "admin");
   if (!data?.length) throw new Error("Admin access is required for that.");
 }
+
+/**
+ * The control room hides areas an admin cannot open and greys out actions for
+ * read-only admins, but hiding a button is not a permission check — every
+ * privileged server call runs through here too.
+ *
+ * `mode` is "read" for lookups and "write" for anything that changes data or
+ * sends messages; read-only admins are refused writes.
+ */
+export async function assertAdminArea(
+  userId: string,
+  area: string,
+  mode: "read" | "write" = "write",
+) {
+  await assertAdmin(userId);
+
+  const client = await admin();
+  const { data: row } = await client
+    .from("admin_permissions")
+    .select("super_admin, areas, read_only")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  // Super admins pass everything. So does an admin on a platform that has no
+  // super admin yet — otherwise the first admin could lock everyone out.
+  if (row?.super_admin) return;
+  if (!row) {
+    const { data: anySuper } = await client
+      .from("admin_permissions")
+      .select("user_id")
+      .eq("super_admin", true)
+      .limit(1);
+    if (!anySuper?.length) return;
+    throw new Error("Your admin account has no permissions assigned yet.");
+  }
+
+  if (!(row.areas ?? []).includes(area)) {
+    throw new Error("You don't have access to that part of the control room.");
+  }
+  if (mode === "write" && row.read_only) {
+    throw new Error("Your admin account is read-only.");
+  }
+}
+
+/** Read-only admins may still export; the flag for that is separate. */
+export async function assertAdminExport(userId: string, area: string) {
+  await assertAdminArea(userId, area, "read");
+  const client = await admin();
+  const { data: row } = await client
+    .from("admin_permissions")
+    .select("super_admin, can_export")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (row && !row.super_admin && !row.can_export) {
+    throw new Error("Your admin account cannot export data.");
+  }
+}
+
