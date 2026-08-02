@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, ShieldCheck, ShieldX, UserCog } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, ShieldCheck, ShieldX, UserCog, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { ExportMenu } from "@/components/admin/export-menu";
@@ -11,7 +13,21 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  ACCOUNT_STATUSES,
+  ACCOUNT_STATUS_META,
+  statusBadgeClass,
+  type AccountStatus,
+} from "@/lib/account-status";
+import { getUserAccount, updateUserAccount } from "@/lib/admin-users.functions";
 import {
   ADMIN_AREAS,
   useAdminAccess,
@@ -19,7 +35,17 @@ import {
   useAdminRoster,
   type AdminRosterEntry,
 } from "@/lib/admin-permissions";
+import { useAllProfiles } from "@/lib/queries";
+import { useAuth } from "@/hooks/use-auth";
 import { initials } from "@/lib/types";
+
+type AppRole = "client" | "specialist" | "admin";
+const ROLE_OPTIONS: { key: AppRole; label: string; blurb: string }[] = [
+  { key: "admin", label: "Administrator", blurb: "Can open the control room." },
+  { key: "specialist", label: "Specialist", blurb: "Appears in the specialist directory." },
+  { key: "client", label: "Client", blurb: "Can book and pay for services." },
+];
+
 
 export const Route = createFileRoute("/ashnight-control/admins")({
   head: () => ({
