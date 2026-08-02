@@ -1143,3 +1143,71 @@ function EscrowStrip({ entry }: { entry: EscrowEntry }) {
     </div>
   );
 }
+
+/**
+ * Chat attachment.
+ *
+ * Photos and clips open in a lightbox inside the app instead of jumping to a
+ * raw file URL in a new tab; anything else stays a plain download link.
+ */
+function MediaAttachment({ url, name }: { url: string; name: string }) {
+  const [open, setOpen] = useState(false);
+  const isImage = /\.(png|jpe?g|gif|webp|avif)(\?|$)/i.test(name) || /image/i.test(name);
+  const isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(name) || /video/i.test(name);
+
+  if (!isImage && !isVideo) {
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="flex items-center gap-2 underline">
+        <Paperclip className="size-3.5" />
+        {name}
+      </a>
+    );
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="block w-full overflow-hidden rounded-lg"
+        aria-label={`Open ${name}`}
+      >
+        {isImage ? (
+          <img
+            src={url}
+            alt={name}
+            loading="lazy"
+            className="max-h-64 w-full rounded-lg object-cover"
+          />
+        ) : (
+          <video src={url} muted playsInline className="max-h-64 w-full rounded-lg object-cover" />
+        )}
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-3xl border-border/70 bg-panel p-2">
+          <DialogTitle className="sr-only">{name}</DialogTitle>
+          {isImage ? (
+            <img src={url} alt={name} className="max-h-[80vh] w-full rounded-lg object-contain" />
+          ) : (
+            <video
+              src={url}
+              controls
+              autoPlay
+              playsInline
+              className="max-h-[80vh] w-full rounded-lg"
+            />
+          )}
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="px-2 pb-1 text-xs text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Open original · {name}
+          </a>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
