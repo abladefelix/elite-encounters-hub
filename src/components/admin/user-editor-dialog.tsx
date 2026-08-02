@@ -120,8 +120,12 @@ const EMPTY: FormState = {
 };
 
 function fromProfile(profile: ProfileFullRow): FormState {
+  const extra = (profile.extra ?? {}) as Record<string, unknown>;
+  const rawPhotos = extra["portfolio_photos"];
+  const rawVideo = extra["portfolio_video"];
   return {
     ...EMPTY,
+
     display_name: profile.display_name ?? "",
     username: profile.username ?? "",
     phone: profile.phone ?? "",
