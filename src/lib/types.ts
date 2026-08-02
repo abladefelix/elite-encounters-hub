@@ -32,6 +32,16 @@ export function isTier(value: string): value is Tier {
 }
 
 /**
+ * Rooms a member can see from their own room. Access is cumulative in room
+ * order: Ultimate sees Premium and Basic too, Basic sees Basic only.
+ */
+export function accessibleTiers(viewerRoom: Tier | null | undefined): Tier[] {
+  if (!viewerRoom) return ["basic"];
+  const index = ALL_TIERS.indexOf(viewerRoom);
+  return index < 0 ? ["basic"] : ALL_TIERS.slice(0, index + 1);
+}
+
+/**
  * A map keyed by room. The three base rooms are always present; custom rooms
  * appear only once an admin creates them, so reads must tolerate a miss.
  */
