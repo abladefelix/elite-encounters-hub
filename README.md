@@ -232,6 +232,52 @@ Statutory rates default to Ghana's current standard: **15% VAT**, **6% combined 
 withholding** on service payouts. Change them in Close &amp; settings whenever the law changes —
 no code edit needed.
 
+Every finance surface — trial balance, income statement, general journal, chart of accounts and
+expenses — has an **Export** button covering CSV, Excel, PDF and Word.
+
+## Admin roles &amp; permissions (`/ashnight-control/admins`)
+
+Ashnight has two admin tiers:
+
+- **Super admin** — full access to everything, including this page. Super admins decide what every
+  other admin may do and can never be limited themselves.
+- **Scoped admin** — sees only the control-room areas a super admin ticked, and can optionally be
+  set to **View only** (reads without saving) or have **exports withheld**.
+
+The roster on this page lists every account with the `admin` role; promote a member from
+**Users → Edit everything → Roles** first and they appear here. Permissions live in the
+`admin_permissions` table and are mirrored in the database through `is_super_admin()`, so the
+sidebar gate is never the only line of defence. Safety net: while no super-admin record exists at
+all, every admin is treated as a super admin so the platform can't lock its owners out.
+
+Areas are grouped as Operations, Money, Trust &amp; safety and Platform, matching the sidebar.
+
+## Exports everywhere (CSV, Excel, PDF, Word)
+
+`src/lib/exporters.ts` provides one export pipeline for the whole control room, and
+`src/components/admin/export-menu.tsx` drops it beside any table:
+
+```tsx
+<ExportMenu
+  filename="ashnight-members"
+  title="Members"
+  columns={[{ label: "Name", value: (row) => row.display_name }]}
+  rows={rows}
+/>
+```
+
+- **CSV** — plain data, UTF-8 with BOM so Excel opens Ghanaian names correctly.
+- **Excel (.xlsx)** — formatted worksheet with the report title.
+- **PDF** — print-ready landscape report with headings and page numbers.
+- **Word (.doc)** — editable document for reports and board packs.
+
+Heavy libraries (`xlsx`, `jspdf`) load on demand, so the control room stays light until someone
+actually exports. The menu hides itself for admins whose permissions withhold exports, and exports
+always cover the **filtered** rows in view — not just the current page.
+
+Live today on: members, bookings &amp; payouts, activity log, admin permissions and every finance
+statement.
+
 ## Quick start (local development)
 
 ```sh
