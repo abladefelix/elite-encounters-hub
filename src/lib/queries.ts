@@ -192,7 +192,9 @@ export function useProfilesByIds(ids: string[]) {
     queryKey: ["profiles", "by-ids", key.join(",")],
     enabled: key.length > 0,
     queryFn: async () =>
-      unwrap<ProfileRow[]>(await supabase.from("profiles").select("*").in("id", key)),
+      unwrap<ProfileRow[]>(
+        await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).in("id", key),
+      ),
   });
 }
 
