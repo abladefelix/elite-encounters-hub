@@ -29,6 +29,7 @@ import {
   Menu,
   Palette,
   Users,
+  UserCog,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -49,6 +50,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 import { TwoFactorCard } from "@/components/two-factor-card";
 import { useAuth } from "@/hooks/use-auth";
+import { areaFromPath, useAdminAccess } from "@/lib/admin-permissions";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useTwoFactor } from "@/lib/two-factor";
 
@@ -110,6 +112,7 @@ function AdminLayout() {
 
   const applicationsQuery = useApplications();
   const { flags } = useFeatureFlags();
+  const access = useAdminAccess();
   const twoFactor = useTwoFactor();
   const pendingVetting = (applicationsQuery.data ?? []).filter(
     (row) => row.status === "pending" || row.status === "in_review",
@@ -156,6 +159,12 @@ function AdminLayout() {
   }
 
   const displayName = profile?.display_name || "Admin";
+  const nav = NAV.filter((item) =>
+    item.superOnly ? access.superAdmin : access.can(item.area),
+  );
+  const currentArea = areaFromPath(pathname);
+  const areaAllowed =
+    currentArea === "admins" ? access.superAdmin : access.can(currentArea);
   const activeLabel =
     [...NAV]
       .sort((a, b) => b.to.length - a.to.length)
@@ -174,7 +183,7 @@ function AdminLayout() {
           </Link>
 
           <nav className="mt-8 space-y-1">
-            {NAV.map((item) => {
+            {nav.map((item) => {
               const active = item.exact
                 ? pathname === item.to
                 : pathname.startsWith(item.to);
@@ -269,7 +278,7 @@ function AdminLayout() {
                     <SheetTitle className="font-display text-base">Control room</SheetTitle>
                   </SheetHeader>
                   <nav className="max-h-[calc(100svh-8.5rem)] space-y-1 overflow-y-auto px-3 py-3">
-                    {NAV.map((item) => {
+                    {nav.map((item) => {
                       const active = item.exact
                         ? pathname === item.to
                         : pathname.startsWith(item.to);
