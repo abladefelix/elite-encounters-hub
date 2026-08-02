@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, ShieldCheck, ShieldX, UserCog, UserPlus } from "lucide-react";
+import { Loader2, Search, ShieldCheck, ShieldX, UserCog, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { ExportMenu } from "@/components/admin/export-menu";
