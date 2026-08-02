@@ -372,9 +372,20 @@ function VettingQueue() {
               ) : null}
             </dl>
 
-            {profile ? <ExtraFields extra={profile.extra} /> : null}
+            {profile ? (
+              <>
+                <ExtraFields extra={profile.extra} />
+                <ApplicantMedia profile={profile} />
+              </>
+            ) : (
+              <p className="mt-5 rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
+                {selected.user_id
+                  ? "This applicant's account record hasn't loaded yet — Ghana Card details, profile photo and portfolio media appear here once it does."
+                  : "No account is linked to this application, so there are no Ghana Card scans, profile photo or portfolio media to review."}
+              </p>
+            )}
 
-            {profile ? <ApplicantMedia profile={profile} /> : null}
+
 
 
             <div className="mt-5 rounded-lg border border-border bg-panel p-4">
