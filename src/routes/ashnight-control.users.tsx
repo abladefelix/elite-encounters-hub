@@ -217,15 +217,16 @@ function AdminUsers() {
           Members &amp; specialists
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          {(profilesQuery.data ?? []).length} accounts on file. Banning or suspending someone kills
-          their live sessions immediately and notifies them with your reason.
+          {(profilesQuery.data ?? []).length} accounts on file, split by role. Clients carry a single
+          profile photo; specialists carry a bio, rate, work photos and an intro video. Banning or
+          suspending someone kills their live sessions immediately and notifies them with your reason.
         </p>
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
         <Tabs value={segment} onValueChange={(value) => setSegment(value as Segment)}>
           <TabsList>
-            <TabsTrigger value="clients">Everyone</TabsTrigger>
+            <TabsTrigger value="clients">Clients</TabsTrigger>
             <TabsTrigger value="specialists">Specialists</TabsTrigger>
           </TabsList>
         </Tabs>
