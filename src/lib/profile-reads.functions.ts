@@ -61,17 +61,20 @@ export const listFullProfiles = createServerFn({ method: "POST" })
     if (!roles?.length) throw new Error("Admin access is required for that.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) {
-      if (isClockDrift(error.message)) {
-        await sleep(500);
-        return listFullProfiles();
+    let data: Database["public"]["Tables"]["profiles"]["Row"][] | null = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const result = await supabaseAdmin
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (!result.error) {
+        data = result.data;
+        break;
       }
-      throw new Error(error.message);
+      if (!isClockDrift(result.error.message)) throw new Error(result.error.message);
+      await sleep(400 * (attempt + 1));
     }
+
 
     const { data: allRoles } = await supabaseAdmin.from("user_roles").select("user_id, role");
     const byUser = new Map<string, Database["public"]["Enums"]["app_role"][]>();
