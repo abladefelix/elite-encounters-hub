@@ -253,6 +253,8 @@ export async function updateUser(input: UpdateUserInput) {
     const { error } = await client.from("profiles").update(patch).eq("id", input.userId);
     if (error) throw new Error(error.message);
   }
+  await savePortfolio(input.userId, input.fields);
+
 
   if (input.roles) await setRoles(input.userId, input.roles);
 
