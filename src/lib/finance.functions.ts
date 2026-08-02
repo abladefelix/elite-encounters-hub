@@ -5,7 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdmin(context: {
+async function assertAdminArea(context: {
   supabase: {
     from: (table: "user_roles") => {
       select: (columns: string) => {
@@ -32,7 +32,7 @@ async function assertAdmin(context: {
 export const syncLedgerEntries = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminArea(context as never);
     const [{ supabaseAdmin }, { syncLedger }] = await Promise.all([
       import("@/integrations/supabase/client.server"),
       import("./finance.server"),

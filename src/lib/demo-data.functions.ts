@@ -6,7 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdmin(context: {
+async function assertAdminArea(context: {
   supabase: {
     from: (table: "user_roles") => {
       select: (columns: string) => {
@@ -37,7 +37,7 @@ const actor = (context: unknown) => {
 export const getDemoStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminArea(context as never);
     const { demoStatus } = await import("./demo-data.server");
     return demoStatus();
   });
@@ -45,7 +45,7 @@ export const getDemoStatus = createServerFn({ method: "POST" })
 export const populateDemoData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminArea(context as never);
     const { seedDemoData } = await import("./demo-data.server");
     const who = actor(context);
     return seedDemoData(who.id, who.label);
@@ -54,7 +54,7 @@ export const populateDemoData = createServerFn({ method: "POST" })
 export const removeDemoData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminArea(context as never);
     const { clearDemoData } = await import("./demo-data.server");
     const who = actor(context);
     return clearDemoData(who.id, who.label);

@@ -6,7 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdmin(context: {
+async function assertAdminArea(context: {
   supabase: {
     from: (table: "user_roles") => {
       select: (columns: string) => {
@@ -32,7 +32,7 @@ async function assertAdmin(context: {
 export const getDeployStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminArea(context as never);
     const { deployStatus } = await import("./deploy.server");
     return deployStatus();
   });
@@ -40,7 +40,7 @@ export const getDeployStatus = createServerFn({ method: "POST" })
 export const syncFromGithub = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context as never);
+    await assertAdminArea(context as never);
     const { runDeploySync } = await import("./deploy.server");
     const claims = (context as { claims?: { email?: string } }).claims;
     return runDeploySync({
