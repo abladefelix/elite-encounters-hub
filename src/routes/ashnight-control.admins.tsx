@@ -274,7 +274,7 @@ function PermissionEditor({ entry }: { entry: AdminRosterEntry }) {
             Areas they can open
             {superAdmin ? (
               <span className="ml-2 text-xs font-normal text-muted-foreground">
-                locked — turn off “Super admin” to choose areas
+                super admin already opens everything — these stay saved for when you turn it off
               </span>
             ) : null}
           </h3>
@@ -284,18 +284,11 @@ function PermissionEditor({ entry }: { entry: AdminRosterEntry }) {
               type="button"
               size="sm"
               variant="ghost"
-              disabled={superAdmin}
               onClick={() => setAreas(ADMIN_AREAS.map((area) => area.key))}
             >
               Select all
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={superAdmin}
-              onClick={() => setAreas([])}
-            >
+            <Button type="button" size="sm" variant="ghost" onClick={() => setAreas([])}>
               Clear
             </Button>
           </div>
