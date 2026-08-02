@@ -6,14 +6,26 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function assertAdmin(context: {
-  supabase: { rpc: (fn: "has_role", args: { _user_id: string; _role: "admin" }) => Promise<{ data: unknown }> };
+  supabase: {
+    from: (table: "user_roles") => {
+      select: (columns: string) => {
+        eq: (
+          column: string,
+          value: string,
+        ) => { eq: (column: string, value: string) => Promise<{ data: unknown[] | null }> };
+      };
+    };
+  };
   userId: string;
 }) {
-  const { data } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "admin",
-  });
-  if (data !== true) throw new Error("Only Ashnight admins can run accounting jobs.");
+  // Role is read from `user_roles` under the caller's own session — the helper
+  // functions behind RLS are no longer callable over the API.
+  const { data } = await context.supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", context.userId)
+    .eq("role", "admin");
+  if (!data?.length) throw new Error("Only Ashnight admins can run accounting jobs.");
 }
 
 /** Books every escrow payment, payout and refund that isn't in the journal yet. */

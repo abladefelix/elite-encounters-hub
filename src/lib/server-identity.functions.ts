@@ -50,11 +50,12 @@ async function readIp(url: string): Promise<string | null> {
 export const getServerIdentity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ServerIdentity> => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Forbidden");
+    const { data: roles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin");
+    if (!roles?.length) throw new Error("Forbidden");
 
     let ipv4: string | null = null;
     let source: string | null = null;

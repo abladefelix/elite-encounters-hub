@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useSettingsSection } from "./platform-settings";
+import { getPublicSettings } from "./public-settings.functions";
 import {
   DEFAULT_GIFT_CATALOG,
   DEFAULT_ROOM_GIFT_RULES,

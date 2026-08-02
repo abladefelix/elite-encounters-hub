@@ -10,6 +10,7 @@ import { useEffect, useId } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { listFullProfiles } from "./profile-reads.functions";
 
 type Tables = Database["public"]["Tables"];
 /** Complete profile record — only readable for yourself or as an admin. */
