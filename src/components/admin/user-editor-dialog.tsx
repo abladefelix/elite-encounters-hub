@@ -8,6 +8,7 @@ import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -36,7 +37,7 @@ import {
   updateUserAccount,
 } from "@/lib/admin-users.functions";
 import { ACCOUNT_STATUSES, ACCOUNT_STATUS_META } from "@/lib/account-status";
-import type { ProfileFullRow } from "@/lib/queries";
+import { resolveStoredMedia, uploadAvatar, type ProfileFullRow } from "@/lib/queries";
 
 type AppRole = "client" | "specialist" | "admin";
 
@@ -147,7 +148,7 @@ function AvatarField({
   name,
   onChange,
 }: {
-  userId?: string;
+  userId?: string | undefined;
   value: string;
   name: string;
   onChange: (next: string) => void;
