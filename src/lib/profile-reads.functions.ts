@@ -7,29 +7,11 @@
  * `profiles_full` database view (which ran with elevated rights) is gone.
  */
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
-export type FullProfile = Record<string, unknown>;
-
-async function isAdmin(supabase: {
-  from: (table: "user_roles") => {
-    select: (columns: string) => {
-      eq: (
-        column: string,
-        value: string,
-      ) => { eq: (column: string, value: string) => Promise<{ data: unknown[] | null }> };
-    };
-  };
-}, userId: string) {
-  const { data } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin");
-  return Array.isArray(data) && data.length > 0;
-}
+export type FullProfile = Database["public"]["Tables"]["profiles"]["Row"];
 
 /** The caller's own record, including their contact and identity columns. */
 export const getMyFullProfile = createServerFn({ method: "POST" })
@@ -42,22 +24,25 @@ export const getMyFullProfile = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return (data as FullProfile | null) ?? null;
+    return data ?? null;
   });
 
 /** Admin roster: every member with the full column set. */
 export const listFullProfiles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({}).catch({}).parse(input ?? {}))
   .handler(async ({ context }): Promise<FullProfile[]> => {
-    if (!(await isAdmin(context.supabase as never, context.userId))) {
-      throw new Error("Admin access is required for that.");
-    }
+    const { data: roles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin");
+    if (!roles?.length) throw new Error("Admin access is required for that.");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []) as FullProfile[];
+    return data ?? [];
   });

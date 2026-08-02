@@ -8,6 +8,8 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 
+import type { Json } from "@/integrations/supabase/types";
+
 /** Sections that are safe for anyone, signed in or not, to read. */
 const PUBLIC_SECTIONS = [
   "branding",
@@ -18,7 +20,7 @@ const PUBLIC_SECTIONS = [
   "platform",
 ] as const;
 
-export type PublicSettings = Record<string, unknown>;
+export type PublicSettings = Record<string, Json>;
 
 export const getPublicSettings = createServerFn({ method: "GET" }).handler(
   async (): Promise<PublicSettings> => {
@@ -30,10 +32,11 @@ export const getPublicSettings = createServerFn({ method: "GET" }).handler(
       .maybeSingle();
     if (error) throw new Error(error.message);
 
-    const blob = (data?.data ?? {}) as Record<string, unknown>;
+    const blob = (data?.data ?? {}) as Record<string, Json>;
     const slice: PublicSettings = {};
     for (const section of PUBLIC_SECTIONS) {
-      if (blob[section] !== undefined && blob[section] !== null) slice[section] = blob[section];
+      const value = blob[section];
+      if (value !== undefined && value !== null) slice[section] = value;
     }
     return slice;
   },
