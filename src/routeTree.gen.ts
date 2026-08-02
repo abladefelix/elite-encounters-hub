@@ -48,6 +48,7 @@ import { Route as PaymentReturnRouteImport } from './routes/payment.return'
 import { Route as SpecialistsIndexRouteImport } from './routes/specialists.index'
 import { Route as SpecialistsSpecialistIdRouteImport } from './routes/specialists.$specialistId'
 import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
+import { Route as AshnightControlJournalEntryIdRouteImport } from './routes/ashnight-control.journal.$entryId'
 import { Route as ApiPublicHooksBackupRouteImport } from './routes/api/public/hooks/backup'
 import { Route as ApiPublicHooksEscrowReleaseRouteImport } from './routes/api/public/hooks/escrow-release'
 import { Route as ApiPublicHooksPaystackRouteImport } from './routes/api/public/hooks/paystack'
@@ -251,6 +252,12 @@ const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
   path: '/api/public/bootstrap-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AshnightControlJournalEntryIdRoute =
+  AshnightControlJournalEntryIdRouteImport.update({
+    id: '/journal/$entryId',
+    path: '/journal/$entryId',
+    getParentRoute: () => AshnightControlRoute,
+  } as any)
 const ApiPublicHooksBackupRoute = ApiPublicHooksBackupRouteImport.update({
   id: '/api/public/hooks/backup',
   path: '/api/public/hooks/backup',
@@ -308,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
+  '/ashnight-control/journal/$entryId': typeof AshnightControlJournalEntryIdRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
   '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
@@ -351,6 +359,7 @@ export interface FileRoutesByTo {
   '/ashnight-control': typeof AshnightControlIndexRoute
   '/specialists': typeof SpecialistsIndexRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
+  '/ashnight-control/journal/$entryId': typeof AshnightControlJournalEntryIdRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
   '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
@@ -396,6 +405,7 @@ export interface FileRoutesById {
   '/ashnight-control/': typeof AshnightControlIndexRoute
   '/specialists/': typeof SpecialistsIndexRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
+  '/ashnight-control/journal/$entryId': typeof AshnightControlJournalEntryIdRoute
   '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
   '/api/public/hooks/paystack': typeof ApiPublicHooksPaystackRoute
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/'
     | '/specialists/'
     | '/api/public/bootstrap-admin'
+    | '/ashnight-control/journal/$entryId'
     | '/api/public/hooks/backup'
     | '/api/public/hooks/escrow-release'
     | '/api/public/hooks/paystack'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/ashnight-control'
     | '/specialists'
     | '/api/public/bootstrap-admin'
+    | '/ashnight-control/journal/$entryId'
     | '/api/public/hooks/backup'
     | '/api/public/hooks/escrow-release'
     | '/api/public/hooks/paystack'
@@ -529,6 +541,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/'
     | '/specialists/'
     | '/api/public/bootstrap-admin'
+    | '/ashnight-control/journal/$entryId'
     | '/api/public/hooks/backup'
     | '/api/public/hooks/escrow-release'
     | '/api/public/hooks/paystack'
@@ -831,6 +844,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBootstrapAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ashnight-control/journal/$entryId': {
+      id: '/ashnight-control/journal/$entryId'
+      path: '/journal/$entryId'
+      fullPath: '/ashnight-control/journal/$entryId'
+      preLoaderRoute: typeof AshnightControlJournalEntryIdRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/api/public/hooks/backup': {
       id: '/api/public/hooks/backup'
       path: '/api/public/hooks/backup'
@@ -879,6 +899,7 @@ interface AshnightControlRouteChildren {
   AshnightControlUsersRoute: typeof AshnightControlUsersRoute
   AshnightControlVettingRoute: typeof AshnightControlVettingRoute
   AshnightControlIndexRoute: typeof AshnightControlIndexRoute
+  AshnightControlJournalEntryIdRoute: typeof AshnightControlJournalEntryIdRoute
 }
 
 const AshnightControlRouteChildren: AshnightControlRouteChildren = {
@@ -905,6 +926,7 @@ const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlUsersRoute: AshnightControlUsersRoute,
   AshnightControlVettingRoute: AshnightControlVettingRoute,
   AshnightControlIndexRoute: AshnightControlIndexRoute,
+  AshnightControlJournalEntryIdRoute: AshnightControlJournalEntryIdRoute,
 }
 
 const AshnightControlRouteWithChildren = AshnightControlRoute._addFileChildren(
