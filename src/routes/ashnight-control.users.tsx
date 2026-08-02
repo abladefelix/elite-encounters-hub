@@ -353,8 +353,22 @@ function AdminUsers() {
                           ? formatGhanaCard(row.ghana_card_number)
                           : "no Ghana Card"}
                       </p>
-                      {row.hourly_rate > 0 ? <p>{money(row.hourly_rate)}/h</p> : null}
                     </TableCell>
+
+                    {segment === "specialists" ? (
+                      <TableCell className="text-xs text-muted-foreground">
+                        <p>
+                          {row.hourly_rate > 0 ? `${money(row.hourly_rate)}/h` : "no rate"} ·{" "}
+                          {row.years_experience} yr
+                        </p>
+                        <p>{row.bio?.trim() ? "bio on file" : "no bio yet"}</p>
+                        <p>
+                          {mediaCounts(row).photos} work photo
+                          {mediaCounts(row).photos === 1 ? "" : "s"} ·{" "}
+                          {mediaCounts(row).video ? "intro video" : "no video"}
+                        </p>
+                      </TableCell>
+                    ) : null}
 
                     <TableCell>{row.room ? <TierBadge tier={row.room} /> : "—"}</TableCell>
 
