@@ -270,7 +270,15 @@ function PermissionEditor({ entry }: { entry: AdminRosterEntry }) {
 
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-medium">Areas they can open</h3>
+          <h3 className="text-sm font-medium">
+            Areas they can open
+            {superAdmin ? (
+              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                locked — turn off “Super admin” to choose areas
+              </span>
+            ) : null}
+          </h3>
+
           <div className="flex gap-2">
             <Button
               type="button"
