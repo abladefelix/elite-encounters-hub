@@ -1015,7 +1015,7 @@ function PaymentsAutomationCard() {
     },
     {
       label: "Escrow settlement endpoint",
-      hint: "Call hourly from your scheduler with the project apikey header.",
+      hint: "Call hourly from your scheduler with the x-ashnight-job-secret header (job trigger secret in the integration vault).",
       value: `${origin}/api/public/hooks/escrow-release`,
     },
   ];
