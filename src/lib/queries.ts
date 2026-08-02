@@ -53,16 +53,17 @@ export function useSpecialists(room?: Tier | "all") {
     queryKey: ["specialists", room ?? "all"],
     queryFn: async () => {
       // Clients also hold a room (their membership tier), so the directory is
-      // scoped to accounts that actually carry the specialist role.
-      const roles = unwrap<{ user_id: string }[]>(
-        await supabase.from("user_roles").select("user_id").eq("role", "specialist"),
+      // scoped through the curated `specialist_directory` view, which only
+      // lists approved, placed specialists.
+      const roles = unwrap<{ id: string }[]>(
+        await supabase.from("specialist_directory").select("id"),
       );
-      const ids = roles.map((row) => row.user_id);
+      const ids = roles.map((row) => row.id).filter((id): id is string => Boolean(id));
       if (!ids.length) return [] as ProfileRow[];
 
       let query = supabase
         .from("profiles")
-        .select("*")
+        .select(PUBLIC_PROFILE_COLUMNS)
         .in("id", ids)
         .eq("vetting", "approved")
         .eq("suspended", false)
@@ -82,24 +83,36 @@ export function useProfile(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select(PUBLIC_PROFILE_COLUMNS)
         .eq("id", id!)
         .maybeSingle();
       if (error) throw new Error(error.message);
-      return data;
+      return data as ProfileRow | null;
     },
   });
 }
 
+/**
+ * Admin/self read of complete records, including contact and ID columns.
+ * The `profiles_full` view only ever returns your own row or, for admins,
+ * every row — other members cannot reach the sensitive columns at all.
+ */
 export function useAllProfiles() {
   return useQuery({
     queryKey: ["profiles", "all"],
     queryFn: async () =>
-      unwrap<ProfileRow[]>(
-        await supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      unwrap<ProfileFullRow[]>(
+        (await supabase
+          .from("profiles_full")
+          .select("*")
+          .order("created_at", { ascending: false })) as unknown as {
+          data: ProfileFullRow[] | null;
+          error: { message: string } | null;
+        },
       ),
   });
 }
+
 
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
