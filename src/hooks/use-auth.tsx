@@ -52,7 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("profiles_full").select("*").eq("id", userId).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
-    setProfile(profileResult.data ?? null);
+    // The view mirrors the table one-for-one; generated view types are just
+    // nullable because Postgres cannot prove not-null through a view.
+    setProfile((profileResult.data as ProfileRow | null) ?? null);
     setRoles((rolesResult.data ?? []).map((row) => row.role));
   }, []);
 
