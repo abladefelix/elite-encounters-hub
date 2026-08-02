@@ -47,7 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     const [profileResult, rolesResult] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+      // `profiles_full` only ever returns your own row (or every row for
+      // admins), so contact and ID columns stay unreachable for other members.
+      supabase.from("profiles_full").select("*").eq("id", userId).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
     setProfile(profileResult.data ?? null);
