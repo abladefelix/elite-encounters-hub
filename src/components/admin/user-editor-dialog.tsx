@@ -398,13 +398,15 @@ export function UserEditorDialog({
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="ue-avatar">Avatar URL</Label>
-                  <Input
-                    id="ue-avatar"
+                  <Label htmlFor="ue-avatar">Profile picture</Label>
+                  <AvatarField
+                    userId={profile?.id}
                     value={form.avatar_url}
-                    onChange={(event) => set("avatar_url", event.target.value)}
+                    name={form.display_name}
+                    onChange={(next) => set("avatar_url", next)}
                   />
                 </div>
+
               </div>
             </section>
 
