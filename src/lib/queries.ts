@@ -100,16 +100,7 @@ export function useProfile(id: string | undefined) {
 export function useAllProfiles() {
   return useQuery({
     queryKey: ["profiles", "all"],
-    queryFn: async () =>
-      unwrap<ProfileFullRow[]>(
-        (await supabase
-          .from("profiles_full")
-          .select("*")
-          .order("created_at", { ascending: false })) as unknown as {
-          data: ProfileFullRow[] | null;
-          error: { message: string } | null;
-        },
-      ),
+    queryFn: async () => (await listFullProfiles()) as unknown as ProfileFullRow[],
   });
 }
 

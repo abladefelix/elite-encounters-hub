@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { isBlocked, type AccountStatus } from "@/lib/account-status";
 import type { Database } from "@/integrations/supabase/types";
+import { getMyFullProfile } from "@/lib/profile-reads.functions";
 
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 export type AppRole = Database["public"]["Enums"]["app_role"];
