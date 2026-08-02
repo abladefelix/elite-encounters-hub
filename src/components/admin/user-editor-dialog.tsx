@@ -3,10 +3,12 @@
  * existing one: identity, contact, specialist profile, placement, credentials
  * and roles.
  */
-import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -35,7 +37,7 @@ import {
   updateUserAccount,
 } from "@/lib/admin-users.functions";
 import { ACCOUNT_STATUSES, ACCOUNT_STATUS_META } from "@/lib/account-status";
-import type { ProfileFullRow } from "@/lib/queries";
+import { resolveStoredMedia, uploadAvatar, type ProfileFullRow } from "@/lib/queries";
 
 type AppRole = "client" | "specialist" | "admin";
 
@@ -133,6 +135,128 @@ function fromProfile(profile: ProfileFullRow): FormState {
     available: Boolean(profile.available),
     suspended: Boolean(profile.suspended),
   };
+}
+
+/**
+ * Profile picture control: shows the current picture, uploads a replacement to
+ * the private avatar store on the member's behalf, or clears it. Falls back to
+ * a plain link field so an external URL can still be pasted.
+ */
+function AvatarField({
+  userId,
+  value,
+  name,
+  onChange,
+}: {
+  userId?: string | undefined;
+  value: string;
+  name: string;
+  onChange: (next: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!value) {
+      setPreview(null);
+      return;
+    }
+    resolveStoredMedia("avatars", value)
+      .then((url) => {
+        if (active) setPreview(url);
+      })
+      .catch(() => {
+        if (active) setPreview(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [value]);
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    if (!userId) {
+      toast.error("Save the account first, then add a profile picture.");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Pick an image file — PNG, JPG or WebP.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("That image is larger than 8MB. Pick a smaller file.");
+      return;
+    }
+    setBusy(true);
+    try {
+      onChange(await uploadAvatar(userId, file));
+      toast.success("Picture uploaded — save to apply it.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "That upload failed.");
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-16 w-16 border border-border">
+          {preview ? <AvatarImage src={preview} alt={name || "Member"} /> : null}
+          <AvatarFallback>{(name || "?").slice(0, 2).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() => inputRef.current?.click()}
+          >
+            {busy ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ImagePlus className="mr-2 h-4 w-4" />
+            )}
+            {value ? "Replace picture" : "Upload picture"}
+          </Button>
+          {value ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => onChange("")}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remove
+            </Button>
+          ) : null}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(event) => void handleFile(event.target.files?.[0])}
+        />
+      </div>
+      <Input
+        id="ue-avatar"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="Or paste an image URL"
+      />
+      {!userId ? (
+        <p className="text-xs text-muted-foreground">
+          Uploads become available once the account exists — create it first, then reopen the editor.
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 const list = (value: string) =>
@@ -398,13 +522,15 @@ export function UserEditorDialog({
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="ue-avatar">Avatar URL</Label>
-                  <Input
-                    id="ue-avatar"
+                  <Label htmlFor="ue-avatar">Profile picture</Label>
+                  <AvatarField
+                    userId={profile?.id}
                     value={form.avatar_url}
-                    onChange={(event) => set("avatar_url", event.target.value)}
+                    name={form.display_name}
+                    onChange={(next) => set("avatar_url", next)}
                   />
                 </div>
+
               </div>
             </section>
 
