@@ -21,7 +21,13 @@ import { SiteFooter } from "@/components/site-footer";
 import { TierBadge } from "@/components/tier-badge";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { openThread, useRatings, useServices, useSpecialistServices } from "@/lib/queries";
+import {
+  openThread,
+  useRatings,
+  useServices,
+  useSpecialistServices,
+  type ProfileRow,
+} from "@/lib/queries";
 import { useRoomSettings } from "@/lib/room-settings";
 import { initials, money } from "@/lib/types";
 
