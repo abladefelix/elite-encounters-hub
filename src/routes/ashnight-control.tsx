@@ -114,6 +114,7 @@ function AdminLayout() {
   const { flags } = useFeatureFlags();
   const access = useAdminAccess();
   const twoFactor = useTwoFactor();
+  const inNativeApp = useIsNativeApp();
   const pendingVetting = (applicationsQuery.data ?? []).filter(
     (row) => row.status === "pending" || row.status === "in_review",
   ).length;
