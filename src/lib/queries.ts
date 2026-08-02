@@ -94,9 +94,9 @@ export function useProfile(id: string | undefined) {
 }
 
 /**
- * Admin/self read of complete records, including contact and ID columns.
- * The `profiles_full` view only ever returns your own row or, for admins,
- * every row — other members cannot reach the sensitive columns at all.
+ * Admin roster with the complete records, including contact and ID columns.
+ * The read happens in a server function that re-checks the admin role, so
+ * ordinary members cannot reach those columns at all.
  */
 export function useAllProfiles() {
   return useQuery({
