@@ -164,12 +164,31 @@ export function CallOverlay({
         }
       };
 
+      /** Builds and broadcasts a fresh offer — used whenever the callee joins. */
+      const sendOffer = async () => {
+        const conn = pcRef.current;
+        if (!conn || cancelled) return;
+        const offer = await conn.createOffer();
+        await conn.setLocalDescription(offer);
+        void channel.send({
+          type: "broadcast",
+          event: "signal",
+          payload: { kind: "offer", sdp: offer, from: selfId } satisfies SignalPayload,
+        });
+        setStatus("Ringing…");
+      };
+
       channel
         .on("broadcast", { event: "signal" }, async ({ payload }: { payload: SignalPayload }) => {
           if (cancelled || payload.from === selfId || !pcRef.current) return;
           const conn = pcRef.current;
           try {
-            if (payload.kind === "offer" && !isCaller) {
+            if (payload.kind === "ready") {
+              // The other side just joined. Only the caller offers, and it
+              // re-offers here because the first offer may have been sent
+              // before anyone was listening.
+              if (isCaller) await sendOffer();
+            } else if (payload.kind === "offer" && !isCaller) {
               await conn.setRemoteDescription(new RTCSessionDescription(payload.sdp));
               const answer = await conn.createAnswer();
               await conn.setLocalDescription(answer);
@@ -178,8 +197,11 @@ export function CallOverlay({
                 event: "signal",
                 payload: { kind: "answer", sdp: answer, from: selfId } satisfies SignalPayload,
               });
+              setStatus("Connecting…");
             } else if (payload.kind === "answer" && isCaller) {
-              await conn.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+              if (conn.signalingState === "have-local-offer") {
+                await conn.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+              }
             } else if (payload.kind === "ice") {
               await conn.addIceCandidate(new RTCIceCandidate(payload.candidate));
             } else if (payload.kind === "hangup") {
@@ -193,19 +215,17 @@ export function CallOverlay({
         })
         .subscribe((subStatus) => {
           if (subStatus !== "SUBSCRIBED" || cancelled) return;
+          // Announce the join in both directions: the caller's offer is only
+          // useful once somebody is on the channel to hear it.
+          void channel.send({
+            type: "broadcast",
+            event: "signal",
+            payload: { kind: "ready", from: selfId } satisfies SignalPayload,
+          });
           if (isCaller) {
-            void (async () => {
-              const offer = await pc.createOffer();
-              await pc.setLocalDescription(offer);
-              void channel.send({
-                type: "broadcast",
-                event: "signal",
-                payload: { kind: "offer", sdp: offer, from: selfId } satisfies SignalPayload,
-              });
-              setStatus("Ringing…");
-            })();
+            void sendOffer();
           } else {
-            setStatus("Waiting for the caller…");
+            setStatus("Connecting…");
           }
         });
     }
