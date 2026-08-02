@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
 import { ExportMenu } from "@/components/admin/export-menu";
 import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card } from "@/components/ui/card";
@@ -65,8 +67,23 @@ function AdminLogs() {
   const [area, setArea] = useState("all");
   const [severity, setSeverity] = useState("all");
   const [search, setSearch] = useState("");
-  const logs = useActivityLog({ area, severity, search: search.trim() });
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const logs = useActivityLog({ area, severity, search: search.trim(), from, to });
   const paged = usePaged(logs.data ?? [], 25);
+
+  function setToday() {
+    const today = new Date().toISOString().slice(0, 10);
+    setFrom(today);
+    setTo(today);
+  }
+
+  function setLast7() {
+    const now = new Date();
+    const week = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+    setFrom(week.toISOString().slice(0, 10));
+    setTo(now.toISOString().slice(0, 10));
+  }
 
   return (
     <div className="space-y-6">
@@ -113,6 +130,44 @@ function AdminLogs() {
           className="w-full sm:max-w-xs"
           aria-label="Search the activity log"
         />
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            type="date"
+            value={from}
+            max={to || undefined}
+            onChange={(event) => setFrom(event.target.value)}
+            className="w-[9.5rem]"
+            aria-label="Search from date"
+          />
+          <span className="text-xs text-muted-foreground">to</span>
+          <Input
+            type="date"
+            value={to}
+            min={from || undefined}
+            onChange={(event) => setTo(event.target.value)}
+            className="w-[9.5rem]"
+            aria-label="Search to date"
+          />
+          <Button variant="outline" size="sm" onClick={setToday}>
+            Today
+          </Button>
+          <Button variant="outline" size="sm" onClick={setLast7}>
+            Last 7 days
+          </Button>
+          {from || to ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFrom("");
+                setTo("");
+              }}
+            >
+              Clear dates
+            </Button>
+          ) : null}
+        </div>
+
         <ExportMenu
           filename="ashnight-activity-log"
           title="Activity log"

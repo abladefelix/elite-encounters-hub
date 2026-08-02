@@ -4,6 +4,8 @@ import { Languages, Loader2, MessageSquareHeart, Palette, RotateCcw, Save } from
 import { toast } from "sonner";
 
 import { BrandMark } from "@/components/brand-mark";
+import { LogoPicker } from "@/components/logo-picker";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -124,6 +126,16 @@ function BrandingCard() {
             </div>
           </div>
 
+          <div className="mt-4">
+            <LogoPicker
+              value={draft.logoUrl}
+              alt={draft.logoAlt || draft.name}
+              onChange={(url) => set("logoUrl", url)}
+            />
+          </div>
+
+
+
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <Field label="Brand name" value={draft.name} onChange={(v) => set("name", v)} />
             <Field
@@ -133,11 +145,12 @@ function BrandingCard() {
             />
             <Field
               label="Logo image URL"
-              hint="Leave empty to use the built-in brass mark."
-              value={draft.logoUrl}
-              placeholder="https://…/logo.png"
+              hint="Or paste a hosted URL. Leave empty to use the built-in brass mark."
+              value={draft.logoUrl.startsWith("data:") ? "" : draft.logoUrl}
+              placeholder={draft.logoUrl.startsWith("data:") ? "Uploaded image in use" : "https://…/logo.png"}
               onChange={(v) => set("logoUrl", v)}
             />
+
             <Field
               label="Logo alt text"
               value={draft.logoAlt}

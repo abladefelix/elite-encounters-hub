@@ -243,7 +243,13 @@ export interface ActivityFilters {
   area?: string;
   severity?: string;
   search?: string;
+  /** Inclusive start date, `YYYY-MM-DD`. */
+  from?: string;
+  /** Inclusive end date, `YYYY-MM-DD` — the whole day is included. */
+  to?: string;
 }
+
+
 
 export function useActivityLog(filters: ActivityFilters = {}) {
   return useQuery({
@@ -257,6 +263,9 @@ export function useActivityLog(filters: ActivityFilters = {}) {
       if (filters.area && filters.area !== "all") query = query.eq("area", filters.area);
       if (filters.severity && filters.severity !== "all")
         query = query.eq("severity", filters.severity);
+      if (filters.from) query = query.gte("created_at", `${filters.from}T00:00:00`);
+      if (filters.to) query = query.lte("created_at", `${filters.to}T23:59:59.999`);
+
       if (filters.search) {
         const term = `%${filters.search}%`;
         query = query.or(
