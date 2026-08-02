@@ -179,10 +179,14 @@ export async function resolveStoredMedia(
     const extracted = storagePathFromUrl(bucket, value);
     if (!extracted) return value;
     path = extracted;
+  } else if (value.startsWith("/")) {
+    // Site-relative asset (demo media) — already loadable as-is.
+    return value;
   }
   const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn);
   if (error) throw new Error(error.message);
   return data.signedUrl;
+
 }
 
 

@@ -950,7 +950,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
 
   const manifest: DemoManifest = {
     seededAt: new Date().toISOString(),
-    userIds: [...specialistIds, ...clientIds],
+    userIds: [...specialistIds, ...clientIds, ...applicantIds],
     serviceIds,
     counts,
   };
