@@ -38,6 +38,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { TierBadge } from "@/components/tier-badge";
 import { CallOverlay, type CallMode } from "@/components/chat/call-overlay";
+import { sendRing } from "@/lib/call-ring";
 import {
   ServiceRequestDialog,
   type ServiceRequestDraft,
