@@ -317,7 +317,7 @@ function AdminUsers() {
             <TableBody>
               {profilesQuery.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center">
+                  <TableCell colSpan={segment === "specialists" ? 6 : 5} className="py-10 text-center">
                     <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
@@ -439,7 +439,7 @@ function AdminUsers() {
 
               {profilesQuery.isError ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-sm">
+                  <TableCell colSpan={segment === "specialists" ? 6 : 5} className="py-10 text-center text-sm">
                     <p className="font-medium text-destructive">
                       {profilesQuery.error instanceof Error &&
                       /unauthor|authorization|admin access/i.test(profilesQuery.error.message)
@@ -463,10 +463,12 @@ function AdminUsers() {
 
               {!profilesQuery.isLoading && !profilesQuery.isError && rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={segment === "specialists" ? 6 : 5} className="py-10 text-center text-sm text-muted-foreground">
                     {(profilesQuery.data ?? []).length === 0
                       ? "No accounts on file yet."
-                      : "No accounts match that search."}
+                      : segment === "specialists"
+                        ? "No specialists match that search."
+                        : "No clients match that search."}
                   </TableCell>
                 </TableRow>
               ) : null}
