@@ -35,7 +35,8 @@ export const Route = createFileRoute("/specialists/$specialistId")({
       .eq("suspended", false)
       .maybeSingle();
     if (error || !data) throw notFound();
-    return { specialist: data };
+    // View columns are typed nullable, but they mirror the not-null table.
+    return { specialist: data as ProfileRow };
   },
   head: ({ loaderData }) => {
     if (!loaderData) {
