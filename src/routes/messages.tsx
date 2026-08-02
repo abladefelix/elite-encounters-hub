@@ -1093,27 +1093,10 @@ function MessageBubble({
           )}
         >
           {message.attachment_url ? (
-            /\.(png|jpe?g|gif|webp|avif)(\?|$)/i.test(message.attachment_name ?? "") ||
-            /image/i.test(message.attachment_name ?? "") ? (
-              <a href={message.attachment_url} target="_blank" rel="noreferrer" className="block">
-                <img
-                  src={message.attachment_url}
-                  alt={message.attachment_name ?? "Shared photo"}
-                  loading="lazy"
-                  className="max-h-64 w-full rounded-lg object-cover"
-                />
-              </a>
-            ) : (
-              <a
-                href={message.attachment_url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2 underline"
-              >
-                <Paperclip className="size-3.5" />
-                {message.attachment_name ?? "Attachment"}
-              </a>
-            )
+            <MediaAttachment
+              url={message.attachment_url}
+              name={message.attachment_name ?? "Attachment"}
+            />
           ) : (
             message.body
           )}
