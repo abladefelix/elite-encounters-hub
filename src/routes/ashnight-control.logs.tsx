@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { ExportMenu } from "@/components/admin/export-menu";
 import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,17 @@ export const Route = createFileRoute("/ashnight-control/logs")({
   }),
   component: AdminLogs,
 });
+
+type LogRow = {
+  created_at: string;
+  area: string;
+  event: string;
+  severity: string;
+  actor_label: string;
+  target: string;
+  ip: string;
+  user_agent: string;
+};
 
 const SEVERITIES = ["all", "info", "notice", "warning", "critical"];
 
@@ -100,6 +112,22 @@ function AdminLogs() {
           placeholder="Event, actor, target or IP"
           className="w-full sm:max-w-xs"
           aria-label="Search the activity log"
+        />
+        <ExportMenu
+          filename="ashnight-activity-log"
+          title="Activity log"
+          columns={[
+            { label: "When", value: (row: LogRow) => row.created_at },
+            { label: "Area", value: (row: LogRow) => row.area },
+            { label: "Event", value: (row: LogRow) => row.event },
+            { label: "Severity", value: (row: LogRow) => row.severity },
+            { label: "Actor", value: (row: LogRow) => row.actor_label },
+            { label: "Target", value: (row: LogRow) => row.target },
+            { label: "IP", value: (row: LogRow) => row.ip },
+            { label: "User agent", value: (row: LogRow) => row.user_agent },
+          ]}
+          rows={logs.data ?? []}
+          size="default"
         />
       </div>
 

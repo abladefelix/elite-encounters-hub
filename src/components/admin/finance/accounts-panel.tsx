@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ExportMenu } from "@/components/admin/export-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +38,6 @@ import {
   ACCOUNT_TYPES,
   ACCOUNT_TYPE_LABEL,
   cedis,
-  downloadCsv,
   isDebitAccount,
   useAccountMutations,
   type AccountBalance,
@@ -148,24 +148,20 @@ export function AccountsPanel({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() =>
-              downloadCsv("ashnight-chart-of-accounts.csv", [
-                ["Code", "Name", "Type", "Subtype", "Balance", "Active"],
-                ...rows.map((account) => [
-                  account.code,
-                  account.name,
-                  account.type,
-                  account.subtype,
-                  balanceOf.get(account.id) ?? 0,
-                  account.active ? "yes" : "no",
-                ]),
-              ])
-            }
-          >
-            Export CSV
-          </Button>
+          <ExportMenu
+            filename="ashnight-chart-of-accounts"
+            title="Chart of accounts"
+            columns={[
+              { label: "Code", value: (row: LedgerAccount) => row.code },
+              { label: "Name", value: (row: LedgerAccount) => row.name },
+              { label: "Type", value: (row: LedgerAccount) => ACCOUNT_TYPE_LABEL[row.type] },
+              { label: "Subtype", value: (row: LedgerAccount) => row.subtype },
+              { label: "Balance", value: (row: LedgerAccount) => balanceOf.get(row.id) ?? 0 },
+              { label: "Active", value: (row: LedgerAccount) => (row.active ? "yes" : "no") },
+            ]}
+            rows={rows}
+            size="default"
+          />
           <Button onClick={startCreate}>
             <Plus className="size-4" /> New account
           </Button>

@@ -1,3 +1,4 @@
+import { ExportMenu } from "@/components/admin/export-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,13 +13,19 @@ import {
 import {
   ACCOUNT_TYPE_LABEL,
   cedis,
-  downloadCsv,
   type AccountBalance,
   type BalanceSheet,
   type CashFlow,
   type IncomeStatement,
   type TaxSummary,
 } from "@/lib/finance";
+
+interface StatementLine {
+  section: string;
+  code: string;
+  account: string;
+  amount: number;
+}
 
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
@@ -81,25 +88,22 @@ export function ReportsPanel({
             <Badge variant={trial.balanced ? "default" : "destructive"}>
               {trial.balanced ? "Books balance" : "Out of balance"}
             </Badge>
-            <Button
-              variant="outline"
-              onClick={() =>
-                downloadCsv("ashnight-trial-balance.csv", [
-                  ["Code", "Account", "Type", "Debit", "Credit", "Balance"],
-                  ...trial.rows.map((row) => [
-                    row.account.code,
-                    row.account.name,
-                    row.account.type,
-                    row.debit,
-                    row.credit,
-                    row.balance,
-                  ]),
-                  ["", "Totals", "", trial.debit, trial.credit, ""],
-                ])
-              }
-            >
-              Export CSV
-            </Button>
+            <ExportMenu
+              filename="ashnight-trial-balance"
+              title="Trial balance"
+              subtitle={rangeLabel}
+              columns={[
+                { label: "Code", value: (row: AccountBalance) => row.account.code },
+                { label: "Account", value: (row: AccountBalance) => row.account.name },
+                { label: "Type", value: (row: AccountBalance) => ACCOUNT_TYPE_LABEL[row.account.type] },
+                { label: "Debit", value: (row: AccountBalance) => row.debit },
+                { label: "Credit", value: (row: AccountBalance) => row.credit },
+                { label: "Balance", value: (row: AccountBalance) => row.balance },
+              ]}
+              rows={trial.rows}
+              size="default"
+            />
+
           </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -168,32 +172,35 @@ export function ReportsPanel({
               value={cedis(pnl.netProfit)}
               strong
             />
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() =>
-                downloadCsv("ashnight-income-statement.csv", [
-                  ["Section", "Code", "Account", "Amount"],
-                  ...pnl.revenue.map((row) => [
-                    "Revenue",
-                    row.account.code,
-                    row.account.name,
-                    row.balance,
-                  ]),
-                  ["", "", "Total revenue", pnl.totalRevenue],
-                  ...pnl.expenses.map((row) => [
-                    "Expense",
-                    row.account.code,
-                    row.account.name,
-                    row.balance,
-                  ]),
-                  ["", "", "Total expenses", pnl.totalExpenses],
-                  ["", "", "Net profit", pnl.netProfit],
-                ])
-              }
-            >
-              Export income statement
-            </Button>
+            <ExportMenu
+              filename="ashnight-income-statement"
+              title="Income statement"
+              subtitle={rangeLabel}
+              label="Export income statement"
+              columns={[
+                { label: "Section", value: (row: StatementLine) => row.section },
+                { label: "Code", value: (row: StatementLine) => row.code },
+                { label: "Account", value: (row: StatementLine) => row.account },
+                { label: "Amount", value: (row: StatementLine) => row.amount },
+              ]}
+              rows={[
+                ...pnl.revenue.map((row) => ({
+                  section: "Revenue",
+                  code: row.account.code,
+                  account: row.account.name,
+                  amount: row.balance,
+                })),
+                { section: "Revenue", code: "", account: "Total revenue", amount: pnl.totalRevenue },
+                ...pnl.expenses.map((row) => ({
+                  section: "Expense",
+                  code: row.account.code,
+                  account: row.account.name,
+                  amount: row.balance,
+                })),
+                { section: "Expense", code: "", account: "Total expenses", amount: pnl.totalExpenses },
+                { section: "Result", code: "", account: "Net profit", amount: pnl.netProfit },
+              ]}
+            />
           </CardContent>
         </Card>
 

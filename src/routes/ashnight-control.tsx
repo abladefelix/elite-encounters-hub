@@ -29,6 +29,7 @@ import {
   Menu,
   Palette,
   Users,
+  UserCog,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -49,6 +50,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 import { TwoFactorCard } from "@/components/two-factor-card";
 import { useAuth } from "@/hooks/use-auth";
+import { areaFromPath, useAdminAccess } from "@/lib/admin-permissions";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useTwoFactor } from "@/lib/two-factor";
 
@@ -57,31 +59,41 @@ export const Route = createFileRoute("/ashnight-control")({
   component: AdminLayout,
 });
 
-const NAV: { to: string; label: string; icon: typeof Users; exact?: boolean }[] = [
-  { to: "/ashnight-control", label: "Overview", icon: LayoutDashboard, exact: true },
-  { to: "/ashnight-control/vetting", label: "Vetting queue", icon: BadgeCheck },
-  { to: "/ashnight-control/users", label: "Users", icon: Users },
-  { to: "/ashnight-control/rooms", label: "Rooms", icon: DoorOpen },
-  { to: "/ashnight-control/services", label: "Services", icon: Sparkles },
-  { to: "/ashnight-control/bookings", label: "Bookings", icon: CalendarCheck },
-  { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck },
-  { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan },
-  { to: "/ashnight-control/complaints", label: "Complaints", icon: LifeBuoy },
-  { to: "/ashnight-control/notifications", label: "Notifications", icon: Bell },
-  { to: "/ashnight-control/documents", label: "Invoices & receipts", icon: ReceiptText },
-  { to: "/ashnight-control/finance", label: "Finance & accounting", icon: Calculator },
-  { to: "/ashnight-control/logs", label: "Activity log", icon: ScrollText },
-  { to: "/ashnight-control/signup", label: "Sign-up form", icon: ClipboardList },
-  { to: "/ashnight-control/features", label: "Features", icon: ToggleLeft },
-  { to: "/ashnight-control/branding", label: "Brand & wording", icon: Palette },
-  { to: "/ashnight-control/settings", label: "Keys & security", icon: KeyRound },
-  { to: "/ashnight-control/email", label: "Email & domain", icon: Mail },
-  { to: "/ashnight-control/backups", label: "Backups", icon: DatabaseBackup },
-  { to: "/ashnight-control/server", label: "Server & DNS", icon: Server },
-  { to: "/ashnight-control/demo", label: "Demo data", icon: Database },
-  { to: "/ashnight-control/deploy", label: "Deploy", icon: Rocket },
-
+const NAV: {
+  to: string;
+  label: string;
+  icon: typeof Users;
+  /** Permission key from ADMIN_AREAS. */
+  area: string;
+  exact?: boolean;
+  /** Only super admins ever see this. */
+  superOnly?: boolean;
+}[] = [
+  { to: "/ashnight-control", label: "Overview", icon: LayoutDashboard, area: "overview", exact: true },
+  { to: "/ashnight-control/vetting", label: "Vetting queue", icon: BadgeCheck, area: "vetting" },
+  { to: "/ashnight-control/users", label: "Users", icon: Users, area: "users" },
+  { to: "/ashnight-control/admins", label: "Admin roles", icon: UserCog, area: "admins", superOnly: true },
+  { to: "/ashnight-control/rooms", label: "Rooms", icon: DoorOpen, area: "rooms" },
+  { to: "/ashnight-control/services", label: "Services", icon: Sparkles, area: "services" },
+  { to: "/ashnight-control/bookings", label: "Bookings", icon: CalendarCheck, area: "bookings" },
+  { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck, area: "escrow" },
+  { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan, area: "moderation" },
+  { to: "/ashnight-control/complaints", label: "Complaints", icon: LifeBuoy, area: "complaints" },
+  { to: "/ashnight-control/notifications", label: "Notifications", icon: Bell, area: "notifications" },
+  { to: "/ashnight-control/documents", label: "Invoices & receipts", icon: ReceiptText, area: "documents" },
+  { to: "/ashnight-control/finance", label: "Finance & accounting", icon: Calculator, area: "finance" },
+  { to: "/ashnight-control/logs", label: "Activity log", icon: ScrollText, area: "logs" },
+  { to: "/ashnight-control/signup", label: "Sign-up form", icon: ClipboardList, area: "signup" },
+  { to: "/ashnight-control/features", label: "Features", icon: ToggleLeft, area: "features" },
+  { to: "/ashnight-control/branding", label: "Brand & wording", icon: Palette, area: "branding" },
+  { to: "/ashnight-control/settings", label: "Keys & security", icon: KeyRound, area: "settings" },
+  { to: "/ashnight-control/email", label: "Email & domain", icon: Mail, area: "email" },
+  { to: "/ashnight-control/backups", label: "Backups", icon: DatabaseBackup, area: "backups" },
+  { to: "/ashnight-control/server", label: "Server & DNS", icon: Server, area: "server" },
+  { to: "/ashnight-control/demo", label: "Demo data", icon: Database, area: "demo" },
+  { to: "/ashnight-control/deploy", label: "Deploy", icon: Rocket, area: "deploy" },
 ];
+
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -100,6 +112,7 @@ function AdminLayout() {
 
   const applicationsQuery = useApplications();
   const { flags } = useFeatureFlags();
+  const access = useAdminAccess();
   const twoFactor = useTwoFactor();
   const pendingVetting = (applicationsQuery.data ?? []).filter(
     (row) => row.status === "pending" || row.status === "in_review",
@@ -146,6 +159,12 @@ function AdminLayout() {
   }
 
   const displayName = profile?.display_name || "Admin";
+  const nav = NAV.filter((item) =>
+    item.superOnly ? access.superAdmin : access.can(item.area),
+  );
+  const currentArea = areaFromPath(pathname);
+  const areaAllowed =
+    currentArea === "admins" ? access.superAdmin : access.can(currentArea);
   const activeLabel =
     [...NAV]
       .sort((a, b) => b.to.length - a.to.length)
@@ -164,7 +183,7 @@ function AdminLayout() {
           </Link>
 
           <nav className="mt-8 space-y-1">
-            {NAV.map((item) => {
+            {nav.map((item) => {
               const active = item.exact
                 ? pathname === item.to
                 : pathname.startsWith(item.to);
@@ -259,7 +278,7 @@ function AdminLayout() {
                     <SheetTitle className="font-display text-base">Control room</SheetTitle>
                   </SheetHeader>
                   <nav className="max-h-[calc(100svh-8.5rem)] space-y-1 overflow-y-auto px-3 py-3">
-                    {NAV.map((item) => {
+                    {nav.map((item) => {
                       const active = item.exact
                         ? pathname === item.to
                         : pathname.startsWith(item.to);
@@ -311,8 +330,19 @@ function AdminLayout() {
           </div>
 
           <div className="px-5 py-8 sm:px-8">
-            <Outlet />
+            {access.loading || areaAllowed ? (
+              <Outlet />
+            ) : (
+              <Card className="mx-auto max-w-md p-8 text-center">
+                <ShieldBan className="mx-auto size-6 text-muted-foreground" />
+                <h1 className="mt-3 font-display text-lg font-semibold">Area not available</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  A super admin hasn't given your account access to this part of the control room.
+                </p>
+              </Card>
+            )}
           </div>
+
         </main>
       </div>
     </div>

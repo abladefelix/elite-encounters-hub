@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ExportMenu } from "@/components/admin/export-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +37,6 @@ import {
   EXPENSE_CATEGORIES,
   PAYMENT_METHODS,
   cedis,
-  downloadCsv,
   useExpenseMutations,
   type DraftExpense,
   type ExpenseRow,
@@ -113,26 +113,22 @@ export function ExpensesPanel({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() =>
-              downloadCsv("ashnight-expenses.csv", [
-                ["Date", "Vendor", "Category", "Amount", "Tax", "Method", "Status", "Reference"],
-                ...rows.map((row) => [
-                  row.expense_date,
-                  row.vendor,
-                  row.category,
-                  Number(row.amount),
-                  Number(row.tax_amount),
-                  row.payment_method,
-                  row.status,
-                  row.reference,
-                ]),
-              ])
-            }
-          >
-            Export CSV
-          </Button>
+          <ExportMenu
+            filename="ashnight-expenses"
+            title="Expenses & payables"
+            columns={[
+              { label: "Date", value: (row: ExpenseRow) => row.expense_date },
+              { label: "Vendor", value: (row: ExpenseRow) => row.vendor },
+              { label: "Category", value: (row: ExpenseRow) => row.category },
+              { label: "Amount", value: (row: ExpenseRow) => Number(row.amount) },
+              { label: "Tax", value: (row: ExpenseRow) => Number(row.tax_amount) },
+              { label: "Method", value: (row: ExpenseRow) => row.payment_method },
+              { label: "Status", value: (row: ExpenseRow) => row.status },
+              { label: "Reference", value: (row: ExpenseRow) => row.reference },
+            ]}
+            rows={rows}
+            size="default"
+          />
           <Button onClick={() => setOpen(true)}>
             <Plus className="size-4" /> Record expense
           </Button>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Ban, Loader2, Plus, RefreshCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ExportMenu } from "@/components/admin/export-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +35,6 @@ import {
 import { DataPager, usePaged } from "@/components/ui/data-pager";
 import {
   cedis,
-  downloadCsv,
   entryTotals,
   useJournalMutations,
   type DraftLine,
@@ -42,6 +42,17 @@ import {
   type JournalStatus,
   type LedgerAccount,
 } from "@/lib/finance";
+
+interface LedgerLine {
+  entryNo: string;
+  date: string;
+  status: string;
+  source: string;
+  account: string;
+  description: string;
+  debit: number;
+  credit: number;
+}
 
 const STATUS_TONE: Record<JournalStatus, "default" | "secondary" | "destructive"> = {
   posted: "default",
@@ -121,28 +132,33 @@ export function JournalPanel({
             {syncing ? <Loader2 className="size-4 animate-spin" /> : <RefreshCcw className="size-4" />}
             Sync from platform activity
           </Button>
-          <Button
-            variant="outline"
-            onClick={() =>
-              downloadCsv("ashnight-general-ledger.csv", [
-                ["Entry", "Date", "Status", "Source", "Account", "Description", "Debit", "Credit"],
-                ...rows.flatMap((entry) =>
-                  entry.lines.map((line) => [
-                    entry.entry_no,
-                    entry.entry_date,
-                    entry.status,
-                    entry.source,
-                    `${line.account?.code ?? ""} ${line.account?.name ?? ""}`.trim(),
-                    line.description || entry.memo,
-                    Number(line.debit),
-                    Number(line.credit),
-                  ]),
-                ),
-              ])
-            }
-          >
-            Export CSV
-          </Button>
+          <ExportMenu
+            filename="ashnight-general-ledger"
+            title="General journal"
+            columns={[
+              { label: "Entry", value: (row: LedgerLine) => row.entryNo },
+              { label: "Date", value: (row: LedgerLine) => row.date },
+              { label: "Status", value: (row: LedgerLine) => row.status },
+              { label: "Source", value: (row: LedgerLine) => row.source },
+              { label: "Account", value: (row: LedgerLine) => row.account },
+              { label: "Description", value: (row: LedgerLine) => row.description },
+              { label: "Debit", value: (row: LedgerLine) => row.debit },
+              { label: "Credit", value: (row: LedgerLine) => row.credit },
+            ]}
+            rows={rows.flatMap((entry) =>
+              entry.lines.map((line) => ({
+                entryNo: entry.entry_no,
+                date: entry.entry_date,
+                status: entry.status,
+                source: entry.source,
+                account: `${line.account?.code ?? ""} ${line.account?.name ?? ""}`.trim(),
+                description: line.description || entry.memo,
+                debit: Number(line.debit),
+                credit: Number(line.credit),
+              })),
+            )}
+            size="default"
+          />
           <Button onClick={() => setOpen(true)}>
             <Plus className="size-4" /> New entry
           </Button>

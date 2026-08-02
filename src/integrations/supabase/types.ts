@@ -122,6 +122,42 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_permissions: {
+        Row: {
+          areas: string[]
+          can_export: boolean
+          created_at: string
+          note: string
+          read_only: boolean
+          super_admin: boolean
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          areas?: string[]
+          can_export?: boolean
+          created_at?: string
+          note?: string
+          read_only?: boolean
+          super_admin?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          areas?: string[]
+          can_export?: boolean
+          created_at?: string
+          note?: string
+          read_only?: boolean
+          super_admin?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       applications: {
         Row: {
           admin_note: string
@@ -1412,6 +1448,10 @@ export type Database = {
     }
     Functions: {
       account_is_active: { Args: { _user_id: string }; Returns: boolean }
+      admin_can_open: {
+        Args: { _area: string; _user_id?: string }
+        Returns: boolean
+      }
       current_room: {
         Args: never
         Returns: Database["public"]["Enums"]["tier"]
@@ -1425,6 +1465,7 @@ export type Database = {
       }
       in_thread: { Args: { _thread_id: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      is_super_admin: { Args: { _user_id?: string }; Returns: boolean }
       settings_section: { Args: { _section: string }; Returns: Json }
     }
     Enums: {
