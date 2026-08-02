@@ -90,7 +90,11 @@ async function savePortfolio(userId: string, fields: AdminUserFields) {
   const extra = { ...((data?.extra ?? {}) as Record<string, unknown>) };
   if (fields.portfolio_photos !== undefined) extra["portfolio_photos"] = fields.portfolio_photos;
   if (fields.portfolio_video !== undefined) extra["portfolio_video"] = fields.portfolio_video;
-  const { error } = await client.from("profiles").update({ extra }).eq("id", userId);
+  const { error } = await client
+    .from("profiles")
+    .update({ extra: extra as Database["public"]["Tables"]["profiles"]["Update"]["extra"] })
+    .eq("id", userId);
+
   if (error) throw new Error(error.message);
 }
 
