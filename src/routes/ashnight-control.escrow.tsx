@@ -685,7 +685,9 @@ function AdminEscrow() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Payment</TableHead>
+                  <TableHead>Recorded</TableHead>
                   <TableHead>Specialist</TableHead>
+
                   <TableHead>State</TableHead>
                   <TableHead>Deposits</TableHead>
                   <TableHead className="text-right">Gross</TableHead>
