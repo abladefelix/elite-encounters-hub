@@ -133,11 +133,12 @@ function BrandingCard() {
             />
             <Field
               label="Logo image URL"
-              hint="Leave empty to use the built-in brass mark."
-              value={draft.logoUrl}
-              placeholder="https://…/logo.png"
+              hint="Or paste a hosted URL. Leave empty to use the built-in brass mark."
+              value={draft.logoUrl.startsWith("data:") ? "" : draft.logoUrl}
+              placeholder={draft.logoUrl.startsWith("data:") ? "Uploaded image in use" : "https://…/logo.png"}
               onChange={(v) => set("logoUrl", v)}
             />
+
             <Field
               label="Logo alt text"
               value={draft.logoAlt}
