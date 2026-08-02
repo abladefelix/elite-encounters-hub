@@ -120,6 +120,26 @@ function AdminLayout() {
     (row) => row.status === "pending" || row.status === "in_review",
   ).length;
 
+  // The control room stays a browser tool: never a screen in the mobile app.
+  if (inNativeApp) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
+        <Card className="max-w-sm p-8 text-center">
+          <ShieldCheck className="mx-auto size-6 text-primary" />
+          <h1 className="mt-3 font-display text-lg font-semibold">Admin is web only</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The Ashnight control room is built for a desktop browser and isn't part of the mobile
+            app. Open it on a computer to vet applicants, manage escrow and run the books.
+          </p>
+          <Button asChild variant="outline" className="mt-5 w-full">
+            <Link to="/rooms">Back to Ashnight</Link>
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
