@@ -181,6 +181,9 @@ function RoomsPage() {
           record and the type of work they're cleared for, and earn from each booking.
         </p>
 
+        {user ? <MemberDashboardStrip /> : null}
+
+
         {!authLoading && !user ? (
           <Card className="mt-6 border-primary/25 bg-panel p-5">
             <p className="flex items-center gap-2 font-display text-base font-semibold">
