@@ -124,6 +124,16 @@ function BrandingCard() {
             </div>
           </div>
 
+          <div className="mt-4">
+            <LogoPicker
+              value={draft.logoUrl}
+              alt={draft.logoAlt || draft.name}
+              onChange={(url) => set("logoUrl", url)}
+            />
+          </div>
+
+
+
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <Field label="Brand name" value={draft.name} onChange={(v) => set("name", v)} />
             <Field
