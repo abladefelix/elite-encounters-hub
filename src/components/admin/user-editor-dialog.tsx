@@ -571,7 +571,10 @@ export function UserEditorDialog({
     }));
   }
 
+  const isSpecialist = form.roles.includes("specialist");
+
   function fields() {
+
     return {
       display_name: form.display_name.trim(),
       username: form.username.trim() || null,
