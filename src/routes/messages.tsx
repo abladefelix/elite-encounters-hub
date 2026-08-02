@@ -181,7 +181,15 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const messages = useMemo(() => messagesQuery.data ?? [], [messagesQuery.data]);
   const sendMessage = useSendMessage();
   const createBooking = useCreateBooking();
+  const bookingsQuery = useBookings();
+  const bookingsById = useMemo(() => {
+    const map = new Map<string, (typeof bookingRows)[number]>();
+    const bookingRows = bookingsQuery.data ?? [];
+    for (const booking of bookingRows) map.set(booking.id, booking);
+    return map;
+  }, [bookingsQuery.data]);
   const bookingCheckout = useServerFn(startBookingCheckout);
+  const sendQuote = useServerFn(createSpecialistQuote);
   const giftCheckout = useServerFn(startGiftCheckout);
   const logHit = useLogModerationHit();
   const reports = useReportMutations();
