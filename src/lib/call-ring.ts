@@ -27,30 +27,23 @@ export function ringChannelName(userId: string) {
 }
 
 /**
- * Sends one ring event to another member. A short-lived channel is used so the
- * sender never has to stay subscribed to somebody else's ring line.
+ * Sends one ring event to another member by joining their ring topic just long
+ * enough to broadcast, then leaving it again.
  */
 export async function sendRing(toUserId: string, payload: RingPayload) {
-  const channel = supabase.channel(`${ringChannelName(toUserId)}:out:${Date.now()}`, {
+  const channel = supabase.channel(ringChannelName(toUserId), {
     config: { broadcast: { self: false } },
   });
 
   await new Promise<void>((resolve) => {
     const timer = setTimeout(resolve, 4000);
     channel.subscribe((status) => {
-      if (status === "SUBSCRIBED") {
+      if (status === "SUBSCRIBED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         clearTimeout(timer);
         resolve();
       }
     });
   });
-
-  // The receiving side listens on the plain per-member name; broadcast is
-  // routed by channel topic, so send on that topic explicitly.
-  await supabase
-    .channel(ringChannelName(toUserId))
-    .send({ type: "broadcast", event: "ring", payload })
-    .catch(() => undefined);
 
   await channel.send({ type: "broadcast", event: "ring", payload }).catch(() => undefined);
   setTimeout(() => void supabase.removeChannel(channel), 1500);
