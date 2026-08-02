@@ -38,6 +38,7 @@ const fields = z
     status_reason: z.string().trim().max(500),
     portfolio_photos: z.array(z.string().trim().max(500)).max(6),
     portfolio_video: z.string().trim().max(500).nullable(),
+  })
 
   .partial();
 
