@@ -155,6 +155,12 @@ function VettingQueue() {
         }
       }
 
+      // Follow the applicant into their new stage so the reviewer keeps context
+      // instead of silently landing on the next pending application.
+      setFilter(status);
+      setSelectedId(applicant.id);
+
+
       if (status === "approved") {
         toast.success(`${applicant.full_name} approved into the ${room} room`);
       } else if (status === "rejected") {
