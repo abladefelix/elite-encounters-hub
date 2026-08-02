@@ -4,7 +4,7 @@
  * and roles.
  */
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { Film, ImagePlus, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 
