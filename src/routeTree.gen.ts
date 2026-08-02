@@ -20,6 +20,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-control.index'
 import { Route as AshnightControlAdminsRouteImport } from './routes/ashnight-control.admins'
@@ -106,6 +107,11 @@ const RoomsRoute = RoomsRouteImport.update({
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WalletRoute = WalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WelcomeRoute = WelcomeRouteImport.update({
@@ -287,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/support': typeof SupportRoute
+  '/wallet': typeof WalletRoute
   '/welcome': typeof WelcomeRoute
   '/ashnight-control/admins': typeof AshnightControlAdminsRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/support': typeof SupportRoute
+  '/wallet': typeof WalletRoute
   '/welcome': typeof WelcomeRoute
   '/ashnight-control/admins': typeof AshnightControlAdminsRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
@@ -377,6 +385,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/support': typeof SupportRoute
+  '/wallet': typeof WalletRoute
   '/welcome': typeof WelcomeRoute
   '/ashnight-control/admins': typeof AshnightControlAdminsRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
@@ -424,6 +433,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/support'
+    | '/wallet'
     | '/welcome'
     | '/ashnight-control/admins'
     | '/ashnight-control/backups'
@@ -468,6 +478,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/support'
+    | '/wallet'
     | '/welcome'
     | '/ashnight-control/admins'
     | '/ashnight-control/backups'
@@ -513,6 +524,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/support'
+    | '/wallet'
     | '/welcome'
     | '/ashnight-control/admins'
     | '/ashnight-control/backups'
@@ -559,6 +571,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
   SupportRoute: typeof SupportRoute
+  WalletRoute: typeof WalletRoute
   WelcomeRoute: typeof WelcomeRoute
   PaymentReturnRoute: typeof PaymentReturnRoute
   SpecialistsSpecialistIdRoute: typeof SpecialistsSpecialistIdRoute
@@ -646,6 +659,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wallet': {
+      id: '/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof WalletRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/welcome': {
@@ -945,6 +965,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
   SupportRoute: SupportRoute,
+  WalletRoute: WalletRoute,
   WelcomeRoute: WelcomeRoute,
   PaymentReturnRoute: PaymentReturnRoute,
   SpecialistsSpecialistIdRoute: SpecialistsSpecialistIdRoute,
