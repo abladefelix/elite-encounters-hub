@@ -183,9 +183,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const createBooking = useCreateBooking();
   const bookingsQuery = useBookings();
   const bookingsById = useMemo(() => {
-    const map = new Map<string, (typeof bookingRows)[number]>();
-    const bookingRows = bookingsQuery.data ?? [];
-    for (const booking of bookingRows) map.set(booking.id, booking);
+    const map = new Map<string, BookingRow>();
+    for (const booking of bookingsQuery.data ?? []) map.set(booking.id, booking);
     return map;
   }, [bookingsQuery.data]);
   const bookingCheckout = useServerFn(startBookingCheckout);
