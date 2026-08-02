@@ -11,7 +11,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
-export type FullProfile = Database["public"]["Tables"]["profiles"]["Row"];
+export type FullProfile = Database["public"]["Tables"]["profiles"]["Row"] & {
+  /** Roles held by the account, so the admin roster can split clients from specialists. */
+  roles?: Database["public"]["Enums"]["app_role"][];
+};
 
 /** The caller's own record, including their contact and identity columns. */
 export const getMyFullProfile = createServerFn({ method: "POST" })
