@@ -16,19 +16,38 @@ export type FullProfile = Database["public"]["Tables"]["profiles"]["Row"] & {
   roles?: Database["public"]["Enums"]["app_role"][];
 };
 
+/**
+ * Postgres/PostgREST rejects a token whose `iat` sits ahead of the database
+ * clock ("JWT issued at future"). That is pure clock drift between the app
+ * server and the database, and it clears within a second — so retry briefly
+ * instead of surfacing a fatal error that blanks the signed-in shell.
+ */
+function isClockDrift(message: string | undefined) {
+  return Boolean(message && /issued at future|JWSInvalidSignature|iat/i.test(message));
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /** The caller's own record, including their contact and identity columns. */
 export const getMyFullProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<FullProfile | null> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .select("*")
-      .eq("id", context.userId)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return data ?? null;
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const { data, error } = await supabaseAdmin
+        .from("profiles")
+        .select("*")
+        .eq("id", context.userId)
+        .maybeSingle();
+      if (!error) return data ?? null;
+      if (!isClockDrift(error.message)) throw new Error(error.message);
+      await sleep(400 * (attempt + 1));
+    }
+    // Still drifting: hand back nothing so the UI keeps its cached profile.
+    return null;
   });
+
 
 /** Admin roster: every member with the full column set. */
 export const listFullProfiles = createServerFn({ method: "POST" })
