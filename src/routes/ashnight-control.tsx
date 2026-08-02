@@ -182,7 +182,7 @@ function AdminLayout() {
             </span>
           </Link>
 
-          <nav className="mt-8 space-y-1">
+          <nav className="mt-8 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
             {nav.map((item) => {
               const active = item.exact
                 ? pathname === item.to
