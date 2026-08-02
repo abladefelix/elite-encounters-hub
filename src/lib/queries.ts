@@ -12,7 +12,23 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
 type Tables = Database["public"]["Tables"];
-export type ProfileRow = Tables["profiles"]["Row"];
+/** Complete profile record — only readable for yourself or as an admin. */
+export type ProfileFullRow = Tables["profiles"]["Row"];
+/** Contact and ID columns are blocked for other members by column privileges. */
+export type ProfileRow = Omit<
+  ProfileFullRow,
+  | "phone"
+  | "address"
+  | "locality"
+  | "extra"
+  | "ghana_card_number"
+  | "ghana_card_expiry"
+  | "ghana_card_front_url"
+  | "ghana_card_back_url"
+>;
+/** The exact column set a signed-in member is allowed to read on `profiles`. */
+export const PUBLIC_PROFILE_COLUMNS =
+  "id, display_name, city, headline, bio, avatar_url, likes, dislikes, languages, hourly_rate, years_experience, response_minutes, room, vetting, rating, jobs_completed, verified, available, suspended, last_seen_at, created_at, updated_at, username, account_status, status_reason, status_changed_at, terms_accepted_at, privacy_accepted_at";
 export type ServiceRow = Tables["services"]["Row"];
 export type ApplicationRow = Tables["applications"]["Row"];
 export type ThreadRow = Tables["threads"]["Row"];
