@@ -214,38 +214,67 @@ function AvatarField({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-3">
-        <Avatar className="h-16 w-16 border border-border">
-          {preview ? <AvatarImage src={preview} alt={name || "Member"} /> : null}
-          <AvatarFallback>{(name || "?").slice(0, 2).toUpperCase()}</AvatarFallback>
-        </Avatar>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={busy}
-            onClick={() => inputRef.current?.click()}
-          >
-            {busy ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <ImagePlus className="mr-2 h-4 w-4" />
-            )}
-            {value ? "Replace picture" : "Upload picture"}
-          </Button>
-          {value ? (
+      <div className="flex items-start gap-4 rounded-lg border border-border bg-panel p-3">
+        <div className="space-y-1 text-center">
+          <Avatar className="h-24 w-24 border border-border">
+            {preview ? <AvatarImage src={preview} alt={name || "Member"} /> : null}
+            <AvatarFallback className="text-lg">
+              {(name || "?").slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            {value ? "Current picture" : "No picture"}
+          </p>
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          {loadingPreview ? (
+            <p className="text-xs text-muted-foreground">Loading current picture…</p>
+          ) : previewError ? (
+            <p className="text-xs text-destructive">
+              Stored picture could not be loaded — you can still replace it.
+            </p>
+          ) : preview ? (
+            <a
+              href={preview}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-primary underline"
+            >
+              Open full size
+            </a>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              This member has not set a profile picture.
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
               disabled={busy}
-              onClick={() => onChange("")}
+              onClick={() => inputRef.current?.click()}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Remove
+              {busy ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ImagePlus className="mr-2 h-4 w-4" />
+              )}
+              {value ? "Replace picture" : "Upload picture"}
             </Button>
-          ) : null}
+            {value ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={busy}
+                onClick={() => onChange("")}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Remove
+              </Button>
+            ) : null}
+          </div>
         </div>
         <input
           ref={inputRef}
@@ -255,6 +284,7 @@ function AvatarField({
           onChange={(event) => void handleFile(event.target.files?.[0])}
         />
       </div>
+
       <Input
         id="ue-avatar"
         value={value}
