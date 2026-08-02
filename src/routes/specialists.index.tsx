@@ -17,8 +17,9 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SpecialistCard } from "@/components/specialist-card";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { useServices, useSpecialists, type ProfileRow } from "@/lib/queries";
-import type { Specialist, Tier } from "@/lib/types";
+import { ALL_TIERS, accessibleTiers, tierLabel, type Specialist, type Tier } from "@/lib/types";
 
 export const Route = createFileRoute("/specialists/")({
   head: () => ({
@@ -86,10 +87,20 @@ function useSpecialistServiceMap() {
 }
 
 function SpecialistsPage() {
+  const { profile, isSpecialist, isAdmin } = useAuth();
   const [query, setQuery] = useState("");
   const [room, setRoom] = useState<Tier | "all">("all");
   const [service, setService] = useState("all");
   const [sort, setSort] = useState<SortKey>("rating");
+
+  // A specialist never browses the roster — they only meet a client once that
+  // client opens a thread with them.
+  const canBrowse = isAdmin || !isSpecialist;
+  // Your room decides which rooms you can see, cumulatively.
+  const allowedRooms = useMemo(
+    () => (isAdmin ? ALL_TIERS : accessibleTiers(profile?.room)),
+    [isAdmin, profile?.room],
+  );
 
   const { data: profiles, isLoading } = useSpecialists(room);
   const { data: serviceMap } = useSpecialistServiceMap();
@@ -98,6 +109,7 @@ function SpecialistsPage() {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = (profiles ?? []).filter((s) => {
+      const matchesRoom = allowedRooms.includes((s.room ?? "basic") as Tier);
       const matchesQuery =
         !q ||
         s.display_name.toLowerCase().includes(q) ||
@@ -105,7 +117,7 @@ function SpecialistsPage() {
         s.headline.toLowerCase().includes(q);
       const serviceNames = serviceMap?.get(s.id) ?? [];
       const matchesService = service === "all" || serviceNames.includes(service);
-      return matchesQuery && matchesService;
+      return matchesRoom && matchesQuery && matchesService;
     });
 
     return [...filtered].sort((a, b) => {
@@ -114,9 +126,35 @@ function SpecialistsPage() {
       if (sort === "experience") return b.years_experience - a.years_experience;
       return b.rating - a.rating;
     });
-  }, [profiles, query, service, sort, serviceMap]);
+  }, [profiles, query, service, sort, serviceMap, allowedRooms]);
 
   const hasAnySpecialists = (profiles?.length ?? 0) > 0;
+
+  if (!canBrowse) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <div className="mx-auto w-full max-w-2xl px-5 py-16">
+          <h1 className="font-display text-3xl font-semibold">Specialist workspace</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            The specialist directory is for clients. As a specialist you don't browse other
+            specialists or clients — a client reaches you first, and the thread appears in your
+            messages straight away.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button asChild variant="brass">
+              <Link to="/messages">Open messages</Link>
+            </Button>
+            <Button asChild variant="soft">
+              <Link to="/profile">Edit my profile</Link>
+            </Button>
+          </div>
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-screen">
@@ -145,10 +183,12 @@ function SpecialistsPage() {
               <SelectValue placeholder="Room" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All rooms</SelectItem>
-              <SelectItem value="basic">Basic</SelectItem>
-              <SelectItem value="premium">Premium</SelectItem>
-              <SelectItem value="ultimate">Ultimate</SelectItem>
+              <SelectItem value="all">All my rooms</SelectItem>
+              {allowedRooms.map((tier) => (
+                <SelectItem key={tier} value={tier}>
+                  {tierLabel(tier)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
