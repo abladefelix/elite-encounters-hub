@@ -43,7 +43,16 @@ async function readSettings(): Promise<SettingsBlob> {
     .eq("id", true)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return (data?.data as SettingsBlob | null) ?? {};
+  if (data) return (data.data as SettingsBlob | null) ?? {};
+
+  // Signed-out visitors cannot read the full settings row, so fall back to the
+  // public slice (branding, wording, sign-up form, feature flags, rooms).
+  const { data: publicData, error: publicError } = await supabase
+    .from("platform_settings_public")
+    .select("data")
+    .maybeSingle();
+  if (publicError) throw new Error(publicError.message);
+  return (publicData?.data as SettingsBlob | null) ?? {};
 }
 
 /**
