@@ -155,25 +155,36 @@ function AvatarField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setPreviewError(false);
     if (!value) {
       setPreview(null);
+      setLoadingPreview(false);
       return;
     }
+    setLoadingPreview(true);
     resolveStoredMedia("avatars", value)
       .then((url) => {
-        if (active) setPreview(url);
+        if (!active) return;
+        setPreview(url);
+        setLoadingPreview(false);
       })
       .catch(() => {
-        if (active) setPreview(null);
+        if (!active) return;
+        setPreview(null);
+        setPreviewError(true);
+        setLoadingPreview(false);
       });
     return () => {
       active = false;
     };
   }, [value]);
+
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
