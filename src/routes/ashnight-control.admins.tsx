@@ -335,3 +335,197 @@ function PermissionEditor({ entry }: { entry: AdminRosterEntry }) {
     </Card>
   );
 }
+
+/** Promote any existing member to administrator. */
+function GrantAdminCard({ existing }: { existing: string[] }) {
+  const profiles = useAllProfiles();
+  const queryClient = useQueryClient();
+  const readAccount = useServerFn(getUserAccount);
+  const saveAccount = useServerFn(updateUserAccount);
+  const [userId, setUserId] = useState("");
+
+  const candidates = useMemo(
+    () =>
+      (profiles.data ?? [])
+        .filter((row) => !existing.includes(row.id))
+        .sort((a, b) => (a.display_name ?? "").localeCompare(b.display_name ?? "")),
+    [profiles.data, existing],
+  );
+
+  const grant = useMutation({
+    mutationFn: async (id: string) => {
+      const account = await readAccount({ data: { userId: id } });
+      const roles = [...new Set([...(account.roles ?? []), "admin" as AppRole])];
+      await saveAccount({ data: { userId: id, fields: {}, roles } });
+    },
+    onSuccess: async () => {
+      setUserId("");
+      toast.success("Administrator added.");
+      await queryClient.invalidateQueries({ queryKey: ["admin-roster"] });
+      await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Could not add that administrator."),
+  });
+
+  return (
+    <Card className="flex flex-wrap items-end gap-3 p-5">
+      <div className="min-w-[16rem] flex-1 space-y-2">
+        <Label>Add an administrator</Label>
+        <Select value={userId} onValueChange={setUserId}>
+          <SelectTrigger>
+            <SelectValue
+              placeholder={profiles.isLoading ? "Loading members…" : "Choose a member"}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {candidates.map((row) => (
+              <SelectItem key={row.id} value={row.id}>
+                {row.display_name}
+                {row.username ? ` · @${row.username}` : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          The member keeps their existing roles and gains control-room access. Set their areas below
+          after adding them.
+        </p>
+      </div>
+      <Button disabled={!userId || grant.isPending} onClick={() => grant.mutate(userId)}>
+        {grant.isPending ? (
+          <Loader2 className="mr-2 size-4 animate-spin" />
+        ) : (
+          <UserPlus className="mr-2 size-4" />
+        )}
+        Make administrator
+      </Button>
+    </Card>
+  );
+}
+
+/** Roles and account state for one administrator. */
+function AccountControls({ entry }: { entry: AdminRosterEntry }) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const saveAccount = useServerFn(updateUserAccount);
+
+  const [roles, setRoles] = useState<AppRole[]>(entry.roles as AppRole[]);
+  const [status, setStatus] = useState<AccountStatus>(entry.accountStatus ?? "active");
+  const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    setRoles(entry.roles as AppRole[]);
+    setStatus(entry.accountStatus ?? "active");
+    setReason("");
+  }, [entry]);
+
+  const isSelf = user?.id === entry.userId;
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (!roles.length) throw new Error("Give this account at least one role.");
+      if (isSelf && !roles.includes("admin")) {
+        throw new Error("You can't remove your own administrator role.");
+      }
+      if (isSelf && status !== "active") {
+        throw new Error("You can't block your own account.");
+      }
+      await saveAccount({
+        data: {
+          userId: entry.userId,
+          roles,
+          fields: {
+            account_status: status,
+            suspended: status === "suspended" || status === "banned",
+            ...(reason.trim() ? { status_reason: reason.trim() } : {}),
+          },
+        },
+      });
+    },
+    onSuccess: async () => {
+      toast.success(`Account updated for ${entry.displayName}.`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-roster"] });
+      await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Could not update that account."),
+  });
+
+  function toggleRole(role: AppRole, on: boolean) {
+    setRoles((current) =>
+      on ? [...new Set([...current, role])] : current.filter((item) => item !== role),
+    );
+  }
+
+  return (
+    <div className="space-y-4 rounded-xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-medium">Roles &amp; account state</h3>
+        <Badge variant="outline" className={statusBadgeClass(entry.accountStatus ?? "active")}>
+          {ACCOUNT_STATUS_META[entry.accountStatus ?? "active"].label}
+        </Badge>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-3">
+        {ROLE_OPTIONS.map((role) => (
+          <label
+            key={role.key}
+            className="flex items-start justify-between gap-3 rounded-lg border border-border/70 px-3 py-2"
+          >
+            <span>
+              <span className="text-sm font-medium">{role.label}</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">{role.blurb}</span>
+            </span>
+            <Switch
+              checked={roles.includes(role.key)}
+              disabled={isSelf && role.key === "admin"}
+              onCheckedChange={(value) => toggleRole(role.key, value)}
+            />
+          </label>
+        ))}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Account status</Label>
+          <Select value={status} onValueChange={(value) => setStatus(value as AccountStatus)}>
+            <SelectTrigger disabled={isSelf}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ACCOUNT_STATUSES.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {ACCOUNT_STATUS_META[option].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {ACCOUNT_STATUS_META[status].blurb}
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`reason-${entry.userId}`}>Reason (optional)</Label>
+          <Input
+            id={`reason-${entry.userId}`}
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="Shown in the activity log"
+          />
+        </div>
+      </div>
+
+      <Button size="sm" disabled={mutation.isPending} onClick={() => mutation.mutate()}>
+        {mutation.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+        Save roles &amp; status
+      </Button>
+      {isSelf ? (
+        <p className="text-xs text-muted-foreground">
+          This is your own account — your admin role and status are locked to keep you signed in.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
