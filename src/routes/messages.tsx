@@ -1164,10 +1164,17 @@ function MessageBubble({
   }
 
   if (message.kind === "booking") {
+    const unpaid = !escrow && (!booking || booking.status === "requested");
+    const due = booking ? Number(booking.hours) * booking.rate : 0;
+    const dueWithFee = booking
+      ? due + Math.round(due * (Number(booking.platform_fee_pct ?? 0) / 100))
+      : 0;
     return (
       <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
         <div className="max-w-sm rounded-xl border border-primary/30 bg-primary/10 p-4">
-          <p className="eyebrow text-primary">Service requested · funds in escrow</p>
+          <p className="eyebrow text-primary">
+            {escrow ? "Service requested · funds in escrow" : "Payment request · awaiting payment"}
+          </p>
           <p className="mt-2 text-sm leading-relaxed">{message.body}</p>
 
           {escrow ? (
@@ -1190,9 +1197,29 @@ function MessageBubble({
                 </div>
               ) : null}
             </>
+          ) : unpaid && canPay && message.booking_id ? (
+            <div className="mt-3">
+              <Button
+                size="sm"
+                variant="brass"
+                disabled={paying}
+                onClick={() => onPay(message.booking_id!)}
+              >
+                {paying ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Banknote className="size-3.5" />
+                )}
+                {dueWithFee ? `Pay ${money(dueWithFee)} into escrow` : "Pay into escrow"}
+              </Button>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Ashnight holds the money until you confirm the visit.
+              </p>
+            </div>
           ) : (
             <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <CheckCheck className="size-3.5" /> Awaiting confirmation from {peerFirstName}
+              <CheckCheck className="size-3.5" /> Awaiting {unpaid ? "payment" : "confirmation"} from{" "}
+              {peerFirstName}
             </p>
           )}
         </div>
