@@ -44,12 +44,17 @@ import {
   ServiceRequestDialog,
   type ServiceRequestDraft,
 } from "@/components/chat/service-request-dialog";
+import { QuoteDialog, type QuoteDraft } from "@/components/chat/quote-dialog";
 import { GiftDialog, type GiftDraft } from "@/components/chat/gift-dialog";
 import { ReportDialog, type ReportDraft } from "@/components/chat/report-dialog";
 import { RatingDialog, type RatingDraft } from "@/components/chat/rating-dialog";
 import { REPORT_REASON_LABEL } from "@/lib/reports";
 import { paystackChannel } from "@/lib/paystack";
-import { startBookingCheckout, startGiftCheckout } from "@/lib/payments.functions";
+import {
+  createSpecialistQuote,
+  startBookingCheckout,
+  startGiftCheckout,
+} from "@/lib/payments.functions";
 import { useAuth } from "@/hooks/use-auth";
 import {
   markThreadRead,
