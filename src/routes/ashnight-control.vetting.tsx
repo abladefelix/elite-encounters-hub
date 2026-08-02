@@ -415,30 +415,66 @@ function VettingQueue() {
               </p>
             </div>
 
-            <div className="mt-6 grid gap-2 sm:grid-cols-2">
-              <Button
-                variant="brass"
-                disabled={review.isPending}
-                onClick={() => void decide(selected, "approved")}
-              >
-                <Check className="size-4" /> Approve
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={review.isPending}
-                onClick={() => void decide(selected, "in_review")}
-              >
-                <ShieldAlert className="size-4" /> Hold
-              </Button>
-              <Button
-                variant="ghost"
-                className="sm:col-span-2"
-                disabled={review.isPending}
-                onClick={() => void decide(selected, "rejected")}
-              >
-                <X className="size-4" /> Decline application
-              </Button>
+            <div className="mt-6 space-y-3">
+              <StageTrail status={selected.status} />
+              {selected.status === "pending" ? (
+                <>
+                  <Button
+                    variant="brass"
+                    className="w-full"
+                    disabled={review.isPending}
+                    onClick={() => void decide(selected, "in_review")}
+                  >
+                    <ShieldAlert className="size-4" /> Start review
+                  </Button>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Applicants move pending → in review → approved or declined. Start the review to
+                    unlock the approve and decline decisions.
+                  </p>
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    disabled={review.isPending}
+                    onClick={() => void decide(selected, "rejected")}
+                  >
+                    <X className="size-4" /> Decline without review
+                  </Button>
+                </>
+              ) : selected.status === "in_review" ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Button
+                    variant="brass"
+                    disabled={review.isPending}
+                    onClick={() => void decide(selected, "approved")}
+                  >
+                    <Check className="size-4" /> Approve
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={review.isPending}
+                    onClick={() => void decide(selected, "rejected")}
+                  >
+                    <X className="size-4" /> Decline
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    This application is {selected.status === "approved" ? "approved" : "declined"}.
+                    Reopen it to change the decision.
+                  </p>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    disabled={review.isPending}
+                    onClick={() => void decide(selected, "in_review")}
+                  >
+                    <ShieldAlert className="size-4" /> Reopen review
+                  </Button>
+                </>
+              )}
             </div>
+
           </Card>
         ) : (
           <Card className="h-fit p-6 text-sm text-muted-foreground">
