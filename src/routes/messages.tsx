@@ -1098,6 +1098,10 @@ function MessageBubble({
   peerFirstName,
   escrow,
   canResolve,
+  booking,
+  canPay,
+  paying,
+  onPay,
   onConfirm,
   onDispute,
 }: {
@@ -1106,6 +1110,10 @@ function MessageBubble({
   peerFirstName: string;
   escrow?: EscrowEntry | undefined;
   canResolve: boolean;
+  booking?: BookingRow | undefined;
+  canPay: boolean;
+  paying: boolean;
+  onPay: (id: string) => void;
   onConfirm: (id: string) => void;
   onDispute: (id: string, reason: string) => void;
 }) {
