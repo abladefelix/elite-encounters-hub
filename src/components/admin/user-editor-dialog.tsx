@@ -805,7 +805,20 @@ export function UserEditorDialog({
 
             <section className="space-y-3">
               <h3 className="text-sm font-semibold">Specialist profile</h3>
+              {isSpecialist ? (
+                <div className="space-y-1.5">
+                  <Label>Portfolio media</Label>
+                  <PortfolioField
+                    userId={profile?.id}
+                    photos={form.portfolio_photos}
+                    video={form.portfolio_video}
+                    onPhotosChange={(next) => set("portfolio_photos", next)}
+                    onVideoChange={(next) => set("portfolio_video", next)}
+                  />
+                </div>
+              ) : null}
               <div className="grid gap-3 sm:grid-cols-2">
+
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="ue-headline">Headline</Label>
                   <Input
