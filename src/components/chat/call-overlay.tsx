@@ -164,6 +164,17 @@ export function CallOverlay({
         }
       };
 
+      // Candidates that arrive before the remote description is set have to be
+      // held back, otherwise the browser rejects them and the call never joins.
+      const pendingIce: RTCIceCandidateInit[] = [];
+      const flushIce = async (conn: RTCPeerConnection) => {
+        while (pendingIce.length) {
+          const candidate = pendingIce.shift();
+          if (!candidate) break;
+          await conn.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => undefined);
+        }
+      };
+
       /** Builds and broadcasts a fresh offer — used whenever the callee joins. */
       const sendOffer = async () => {
         const conn = pcRef.current;
@@ -190,6 +201,7 @@ export function CallOverlay({
               if (isCaller) await sendOffer();
             } else if (payload.kind === "offer" && !isCaller) {
               await conn.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+              await flushIce(conn);
               const answer = await conn.createAnswer();
               await conn.setLocalDescription(answer);
               void channel.send({
@@ -201,9 +213,14 @@ export function CallOverlay({
             } else if (payload.kind === "answer" && isCaller) {
               if (conn.signalingState === "have-local-offer") {
                 await conn.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+                await flushIce(conn);
               }
             } else if (payload.kind === "ice") {
-              await conn.addIceCandidate(new RTCIceCandidate(payload.candidate));
+              if (conn.remoteDescription) {
+                await conn.addIceCandidate(new RTCIceCandidate(payload.candidate));
+              } else {
+                pendingIce.push(payload.candidate);
+              }
             } else if (payload.kind === "hangup") {
               setStatus("The other person left the call");
               cleanup();
