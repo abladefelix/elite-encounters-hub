@@ -92,8 +92,8 @@ function isSpecialistRow(row: ProfileFullRow) {
 /** Portfolio media a specialist has uploaded, stored on `extra`. */
 function mediaCounts(row: ProfileFullRow) {
   const extra = (row.extra ?? {}) as Record<string, unknown>;
-  const photos = Array.isArray(extra.portfolio_photos) ? extra.portfolio_photos.length : 0;
-  const video = typeof extra.portfolio_video === "string" && extra.portfolio_video ? 1 : 0;
+  const photos = Array.isArray(extra["portfolio_photos"]) ? extra["portfolio_photos"].length : 0;
+  const video = typeof extra["portfolio_video"] === "string" && extra["portfolio_video"] ? 1 : 0;
   return { photos, video };
 }
 
