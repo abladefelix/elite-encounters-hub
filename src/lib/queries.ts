@@ -125,7 +125,12 @@ export function useUpdateProfile() {
   });
 }
 
-/** Uploads to the private avatar store and returns a long-lived signed URL. */
+/**
+ * Uploads to the private avatar store and returns the storage path.
+ *
+ * The path — not a signed URL — is what gets saved on the profile, because
+ * signed links expire and would leave the editor with an unreadable picture.
+ */
 export async function uploadAvatar(userId: string, file: File) {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
   const path = `${userId}/avatar-${Date.now()}.${extension}`;
@@ -133,28 +138,53 @@ export async function uploadAvatar(userId: string, file: File) {
     .from("avatars")
     .upload(path, file, { upsert: true, contentType: file.type });
   if (error) throw new Error(error.message);
-  const { data, error: signError } = await supabase.storage
-    .from("avatars")
-    .createSignedUrl(path, 60 * 60 * 24 * 365);
-  if (signError) throw new Error(signError.message);
-  return data.signedUrl;
+  return path;
+}
+
+/** Uploads one specialist portfolio file and returns its storage path. */
+export async function uploadPortfolioFile(userId: string, file: File, kind: "photo" | "video") {
+  const safe = file.name.replace(/[^\w.-]+/g, "_");
+  const path = `${userId}/portfolio/${kind}-${Date.now()}-${safe}`;
+  const { error } = await supabase.storage
+    .from("attachments")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw new Error(error.message);
+  return path;
+}
+
+/**
+ * Pulls the bucket-relative path back out of a Supabase storage link, so
+ * historical rows that stored a (now expired) signed URL still resolve.
+ * Returns null for genuinely external links.
+ */
+export function storagePathFromUrl(bucket: "avatars" | "attachments", value: string) {
+  const match = value.match(
+    new RegExp(`/storage/v1/object/(?:sign|public|authenticated)/${bucket}/([^?]+)`),
+  );
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
 /**
  * Turns a stored media reference into something an <img>/<video> can load.
- * Values saved during sign-up are bucket paths; values saved later are already
- * signed URLs, so those are passed straight through.
+ * Values may be bucket paths, expired signed URLs from older saves, or plain
+ * external links — all three are handled here.
  */
 export async function resolveStoredMedia(
   bucket: "avatars" | "attachments",
   value: string,
   expiresIn = 60 * 60,
 ) {
-  if (/^https?:\/\//i.test(value)) return value;
-  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(value, expiresIn);
+  let path = value;
+  if (/^https?:\/\//i.test(value)) {
+    const extracted = storagePathFromUrl(bucket, value);
+    if (!extracted) return value;
+    path = extracted;
+  }
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn);
   if (error) throw new Error(error.message);
   return data.signedUrl;
 }
+
 
 /** Signs a batch of stored media references, dropping any that fail. */
 export function useStoredMedia(
