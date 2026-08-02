@@ -1008,6 +1008,15 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
               onConfirm={(request) => void handleBooking(request)}
             />
 
+            <QuoteDialog
+              clientName={firstName}
+              defaultRate={profile?.hourly_rate ?? 0}
+              open={quoteOpen}
+              onOpenChange={setQuoteOpen}
+              onConfirm={(quote) => void handleQuote(quote)}
+            />
+
+
             <GiftDialog
               specialistName={peerName}
               room={room}
