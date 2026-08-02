@@ -505,6 +505,7 @@ function AdminUsers() {
         open={editor.open}
         onOpenChange={(open) => setEditor((prev) => ({ ...prev, open }))}
         profile={editor.profile}
+        defaultRoles={segment === "specialists" ? ["specialist"] : ["client"]}
         onSaved={() => profilesQuery.refetch()}
       />
 
