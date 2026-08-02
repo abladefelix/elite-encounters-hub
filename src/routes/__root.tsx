@@ -152,6 +152,8 @@ function RootComponent() {
                 {isAdmin ? null : <MobileTabBar />}
                 {/* Rings anywhere in the app, so calls reach members who don't have the thread open. */}
                 <IncomingCallWatcher />
+                {/* Native-only shell behaviour (status bar, keyboard, back button). No-op on web. */}
+                <NativeShell />
                 <Toaster position="top-center" />
               </EscrowProvider>
             </ServiceCatalogProvider>
