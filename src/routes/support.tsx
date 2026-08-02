@@ -3,7 +3,9 @@ import { useMemo, useState } from "react";
 import { Bell, Download, FileText, LifeBuoy, Loader2, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { BrandMark } from "@/components/brand-mark";
 import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
