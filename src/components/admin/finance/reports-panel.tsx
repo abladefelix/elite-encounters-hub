@@ -1,3 +1,4 @@
+import { ExportMenu } from "@/components/admin/export-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,11 +88,11 @@ export function ReportsPanel({
               subtitle={rangeLabel}
               columns={[
                 { label: "Code", value: (row: AccountBalance) => row.account.code },
-                { label: "Account", value: (row) => row.account.name },
-                { label: "Type", value: (row) => ACCOUNT_TYPE_LABEL[row.account.type] },
-                { label: "Debit", value: (row) => row.debit },
-                { label: "Credit", value: (row) => row.credit },
-                { label: "Balance", value: (row) => row.balance },
+                { label: "Account", value: (row: AccountBalance) => row.account.name },
+                { label: "Type", value: (row: AccountBalance) => ACCOUNT_TYPE_LABEL[row.account.type] },
+                { label: "Debit", value: (row: AccountBalance) => row.debit },
+                { label: "Credit", value: (row: AccountBalance) => row.credit },
+                { label: "Balance", value: (row: AccountBalance) => row.balance },
               ]}
               rows={trial.rows}
               size="default"
