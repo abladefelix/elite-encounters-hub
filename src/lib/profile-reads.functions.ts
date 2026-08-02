@@ -47,5 +47,13 @@ export const listFullProfiles = createServerFn({ method: "POST" })
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return data ?? [];
+
+    const { data: allRoles } = await supabaseAdmin.from("user_roles").select("user_id, role");
+    const byUser = new Map<string, Database["public"]["Enums"]["app_role"][]>();
+    for (const row of allRoles ?? []) {
+      const list = byUser.get(row.user_id) ?? [];
+      list.push(row.role);
+      byUser.set(row.user_id, list);
+    }
+    return (data ?? []).map((row) => ({ ...row, roles: byUser.get(row.id) ?? [] }));
   });
