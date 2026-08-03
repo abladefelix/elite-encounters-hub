@@ -42,6 +42,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Tooltip,
   TooltipContent,
@@ -61,6 +62,9 @@ import { QuoteDialog, type QuoteDraft } from "@/components/chat/quote-dialog";
 import { GiftDialog, type GiftDraft } from "@/components/chat/gift-dialog";
 import { ReportDialog, type ReportDraft } from "@/components/chat/report-dialog";
 import { RatingDialog, type RatingDraft } from "@/components/chat/rating-dialog";
+import { UploadProgressList } from "@/components/upload-progress-list";
+import { useUploadQueue } from "@/hooks/use-upload-queue";
+import { safeName, signAttachment } from "@/lib/upload-progress";
 import { canReview } from "@/lib/ratings";
 import { REPORT_REASON_LABEL } from "@/lib/reports";
 import { paystackChannel } from "@/lib/paystack";
@@ -72,8 +76,8 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import {
   hideThread,
+  unhideThread,
   markThreadRead,
-  uploadAttachment,
   useBookings,
   useCreateBooking,
   useLogModerationHit,
@@ -177,6 +181,9 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [ratingBooking, setRatingBooking] = useState<BookingRow | null>(null);
   const [showListOnMobile, setShowListOnMobile] = useState(true);
   const [removeThread, setRemoveThread] = useState<ThreadRow | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const uploads = useUploadQueue();
   const [removing, setRemoving] = useState(false);
   const queryClient = useQueryClient();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -387,12 +394,18 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       toast.error(problem);
       return;
     }
-    try {
-      const url = await uploadAttachment(activeThread.id, file);
-      await post({ body: file.name, attachment_url: url, attachment_name: file.name });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
-    }
+    // The progress row lives above the composer, with cancel and retry, so a
+    // slow connection is visible instead of looking like a frozen chat.
+    const threadId = activeThread.id;
+    uploads.start({
+      bucket: "attachments",
+      path: `${userId}/${threadId}/${Date.now()}-${safeName(file.name)}`,
+      file,
+      onStored: async (storedPath) => {
+        const url = await signAttachment(storedPath);
+        await post({ body: file.name, attachment_url: url, attachment_name: file.name });
+      },
+    });
   }
 
   /**
@@ -664,22 +677,62 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
 
 
-  /** Clears a conversation from this member's own list only. */
-  async function confirmRemoveThread() {
-    if (!removeThread) return;
+  /** Which side of a thread this member sits on, for the hidden-at column. */
+  function sideOf(thread: ThreadRow) {
+    return thread.client_id === userId ? ("client" as const) : ("specialist" as const);
+  }
+
+  /**
+   * Clears conversations from this member's own list only, then offers a short
+   * undo window — nothing is deleted for the other person either way.
+   */
+  async function removeThreads(targets: ThreadRow[]) {
+    if (!targets.length) return;
     setRemoving(true);
     try {
-      await hideThread(removeThread.id, removeThread.client_id === userId ? "client" : "specialist");
-      if (activeThreadId === removeThread.id) setActiveThreadId("");
+      for (const thread of targets) {
+        await hideThread(thread.id, sideOf(thread));
+      }
+      if (targets.some((thread) => thread.id === activeThreadId)) setActiveThreadId("");
       await queryClient.invalidateQueries({ queryKey: ["threads"] });
-      toast.success("Conversation removed from your list");
       setRemoveThread(null);
+      setSelectMode(false);
+      setSelectedIds([]);
+      toast.success(
+        targets.length === 1
+          ? "Conversation removed from your list"
+          : `${targets.length} conversations removed from your list`,
+        {
+          duration: 8000,
+          action: {
+            label: "Undo",
+            onClick: () => {
+              void (async () => {
+                try {
+                  for (const thread of targets) {
+                    await unhideThread(thread.id, sideOf(thread));
+                  }
+                  await queryClient.invalidateQueries({ queryKey: ["threads"] });
+                  toast.success(
+                    targets.length === 1 ? "Conversation restored" : "Conversations restored",
+                  );
+                } catch (error) {
+                  toast.error(
+                    error instanceof Error ? error.message : "Couldn't restore that conversation",
+                  );
+                }
+              })();
+            },
+          },
+        },
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't remove that conversation");
     } finally {
       setRemoving(false);
     }
   }
+
 
   function openGift() {
     if (!escrow.tipsEnabled) {
@@ -717,10 +770,62 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                 )}
               >
                 <div className="border-b border-border/70 p-4">
-                  <h1 className="font-display text-base font-semibold">Messages</h1>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {threadList.length} conversations · {tierLabel(room)} room
-                  </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h1 className="font-display text-base font-semibold">Messages</h1>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {threadList.length} conversations · {tierLabel(room)} room
+                      </p>
+                    </div>
+                    {threadList.length ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0 text-xs"
+                        onClick={() => {
+                          setSelectMode((current) => !current);
+                          setSelectedIds([]);
+                        }}
+                      >
+                        {selectMode ? "Done" : "Select"}
+                      </Button>
+                    ) : null}
+                  </div>
+                  {selectMode ? (
+                    <div className="mt-3 flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() =>
+                          setSelectedIds(
+                            selectedIds.length === threadList.length
+                              ? []
+                              : threadList.map((thread) => thread.id),
+                          )
+                        }
+                      >
+                        {selectedIds.length === threadList.length ? "Clear all" : "Select all"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="text-xs"
+                        disabled={!selectedIds.length || removing}
+                        onClick={() =>
+                          void removeThreads(
+                            threadList.filter((thread) => selectedIds.includes(thread.id)),
+                          )
+                        }
+                      >
+                        <Trash2 className="size-3.5" />
+                        {removing ? "Removing…" : `Remove ${selectedIds.length || ""}`.trim()}
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
                 <ScrollArea className="min-h-0 flex-1">
                   {threadsQuery.isLoading ? (
@@ -745,6 +850,28 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           item.id === activeThread?.id && "bg-secondary",
                         )}
                       >
+                      {selectMode ? (
+                        <label className="flex min-w-0 flex-1 cursor-pointer gap-3 p-4 text-left">
+                          <Checkbox
+                            className="mt-3"
+                            checked={selectedIds.includes(item.id)}
+                            aria-label={`Select conversation with ${name}`}
+                            onCheckedChange={(checked) =>
+                              setSelectedIds((current) =>
+                                checked
+                                  ? [...current, item.id]
+                                  : current.filter((id) => id !== item.id),
+                              )
+                            }
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold">{name}</p>
+                            <p className="mt-1 truncate text-xs text-muted-foreground">
+                              {item.last_message || "No messages yet"}
+                            </p>
+                          </div>
+                        </label>
+                      ) : (
                       <button
                         type="button"
                         onClick={() => {
@@ -776,6 +903,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           </Badge>
                         ) : null}
                       </button>
+                      )}
+                        {selectMode ? null : (
                         <Button
                           type="button"
                           variant="ghost"
@@ -786,6 +915,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         >
                           <Trash2 className="size-4" />
                         </Button>
+                        )}
                       </div>
                     );
                   })}
@@ -970,7 +1100,16 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         </Button>
                       )}
 
+                      <UploadProgressList
+                        tasks={uploads.tasks}
+                        onRetry={uploads.retry}
+                        onCancel={uploads.cancel}
+                        onDismiss={uploads.dismiss}
+                        className="mt-3"
+                      />
+
                       <form
+
                         className="mt-3 flex items-center gap-2"
                         onSubmit={(event) => {
                           event.preventDefault();
@@ -1194,7 +1333,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
           <AlertDialogHeader>
             <AlertDialogTitle>Remove this conversation?</AlertDialogTitle>
             <AlertDialogDescription>
-              It disappears from your list only — the other member keeps their copy, and bookings,
+              You can undo this for a few seconds afterwards. It disappears from your list only — the other member keeps their copy, and bookings,
               payments and escrow records are untouched. If they message you again, the thread comes
               back.
             </AlertDialogDescription>
@@ -1205,7 +1344,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
               disabled={removing}
               onClick={(event) => {
                 event.preventDefault();
-                void confirmRemoveThread();
+                void removeThreads(removeThread ? [removeThread] : []);
               }}
             >
               {removing ? "Removing…" : "Remove chat"}

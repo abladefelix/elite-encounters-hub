@@ -157,7 +157,21 @@ See [docs/SETUP.md § 7](docs/SETUP.md#7-backups--operations--daily-off-site-sna
 for the Dropbox/Drive token setup, Windows/Linux/pg_cron schedules and the restore
 procedure.
 
+## Upload progress, retries and chat clean-up
+
+Every member-facing upload (specialist work photos, intro video, chat attachments) runs through
+`src/lib/upload-progress.ts` + `src/hooks/use-upload-queue.ts`. Files stream with
+`XMLHttpRequest`, so members see a real percentage bar per file, can **Cancel** while it is
+moving, and get a plain-language error with a **Retry** button if the connection drops — no need
+to pick the file again. The UI is `src/components/upload-progress-list.tsx`.
+
+Removing chats is reversible: after removing one (or several via **Select** in the thread list),
+a toast offers **Undo** for 8 seconds, which clears the `client_hidden_at` /
+`specialist_hidden_at` timestamp again. Removal only ever affects the member who did it —
+the other side keeps their copy and all bookings, payments and escrow records are untouched.
+
 ## Media sharing & admin switches
+
 
 Everything below is toggled live in **Control room → Features** (no deploy needed) and every
 change is written to the admin audit log.

@@ -297,8 +297,8 @@ function AdminLayout() {
                     <Menu className="size-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="flex w-[17rem] flex-col p-0">
-                  <SheetHeader className="shrink-0 border-b border-border/70 px-4 py-4 pr-14 pt-[max(1rem,calc(env(safe-area-inset-top)+0.75rem))] text-left">
+                <SheetContent side="right" className="w-[17rem]" bodyClassName="gap-0 px-0 pb-0">
+                  <SheetHeader className="border-b border-border/70 px-4 pb-3 text-left">
                     <SheetTitle className="font-display text-base">Control room</SheetTitle>
                   </SheetHeader>
                   <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-3">
