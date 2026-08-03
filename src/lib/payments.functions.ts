@@ -405,3 +405,63 @@ export const createSpecialistQuote = createServerFn({ method: "POST" })
 
     return { bookingId: booking.id, subtotal, fee, total: subtotal + fee, feePct };
   });
+
+/**
+ * Specialist asks Ashnight to release a payout that is sitting in escrow.
+ *
+ * This does not move money — it flags the entry for the control room, so a
+ * paid job always leaves a record the specialist can act on rather than
+ * waiting silently for the hold window.
+ */
+export const requestEscrowPayout = createServerFn({ method: "POST" })
+  .validator((input) =>
+    z
+      .object({
+        escrowId: z.string().uuid(),
+        note: z.string().trim().max(600).optional(),
+      })
+      .parse(input),
+  )
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ data, context }) => {
+    const { adminClient } = await import("./payments.server");
+    const admin = await adminClient();
+
+    const { data: entry } = await admin
+      .from("escrow_entries")
+      .select("id, specialist_id, state, payout_request_state, payout_amount, label")
+      .eq("id", data.escrowId)
+      .maybeSingle();
+    if (!entry) throw new Error("That payment no longer exists.");
+    if (entry.specialist_id !== context.userId) {
+      throw new Error("Only the specialist paid for this job can request a release.");
+    }
+    if (entry.state === "pending") throw new Error("This payment hasn't been confirmed yet.");
+    if (entry.state === "released") throw new Error("This payout has already been deposited.");
+    if (entry.state === "refunded") throw new Error("This payment was refunded to the member.");
+    if (entry.payout_request_state === "requested") {
+      throw new Error("You've already requested this payout — Ashnight is reviewing it.");
+    }
+
+    const { error } = await admin
+      .from("escrow_entries")
+      .update({
+        payout_request_state: "requested",
+        payout_requested_at: new Date().toISOString(),
+        payout_request_note: data.note ?? "",
+      })
+      .eq("id", entry.id);
+    if (error) throw new Error(error.message);
+
+    const { data: admins } = await admin.from("user_roles").select("user_id").eq("role", "admin");
+    const rows = (admins ?? []).map((row) => ({
+      user_id: row.user_id,
+      kind: "escrow",
+      title: "Payout release requested",
+      body: `A specialist requested release of GHS ${entry.payout_amount.toLocaleString()} for “${entry.label}”.`,
+      link: "/ashnight-control/escrow",
+    }));
+    if (rows.length) await admin.from("notifications").insert(rows);
+
+    return { ok: true };
+  });
