@@ -1076,16 +1076,21 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 function CallControl({
   allowed,
   label,
+  callWord,
+  startWord,
   room,
   onClick,
   children,
 }: {
   allowed: boolean;
   label: string;
+  callWord: string;
+  startWord: string;
   room: string;
   onClick: () => void;
   children: ReactNode;
 }) {
+  const start = `${startWord} ${label} ${callWord}`;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -1093,18 +1098,19 @@ function CallControl({
           variant="ghost"
           size="icon"
           onClick={onClick}
-          aria-label={`Start ${label} call`}
+          aria-label={start}
           className={cn(!allowed && "text-muted-foreground/50")}
         >
           {allowed ? children : <Lock className="size-4" />}
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        {allowed ? `Start ${label} call` : `${label} calls are off for the ${room} room`}
+        {allowed ? start : `${label} ${callWord}s are off for the ${room} room`}
       </TooltipContent>
     </Tooltip>
   );
 }
+
 
 function MessageBubble({
   message,
