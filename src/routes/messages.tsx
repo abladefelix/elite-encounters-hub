@@ -623,7 +623,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     setRemoving(true);
     try {
       await hideThread(removeThread.id, removeThread.client_id === userId ? "client" : "specialist");
-      if (activeThreadId === removeThread.id) setActiveThreadId(undefined);
+      if (activeThreadId === removeThread.id) setActiveThreadId("");
       await queryClient.invalidateQueries({ queryKey: ["threads"] });
       toast.success("Conversation removed from your list");
       setRemoveThread(null);
