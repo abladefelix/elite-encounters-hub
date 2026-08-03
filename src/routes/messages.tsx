@@ -1280,12 +1280,13 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           return (
                             <div key={message.id} className="space-y-4">
                               {showDay ? (
-                                <div className="flex items-center gap-3">
-                                  <Separator className="flex-1" />
-                                  <span className="eyebrow shrink-0 text-[10px]">
+                                <div className="relative flex items-center justify-center py-1">
+                                  <div className="absolute inset-0 flex items-center">
+                                    <Separator className="w-full" />
+                                  </div>
+                                  <span className="relative bg-background px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                                     {dayLabel(message.created_at)}
                                   </span>
-                                  <Separator className="flex-1" />
                                 </div>
                               ) : null}
                               <MessageBubble
