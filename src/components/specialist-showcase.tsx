@@ -204,19 +204,11 @@ export function SpecialistShowcase({ limit = 9 }: { limit?: number }) {
           </div>
         </div>
       ) : spotlight ? (
-        <div className="mt-5 space-y-4">
-          <SpotlightCard specialist={spotlight} />
-
-          {rest.length ? (
-            <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 lg:grid-cols-6">
-              {rest.map((specialist) => (
-                <div key={specialist.id} className="w-28 shrink-0 snap-start sm:w-auto">
-                  <SpecialistTile specialist={specialist} />
-                </div>
-              ))}
-            </div>
-          ) : null}
+        <div className="mt-5 space-y-6">
+          {showSpotlight ? <SpotlightCard specialist={spotlight} /> : null}
+          {showRows ? <SpecialistRows roster={reachable} /> : null}
         </div>
+
       ) : (
         <Card className="mt-5 border-dashed border-border/70 bg-panel/60 p-5 text-sm text-muted-foreground">
           No specialists are open to your room yet. Join or upgrade a room below to widen who you
