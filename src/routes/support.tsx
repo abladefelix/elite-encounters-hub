@@ -458,7 +458,7 @@ export function DocumentCard({
           <Button size="sm" variant="outline" onClick={print}>
             <Printer className="size-4" /> Print
           </Button>
-          <Button size="sm" variant="ghost" onClick={print}>
+          <Button size="sm" variant="ghost" onClick={() => void savePdf()}>
             <Download className="size-4" /> Save as PDF
           </Button>
         </div>
