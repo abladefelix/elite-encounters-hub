@@ -172,6 +172,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [giftOpen, setGiftOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [ratingOpen, setRatingOpen] = useState(false);
+  /** Booking the open rating dialog belongs to, when it followed a visit. */
+  const [ratingBooking, setRatingBooking] = useState<BookingRow | null>(null);
   const [showListOnMobile, setShowListOnMobile] = useState(true);
   const [removeThread, setRemoveThread] = useState<ThreadRow | null>(null);
   const [removing, setRemoving] = useState(false);
@@ -599,6 +601,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
         thread_id: activeThread.id,
         rater_id: userId,
         rated_id: peerId,
+        booking_id: ratingBooking?.id ?? null,
         stars: ratingDraft.stars,
         note: ratingDraft.note,
         tags: ratingDraft.tags,
@@ -610,7 +613,10 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
               ratingDraft.tags.length ? ` · ${ratingDraft.tags.join(", ")}` : ""
             }`,
           );
-          toast.success(`${ratingDraft.stars}-star rating posted`);
+          toast.success(`${ratingDraft.stars}-star rating posted`, {
+            description: "Ashnight reviews specialist rooms from these ratings.",
+          });
+          setRatingBooking(null);
         },
         onError: (error) => toast.error(error.message),
       },
@@ -878,7 +884,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                               !!message.booking_id && payingBookingId === message.booking_id
                             }
                             onPay={(id) => void payBooking(id)}
-                            onConfirm={(id) => void confirmComplete(id)}
+                            onConfirm={(id) => void confirmAndReview(id)}
                             onDispute={(id, reason) => void raiseIssue(id, reason)}
                           />
                         ))}
@@ -1109,7 +1115,12 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
             <RatingDialog
               specialistName={peerName}
               open={ratingOpen}
-              onOpenChange={setRatingOpen}
+              serviceName={ratingBooking?.service_name}
+              submitting={submitRating.isPending}
+              onOpenChange={(next) => {
+                setRatingOpen(next);
+                if (!next) setRatingBooking(null);
+              }}
               onSubmit={handleRating}
             />
 

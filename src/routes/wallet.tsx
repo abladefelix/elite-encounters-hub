@@ -13,6 +13,7 @@ import {
 
 import { SiteHeader } from "@/components/site-header";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
+import { PendingFeedbackCard } from "@/components/pending-feedback-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -169,6 +170,8 @@ function WalletBody({ userId, isSpecialist }: { userId: string; isSpecialist: bo
             </Card>
           ))}
         </div>
+
+        {!isSpecialist ? <PendingFeedbackCard userId={userId} /> : null}
 
         {!isSpecialist ? (
           <Card className="mt-4 flex flex-wrap items-center gap-3 border-border/70 bg-surface p-5">
