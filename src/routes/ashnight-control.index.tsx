@@ -157,6 +157,7 @@ function AdminOverview() {
           hint={`${memberships.length} total memberships`}
           icon={TrendingUp}
           tone="default"
+          to="/ashnight-control/users"
         />
         <StatCard
           label="Escrow held & clearing"
@@ -164,6 +165,7 @@ function AdminOverview() {
           hint={`${money(totals.disputed)} frozen in disputes`}
           icon={ArrowUpRight}
           tone="success"
+          to="/ashnight-control/escrow"
         />
         <StatCard
           label="Vetted specialists"
@@ -171,6 +173,7 @@ function AdminOverview() {
           hint="Across three rooms"
           icon={Users}
           tone="accent"
+          to="/ashnight-control/rooms"
         />
         <StatCard
           label="Needs attention"
@@ -178,8 +181,10 @@ function AdminOverview() {
           hint={`${pendingVetting} vetting · ${openDisputes} disputes · ${openReports} reports`}
           icon={AlertTriangle}
           tone="warning"
+          to="/ashnight-control/vetting"
         />
       </div>
+
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-6 lg:col-span-2">
