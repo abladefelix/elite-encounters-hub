@@ -17,6 +17,8 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SpecialistTile } from "@/components/specialist-tile";
 import { RosterPagination } from "@/components/roster-pagination";
+import { SpecialistRows } from "@/components/specialist-rows";
+import { useAppearance } from "@/lib/appearance";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useServices, useSpecialists, type ProfileRow } from "@/lib/queries";
@@ -137,8 +139,10 @@ function SpecialistsPage() {
 
   const hasAnySpecialists = (profiles?.length ?? 0) > 0;
 
-  // Big rosters get paged so the grid stays fast and scannable on mobile.
-  const PAGE_SIZE = 24;
+  // Layout and page size are admin settings from the control room.
+  const { appearance } = useAppearance();
+  const rowsLayout = appearance.directoryLayout === "rows";
+  const PAGE_SIZE = Math.max(6, appearance.gridPageSize || 24);
   const [page, setPage] = useState(1);
   const pageCount = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
 
@@ -269,19 +273,31 @@ function SpecialistsPage() {
           <>
             <p className="mt-6 text-xs text-muted-foreground">
               {results.length} specialist{results.length === 1 ? "" : "s"} match your filters
-              {pageCount > 1 ? ` · page ${Math.min(page, pageCount)} of ${pageCount}` : ""}
+              {!rowsLayout && pageCount > 1
+                ? ` · page ${Math.min(page, pageCount)} of ${pageCount}`
+                : ""}
             </p>
 
-            <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-              {visible.map((specialist) => (
-                <SpecialistTile
-                  key={specialist.id}
-                  specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
+            {rowsLayout ? (
+              <div className="mt-5">
+                <SpecialistRows
+                  roster={results.map((specialist) =>
+                    toSpecialist(specialist, serviceMap?.get(specialist.id) ?? []),
+                  )}
                 />
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                {visible.map((specialist) => (
+                  <SpecialistTile
+                    key={specialist.id}
+                    specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
+                  />
+                ))}
+              </div>
+            )}
 
-            <RosterPagination
+            {rowsLayout ? null : <RosterPagination
               page={Math.min(page, pageCount)}
               pageCount={pageCount}
               total={results.length}
@@ -291,7 +307,7 @@ function SpecialistsPage() {
                 setPage(next);
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-            />
+            />}
 
 
 
