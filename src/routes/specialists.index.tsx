@@ -292,7 +292,9 @@ function SpecialistsPage() {
                   roster={mapped}
                   // Filters and sort stay meaningful in the row layout: the
                   // member's own selection leads, in their chosen order.
-                  leadRow={filtersActive ? { label: "Matching your filters", items: mapped } : undefined}
+                  {...(filtersActive
+                    ? { leadRow: { label: "Matching your filters", items: mapped } }
+                    : {})}
                 />
               </div>
             ) : (
