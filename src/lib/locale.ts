@@ -18,18 +18,48 @@ export const LOCALE_LANGUAGES = [
   { code: "ar", label: "العربية" },
 ] as const;
 
-/** Every string an admin may reword, grouped for the editor. */
+/**
+ * Every string an admin may reword, grouped for the editor.
+ *
+ * `usedIn` lists the exact screens/elements each word appears on, so an admin
+ * editing a term like "Ultimate" can see which surface it changes before saving.
+ */
 export const COPY_GROUPS = [
   {
     id: "people",
     title: "People",
     blurb: "How the two sides of the marketplace are named everywhere.",
     keys: [
-      { key: "specialist", label: "Specialist (singular)", value: "Specialist" },
-      { key: "specialists", label: "Specialists (plural)", value: "Specialists" },
-      { key: "client", label: "Client (singular)", value: "Client" },
-      { key: "clients", label: "Clients (plural)", value: "Clients" },
-      { key: "member", label: "Member", value: "Member" },
+      {
+        key: "specialist",
+        label: "Specialist (singular)",
+        value: "Specialist",
+        usedIn: ["Specialist profile page", "Chat header", "Booking & quote dialogs", "Wallet"],
+      },
+      {
+        key: "specialists",
+        label: "Specialists (plural)",
+        value: "Specialists",
+        usedIn: ["Header nav", "Mobile tab bar", "Directory page title", "Home page"],
+      },
+      {
+        key: "client",
+        label: "Client (singular)",
+        value: "Client",
+        usedIn: ["Chat header", "Booking cards", "Escrow entries", "Wallet"],
+      },
+      {
+        key: "clients",
+        label: "Clients (plural)",
+        value: "Clients",
+        usedIn: ["How it works page", "Rooms page", "Admin roster tab labels"],
+      },
+      {
+        key: "member",
+        label: "Member",
+        value: "Member",
+        usedIn: ["Auth screens", "Rooms page", "Welcome message", "Footer"],
+      },
     ],
   },
   {
@@ -37,13 +67,48 @@ export const COPY_GROUPS = [
     title: "Rooms & bookings",
     blurb: "Membership tiers, jobs and the money words.",
     keys: [
-      { key: "room", label: "Room (singular)", value: "Room" },
-      { key: "rooms", label: "Rooms (plural)", value: "Rooms" },
-      { key: "booking", label: "Booking", value: "Booking" },
-      { key: "bookings", label: "Bookings", value: "Bookings" },
-      { key: "service", label: "Service", value: "Service" },
-      { key: "escrow", label: "Escrow", value: "Escrow" },
-      { key: "gift", label: "Gift / tip", value: "Gift" },
+      {
+        key: "room",
+        label: "Room (singular)",
+        value: "Room",
+        usedIn: ["Room badges", "Rooms page cards", "Chat header", "Membership checkout"],
+      },
+      {
+        key: "rooms",
+        label: "Rooms (plural)",
+        value: "Rooms",
+        usedIn: ["Header nav", "Mobile tab bar", "Rooms page title"],
+      },
+      {
+        key: "booking",
+        label: "Booking",
+        value: "Booking",
+        usedIn: ["Service request dialog", "Chat booking bubbles", "Wallet timeline"],
+      },
+      {
+        key: "bookings",
+        label: "Bookings",
+        value: "Bookings",
+        usedIn: ["Wallet page", "Member dashboard strip", "How it works"],
+      },
+      {
+        key: "service",
+        label: "Service",
+        value: "Service",
+        usedIn: ["Service request dialog", "Specialist profile services list", "Invoices"],
+      },
+      {
+        key: "escrow",
+        label: "Escrow",
+        value: "Escrow",
+        usedIn: ["Wallet page", "Chat payment bubbles", "Receipts"],
+      },
+      {
+        key: "gift",
+        label: "Gift / tip",
+        value: "Gift",
+        usedIn: ["Chat gift dialog", "Wallet timeline"],
+      },
     ],
   },
   {
@@ -51,14 +116,54 @@ export const COPY_GROUPS = [
     title: "Navigation & actions",
     blurb: "Labels on the header, footer and primary buttons.",
     keys: [
-      { key: "nav.specialists", label: "Browse specialists link", value: "Specialists" },
-      { key: "nav.rooms", label: "Rooms link", value: "Rooms" },
-      { key: "nav.messages", label: "Messages link", value: "Messages" },
-      { key: "nav.wallet", label: "Money / wallet link", value: "Money" },
-      { key: "nav.howItWorks", label: "How it works link", value: "How it works" },
-      { key: "action.signIn", label: "Sign in", value: "Sign in" },
-      { key: "action.signUp", label: "Create account", value: "Create account" },
-      { key: "action.book", label: "Book now", value: "Book now" },
+      {
+        key: "nav.specialists",
+        label: "Browse specialists link",
+        value: "Specialists",
+        usedIn: ["Header nav (desktop)", "Mobile menu", "Mobile tab bar"],
+      },
+      {
+        key: "nav.rooms",
+        label: "Rooms link",
+        value: "Rooms",
+        usedIn: ["Header nav (desktop)", "Mobile menu", "Mobile tab bar"],
+      },
+      {
+        key: "nav.messages",
+        label: "Messages link",
+        value: "Messages",
+        usedIn: ["Header nav (desktop)", "Mobile menu", "Mobile tab bar"],
+      },
+      {
+        key: "nav.wallet",
+        label: "Money / wallet link",
+        value: "Money",
+        usedIn: ["Header nav (desktop)", "Mobile menu", "Mobile tab bar"],
+      },
+      {
+        key: "nav.howItWorks",
+        label: "How it works link",
+        value: "How it works",
+        usedIn: ["Header nav (desktop)", "Mobile menu", "Footer"],
+      },
+      {
+        key: "action.signIn",
+        label: "Sign in",
+        value: "Sign in",
+        usedIn: ["Auth page tab", "Header button", "Mobile menu"],
+      },
+      {
+        key: "action.signUp",
+        label: "Create account",
+        value: "Create account",
+        usedIn: ["Auth page tab", "Apply page submit button"],
+      },
+      {
+        key: "action.book",
+        label: "Book now",
+        value: "Book now",
+        usedIn: ["Specialist profile page", "Specialist cards", "Chat action bar"],
+      },
     ],
   },
 ] as const;
@@ -68,6 +173,7 @@ export type CopyKey = (typeof COPY_GROUPS)[number]["keys"][number]["key"];
 export const DEFAULT_COPY: Record<string, string> = Object.fromEntries(
   COPY_GROUPS.flatMap((group) => group.keys.map((entry) => [entry.key, entry.value])),
 );
+
 
 export interface LocaleSettings {
   language: string;
