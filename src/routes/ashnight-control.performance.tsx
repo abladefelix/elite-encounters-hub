@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pager, usePaged } from "@/components/pager";
+import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { TierBadge } from "@/components/tier-badge";
 import { useAdminAccess } from "@/lib/admin-permissions";
 import { useAllProfiles, useRatings, useUpdateProfile, type ProfileFullRow } from "@/lib/queries";
@@ -172,7 +172,7 @@ function AdminPerformance() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {paged.items.map(({ profile, summary, advice }) => (
+          {paged.rows.map(({ profile, summary, advice }) => (
             <Card key={profile.id} className="space-y-4 p-5">
               <div className="flex flex-wrap items-start gap-3">
                 <div className="min-w-0">
@@ -270,7 +270,7 @@ function AdminPerformance() {
               ) : null}
             </Card>
           ))}
-          <Pager state={paged} />
+          <DataPager paged={paged} label="specialists" />
         </div>
       )}
     </div>
