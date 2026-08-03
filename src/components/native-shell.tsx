@@ -15,18 +15,24 @@ export function NativeShell() {
     let disposed = false;
     const cleanups: Array<() => void> = [];
 
+    // Lets CSS paint the safe areas instead of leaving OS-coloured bars.
+    document.documentElement.classList.add("native-app");
+    cleanups.push(() => document.documentElement.classList.remove("native-app"));
+
     void (async () => {
-      // Status bar: match the app chrome instead of the OS default.
+      // Status bar: overlay the web view and match the app chrome.
       try {
         const { StatusBar, Style } = await import("@capacitor/status-bar");
         const dark = document.documentElement.classList.contains("dark");
+        await StatusBar.setOverlaysWebView({ overlay: true });
         await StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light });
         if (nativePlatform() === "android") {
-          await StatusBar.setBackgroundColor({ color: dark ? "#0b0d12" : "#faf7f0" });
+          await StatusBar.setBackgroundColor({ color: "#00000000" });
         }
       } catch {
         // Plugin unavailable — harmless.
       }
+
 
       // Keyboard: keep the chat composer visible above the keyboard.
       try {
