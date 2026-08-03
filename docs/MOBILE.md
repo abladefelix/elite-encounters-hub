@@ -161,3 +161,26 @@ Because the shell loads the live site, any web change you publish reaches every
 installed app on the next launch — no store review needed. You only resubmit
 when you change native config: app name, icons, permissions, plugins or the
 `server.url` domain.
+
+## Microphone / camera permissions (calls)
+
+iOS and Android only prompt for mic/camera when the native project declares them.
+`bun run mobile:sync` now runs `scripts/native-permissions.mjs`, which adds the
+usage descriptions to `ios/App/App/Info.plist`, the permissions to
+`android/app/src/main/AndroidManifest.xml`, and switches the iOS launch image to
+full-screen (`scaleAspectFill`).
+
+```bash
+git pull origin main
+bun install
+bun run build
+bun run mobile:sync        # patches permissions + launch screen
+bun run mobile:assets      # regenerates icons + 2732x2732 splashes
+bun run mobile:sync
+bun run mobile:open:ios    # delete the app from the device, then Run
+```
+
+Deleting the app first is required: iOS caches both the old launch image and a
+previously denied microphone decision. After reinstalling, the first call shows
+the system prompt. If it was denied earlier, re-enable it in
+**Settings → Ashnight → Microphone / Camera**.
