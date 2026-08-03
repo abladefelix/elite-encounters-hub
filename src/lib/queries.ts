@@ -54,7 +54,13 @@ function unwrap<T>(result: { data: T | null; error: { message: string } | null }
 export function useSpecialists(room?: Tier | "all") {
   return useQuery({
     queryKey: ["specialists", room ?? "all"],
+    // Keep the "available now" dot honest when a specialist flips their switch.
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    refetchInterval: 60_000,
     queryFn: async () => {
+
       // Clients also hold a room (their membership tier), so the directory is
       // scoped through the curated `specialist_directory` view, which only
       // lists approved, placed specialists.
