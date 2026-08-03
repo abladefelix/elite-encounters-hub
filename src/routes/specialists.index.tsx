@@ -173,7 +173,31 @@ function SpecialistsPage() {
           Your room decides who you can book — you can still browse everyone.
         </p>
 
-        <div className="mt-8 grid gap-3 rounded-xl border border-border/70 bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-3 rounded-xl border border-border/70 bg-surface p-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="relative lg:col-span-2">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search name, city, specialism"
+              className="pl-9"
+            />
+          </div>
+
+          <Select
+            value={availability}
+            onValueChange={(value) => setAvailability(value as typeof availability)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Availability" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Everyone</SelectItem>
+              <SelectItem value="online">Available now</SelectItem>
+              <SelectItem value="verified">Verified only</SelectItem>
+            </SelectContent>
+          </Select>
+
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
