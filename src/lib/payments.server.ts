@@ -281,6 +281,22 @@ export async function finalizeReference(
       }
     }
 
+    // The paying member gets the same courtesy: a receipt notification plus a
+    // clear statement of what happens to the money next.
+    if (entry.kind === "booking") {
+      await admin.from("notifications").insert({
+        user_id: entry.client_id,
+        kind: "payment",
+        title: "Payment received — job confirmed",
+        body: `GHS ${entry.amount.toLocaleString()} for ${entry.label || "your ash service"} is ${
+          patch.state === "released"
+            ? "on its way to your specialist"
+            : "held in Ashnight escrow. Confirm the visit once it's done and the payout starts clearing."
+        }`,
+        link: "/wallet",
+      });
+    }
+
 
     // A confirmed charge always leaves a receipt the member can download.
     await issueDocument({
