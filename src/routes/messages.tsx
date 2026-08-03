@@ -203,6 +203,11 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [removeThread, setRemoveThread] = useState<ThreadRow | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [clearOpen, setClearOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<MessageRowType | null>(null);
+  const [deletingMessage, setDeletingMessage] = useState(false);
   const uploads = useUploadQueue();
   const [removing, setRemoving] = useState(false);
   const queryClient = useQueryClient();
