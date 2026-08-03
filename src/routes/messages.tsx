@@ -1042,12 +1042,24 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         </Avatar>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="truncate text-sm font-semibold">{name}</p>
+                            <p
+                              className={cn(
+                                "truncate text-sm",
+                                unread ? "font-semibold" : "font-medium",
+                              )}
+                            >
+                              {name}
+                            </p>
                             <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
                               {timeLabel(item.last_message_at)}
                             </span>
                           </div>
-                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                          <p
+                            className={cn(
+                              "mt-1 truncate text-xs",
+                              unread ? "text-foreground" : "text-muted-foreground",
+                            )}
+                          >
                             {item.last_message || "No messages yet"}
                           </p>
                         </div>
@@ -1059,25 +1071,49 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                       </button>
                       )}
                         {selectMode ? null : (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Remove conversation with ${name}`}
-                          className="mr-2 mt-3 size-8 shrink-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => setRemoveThread(item)}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Options for the conversation with ${name}`}
+                              className="mr-2 mt-3 size-8 shrink-0 text-muted-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                            >
+                              <MoreVertical className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-52">
+                            <DropdownMenuLabel className="truncate text-xs">{name}</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setActiveThreadId(item.id);
+                                setShowListOnMobile(false);
+                              }}
+                            >
+                              Open conversation
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onSelect={() => setRemoveThread(item)}
+                            >
+                              <Trash2 className="size-4" /> Remove from my list
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         )}
                       </div>
                     );
                   })}
-                  {!threadsQuery.isLoading && !threadList.length ? (
+                  {!threadsQuery.isLoading && !visibleThreads.length ? (
                     <p className="p-4 text-xs text-muted-foreground">
-                      No conversations yet. Open one from a specialist profile.
+                      {threadList.length
+                        ? `No conversations match “${search}”.`
+                        : "No conversations yet. Open one from a specialist profile."}
                     </p>
                   ) : null}
+
                 </ScrollArea>
               </aside>
 
