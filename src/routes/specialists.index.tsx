@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { SpecialistCard } from "@/components/specialist-card";
+import { SpecialistTile } from "@/components/specialist-tile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useServices, useSpecialists, type ProfileRow } from "@/lib/queries";
