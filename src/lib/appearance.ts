@@ -49,6 +49,8 @@ export interface AppearanceSettings {
   fontScale: number;
   /** Optional accent override (hex). Empty keeps the brass design token. */
   accentColor: string;
+  /** Shuffle the faces inside each row so the strips look fresh each visit. */
+  shuffleRows: boolean;
   /** Which roster rows are shown, in order. */
   rosterGroups: RosterGroupKey[];
   /** Which landing-page sections are shown, in order. */
@@ -64,6 +66,7 @@ export const DEFAULT_APPEARANCE: AppearanceSettings = {
   cornerRadius: 0.75,
   fontScale: 1,
   accentColor: "",
+  shuffleRows: true,
   rosterGroups: ["online", "top", "new"],
   sections: ["spotlight", "rows", "dashboard", "pricing", "comparison"],
 };
