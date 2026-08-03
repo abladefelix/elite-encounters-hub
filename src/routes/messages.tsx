@@ -306,11 +306,18 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
    * "Clear chat" is per member: everything older than their own cleared-at
    * stamp drops out of their view while the other side keeps the full history.
    */
-  const clearedAt = activeThread
-    ? iAmClient
-      ? activeThread.client_cleared_at
-      : activeThread.specialist_cleared_at
-    : null;
+  const clearedAt = useMemo(() => {
+    if (!activeThread) return null;
+    const stamps = iAmClient
+      ? [activeThread.client_cleared_at, activeThread.client_hidden_at]
+      : [activeThread.specialist_cleared_at, activeThread.specialist_hidden_at];
+    const times = stamps
+      .filter((stamp): stamp is string => Boolean(stamp))
+      .map((stamp) => new Date(stamp).getTime())
+      .filter((time) => Number.isFinite(time));
+    if (!times.length) return null;
+    return new Date(Math.max(...times)).toISOString();
+  }, [activeThread, iAmClient]);
   const visibleMessages = useMemo(() => {
     if (!clearedAt) return messages;
     const cutoff = new Date(clearedAt).getTime();
