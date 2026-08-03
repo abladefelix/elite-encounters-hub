@@ -1919,7 +1919,7 @@ function MessageBubble({
           onReply={() => onReply(message)}
           onReport={onReport}
           attachmentUrl={message.attachment_url}
-          {...(mine ? { onDelete } : {})}
+          onDelete={onDelete}
         >
           <div className="max-w-sm rounded-xl border border-border bg-card p-4">
             <p className="eyebrow text-primary">Location shared</p>
