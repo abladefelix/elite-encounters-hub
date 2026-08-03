@@ -2013,7 +2013,7 @@ function MessageBubble({
         onReply={() => onReply(message)}
         onReport={onReport}
         attachmentUrl={message.attachment_url}
-        {...(mine ? { onDelete } : {})}
+        onDelete={onDelete}
       >
         <div className="max-w-[85%] select-none">
           <div
