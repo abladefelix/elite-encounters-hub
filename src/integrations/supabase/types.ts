@@ -234,6 +234,7 @@ export type Database = {
           notes: string
           platform_fee_pct: number
           rate: number
+          reference: string
           scheduled_for: string | null
           service_id: string | null
           service_name: string
@@ -251,6 +252,7 @@ export type Database = {
           notes?: string
           platform_fee_pct?: number
           rate?: number
+          reference?: string
           scheduled_for?: string | null
           service_id?: string | null
           service_name?: string
@@ -268,6 +270,7 @@ export type Database = {
           notes?: string
           platform_fee_pct?: number
           rate?: number
+          reference?: string
           scheduled_for?: string | null
           service_id?: string | null
           service_name?: string
@@ -534,6 +537,7 @@ export type Database = {
           payout_requested_at: string | null
           paystack_reference: string | null
           platform_fee: number
+          reference: string
           release_at: string | null
           released_at: string | null
           specialist_id: string
@@ -561,6 +565,7 @@ export type Database = {
           payout_requested_at?: string | null
           paystack_reference?: string | null
           platform_fee?: number
+          reference?: string
           release_at?: string | null
           released_at?: string | null
           specialist_id: string
@@ -588,6 +593,7 @@ export type Database = {
           payout_requested_at?: string | null
           paystack_reference?: string | null
           platform_fee?: number
+          reference?: string
           release_at?: string | null
           released_at?: string | null
           specialist_id?: string
@@ -657,6 +663,7 @@ export type Database = {
           reference: string
           status: Database["public"]["Enums"]["expense_status"]
           tax_amount: number
+          txn_reference: string
           updated_at: string
           vendor: string
         }
@@ -676,6 +683,7 @@ export type Database = {
           reference?: string
           status?: Database["public"]["Enums"]["expense_status"]
           tax_amount?: number
+          txn_reference?: string
           updated_at?: string
           vendor?: string
         }
@@ -695,6 +703,7 @@ export type Database = {
           reference?: string
           status?: Database["public"]["Enums"]["expense_status"]
           tax_amount?: number
+          txn_reference?: string
           updated_at?: string
           vendor?: string
         }
@@ -1659,6 +1668,7 @@ export type Database = {
     }
     Functions: {
       settings_section: { Args: { _section: string }; Returns: Json }
+      txn_reference: { Args: { _prefix: string }; Returns: string }
     }
     Enums: {
       account_status:
