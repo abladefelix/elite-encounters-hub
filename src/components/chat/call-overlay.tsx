@@ -109,22 +109,14 @@ export function CallOverlay(props: CallProps) {
 }
 
 function PeerCall({
-
   threadId,
   selfId,
   isCaller,
   peerName,
   mode,
   onEnd,
-}: {
-  threadId: string;
-  selfId: string;
-  /** Whoever clicked "start call" makes the offer; the other side answers. */
-  isCaller: boolean;
-  peerName: string;
-  mode: CallMode;
-  onEnd: () => void;
-}) {
+}: CallProps) {
+
   const { t } = useCopy();
   const [seconds, setSeconds] = useState(0);
 
