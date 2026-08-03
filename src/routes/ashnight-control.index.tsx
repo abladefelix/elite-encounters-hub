@@ -279,16 +279,22 @@ function AdminOverview() {
           ) : (
             <ul className="mt-4 divide-y divide-border/60">
               {queue.map((applicant) => (
-                <li key={applicant.id} className="flex items-center gap-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{applicant.full_name}</p>
-                    <p className="text-xs capitalize text-muted-foreground">
-                      {applicant.applied_role} · {applicant.city}
-                    </p>
-                  </div>
-                  <TierBadge tier={applicant.suggested_room} showIcon />
+                <li key={applicant.id}>
+                  <Link
+                    to="/ashnight-control/vetting"
+                    className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-muted/60"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{applicant.full_name}</p>
+                      <p className="text-xs capitalize text-muted-foreground">
+                        {applicant.applied_role} · {applicant.city}
+                      </p>
+                    </div>
+                    <TierBadge tier={applicant.suggested_room} showIcon />
+                  </Link>
                 </li>
               ))}
+
             </ul>
           )}
         </Card>
