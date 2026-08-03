@@ -329,3 +329,23 @@
     padding-bottom: 0;
   }
 }
+
+/* Native shell (iOS/Android): the web view is drawn edge to edge, so the app
+   itself paints the status bar / home indicator areas instead of the OS
+   showing black or white bars. */
+html.native-app,
+html.native-app body {
+  background-color: var(--color-background);
+  min-height: 100dvh;
+}
+
+html.native-app body {
+  padding-top: env(safe-area-inset-top);
+}
+
+@media (max-width: 767px) {
+  html.native-app body {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+  }
+}
+
