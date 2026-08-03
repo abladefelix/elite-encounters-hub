@@ -1806,6 +1806,8 @@ function MessageBubble({
   onDispute,
   onCopy,
   onDelete,
+  onReply,
+  onReport,
 }: {
   message: MessageRowType;
   mine: boolean;
@@ -1820,6 +1822,9 @@ function MessageBubble({
   onDispute: (id: string, reason: string) => void;
   onCopy: (body: string) => void;
   onDelete: () => void;
+  onReply: (message: MessageRowType) => void;
+  onReport: () => void;
+
 }) {
   if (message.kind === "system") {
     return (
