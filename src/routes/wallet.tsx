@@ -213,6 +213,9 @@ function WalletBody({ userId, isSpecialist }: { userId: string; isSpecialist: bo
                     <li key={entry.id} className="flex flex-wrap items-center gap-3 px-5 py-4">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{entry.label}</p>
+                        <p className="mt-0.5 font-mono text-[11px] text-foreground/70">
+                          {entry.reference}
+                        </p>
                         <p className="mt-0.5 text-[11px] text-muted-foreground">
                           {entry.kind} · created {formatStamp(entry.created_at)}
                           {entry.released_at
