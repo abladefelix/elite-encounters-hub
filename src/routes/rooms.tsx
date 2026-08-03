@@ -147,6 +147,21 @@ function RoomsPage() {
   const [joining, setJoining] = useState<Tier | null>(null);
 
 
+  const { appearance } = useAppearance();
+  const showDashboard = sectionEnabled(appearance, "dashboard");
+  const showPricing = sectionEnabled(appearance, "pricing");
+  const showComparison = sectionEnabled(appearance, "comparison");
+  const showRoster =
+    sectionEnabled(appearance, "spotlight") || sectionEnabled(appearance, "rows");
+  const rosterIndex = Math.min(
+    ...["spotlight", "rows"].map((key) => {
+      const index = appearance.sections.indexOf(key as "rows");
+      return index < 0 ? Number.POSITIVE_INFINITY : index;
+    }),
+  );
+  const dashboardIndex = appearance.sections.indexOf("dashboard");
+  const dashboardFirst = dashboardIndex >= 0 && dashboardIndex < rosterIndex;
+
   async function joinRoom(room: Tier) {
     setJoining(room);
     try {
@@ -421,6 +436,7 @@ function RoomsPage() {
             </Table>
           </div>
         </Card>
+        ) : null}
 
         {!specialistsLoading && (allSpecialists?.length ?? 0) === 0 ? (
           <p className="mt-6 text-center text-xs text-muted-foreground">
