@@ -21,10 +21,11 @@ import { PhoneCall } from "lucide-react";
 import {
   DEFAULT_CALL_PREFERENCES,
   readCallPreferences,
-  writeCallPreferences,
   type CallPreferences,
 } from "@/lib/call-preferences";
+import { saveMyCallPreferences } from "@/lib/identity.functions";
 import { PortfolioManager } from "@/components/portfolio-manager";
+
 
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
