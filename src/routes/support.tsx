@@ -296,13 +296,37 @@ export function DocumentCard({
   function print() {
     const node = document.getElementById(printId);
     if (!node) return;
-    const frame = window.open("", "_blank", "width=820,height=1000");
-    if (!frame) {
-      toast.error("Allow pop-ups to print this document.");
+
+    let iframe = document.getElementById(
+      "ashnight-print-frame",
+    ) as HTMLIFrameElement | null;
+    if (!iframe) {
+      iframe = document.createElement("iframe");
+      iframe.id = "ashnight-print-frame";
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.style.position = "fixed";
+      iframe.style.width = "1px";
+      iframe.style.height = "1px";
+      iframe.style.left = "-1000px";
+      iframe.style.top = "-1000px";
+      iframe.style.opacity = "0";
+      iframe.style.border = "0";
+      document.body.appendChild(iframe);
+    }
+
+    const win = iframe.contentWindow;
+    const doc = win?.document;
+    if (!doc || !win) {
+      toast.error("Unable to open the print preview.");
       return;
     }
-    frame.document.write(
+
+    doc.open();
+    doc.write(
       `<!doctype html><html><head><title>${row.number}</title><style>
+        @media print{
+          body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        }
         body{font-family:ui-sans-serif,system-ui,sans-serif;padding:40px;color:#171514}
         h1{font-size:20px;margin:0 0 4px;color:${template.accent}}
         table{width:100%;border-collapse:collapse;margin-top:24px;font-size:13px}
@@ -313,10 +337,15 @@ export function DocumentCard({
         .contact{white-space:pre-line}
       </style></head><body>${node.innerHTML}</body></html>`,
     );
-    frame.document.close();
-    frame.focus();
-    frame.print();
+    doc.close();
+    win.focus();
+
+    // Give the browser a moment to render the frame before printing.
+    setTimeout(() => {
+      win.print();
+    }, 250);
   }
+
 
   return (
     <Card>
