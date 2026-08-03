@@ -12,13 +12,12 @@ import {
   ClipboardList,
   Database,
   DoorOpen,
-
   KeyRound,
+  MessageSquareWarning,
   ShieldCheck,
   Sparkles,
   ShieldBan,
   LayoutDashboard,
-  LifeBuoy,
   Loader2,
   DatabaseBackup,
   Server,
@@ -86,7 +85,7 @@ const NAV: {
   { to: "/ashnight-control/performance", label: "Specialist performance", icon: Trophy, area: "performance" },
   { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck, area: "escrow" },
   { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan, area: "moderation" },
-  { to: "/ashnight-control/complaints", label: "Complaints", icon: LifeBuoy, area: "complaints" },
+  { to: "/ashnight-control/complaints", label: "Complaints", icon: MessageSquareWarning, area: "complaints" },
   { to: "/ashnight-control/notifications", label: "Notifications", icon: Bell, area: "notifications" },
   { to: "/ashnight-control/documents", label: "Invoices & receipts", icon: ReceiptText, area: "documents" },
   { to: "/ashnight-control/finance", label: "Finance & accounting", icon: Calculator, area: "finance" },
@@ -241,13 +240,6 @@ function AdminLayout() {
           </nav>
 
           <div className="mt-6 shrink-0 space-y-4">
-            <Link
-              to="/ashnight-control/moderation"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <LifeBuoy className="size-4" /> Trust &amp; safety
-            </Link>
-
             <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2">
               <span className="text-xs text-muted-foreground">Appearance</span>
               <div className="flex items-center gap-1">
