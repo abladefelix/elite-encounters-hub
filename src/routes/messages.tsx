@@ -1535,6 +1535,30 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           }}
                         />
 
+                        {replyTo ? (
+                          <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-surface-strong/60 px-3 py-2">
+                            <Reply className="size-4 shrink-0 text-primary" />
+                            <div className="min-w-0 flex-1 border-l-2 border-l-primary pl-2">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                                Replying to {replyTo.author_id === userId ? "yourself" : firstName}
+                              </p>
+                              <p className="truncate text-[11px] text-muted-foreground">
+                                {messagePreview(replyTo)}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="size-8 shrink-0 rounded-full"
+                              aria-label="Cancel reply"
+                              onClick={() => setReplyTo(null)}
+                            >
+                              <X className="size-4" />
+                            </Button>
+                          </div>
+                        ) : null}
+
                         <div className="flex w-full items-end gap-2 rounded-2xl border border-border/70 bg-surface-strong/60 px-3 py-2 transition-colors focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 sm:px-4">
                           <EmojiPicker
                             extraGroups={extraEmojiGroups}
@@ -2122,6 +2146,74 @@ function MessageBubble({
         </div>
       </MessageActions>
     </div>
+  );
+}
+
+/** One-line summary of a message, used in reply quotes and the composer bar. */
+function messagePreview(message: MessageRowType | undefined) {
+  if (!message) return "Original message unavailable";
+  if (message.kind === "location") return "Location";
+  if (message.kind === "gift") return message.body || "Cash gift";
+  if (message.kind === "booking") return message.body || "Payment request";
+  if (message.body.trim()) return message.body.trim();
+  return message.attachment_name ?? "Attachment";
+}
+
+/**
+ * WhatsApp-style quoted strip. Rendered inside a bubble so both sides see the
+ * same reference, and tapping it jumps to the original message.
+ */
+function QuotedMessage({
+  original,
+  label,
+  onSurface,
+  onJump,
+  className,
+}: {
+  original?: MessageRowType | undefined;
+  label?: string;
+  onSurface: "primary" | "card";
+  onJump?: (() => void) | undefined;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={!onJump}
+      onClick={(event) => {
+        event.stopPropagation();
+        onJump?.();
+      }}
+      className={cn(
+        "flex w-full items-stretch gap-2 rounded-lg border-l-2 px-2 py-1.5 text-left",
+        onSurface === "primary"
+          ? "border-l-primary-foreground/70 bg-primary-foreground/10"
+          : "border-l-primary bg-primary/5",
+        onJump ? "cursor-pointer" : "cursor-default opacity-80",
+        className,
+      )}
+    >
+      <span className="min-w-0 flex-1">
+        {label ? (
+          <span
+            className={cn(
+              "block text-[10px] font-semibold uppercase tracking-[0.14em]",
+              onSurface === "primary" ? "text-primary-foreground/80" : "text-primary",
+            )}
+          >
+            {label}
+          </span>
+        ) : null}
+        <span
+          className={cn(
+            "block truncate text-[11px] leading-snug",
+            onSurface === "primary" ? "text-primary-foreground/85" : "text-muted-foreground",
+          )}
+        >
+          {messagePreview(original)}
+        </span>
+      </span>
+    </button>
   );
 }
 
