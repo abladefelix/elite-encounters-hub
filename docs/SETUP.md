@@ -364,18 +364,29 @@ room pricing, commission) — the browser never tells the server what to charge.
 
 ## 6. Voice & video calls
 
-Chat calls use the browser's native WebRTC APIs (`getUserMedia` / `RTCPeerConnection`).
-For calls that work across networks you need a signalling + TURN service. The
-recommended option is **LiveKit** (self-hostable, open source):
+Ashnight has two call engines and chooses automatically:
 
-```sh
-docker run --rm -p 7880:7880 -p 7881:7881 -p 50000-60000:50000-60000/udp \
-  -e LIVEKIT_KEYS="<api-key>: <api-secret>" livekit/livekit-server
-```
+1. **LiveKit (recommended).** As soon as `livekit_url`, `livekit_api_key` and
+   `livekit_api_secret` are saved in **Keys & security**, calls run through the
+   LiveKit SDK (`livekit-client`) against LiveKit's SFU/TURN relay. This is what makes
+   calls connect on mobile data and behind strict firewalls. Use LiveKit Cloud (the free
+   tier is enough to start) or self-host:
 
-Put the server URL, API key and secret into **Keys & security** in the control room.
+   ```sh
+   docker run --rm -p 7880:7880 -p 7881:7881 -p 50000-60000:50000-60000/udp \
+     -e LIVEKIT_KEYS="<api-key>: <api-secret>" livekit/livekit-server
+   ```
+
+2. **Direct peer-to-peer fallback.** With no LiveKit credentials, the app falls back to
+   raw WebRTC with public STUN only — fine on friendly networks, unreliable on mobile
+   carriers.
+
+Join tokens are minted server-side (`src/lib/livekit.functions.ts`), scoped to the single
+chat thread, and only after the server confirms the caller is a participant of that
+thread. The API secret never reaches the browser, and tokens expire after one hour.
 Calls are additionally gated per room, so you can offer audio-only on Basic and full
 video on Ultimate.
+
 
 ---
 
