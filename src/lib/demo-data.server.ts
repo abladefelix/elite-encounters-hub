@@ -39,6 +39,26 @@ const AVATARS = [
   "/__l5e/assets-v1/363f4e6b-6dbd-4d93-9988-32f1177068d9/demo-avatar-8.jpg",
 ];
 
+/** Finished-work photos used for specialist galleries. */
+const WORK_PHOTOS = [
+  "/__l5e/assets-v1/c7d743ba-febd-4c1b-b8dc-6ced7a4c695c/demo-work-1.jpg",
+  "/__l5e/assets-v1/5ad6d33a-b7e0-40c0-917d-c755943b63de/demo-work-2.jpg",
+  "/__l5e/assets-v1/c5e6659b-9200-4012-8580-b78fff689d37/demo-work-3.jpg",
+  "/__l5e/assets-v1/2a4cd6af-e01c-4c6c-9632-4dd2aa3907c8/demo-work-4.jpg",
+];
+
+/** Sample intro clip, so every demo specialist has a playable video. */
+const INTRO_VIDEO = "/__l5e/assets-v1/754962e7-7959-4f72-9a73-f680e2fb12cd/demo-intro-clip.mp4";
+
+/** Rotates the gallery so each demo specialist shows a different first photo. */
+function galleryFor(index: number, size = 4) {
+  return Array.from(
+    { length: Math.min(size, WORK_PHOTOS.length) },
+    (_, offset) => WORK_PHOTOS[(index + offset) % WORK_PHOTOS.length]!,
+  );
+}
+
+
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
@@ -306,7 +326,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
 
   /* specialists */
   const specialistIds: string[] = [];
-  for (const person of SPECIALISTS) {
+  for (const [personIndex, person] of SPECIALISTS.entries()) {
     const id = await ensureUser(`${person.username}@${DEMO_DOMAIN}`, {
       display_name: person.name,
       username: person.username,
@@ -341,10 +361,20 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
         dislikes: person.dislikes,
         ghana_card_number: person.card,
         ghana_card_expiry: "2031-06-30",
+        ghana_card_front_url: person.avatar,
+        ghana_card_back_url: person.avatar,
+
         terms_accepted_at: hoursAgo(900),
         privacy_accepted_at: hoursAgo(900),
         last_seen_at: hoursAgo(1),
-        extra: { demo: true } as never,
+        // Gallery photos and an intro clip, so client-facing profiles look
+        // complete straight after seeding.
+        extra: {
+          demo: true,
+          portfolio_photos: galleryFor(personIndex),
+          portfolio_video: INTRO_VIDEO,
+        } as never,
+
       },
       { onConflict: "id" },
     ), "profiles");
@@ -436,7 +466,8 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       admin_note: "Strong references. Confirm weekend availability.",
       card: "GHA-700500505-5",
       avatar: AVATARS[4]!,
-      portfolio: [AVATARS[0]!, AVATARS[1]!, AVATARS[2]!],
+      portfolio: galleryFor(0),
+      video: INTRO_VIDEO as string | null,
     },
     {
       username: "comfort.anaba",
@@ -457,7 +488,8 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       admin_note: "Awaiting second reference.",
       card: "GHA-700600606-6",
       avatar: AVATARS[5]!,
-      portfolio: [AVATARS[3]!, AVATARS[6]!],
+      portfolio: galleryFor(2, 2),
+      video: INTRO_VIDEO as string | null,
     },
     {
       username: "samuel.ofori",
@@ -479,6 +511,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       card: "GHA-700700707-7",
       avatar: AVATARS[6]!,
       portfolio: [] as string[],
+      video: null as string | null,
     },
     {
       username: "ibrahim.fuseini",
@@ -500,6 +533,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       card: "GHA-700800808-8",
       avatar: AVATARS[7]!,
       portfolio: [] as string[],
+      video: null as string | null,
     },
   ];
 
@@ -549,7 +583,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
         extra: {
           demo: true,
           portfolio_photos: person.portfolio,
-          portfolio_video: null,
+          portfolio_video: person.video,
         } as never,
       },
       { onConflict: "id" },
