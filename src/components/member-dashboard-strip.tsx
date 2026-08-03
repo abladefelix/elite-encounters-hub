@@ -77,7 +77,7 @@ export function MemberDashboardStrip() {
             </Button>
           )}
           <Button asChild size="sm" variant="outline">
-            <Link to="/support">Inbox &amp; documents</Link>
+            <Link to="/support" search={{ tab: "complaint" }}>Inbox &amp; documents</Link>
           </Button>
         </div>
       </div>
