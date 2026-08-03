@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   ArrowDownLeft,
@@ -18,7 +18,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { requestEscrowPayout } from "@/lib/payments.functions";
+import type { EscrowRow } from "@/lib/queries";
 import { useBookings, useEscrowEntries, useMemberships } from "@/lib/queries";
 import { useDocuments } from "@/lib/support";
 import { money, tierLabel } from "@/lib/types";
@@ -228,6 +233,7 @@ function WalletBody({ userId, isSpecialist }: { userId: string; isSpecialist: bo
                           {isSpecialist ? "your payout" : `incl. ${money(entry.platform_fee)} fee`}
                         </p>
                       </div>
+                      {isSpecialist ? <PayoutRequest entry={entry} /> : null}
                     </li>
                   ))}
                 </ul>
@@ -309,6 +315,61 @@ function WalletBody({ userId, isSpecialist }: { userId: string; isSpecialist: bo
 
       <MobileTabBar />
     </div>
+  );
+}
+
+/**
+ * A paid job leaves the specialist a record she can act on: ask Ashnight to
+ * release the escrowed payout. Money still only moves from the control room or
+ * when the hold window closes.
+ */
+function PayoutRequest({ entry }: { entry: EscrowRow }) {
+  const requestPayout = useServerFn(requestEscrowPayout);
+  const queryClient = useQueryClient();
+  const [busy, setBusy] = useState(false);
+
+  if (entry.state === "released") {
+    return <span className="w-full text-[11px] text-emerald-500 sm:w-auto">Deposited</span>;
+  }
+  if (entry.state === "refunded") {
+    return <span className="w-full text-[11px] text-muted-foreground sm:w-auto">Refunded</span>;
+  }
+  if (entry.state === "pending") {
+    return <span className="w-full text-[11px] text-muted-foreground sm:w-auto">Awaiting payment</span>;
+  }
+  if (entry.payout_request_state === "requested") {
+    return (
+      <Badge variant="outline" className="border-accent/40 text-accent">
+        Release requested
+      </Badge>
+    );
+  }
+
+  return (
+    <Button
+      size="sm"
+      variant="soft"
+      disabled={busy}
+      onClick={() => {
+        setBusy(true);
+        void requestPayout({ data: { escrowId: entry.id } })
+          .then(() => {
+            toast.success("Release requested", {
+              description: "Ashnight will review and deposit your payout.",
+            });
+            return queryClient.invalidateQueries({ queryKey: ["escrow"] });
+          })
+          .catch((error: unknown) =>
+            toast.error("Couldn't request the release", {
+              description: error instanceof Error ? error.message : "Please try again.",
+            }),
+          )
+          .finally(() => setBusy(false));
+      }}
+    >
+      {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Banknote className="size-3.5" />}
+      Request release
+    </Button>
   );
 }
 
