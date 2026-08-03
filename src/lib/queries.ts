@@ -226,21 +226,56 @@ export function useStoredMedia(
 /** Looks up several members at once — used to name the other side of a thread. */
 export function useProfilesByIds(ids: string[]) {
   const key = [...new Set(ids)].sort();
-  return useQuery({
-    queryKey: ["profiles", "by-ids", key.join(",")],
+  const joined = key.join(",");
+  const queryClient = useQueryClient();
+  const channelId = useId();
+
+  const query = useQuery({
+    queryKey: ["profiles", "by-ids", joined],
     enabled: key.length > 0,
     // Availability is a live signal: a specialist can switch it off mid-thread,
     // so never serve a cached "Available now" to the other side.
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
     queryFn: async () =>
       unwrap<ProfileRow[]>(
         await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).in("id", key),
       ),
   });
+
+  // Live availability: patch the cached row the moment the other side flips
+  // their switch, so the chat header never lags behind the database.
+  useEffect(() => {
+    if (!joined) return;
+    const watched = new Set(joined.split(","));
+    const channel = supabase
+      .channel(`profile-presence:${channelId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles" },
+        (payload) => {
+          const row = payload.new as Partial<ProfileRow> | null;
+          if (!row?.id || !watched.has(row.id)) return;
+          queryClient.setQueryData<ProfileRow[]>(["profiles", "by-ids", joined], (previous) =>
+            (previous ?? []).map((profile) =>
+              profile.id === row.id ? { ...profile, ...row } : profile,
+            ),
+          );
+          void queryClient.invalidateQueries({ queryKey: ["specialists"] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [joined, channelId, queryClient]);
+
+  return query;
 }
+
 
 
 /** Uploads a chat attachment and returns a signed URL the thread can render. */
