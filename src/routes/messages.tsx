@@ -1914,9 +1914,15 @@ function MessageBubble({
   onDelete,
   onReply,
   onReport,
+  repliedTo,
+  repliedToMine,
+  onJumpTo,
 }: {
   message: MessageRowType;
   mine: boolean;
+  repliedTo?: MessageRowType | undefined;
+  repliedToMine?: boolean;
+  onJumpTo?: (id: string) => void;
   peerFirstName: string;
   escrow?: EscrowEntry | undefined;
   canResolve: boolean;
@@ -2076,6 +2082,25 @@ function MessageBubble({
                 : "rounded-tl-none border border-border/70 bg-card text-foreground",
             )}
           >
+            {message.reply_to_id ? (
+              <QuotedMessage
+                original={repliedTo}
+                label={
+                  repliedTo
+                    ? repliedToMine
+                      ? mine
+                        ? "You"
+                        : peerFirstName
+                      : mine
+                        ? peerFirstName
+                        : "You"
+                    : ""
+                }
+                onSurface={mine ? "primary" : "card"}
+                onJump={repliedTo && onJumpTo ? () => onJumpTo(repliedTo.id) : undefined}
+                className={message.attachment_url ? "mx-1.5 mt-1.5" : "mb-2"}
+              />
+            ) : null}
             {message.attachment_url ? (
               <MediaAttachment
                 url={message.attachment_url}
