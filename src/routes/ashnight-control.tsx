@@ -240,13 +240,6 @@ function AdminLayout() {
           </nav>
 
           <div className="mt-6 shrink-0 space-y-4">
-            <Link
-              to="/ashnight-control/moderation"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <LifeBuoy className="size-4" /> Trust &amp; safety
-            </Link>
-
             <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2">
               <span className="text-xs text-muted-foreground">Appearance</span>
               <div className="flex items-center gap-1">
