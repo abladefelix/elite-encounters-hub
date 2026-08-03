@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/carousel";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { VideoThumbnail } from "@/components/video-thumbnail";
 import { getSpecialistMedia } from "@/lib/specialist-media.functions";
 
 export function PortfolioGallery({

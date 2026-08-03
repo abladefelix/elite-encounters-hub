@@ -19,6 +19,7 @@ import {
   MAX_VIDEO_MB,
   MAX_VIDEO_SECONDS,
 } from "@/components/portfolio-picker";
+import { VideoThumbnail } from "@/components/video-thumbnail";
 import { UploadProgressList } from "@/components/upload-progress-list";
 import { useUploadQueue } from "@/hooks/use-upload-queue";
 import { validateMediaFile } from "@/lib/media-validation";
@@ -198,13 +199,7 @@ export function PortfolioManager({ userId }: { userId: string }) {
             <p className="text-sm font-medium">Intro video</p>
             {video ? (
               <div className="space-y-2">
-                <video
-                  src={video.url}
-                  controls
-                  playsInline
-                  preload="metadata"
-                  className="w-full rounded-lg border border-border/60"
-                />
+                <VideoThumbnail url={video.url} />
                 <Button
                   type="button"
                   variant="ghost"
