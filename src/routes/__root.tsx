@@ -154,7 +154,10 @@ function RootComponent() {
                 <IncomingCallWatcher />
                 {/* Native-only shell behaviour (status bar, keyboard, back button). No-op on web. */}
                 <NativeShell />
+                {/* Applies the admin's site-wide wording rules to every rendered string. */}
+                <WordingOverrides />
                 <Toaster position="top-center" />
+
               </EscrowProvider>
             </ServiceCatalogProvider>
           </RoomSettingsProvider>
