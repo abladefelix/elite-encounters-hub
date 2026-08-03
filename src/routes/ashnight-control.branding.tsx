@@ -333,8 +333,23 @@ function LanguageCard() {
   const { locale, save, loading } = useLocaleSettings();
   const [draft, setDraft] = useState<LocaleSettings>(locale);
   const [busy, setBusy] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => setDraft(locale), [locale]);
+
+  const term = search.trim().toLowerCase();
+  const groups = COPY_GROUPS.map((group) => ({
+    ...group,
+    keys: group.keys.filter(
+      (entry) =>
+        !term ||
+        entry.label.toLowerCase().includes(term) ||
+        entry.value.toLowerCase().includes(term) ||
+        entry.key.toLowerCase().includes(term) ||
+        entry.usedIn.some((place) => place.toLowerCase().includes(term)),
+    ),
+  })).filter((group) => group.keys.length > 0);
+
 
   async function commit(next: LocaleSettings) {
     setBusy(true);
