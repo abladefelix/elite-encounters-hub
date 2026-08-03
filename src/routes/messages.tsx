@@ -462,6 +462,11 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     return;
   }, [activeThread?.id, visibleMessages.length]);
 
+  // Switching conversations drops any half-composed reply.
+  useEffect(() => {
+    setReplyTo(null);
+  }, [activeThread?.id]);
+
   async function post(
     input: Partial<Omit<MessageRowType, "id" | "created_at" | "thread_id">> & { body: string },
   ) {
