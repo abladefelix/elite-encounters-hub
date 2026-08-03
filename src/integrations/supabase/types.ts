@@ -1668,7 +1668,6 @@ export type Database = {
     }
     Functions: {
       settings_section: { Args: { _section: string }; Returns: Json }
-      txn_reference: { Args: { _prefix: string }; Returns: string }
     }
     Enums: {
       account_status:
