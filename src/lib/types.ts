@@ -86,7 +86,10 @@ export interface Specialist {
   verified: boolean;
   online: boolean;
   responseMinutes: number;
+  /** Stored avatar reference (bucket path or legacy URL), signed for display. */
+  avatarPath?: string | null;
 }
+
 
 export interface Client {
   id: string;

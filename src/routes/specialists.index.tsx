@@ -60,7 +60,9 @@ function toSpecialist(profile: ProfileRow, serviceNames: string[]): Specialist {
     verified: profile.verified,
     online: profile.available,
     responseMinutes: profile.response_minutes,
+    avatarPath: profile.avatar_url,
   };
+
 }
 
 /** All specialist -> service name links, so listings can filter and badge without N+1 queries. */
