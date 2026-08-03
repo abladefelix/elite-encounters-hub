@@ -195,6 +195,12 @@ export function LiveKitCall({
   }, []);
 
   const live = connected && peerJoined;
+  const {
+    speakerOn,
+    supported: speakerSupported,
+    toggleSpeaker,
+  } = useSpeaker(remoteAudioRef, live);
+
   const showSelfVideo = mode === "video" && cameraOn && !mediaError;
 
   return (
