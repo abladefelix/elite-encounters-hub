@@ -61,6 +61,7 @@ import { QuoteDialog, type QuoteDraft } from "@/components/chat/quote-dialog";
 import { GiftDialog, type GiftDraft } from "@/components/chat/gift-dialog";
 import { ReportDialog, type ReportDraft } from "@/components/chat/report-dialog";
 import { RatingDialog, type RatingDraft } from "@/components/chat/rating-dialog";
+import { canReview } from "@/lib/ratings";
 import { REPORT_REASON_LABEL } from "@/lib/reports";
 import { paystackChannel } from "@/lib/paystack";
 import {
@@ -172,6 +173,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [giftOpen, setGiftOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [ratingOpen, setRatingOpen] = useState(false);
+  /** Booking the open rating dialog belongs to, when it followed a visit. */
+  const [ratingBooking, setRatingBooking] = useState<BookingRow | null>(null);
   const [showListOnMobile, setShowListOnMobile] = useState(true);
   const [removeThread, setRemoveThread] = useState<ThreadRow | null>(null);
   const [removing, setRemoving] = useState(false);
@@ -218,7 +221,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const submitRating = useSubmitRating();
   const {
     settings: escrow,
-    
+    entries: allEscrows,
     threadEntries,
     confirmComplete,
     raiseIssue,
@@ -242,7 +245,31 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     return mine.reduce((sum, rating) => sum + rating.stars, 0) / mine.length;
   }, [ratingsQuery.data, userId]);
 
+  const myPeerRatings = useMemo(
+    () => (ratingsQuery.data ?? []).filter((rating) => rating.rater_id === userId),
+    [ratingsQuery.data, userId],
+  );
+  const ratedBookingIds = useMemo(
+    () =>
+      new Set(
+        myPeerRatings.map((rating) => rating.booking_id).filter((id): id is string => Boolean(id)),
+      ),
+    [myPeerRatings],
+  );
+
   const escrowEntries = activeThread ? threadEntries(activeThread.id) : [];
+
+  // Only a client who actually paid for and received a visit may rate.
+  const allBookings = useMemo(() => bookingsQuery.data ?? [], [bookingsQuery.data]);
+  const canRatePeer =
+    iAmClient &&
+    Boolean(peerId) &&
+    canReview({
+      userId,
+      specialistId: peerId!,
+      bookings: allBookings,
+      escrows: allEscrows,
+    });
   const roomGifts = giftsFor(room);
   const giftsAllowed =
     flags.giftsEnabled && escrow.tipsEnabled && roomGifts.length > 0 && iAmClient;
@@ -599,6 +626,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
         thread_id: activeThread.id,
         rater_id: userId,
         rated_id: peerId,
+        booking_id: ratingBooking?.id ?? null,
         stars: ratingDraft.stars,
         note: ratingDraft.note,
         tags: ratingDraft.tags,
@@ -610,12 +638,31 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
               ratingDraft.tags.length ? ` · ${ratingDraft.tags.join(", ")}` : ""
             }`,
           );
-          toast.success(`${ratingDraft.stars}-star rating posted`);
+          toast.success(`${ratingDraft.stars}-star rating posted`, {
+            description: "Ashnight reviews specialist rooms from these ratings.",
+          });
+          setRatingBooking(null);
         },
         onError: (error) => toast.error(error.message),
       },
     );
   }
+
+  /**
+   * Client confirms the visit, then gets asked to rate it straight away — the
+   * rating is the performance record Ashnight uses for room placement.
+   */
+  async function confirmAndReview(escrowId: string) {
+    const entry = escrowEntries.find((row) => row.id === escrowId);
+    await confirmComplete(escrowId);
+    if (!iAmClient) return;
+    const booking = entry?.booking_id ? bookingsById.get(entry.booking_id) : undefined;
+    if (booking && ratedBookingIds.has(booking.id)) return;
+    setRatingBooking(booking ?? null);
+    setRatingOpen(true);
+  }
+
+
 
   /** Clears a conversation from this member's own list only. */
   async function confirmRemoveThread() {
@@ -796,19 +843,21 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         </p>
                       </div>
                       <div className="ml-auto flex items-center gap-1">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Rate ${peerName}`}
-                              onClick={() => setRatingOpen(true)}
-                            >
-                              <Star className="size-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Rate this member</TooltipContent>
-                        </Tooltip>
+                        {canRatePeer ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Rate ${peerName}`}
+                                onClick={() => setRatingOpen(true)}
+                              >
+                                <Star className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Rate your visit with {firstName}</TooltipContent>
+                          </Tooltip>
+                        ) : null}
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -878,7 +927,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                               !!message.booking_id && payingBookingId === message.booking_id
                             }
                             onPay={(id) => void payBooking(id)}
-                            onConfirm={(id) => void confirmComplete(id)}
+                            onConfirm={(id) => void confirmAndReview(id)}
                             onDispute={(id, reason) => void raiseIssue(id, reason)}
                           />
                         ))}
@@ -1109,7 +1158,12 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
             <RatingDialog
               specialistName={peerName}
               open={ratingOpen}
-              onOpenChange={setRatingOpen}
+              serviceName={ratingBooking?.service_name}
+              submitting={submitRating.isPending}
+              onOpenChange={(next) => {
+                setRatingOpen(next);
+                if (!next) setRatingBooking(null);
+              }}
               onSubmit={handleRating}
             />
 

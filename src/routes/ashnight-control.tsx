@@ -28,6 +28,7 @@ import {
   ToggleLeft,
   Menu,
   Palette,
+  Trophy,
   Users,
   UserCog,
 } from "lucide-react";
@@ -77,6 +78,7 @@ const NAV: {
   { to: "/ashnight-control/rooms", label: "Rooms", icon: DoorOpen, area: "rooms" },
   { to: "/ashnight-control/services", label: "Services", icon: Sparkles, area: "services" },
   { to: "/ashnight-control/bookings", label: "Bookings", icon: CalendarCheck, area: "bookings" },
+  { to: "/ashnight-control/performance", label: "Specialist performance", icon: Trophy, area: "performance" },
   { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck, area: "escrow" },
   { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan, area: "moderation" },
   { to: "/ashnight-control/complaints", label: "Complaints", icon: LifeBuoy, area: "complaints" },

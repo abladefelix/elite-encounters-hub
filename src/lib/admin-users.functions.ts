@@ -26,7 +26,10 @@ const fields = z
     languages: z.array(z.string().trim().max(40)).max(20),
     likes: z.array(z.string().trim().max(60)).max(30),
     dislikes: z.array(z.string().trim().max(60)).max(30),
-    room: z.enum(["basic", "premium", "ultimate"]).nullable(),
+    // Custom rooms (room4-room8) exist alongside the three built-ins.
+    room: z
+      .enum(["basic", "premium", "ultimate", "room4", "room5", "room6", "room7", "room8"])
+      .nullable(),
     vetting: z.enum(["pending", "in_review", "approved", "rejected"]),
     verified: z.boolean(),
     available: z.boolean(),
