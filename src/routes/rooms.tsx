@@ -324,11 +324,19 @@ function RoomsPage() {
                   <Button asChild variant={tier === "premium" ? "brass" : "soft"} className="mt-7 w-full">
                     <Link to="/auth">Sign in to join</Link>
                   </Button>
+                ) : !canJoinRooms ? (
+                  <p className="mt-7 flex items-center gap-2 rounded-md border border-border/60 bg-background/50 px-3 py-2 text-xs text-muted-foreground">
+                    <Lock className="size-3.5 shrink-0" />
+                    {myProfile?.room === tier
+                      ? "Your current room — set by our team."
+                      : "Admin places specialists in rooms by rating."}
+                  </p>
                 ) : isCurrentRoom ? (
                   <Button variant="soft" className="mt-7 w-full" disabled>
                     Your current room
                   </Button>
                 ) : (
+
                   <div className="mt-7 space-y-2">
                     <Button
                       variant={tier === "premium" ? "brass" : "soft"}
