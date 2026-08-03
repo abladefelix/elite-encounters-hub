@@ -1,6 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Languages, Loader2, MessageSquareHeart, Palette, RotateCcw, Save, Search } from "lucide-react";
+import {
+  Languages,
+  Loader2,
+  MessageSquareHeart,
+  Palette,
+  Plus,
+  Replace,
+  RotateCcw,
+  Save,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { BrandMark } from "@/components/brand-mark";
@@ -34,6 +45,12 @@ import {
   useWelcomeSettings,
   type WelcomeSettings,
 } from "@/lib/welcome-message";
+import {
+  clearPhraseHits,
+  newPhraseRule,
+  readPhraseHits,
+  type PhraseRule,
+} from "@/lib/phrase-overrides";
 
 export const Route = createFileRoute("/ashnight-control/branding")({
   head: () => ({
@@ -74,6 +91,7 @@ function AdminBranding() {
       <BrandingCard />
       <WelcomeCard />
       <LanguageCard />
+      <SiteWordingCard />
     </div>
   );
 }
