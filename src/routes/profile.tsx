@@ -443,6 +443,13 @@ function ProfilePage() {
           </Card>
         ) : null}
 
+        {isSpecialist && user ? (
+          <div className="mt-5">
+            <PortfolioManager userId={user.id} />
+          </div>
+        ) : null}
+
+
         {/* likes / dislikes */}
         <div className="mt-5 grid gap-5 md:grid-cols-2">
           <ChipEditor
