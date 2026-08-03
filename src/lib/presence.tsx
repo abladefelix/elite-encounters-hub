@@ -14,7 +14,6 @@
  */
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -137,7 +136,7 @@ export function usePresence() {
  */
 export function useIsOnline(memberId: string | undefined, lastSeenAt?: string | null) {
   const { online, ready } = usePresence();
-  return useCallback(() => undefined, [])() ?? computeOnline(memberId, lastSeenAt, online, ready);
+  return computeOnline(memberId, lastSeenAt, online, ready);
 }
 
 function computeOnline(
