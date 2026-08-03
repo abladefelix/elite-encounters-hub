@@ -781,6 +781,14 @@ function SiteWordingCard() {
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              disabled={rules.every((rule) => !rule.enabled || !rule.find.trim())}
+              onClick={() => setPreviewOpen(true)}
+            >
+              <ScanSearch className="mr-2 size-3.5" /> Preview changes
+            </Button>
+            <Button
+              size="sm"
               variant="ghost"
               onClick={() => {
                 clearPhraseHits();
@@ -793,17 +801,30 @@ function SiteWordingCard() {
           </div>
 
           <p className="mt-3 text-[11px] text-muted-foreground">
-            “Seen on” builds up as pages are visited, so you can confirm a rule only changes the
-            screens you expect. Use the scope dropdown to change a word in one place without
-            changing it everywhere. Room tier names stay under Rooms &amp; pricing.
+            “Preview changes” does a dry run across every page and lists the exact strings each rule
+            would rewrite before anything is saved. “Seen on” then builds up as pages are visited.
+            Use the scope dropdown to change a word in one place without changing it everywhere.
+            Room tier names stay under Rooms &amp; pricing.
           </p>
 
           <Actions
             busy={busy}
-            onSave={() => void commit(rules)}
+            onSave={() => setPreviewOpen(true)}
             onReset={() => void commit([])}
             resetLabel="Clear all rules"
           />
+
+          <WordingPreviewDialog
+            open={previewOpen}
+            onOpenChange={setPreviewOpen}
+            rules={rules}
+            busy={busy}
+            onConfirm={async () => {
+              await commit(rules);
+              setPreviewOpen(false);
+            }}
+          />
+
         </>
       )}
     </Card>
