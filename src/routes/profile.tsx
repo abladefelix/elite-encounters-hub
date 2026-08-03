@@ -143,6 +143,27 @@ function ProfilePage() {
     );
   }
 
+  // Signed in, but the profile record hasn't arrived yet (flaky mobile network,
+  // cold server function). This must NOT read as "you're signed out".
+  if (user && (!profile || !fields)) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <div className="mx-auto max-w-md px-5 py-24 text-center">
+          <ShieldCheck className="mx-auto size-10 text-accent" />
+          <h1 className="mt-6 font-display text-2xl font-semibold">Loading your profile…</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            You're signed in. We're still fetching your details — tap retry if this takes long.
+          </p>
+          <Button variant="brass" className="mt-7" onClick={() => void refresh()}>
+            <RefreshCw className="size-4" /> Retry
+          </Button>
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
+
   if (!user || !profile || !fields) {
     return (
       <div className="min-h-screen">
