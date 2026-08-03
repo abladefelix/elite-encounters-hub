@@ -8,6 +8,7 @@
  * native push service is live — it never silently pretends to work.
  */
 export interface CallPreferences {
+  [key: string]: boolean;
   /** Accept incoming voice/video calls at all. */
   acceptCalls: boolean;
   /** Ring when the app is closed or in the background (needs native push). */
