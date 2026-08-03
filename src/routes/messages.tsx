@@ -141,7 +141,13 @@ import {
   type EscrowEntry,
 } from "@/lib/escrow";
 import { tierLabel, initials, money, type Tier } from "@/lib/types";
+import { packsForRoom, useEmojiPacks } from "@/lib/chat-emoji";
 import { cn } from "@/lib/utils";
+
+/** Local-only list of messages this device has hidden. */
+const HIDDEN_MESSAGES_KEY = "ashnight-hidden-messages-v1";
+
+
 
 export const Route = createFileRoute("/messages")({
   head: () => ({
@@ -240,6 +246,18 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [clearing, setClearing] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<MessageRowType | null>(null);
   const [deletingMessage, setDeletingMessage] = useState(false);
+  // Messages hidden from this device only — used when deleting somebody else's
+  // message, which we can never remove from their side.
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(HIDDEN_MESSAGES_KEY);
+      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+      return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+    } catch {
+      return [];
+    }
+  });
   const uploads = useUploadQueue();
   const [removing, setRemoving] = useState(false);
   const queryClient = useQueryClient();
@@ -334,10 +352,35 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     return new Date(Math.max(...times)).toISOString();
   }, [activeThread, iAmClient]);
   const visibleMessages = useMemo(() => {
-    if (!clearedAt) return messages;
-    const cutoff = new Date(clearedAt).getTime();
-    return messages.filter((message) => new Date(message.created_at).getTime() > cutoff);
-  }, [messages, clearedAt]);
+    const cutoff = clearedAt ? new Date(clearedAt).getTime() : null;
+    return messages.filter(
+      (message) =>
+        !hiddenMessageIds.includes(message.id) &&
+        (cutoff === null || new Date(message.created_at).getTime() > cutoff),
+    );
+  }, [messages, clearedAt, hiddenMessageIds]);
+
+  /** Hides a message on this device only and remembers it across reloads. */
+  function hideMessageLocally(id: string) {
+    setHiddenMessageIds((current) => {
+      const next = current.includes(id) ? current : [...current, id].slice(-500);
+      try {
+        window.localStorage.setItem(HIDDEN_MESSAGES_KEY, JSON.stringify(next));
+      } catch {
+        /* private mode — hiding stays for this session only */
+      }
+      return next;
+    });
+  }
+
+  // Admin-published emoji packs the current room is allowed to use.
+  const { packs: emojiPacks } = useEmojiPacks();
+  const extraEmojiGroups = useMemo(
+    () =>
+      packsForRoom(emojiPacks, room).map((pack) => ({ label: pack.label, emoji: pack.emoji })),
+    [emojiPacks, room],
+  );
+
 
   // Live device presence: the availability switch only reads "Available now"
   // while the member's device is actually reachable.
@@ -1461,12 +1504,14 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
                         <div className="flex w-full items-end gap-2 rounded-2xl border border-border/70 bg-surface-strong/60 px-3 py-2 transition-colors focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 sm:px-4">
                           <EmojiPicker
+                            extraGroups={extraEmojiGroups}
                             onPick={(emoji) => {
                               setDraft((current) => (current + emoji).slice(0, 1000));
                               notifyTyping();
                               draftRef.current?.focus();
                             }}
                           />
+
                           <Textarea
                             ref={draftRef}
                             value={draft}
@@ -1737,9 +1782,15 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this message?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {messageToDelete && messageToDelete.author_id === userId
+                ? "Delete this message?"
+                : "Hide this message?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              It is removed for both of you. Anything already paid or held in escrow is unaffected.
+              {messageToDelete && messageToDelete.author_id === userId
+                ? "It is removed for both of you. Anything already paid or held in escrow is unaffected."
+                : `This removes the message from your view only — ${firstName} keeps it on their side. Nothing paid or held in escrow changes.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1749,13 +1800,25 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
               disabled={deletingMessage}
               onClick={(event) => {
                 event.preventDefault();
-                if (messageToDelete) void removeMessage(messageToDelete);
+                if (!messageToDelete) return;
+                if (messageToDelete.author_id === userId) {
+                  void removeMessage(messageToDelete);
+                  return;
+                }
+                hideMessageLocally(messageToDelete.id);
+                setMessageToDelete(null);
+                toast.success("Message hidden from your view");
               }}
             >
-              {deletingMessage ? "Deleting…" : "Delete message"}
+              {deletingMessage
+                ? "Deleting…"
+                : messageToDelete && messageToDelete.author_id === userId
+                  ? "Delete message"
+                  : "Delete for me"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
+
       </AlertDialog>
 
     </TooltipProvider>
@@ -1874,7 +1937,7 @@ function MessageBubble({
           onReply={() => onReply(message)}
           onReport={onReport}
           attachmentUrl={message.attachment_url}
-          {...(mine ? { onDelete } : {})}
+          onDelete={onDelete}
         >
           <div className="max-w-sm rounded-xl border border-border bg-card p-4">
             <p className="eyebrow text-primary">Location shared</p>
@@ -1968,7 +2031,7 @@ function MessageBubble({
         onReply={() => onReply(message)}
         onReport={onReport}
         attachmentUrl={message.attachment_url}
-        {...(mine ? { onDelete } : {})}
+        onDelete={onDelete}
       >
         <div className="max-w-[85%] select-none">
           <div
@@ -2064,17 +2127,18 @@ function MessageActions({
             </ContextMenuItem>
           </>
         ) : null}
-        {mine && onDelete ? (
+        {onDelete ? (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem
               className="text-destructive focus:text-destructive"
               onSelect={onDelete}
             >
-              <Trash2 className="size-4" /> Delete message
+              <Trash2 className="size-4" /> {mine ? "Delete message" : "Delete for me"}
             </ContextMenuItem>
           </>
         ) : null}
+
         <ContextMenuSeparator />
         <ContextMenuLabel className="truncate text-[11px] font-normal text-muted-foreground">
           {body.slice(0, 40) || "Attachment"}
@@ -2101,8 +2165,15 @@ const EMOJI_GROUPS: { label: string; emoji: string[] }[] = [
   },
 ];
 
-function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
+function EmojiPicker({
+  onPick,
+  extraGroups = [],
+}: {
+  onPick: (emoji: string) => void;
+  extraGroups?: { label: string; emoji: string[] }[];
+}) {
   const [open, setOpen] = useState(false);
+  const groups = [...extraGroups, ...EMOJI_GROUPS];
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -2116,9 +2187,9 @@ function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
           <Smile className="size-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" side="top" className="w-72 p-3">
+      <PopoverContent align="start" side="top" className="max-h-80 w-72 overflow-y-auto p-3">
         <div className="space-y-3">
-          {EMOJI_GROUPS.map((group) => (
+          {groups.map((group) => (
             <div key={group.label}>
               <p className="eyebrow mb-1.5">{group.label}</p>
               <div className="flex flex-wrap gap-1">
