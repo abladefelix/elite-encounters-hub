@@ -311,25 +311,31 @@ function AdminOverview() {
           ) : (
             <ul className="mt-4 divide-y divide-border/60">
               {bookings.slice(0, 4).map((booking) => (
-                <li key={booking.id} className="flex items-center gap-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{booking.service_name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {profileById.get(booking.specialist_id)?.display_name ?? "—"} ·{" "}
-                      {booking.scheduled_for
-                        ? new Date(booking.scheduled_for).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "numeric",
-                          })
-                        : "unscheduled"}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-sm font-medium">
-                    {money(booking.hours * booking.rate)}
-                  </span>
+                <li key={booking.id}>
+                  <Link
+                    to="/ashnight-control/bookings"
+                    className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-muted/60"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{booking.service_name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {profileById.get(booking.specialist_id)?.display_name ?? "—"} ·{" "}
+                        {booking.scheduled_for
+                          ? new Date(booking.scheduled_for).toLocaleString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                            })
+                          : "unscheduled"}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm font-medium">
+                      {money(booking.hours * booking.rate)}
+                    </span>
+                  </Link>
                 </li>
               ))}
+
             </ul>
           )}
         </Card>
