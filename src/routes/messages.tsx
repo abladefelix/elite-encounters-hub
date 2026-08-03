@@ -75,6 +75,8 @@ import {
   type ThreadRow,
 } from "@/lib/queries";
 import { useRoomSettings } from "@/lib/room-settings";
+import { useCopy } from "@/lib/locale";
+
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { moderateMessage } from "@/lib/moderation";
 import {
