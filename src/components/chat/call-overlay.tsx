@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 
 import { getCallToken } from "@/lib/livekit.functions";
+import { useCallEngine } from "@/lib/call-engine";
+
 
 const LiveKitCall = lazy(() => import("@/components/chat/livekit-call"));
 
