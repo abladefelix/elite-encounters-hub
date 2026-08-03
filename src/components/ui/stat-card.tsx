@@ -78,4 +78,19 @@ export function StatCard({
       </div>
     </Card>
   );
+
+  if (!to) return card;
+
+  return (
+    <Link
+      to={to}
+      {...(params ? { params } : {})}
+      {...(search ? { search } : {})}
+      className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      aria-label={`${label}: ${value}`}
+    >
+      {card}
+    </Link>
+  );
 }
+
