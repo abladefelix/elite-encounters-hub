@@ -14,6 +14,7 @@ import {
   Video as VideoIcon,
   VideoOff,
   Volume2,
+  VolumeX,
 } from "lucide-react";
 import {
   ConnectionState,
@@ -29,6 +30,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/types";
 import { useCopy } from "@/lib/locale";
+import { useSpeaker } from "@/lib/call-speaker";
 import { isNativeApp, nativePlatform } from "@/lib/native";
 
 export type CallMode = "audio" | "video";
@@ -75,6 +77,8 @@ export function LiveKitCall({
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+
+
 
   const hangUp = useCallback(() => {
     void roomRef.current?.disconnect();
@@ -191,6 +195,12 @@ export function LiveKitCall({
   }, []);
 
   const live = connected && peerJoined;
+  const {
+    speakerOn,
+    supported: speakerSupported,
+    toggleSpeaker,
+  } = useSpeaker(remoteAudioRef, live);
+
   const showSelfVideo = mode === "video" && cameraOn && !mediaError;
 
   return (
@@ -273,8 +283,19 @@ export function LiveKitCall({
               {cameraOn ? <VideoIcon className="size-4" /> : <VideoOff className="size-4" />}
             </CallButton>
           ) : (
-            <CallButton active label={t("chat.speaker")}>
-              <Volume2 className="size-4" />
+            <CallButton
+              active={speakerOn}
+              onClick={toggleSpeaker}
+              disabled={!speakerSupported}
+              label={
+                speakerSupported
+                  ? speakerOn
+                    ? "Switch to earpiece"
+                    : t("chat.speaker")
+                  : "Speaker is controlled by your device"
+              }
+            >
+              {speakerOn ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
             </CallButton>
           )}
 
@@ -298,11 +319,13 @@ function CallButton({
   active,
   onClick,
   label,
+  disabled,
 }: {
   children: React.ReactNode;
   active: boolean;
   onClick?: () => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <Button
@@ -310,7 +333,9 @@ function CallButton({
       variant={active ? "soft" : "secondary"}
       className="size-12 rounded-full"
       onClick={onClick}
+      disabled={disabled}
       aria-label={label}
+      title={label}
     >
       {children}
     </Button>
