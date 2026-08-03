@@ -1504,12 +1504,14 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
                         <div className="flex w-full items-end gap-2 rounded-2xl border border-border/70 bg-surface-strong/60 px-3 py-2 transition-colors focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 sm:px-4">
                           <EmojiPicker
+                            extraGroups={extraEmojiGroups}
                             onPick={(emoji) => {
                               setDraft((current) => (current + emoji).slice(0, 1000));
                               notifyTyping();
                               draftRef.current?.focus();
                             }}
                           />
+
                           <Textarea
                             ref={draftRef}
                             value={draft}
