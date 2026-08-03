@@ -1868,13 +1868,14 @@ function MessageBubble({
       {mine ? (
         <MessageActions mine onCopy={() => onCopy(message.body)} onDelete={onDelete} />
       ) : null}
-      <div className="max-w-[78%]">
+      <div className="max-w-[85%]">
         <div
           className={cn(
-            "rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+            "text-sm leading-relaxed shadow-sm",
+            message.attachment_url ? "rounded-2xl p-1.5" : "rounded-2xl px-4 py-2.5",
             mine
-              ? "rounded-br-sm bg-primary text-primary-foreground"
-              : "rounded-bl-sm bg-surface-strong text-foreground",
+              ? "rounded-tr-none border border-primary/20 bg-primary text-primary-foreground"
+              : "rounded-tl-none border border-border/70 bg-card text-foreground",
           )}
         >
           {message.attachment_url ? (
