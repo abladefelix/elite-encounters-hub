@@ -22,6 +22,8 @@ import { toast } from "sonner";
 
 import { BrandMark } from "@/components/brand-mark";
 import { LogoPicker } from "@/components/logo-picker";
+import { WordingPreviewDialog } from "@/components/admin/wording-preview-dialog";
+
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
