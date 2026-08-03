@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Heart, ThumbsDown, Sparkles, X, Save, ShieldCheck, LogIn } from "lucide-react";
+import { Camera, Heart, ThumbsDown, Sparkles, X, Save, ShieldCheck, LogIn, RefreshCw } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
