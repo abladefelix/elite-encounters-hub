@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/types";
+import { useCopy } from "@/lib/locale";
 
 export type CallMode = "audio" | "video";
 
@@ -288,7 +289,7 @@ export function CallOverlay({
     <Dialog open onOpenChange={(open) => !open && hangUp()}>
       <DialogContent className="max-w-md overflow-hidden border-border/70 bg-panel p-0">
         <DialogTitle className="sr-only">
-          {mode === "video" ? "Video call" : "Voice call"} with {peerName}
+          {mode === "video" ? t("chat.video") : t("chat.voice")} {t("chat.call")} with {peerName}
         </DialogTitle>
 
         <div className="relative aspect-[4/5] w-full bg-hero">
@@ -315,7 +316,7 @@ export function CallOverlay({
           />
           {mode === "video" && !showSelfVideo ? (
             <div className="absolute bottom-4 right-4 grid h-28 w-20 place-items-center rounded-lg border border-border bg-surface-strong text-center text-[10px] text-muted-foreground">
-              Camera off
+              {t("chat.cameraOff")}
             </div>
           ) : null}
 
@@ -339,7 +340,7 @@ export function CallOverlay({
               <p className="font-display text-lg font-semibold">{peerName}</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {connected
-                  ? `${mode === "video" ? "Video" : "Voice"} call · ${formatDuration(seconds)}`
+                  ? `${mode === "video" ? t("chat.video") : t("chat.voice")} ${t("chat.call")} · ${formatDuration(seconds)}`
                   : status}
               </p>
             </div>
@@ -348,7 +349,7 @@ export function CallOverlay({
         </div>
 
         <div className="flex items-center justify-center gap-3 border-t border-border/70 bg-surface p-5">
-          <CallButton active={!muted} onClick={toggleMute} label={muted ? "Unmute" : "Mute"}>
+          <CallButton active={!muted} onClick={toggleMute} label={muted ? t("chat.unmute") : t("chat.mute")}>
             {muted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
           </CallButton>
 
@@ -361,7 +362,7 @@ export function CallOverlay({
               {cameraOn ? <VideoIcon className="size-4" /> : <VideoOff className="size-4" />}
             </CallButton>
           ) : (
-            <CallButton active label="Speaker">
+            <CallButton active label={t("chat.speaker")}>
               <Volume2 className="size-4" />
             </CallButton>
           )}
@@ -371,7 +372,7 @@ export function CallOverlay({
             variant="destructive"
             className="size-12 rounded-full"
             onClick={hangUp}
-            aria-label="End call"
+            aria-label={t("chat.endCall")}
           >
             <PhoneOff className="size-5" />
           </Button>
