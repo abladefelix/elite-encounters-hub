@@ -985,7 +985,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                   {threadsQuery.isLoading ? (
                     <p className="p-4 text-xs text-muted-foreground">Loading threads…</p>
                   ) : null}
-                  {threadList.map((item) => {
+                  {visibleThreads.map((item) => {
                     const otherId = item.client_id === userId ? item.specialist_id : item.client_id;
                     const other = peopleById.get(otherId);
                     const name = other?.display_name ?? "Ashnight member";
