@@ -257,6 +257,9 @@ function WalletBody({ userId, isSpecialist }: { userId: string; isSpecialist: bo
                     <li key={booking.id} className="flex flex-wrap items-center gap-3 px-5 py-4">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{booking.service_name}</p>
+                        <p className="mt-0.5 font-mono text-[11px] text-foreground/70">
+                          {booking.reference}
+                        </p>
                         <p className="mt-0.5 text-[11px] text-muted-foreground">
                           {Number(booking.hours)}h · {money(booking.rate)}/h · requested{" "}
                           {formatStamp(booking.created_at)}
