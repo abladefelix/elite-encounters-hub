@@ -166,7 +166,87 @@ export const COPY_GROUPS = [
       },
     ],
   },
+  {
+    id: "chat",
+    title: "Chat & calls",
+    blurb: "Wording inside conversations, voice and video calls.",
+    keys: [
+      {
+        key: "chat.call",
+        label: "Call (noun)",
+        value: "call",
+        usedIn: ["Chat header call buttons", "Call overlay", "Chat system notes"],
+      },
+      {
+        key: "chat.voice",
+        label: "Voice (audio call word)",
+        value: "Voice",
+        usedIn: ["Chat header voice button", "Call overlay title", "Chat system notes"],
+      },
+      {
+        key: "chat.video",
+        label: "Video (video call word)",
+        value: "Video",
+        usedIn: ["Chat header video button", "Call overlay title", "Chat system notes"],
+      },
+      {
+        key: "chat.startCall",
+        label: "Start call button",
+        value: "Start",
+        usedIn: ["Chat header call button tooltips & aria labels"],
+      },
+      {
+        key: "chat.endCall",
+        label: "End call button",
+        value: "End call",
+        usedIn: ["Call overlay hang-up button"],
+      },
+      {
+        key: "chat.callEnded",
+        label: "Call ended note",
+        value: "Call ended.",
+        usedIn: ["Chat system message after hanging up"],
+      },
+      {
+        key: "chat.callsOff",
+        label: "Calls disabled notice",
+        value: "Calling is disabled for this room. Chat and booking stay open.",
+        usedIn: ["Chat header banner when a room has calls switched off"],
+      },
+      {
+        key: "chat.mute",
+        label: "Mute",
+        value: "Mute",
+        usedIn: ["Call overlay controls"],
+      },
+      {
+        key: "chat.unmute",
+        label: "Unmute",
+        value: "Unmute",
+        usedIn: ["Call overlay controls"],
+      },
+      {
+        key: "chat.speaker",
+        label: "Speaker",
+        value: "Speaker",
+        usedIn: ["Call overlay controls (voice calls)"],
+      },
+      {
+        key: "chat.cameraOff",
+        label: "Camera off",
+        value: "Camera off",
+        usedIn: ["Call overlay self-view placeholder"],
+      },
+      {
+        key: "chat.report",
+        label: "Report member",
+        value: "Report",
+        usedIn: ["Chat header flag button", "Report dialog"],
+      },
+    ],
+  },
 ] as const;
+
 
 export type CopyKey = (typeof COPY_GROUPS)[number]["keys"][number]["key"];
 

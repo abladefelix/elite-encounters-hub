@@ -75,6 +75,8 @@ import {
   type ThreadRow,
 } from "@/lib/queries";
 import { useRoomSettings } from "@/lib/room-settings";
+import { useCopy } from "@/lib/locale";
+
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { moderateMessage } from "@/lib/moderation";
 import {
@@ -161,6 +163,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const photoRef = useRef<HTMLInputElement>(null);
 
   const { canCall, can, platform, giftsFor, moderation } = useRoomSettings();
+  const { t } = useCopy();
+
   const { flags } = useFeatureFlags();
   const threadsQuery = useThreads(userId);
   const threadList = useMemo(() => threadsQuery.data ?? [], [threadsQuery.data]);
@@ -380,9 +384,11 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
   function startCall(mode: CallMode) {
     const allowed = mode === "video" ? videoAllowed : audioAllowed;
+    const modeWord = mode === "video" ? t("chat.video") : t("chat.voice");
+    const callWord = t("chat.call");
     if (!allowed) {
       toast.error(
-        `${mode === "video" ? "Video" : "Voice"} calls are switched off for the ${tierLabel(room)} room`,
+        `${modeWord} ${callWord}s are switched off for the ${tierLabel(room)} room`,
         { description: "Upgrade your room or ask support to enable it." },
       );
       return;
@@ -398,7 +404,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       fromId: userId,
       fromName: profile?.display_name ?? "An Ashnight member",
     });
-    systemNote(`${mode === "video" ? "Video" : "Voice"} call started — Ashnight never records calls.`);
+    systemNote(`${modeWord} ${callWord} started — Ashnight never records ${callWord}s.`);
+
   }
 
   /** Specialist prices the visit; the client pays from the thread. */
@@ -747,18 +754,22 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                             <Button
                               variant="ghost"
                               size="icon"
-                              aria-label={`Report ${peerName}`}
+                              aria-label={`${t("chat.report")} ${peerName}`}
                               onClick={() => setReportOpen(true)}
                               className="text-muted-foreground hover:text-destructive"
                             >
                               <Flag className="size-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Report this member to trust &amp; safety</TooltipContent>
+                          <TooltipContent>
+                            {t("chat.report")} this member to trust &amp; safety
+                          </TooltipContent>
                         </Tooltip>
                         <CallControl
                           allowed={audioAllowed}
-                          label="voice"
+                          label={t("chat.voice").toLowerCase()}
+                          callWord={t("chat.call")}
+                          startWord={t("chat.startCall")}
                           room={tierLabel(room)}
                           onClick={() => startCall("audio")}
                         >
@@ -766,7 +777,9 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         </CallControl>
                         <CallControl
                           allowed={videoAllowed}
-                          label="video"
+                          label={t("chat.video").toLowerCase()}
+                          callWord={t("chat.call")}
+                          startWord={t("chat.startCall")}
                           room={tierLabel(room)}
                           onClick={() => startCall("video")}
                         >
@@ -778,9 +791,10 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                     {!audioAllowed && !videoAllowed ? (
                       <p className="flex items-center gap-2 border-b border-border/70 bg-background/50 px-4 py-2 text-[11px] text-muted-foreground">
                         <Lock className="size-3.5 shrink-0" />
-                        Calling is disabled for the {tierLabel(room)} room. Chat and booking stay open.
+                        {t("chat.callsOff")}
                       </p>
                     ) : null}
+
 
                     <ScrollArea className="min-h-0 flex-1">
                       <div className="space-y-4 p-4 sm:p-6">
@@ -1048,7 +1062,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                 mode={call}
                 onEnd={() => {
                   setCall(null);
-                  systemNote("Call ended.");
+                  systemNote(t("chat.callEnded"));
                 }}
               />
             ) : null}
@@ -1062,16 +1076,21 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 function CallControl({
   allowed,
   label,
+  callWord,
+  startWord,
   room,
   onClick,
   children,
 }: {
   allowed: boolean;
   label: string;
+  callWord: string;
+  startWord: string;
   room: string;
   onClick: () => void;
   children: ReactNode;
 }) {
+  const start = `${startWord} ${label} ${callWord}`;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -1079,18 +1098,19 @@ function CallControl({
           variant="ghost"
           size="icon"
           onClick={onClick}
-          aria-label={`Start ${label} call`}
+          aria-label={start}
           className={cn(!allowed && "text-muted-foreground/50")}
         >
           {allowed ? children : <Lock className="size-4" />}
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        {allowed ? `Start ${label} call` : `${label} calls are off for the ${room} room`}
+        {allowed ? start : `${label} ${callWord}s are off for the ${room} room`}
       </TooltipContent>
     </Tooltip>
   );
 }
+
 
 function MessageBubble({
   message,
