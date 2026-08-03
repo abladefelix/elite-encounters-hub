@@ -61,6 +61,7 @@ import { QuoteDialog, type QuoteDraft } from "@/components/chat/quote-dialog";
 import { GiftDialog, type GiftDraft } from "@/components/chat/gift-dialog";
 import { ReportDialog, type ReportDraft } from "@/components/chat/report-dialog";
 import { RatingDialog, type RatingDraft } from "@/components/chat/rating-dialog";
+import { canReview } from "@/lib/ratings";
 import { REPORT_REASON_LABEL } from "@/lib/reports";
 import { paystackChannel } from "@/lib/paystack";
 import {
@@ -244,7 +245,31 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     return mine.reduce((sum, rating) => sum + rating.stars, 0) / mine.length;
   }, [ratingsQuery.data, userId]);
 
+  const myPeerRatings = useMemo(
+    () => (ratingsQuery.data ?? []).filter((rating) => rating.rater_id === userId),
+    [ratingsQuery.data, userId],
+  );
+  const ratedBookingIds = useMemo(
+    () =>
+      new Set(
+        myPeerRatings.map((rating) => rating.booking_id).filter((id): id is string => Boolean(id)),
+      ),
+    [myPeerRatings],
+  );
+
   const escrowEntries = activeThread ? threadEntries(activeThread.id) : [];
+
+  // Only a client who actually paid for and received a visit may rate.
+  const allBookings = useMemo(() => bookingsQuery.data ?? [], [bookingsQuery.data]);
+  const canRatePeer =
+    iAmClient &&
+    Boolean(peerId) &&
+    canReview({
+      userId,
+      specialistId: peerId!,
+      bookings: allBookings,
+      escrows: allEscrows,
+    });
   const roomGifts = giftsFor(room);
   const giftsAllowed =
     flags.giftsEnabled && escrow.tipsEnabled && roomGifts.length > 0 && iAmClient;
@@ -818,19 +843,21 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         </p>
                       </div>
                       <div className="ml-auto flex items-center gap-1">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Rate ${peerName}`}
-                              onClick={() => setRatingOpen(true)}
-                            >
-                              <Star className="size-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Rate this member</TooltipContent>
-                        </Tooltip>
+                        {canRatePeer ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Rate ${peerName}`}
+                                onClick={() => setRatingOpen(true)}
+                              >
+                                <Star className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Rate your visit with {firstName}</TooltipContent>
+                          </Tooltip>
+                        ) : null}
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
