@@ -2109,17 +2109,18 @@ function MessageActions({
             </ContextMenuItem>
           </>
         ) : null}
-        {mine && onDelete ? (
+        {onDelete ? (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem
               className="text-destructive focus:text-destructive"
               onSelect={onDelete}
             >
-              <Trash2 className="size-4" /> Delete message
+              <Trash2 className="size-4" /> {mine ? "Delete message" : "Delete for me"}
             </ContextMenuItem>
           </>
         ) : null}
+
         <ContextMenuSeparator />
         <ContextMenuLabel className="truncate text-[11px] font-normal text-muted-foreground">
           {body.slice(0, 40) || "Attachment"}
