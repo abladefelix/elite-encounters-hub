@@ -384,9 +384,11 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
   function startCall(mode: CallMode) {
     const allowed = mode === "video" ? videoAllowed : audioAllowed;
+    const modeWord = mode === "video" ? t("chat.video") : t("chat.voice");
+    const callWord = t("chat.call");
     if (!allowed) {
       toast.error(
-        `${mode === "video" ? "Video" : "Voice"} calls are switched off for the ${tierLabel(room)} room`,
+        `${modeWord} ${callWord}s are switched off for the ${tierLabel(room)} room`,
         { description: "Upgrade your room or ask support to enable it." },
       );
       return;
@@ -402,7 +404,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       fromId: userId,
       fromName: profile?.display_name ?? "An Ashnight member",
     });
-    systemNote(`${mode === "video" ? "Video" : "Voice"} call started — Ashnight never records calls.`);
+    systemNote(`${modeWord} ${callWord} started — Ashnight never records ${callWord}s.`);
+
   }
 
   /** Specialist prices the visit; the client pays from the thread. */
