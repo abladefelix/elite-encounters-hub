@@ -16,8 +16,27 @@ import { useServiceCatalog } from "@/lib/service-catalog";
 import { money } from "@/lib/types";
 
 export const Route = createFileRoute("/ashnight-control/services")({
+  head: () => ({
+    meta: [
+      { title: "Services & add-ons · Ashnight Control" },
+      {
+        name: "description",
+        content:
+          "Manage the Ashnight cleaning service catalogue, add-ons and suggested rates used across bookings.",
+      },
+      { property: "og:title", content: "Services & add-ons · Ashnight Control" },
+      {
+        property: "og:description",
+        content: "Internal console for the Ashnight service catalogue and add-on pricing.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: AdminServicesPage,
 });
+
 
 function AdminServicesPage() {
   const { services, updateService, addService, removeService } = useServiceCatalog();
