@@ -337,7 +337,18 @@ function PayoutRequest({ entry }: { entry: EscrowRow }) {
   if (entry.state === "pending") {
     return <span className="w-full text-[11px] text-muted-foreground sm:w-auto">Awaiting payment</span>;
   }
+  if (entry.state === "held") {
+    return (
+      <span className="w-full text-[11px] text-muted-foreground sm:w-auto">
+        Awaiting the member's confirmation
+      </span>
+    );
+  }
+  if (entry.state === "disputed") {
+    return <span className="w-full text-[11px] text-destructive sm:w-auto">Issue raised — under review</span>;
+  }
   if (entry.payout_request_state === "requested") {
+
     return (
       <Badge variant="outline" className="border-accent/40 text-accent">
         Release requested
