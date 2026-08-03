@@ -352,10 +352,35 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     return new Date(Math.max(...times)).toISOString();
   }, [activeThread, iAmClient]);
   const visibleMessages = useMemo(() => {
-    if (!clearedAt) return messages;
-    const cutoff = new Date(clearedAt).getTime();
-    return messages.filter((message) => new Date(message.created_at).getTime() > cutoff);
-  }, [messages, clearedAt]);
+    const cutoff = clearedAt ? new Date(clearedAt).getTime() : null;
+    return messages.filter(
+      (message) =>
+        !hiddenMessageIds.includes(message.id) &&
+        (cutoff === null || new Date(message.created_at).getTime() > cutoff),
+    );
+  }, [messages, clearedAt, hiddenMessageIds]);
+
+  /** Hides a message on this device only and remembers it across reloads. */
+  function hideMessageLocally(id: string) {
+    setHiddenMessageIds((current) => {
+      const next = current.includes(id) ? current : [...current, id].slice(-500);
+      try {
+        window.localStorage.setItem(HIDDEN_MESSAGES_KEY, JSON.stringify(next));
+      } catch {
+        /* private mode — hiding stays for this session only */
+      }
+      return next;
+    });
+  }
+
+  // Admin-published emoji packs the current room is allowed to use.
+  const { packs: emojiPacks } = useEmojiPacks();
+  const extraEmojiGroups = useMemo(
+    () =>
+      packsForRoom(emojiPacks, room).map((pack) => ({ label: pack.label, emoji: pack.emoji })),
+    [emojiPacks, room],
+  );
+
 
   // Live device presence: the availability switch only reads "Available now"
   // while the member's device is actually reachable.
