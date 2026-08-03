@@ -54,6 +54,8 @@ import { TierBadge } from "@/components/tier-badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { CallOverlay, type CallMode } from "@/components/chat/call-overlay";
 import { sendRing } from "@/lib/call-ring";
+import { useIsOnline } from "@/lib/presence";
+import { useTypingIndicator } from "@/lib/typing";
 import {
   ServiceRequestDialog,
   type ServiceRequestDraft,
@@ -245,6 +247,14 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const firstName = peerName.split(" ")[0] ?? peerName;
   const room: Tier = activeThread?.room ?? profile?.room ?? "basic";
 
+  // Live device presence: the availability switch only reads "Available now"
+  // while the member's device is actually reachable.
+  const peerOnline = useIsOnline(peerId || undefined, peer?.last_seen_at ?? null);
+  const { peerTyping, notifyTyping, notifyStopped } = useTypingIndicator(
+    activeThread?.id,
+    userId || undefined,
+  );
+
   const ratingsQuery = useRatings(peerId);
   const myRating = useMemo(() => {
     const mine = (ratingsQuery.data ?? []).filter((rating) => rating.rater_id === userId);
@@ -370,6 +380,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     }
 
     setDraft("");
+    notifyStopped();
     try {
       await post({ body: verdict.body, redacted: verdict.action === "mask" });
     } catch (error) {
@@ -964,7 +975,13 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           ) : null}
                         </div>
                         <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                          {peer?.available ? "Available now" : `Replies in ~${peer?.response_minutes ?? 30}m`}
+                          {peerTyping
+                            ? `${firstName} is typing…`
+                            : peer?.available && peerOnline
+                              ? "Available now"
+                              : peerOnline
+                                ? "Online"
+                                : `Replies in ~${peer?.response_minutes ?? 30}m`}
                           {myRating ? (
                             <span className="flex items-center gap-1 text-primary">
                               · <Star className="size-3 fill-primary" /> {myRating.toFixed(1)} from you
@@ -1238,7 +1255,11 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
                         <Input
                           value={draft}
-                          onChange={(event) => setDraft(event.target.value)}
+                          onChange={(event) => {
+                            setDraft(event.target.value);
+                            if (event.target.value.trim()) notifyTyping();
+                            else notifyStopped();
+                          }}
                           placeholder={`Message ${firstName}…`}
                           maxLength={1000}
                         />

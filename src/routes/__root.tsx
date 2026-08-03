@@ -23,6 +23,7 @@ import { AuthProvider } from "../hooks/use-auth";
 import { RoomSettingsProvider } from "../lib/room-settings";
 import { ServiceCatalogProvider } from "../lib/service-catalog";
 import { EscrowProvider } from "../lib/escrow";
+import { PresenceProvider } from "../lib/presence";
 
 function NotFoundComponent() {
   return (
@@ -157,6 +158,7 @@ function RootComponent() {
           <RoomSettingsProvider>
             <ServiceCatalogProvider>
               <EscrowProvider>
+                <PresenceProvider>
                 {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
                 <Outlet />
                 {isAdmin ? null : <MobileTabBar />}
@@ -168,6 +170,7 @@ function RootComponent() {
                 <WordingOverrides />
                 <Toaster position="top-center" />
 
+                </PresenceProvider>
               </EscrowProvider>
             </ServiceCatalogProvider>
           </RoomSettingsProvider>
