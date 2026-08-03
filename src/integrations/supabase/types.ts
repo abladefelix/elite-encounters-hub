@@ -949,6 +949,7 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["message_kind"]
           redacted: boolean
+          reply_to_id: string | null
           thread_id: string
         }
         Insert: {
@@ -962,6 +963,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["message_kind"]
           redacted?: boolean
+          reply_to_id?: string | null
           thread_id: string
         }
         Update: {
@@ -975,6 +977,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["message_kind"]
           redacted?: boolean
+          reply_to_id?: string | null
           thread_id?: string
         }
         Relationships: [
@@ -990,6 +993,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {
