@@ -1782,9 +1782,15 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this message?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {messageToDelete && messageToDelete.author_id === userId
+                ? "Delete this message?"
+                : "Hide this message?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              It is removed for both of you. Anything already paid or held in escrow is unaffected.
+              {messageToDelete && messageToDelete.author_id === userId
+                ? "It is removed for both of you. Anything already paid or held in escrow is unaffected."
+                : `This removes the message from your view only — ${firstName} keeps it on their side. Nothing paid or held in escrow changes.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1794,13 +1800,25 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
               disabled={deletingMessage}
               onClick={(event) => {
                 event.preventDefault();
-                if (messageToDelete) void removeMessage(messageToDelete);
+                if (!messageToDelete) return;
+                if (messageToDelete.author_id === userId) {
+                  void removeMessage(messageToDelete);
+                  return;
+                }
+                hideMessageLocally(messageToDelete.id);
+                setMessageToDelete(null);
+                toast.success("Message hidden from your view");
               }}
             >
-              {deletingMessage ? "Deleting…" : "Delete message"}
+              {deletingMessage
+                ? "Deleting…"
+                : messageToDelete && messageToDelete.author_id === userId
+                  ? "Delete message"
+                  : "Delete for me"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
+
       </AlertDialog>
 
     </TooltipProvider>
