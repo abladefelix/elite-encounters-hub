@@ -1250,33 +1250,64 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
                     <ScrollArea className="min-h-0 flex-1">
                       <div className="space-y-4 p-4 sm:p-6">
-                        {messages.map((message) => (
-                          <MessageBubble
-                            key={message.id}
-                            message={message}
-                            mine={message.author_id === userId}
-                            peerFirstName={firstName}
-                            escrow={
-                              message.escrow_id
-                                ? escrowEntries.find((entry) => entry.id === message.escrow_id)
-                                : undefined
-                            }
-                            canResolve={iAmClient}
-                            booking={
-                              message.booking_id ? bookingsById.get(message.booking_id) : undefined
-                            }
-                            canPay={iAmClient && bookingsOpen}
-                            paying={
-                              !!message.booking_id && payingBookingId === message.booking_id
-                            }
-                            onPay={(id) => void payBooking(id)}
-                            onConfirm={(id) => void confirmAndReview(id)}
-                            onDispute={(id, reason) => void raiseIssue(id, reason)}
-                          />
-                        ))}
+                        {clearedAt ? (
+                          <p className="mx-auto flex max-w-md items-center justify-center gap-2 rounded-full border border-dashed border-border bg-background/60 px-4 py-1.5 text-center text-[11px] text-muted-foreground">
+                            <Eraser className="size-3 shrink-0" />
+                            Older messages are hidden from your view only
+                          </p>
+                        ) : null}
+                        {visibleMessages.map((message, index) => {
+                          const previous = visibleMessages[index - 1];
+                          const showDay =
+                            !previous || dayKey(previous.created_at) !== dayKey(message.created_at);
+                          return (
+                            <div key={message.id} className="space-y-4">
+                              {showDay ? (
+                                <div className="flex items-center gap-3">
+                                  <Separator className="flex-1" />
+                                  <span className="eyebrow shrink-0 text-[10px]">
+                                    {dayLabel(message.created_at)}
+                                  </span>
+                                  <Separator className="flex-1" />
+                                </div>
+                              ) : null}
+                              <MessageBubble
+                                message={message}
+                                mine={message.author_id === userId}
+                                peerFirstName={firstName}
+                                escrow={
+                                  message.escrow_id
+                                    ? escrowEntries.find((entry) => entry.id === message.escrow_id)
+                                    : undefined
+                                }
+                                canResolve={iAmClient}
+                                booking={
+                                  message.booking_id
+                                    ? bookingsById.get(message.booking_id)
+                                    : undefined
+                                }
+                                canPay={iAmClient && bookingsOpen}
+                                paying={
+                                  !!message.booking_id && payingBookingId === message.booking_id
+                                }
+                                onPay={(id) => void payBooking(id)}
+                                onConfirm={(id) => void confirmAndReview(id)}
+                                onDispute={(id, reason) => void raiseIssue(id, reason)}
+                                onCopy={(body) => void copyMessage(body)}
+                                onDelete={() => setMessageToDelete(message)}
+                              />
+                            </div>
+                          );
+                        })}
+                        {!visibleMessages.length && !messagesQuery.isLoading ? (
+                          <p className="py-10 text-center text-xs text-muted-foreground">
+                            No messages here yet — say hello to {firstName}.
+                          </p>
+                        ) : null}
                         <div ref={bottomRef} />
                       </div>
                     </ScrollArea>
+
 
                     <div className="shrink-0 border-t border-border/70 p-3 sm:p-4">
                       {iAmClient ? (
