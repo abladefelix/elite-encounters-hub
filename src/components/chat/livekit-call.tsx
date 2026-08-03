@@ -77,11 +77,8 @@ export function LiveKitCall({
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
-  const {
-    speakerOn,
-    supported: speakerSupported,
-    toggleSpeaker,
-  } = useSpeaker(remoteAudioRef, live);
+
+
 
   const hangUp = useCallback(() => {
     void roomRef.current?.disconnect();
