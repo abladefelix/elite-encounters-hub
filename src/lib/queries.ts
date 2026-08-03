@@ -565,6 +565,37 @@ export async function unhideThread(threadId: string, side: "client" | "specialis
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Hides everything said so far from this member's own view of the thread. The
+ * other side keeps the full history, and the timestamp can be rolled back for
+ * the undo action.
+ */
+export async function clearThread(threadId: string, side: "client" | "specialist", at?: string) {
+  const stamp = at ?? new Date().toISOString();
+  const patch: Tables["threads"]["Update"] =
+    side === "client" ? { client_cleared_at: stamp } : { specialist_cleared_at: stamp };
+  const { error } = await supabase.from("threads").update(patch).eq("id", threadId);
+  if (error) throw new Error(error.message);
+}
+
+/** Restores a cleared history for this member (undo). */
+export async function restoreThreadHistory(
+  threadId: string,
+  side: "client" | "specialist",
+  previous: string | null,
+) {
+  const patch: Tables["threads"]["Update"] =
+    side === "client" ? { client_cleared_at: previous } : { specialist_cleared_at: previous };
+  const { error } = await supabase.from("threads").update(patch).eq("id", threadId);
+  if (error) throw new Error(error.message);
+}
+
+/** Deletes one of the caller's own messages for everyone in the thread. */
+export async function deleteOwnMessage(messageId: string) {
+  const { error } = await supabase.from("messages").delete().eq("id", messageId);
+  if (error) throw new Error(error.message);
+}
+
 export async function markThreadRead(threadId: string, side: "client" | "specialist") {
   const now = new Date().toISOString();
   const patch: Tables["threads"]["Update"] =
