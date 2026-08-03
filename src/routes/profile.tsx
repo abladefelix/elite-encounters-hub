@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { IconContainer } from "@/components/ui/icon-container";
 import { TierBadge } from "@/components/tier-badge";
 import { TwoFactorCard } from "@/components/two-factor-card";
+import { PortfolioManager } from "@/components/portfolio-manager";
+
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -440,6 +442,13 @@ function ProfilePage() {
             ) : null}
           </Card>
         ) : null}
+
+        {isSpecialist && user ? (
+          <div className="mt-5">
+            <PortfolioManager userId={user.id} />
+          </div>
+        ) : null}
+
 
         {/* likes / dislikes */}
         <div className="mt-5 grid gap-5 md:grid-cols-2">

@@ -87,7 +87,9 @@ function toSpecialist(profile: ProfileRow, serviceNames: string[]): Specialist {
     verified: profile.verified,
     online: profile.available,
     responseMinutes: profile.response_minutes,
+    avatarPath: profile.avatar_url,
   };
+
 }
 
 interface TestimonialRow {

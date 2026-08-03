@@ -1,20 +1,28 @@
 import { Link } from "@tanstack/react-router";
 import { Star, MapPin, Clock, ShieldCheck } from "lucide-react";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { IconContainer } from "@/components/ui/icon-container";
 import { TierBadge } from "@/components/tier-badge";
+import { useStoredMedia } from "@/lib/queries";
 import { initials, money, type Specialist } from "@/lib/types";
 
 export function SpecialistCard({ specialist }: { specialist: Specialist }) {
+  // Avatars live in a private bucket, so the stored path needs signing first.
+  const { data: media } = useStoredMedia(
+    specialist.avatarPath ? [{ bucket: "avatars" as const, value: specialist.avatarPath }] : [],
+  );
+  const avatarUrl = specialist.avatarPath ? media?.[specialist.avatarPath] : undefined;
+
   return (
     <Card className="flex flex-col gap-4 border-border/70 bg-panel p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated">
       <div className="flex items-start gap-3">
         <div className="relative">
           <Avatar className="size-12 border border-border">
+            {avatarUrl ? <AvatarImage src={avatarUrl} alt={specialist.name} /> : null}
             <AvatarFallback className="bg-surface-strong text-sm font-semibold">
               {initials(specialist.name)}
             </AvatarFallback>
@@ -23,6 +31,7 @@ export function SpecialistCard({ specialist }: { specialist: Specialist }) {
             <span className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-card bg-success" />
           ) : null}
         </div>
+
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
