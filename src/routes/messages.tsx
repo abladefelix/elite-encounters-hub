@@ -1673,6 +1673,8 @@ function MessageBubble({
   onPay,
   onConfirm,
   onDispute,
+  onCopy,
+  onDelete,
 }: {
   message: MessageRowType;
   mine: boolean;
@@ -1685,6 +1687,8 @@ function MessageBubble({
   onPay: (id: string) => void;
   onConfirm: (id: string) => void;
   onDispute: (id: string, reason: string) => void;
+  onCopy: (body: string) => void;
+  onDelete: () => void;
 }) {
   if (message.kind === "system") {
     return (
