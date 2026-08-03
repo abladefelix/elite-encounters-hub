@@ -20,8 +20,8 @@ export function NativeShell() {
     cleanups.push(() => document.documentElement.classList.remove("native-app"));
 
     void (async () => {
-      // Hide the splash as soon as React has mounted, so the OS timeout never
-      // decides for us (that timeout is what leaves a blank frame behind).
+      // Hide the splash as soon as React has mounted. `launchAutoHide` is off in
+      // capacitor.config.ts, so this is the only thing that dismisses it.
       try {
         const { SplashScreen } = await import("@capacitor/splash-screen");
         await SplashScreen.hide({ fadeOutDuration: 200 });
@@ -29,19 +29,32 @@ export function NativeShell() {
         /* plugin unavailable — harmless */
       }
 
-      // Status bar: overlay the web view and match the app chrome.
-
+      // Status bar: overlay the web view and match the app chrome. Each call is
+      // guarded on its own — a single unsupported call must not skip the rest.
       try {
         const { StatusBar, Style } = await import("@capacitor/status-bar");
         const dark = document.documentElement.classList.contains("dark");
-        await StatusBar.setOverlaysWebView({ overlay: true });
-        await StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light });
+        try {
+          await StatusBar.setOverlaysWebView({ overlay: true });
+        } catch {
+          /* not supported on this platform */
+        }
+        try {
+          await StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light });
+        } catch {
+          /* noop */
+        }
         if (nativePlatform() === "android") {
-          await StatusBar.setBackgroundColor({ color: "#00000000" });
+          try {
+            await StatusBar.setBackgroundColor({ color: "#00000000" });
+          } catch {
+            /* noop */
+          }
         }
       } catch {
         // Plugin unavailable — harmless.
       }
+
 
 
       // Keyboard: keep the chat composer visible above the keyboard.
