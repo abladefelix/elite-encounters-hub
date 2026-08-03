@@ -85,7 +85,7 @@ export function ExpensesPanel({
 
   const rows = expenses.filter((row) =>
     search.trim()
-      ? `${row.vendor} ${row.category} ${row.reference} ${row.memo}`
+      ? `${row.vendor} ${row.category} ${row.txn_reference} ${row.reference} ${row.memo}`
           .toLowerCase()
           .includes(search.toLowerCase())
       : true,
@@ -128,7 +128,8 @@ export function ExpensesPanel({
               { label: "Tax", value: (row: ExpenseRow) => Number(row.tax_amount) },
               { label: "Method", value: (row: ExpenseRow) => row.payment_method },
               { label: "Status", value: (row: ExpenseRow) => row.status },
-              { label: "Reference", value: (row: ExpenseRow) => row.reference },
+              { label: "Reference", value: (row: ExpenseRow) => row.txn_reference },
+              { label: "External reference", value: (row: ExpenseRow) => row.reference },
             ]}
             rows={rows}
             size="default"
@@ -174,6 +175,7 @@ export function ExpensesPanel({
 
                   <TableCell>
                     <div className="font-medium">{row.vendor || "—"}</div>
+                    <div className="font-mono text-[11px] text-foreground/70">{row.txn_reference}</div>
                     <div className="text-xs text-muted-foreground">{row.memo || row.reference}</div>
                   </TableCell>
                   <TableCell className="text-sm">{row.category}</TableCell>
