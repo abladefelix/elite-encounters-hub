@@ -32,15 +32,30 @@ export const checkAvailability = createServerFn({ method: "POST" })
 /** Sign in with a username or an email address. */
 export const signInWithIdentifier = createServerFn({ method: "POST" })
   .validator((input) =>
-    z.object({ identifier, password: z.string().min(6).max(200) }).parse(input),
+    z
+      .object({
+        identifier,
+        password: z.string().min(6).max(200),
+        captchaToken: z.string().trim().max(2048).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
+    const ip =
+      getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for") ?? "";
+
+    // Abuse protection: a forged or replayed challenge never reaches the
+    // password check, so credential stuffing costs a Turnstile solve per try.
+    const { assertHuman } = await import("./captcha.server");
+    await assertHuman(data.captchaToken, { ip, action: "signin" });
+
     const { signInWithIdentifier: run } = await import("./identity.server");
     return run(data.identifier, data.password, {
-      ip: getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for") ?? "",
+      ip,
       userAgent: getRequestHeader("user-agent") ?? "",
     });
   });
+
 
 /** Records a client-side event (sign-out, payment start) in the audit trail. */
 export const recordActivity = createServerFn({ method: "POST" })
