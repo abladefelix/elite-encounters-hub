@@ -19,6 +19,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { MemberDashboardStrip } from "@/components/member-dashboard-strip";
 import { SpecialistShowcase } from "@/components/specialist-showcase";
+import { sectionEnabled, useAppearance } from "@/lib/appearance";
 import { SiteFooter } from "@/components/site-footer";
 import { TierBadge } from "@/components/tier-badge";
 import { useAuth } from "@/hooks/use-auth";
@@ -181,8 +182,18 @@ function RoomsPage() {
       <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:py-12">
         {user && canJoinRooms ? (
           <div className="space-y-8">
-            <SpecialistShowcase />
-            <MemberDashboardStrip />
+            {/* Admins choose the order and visibility of these blocks. */}
+            {dashboardFirst ? (
+              <>
+                {showDashboard ? <MemberDashboardStrip /> : null}
+                {showRoster ? <SpecialistShowcase /> : null}
+              </>
+            ) : (
+              <>
+                {showRoster ? <SpecialistShowcase /> : null}
+                {showDashboard ? <MemberDashboardStrip /> : null}
+              </>
+            )}
           </div>
         ) : null}
 
@@ -196,7 +207,7 @@ function RoomsPage() {
           </p>
         </div>
 
-        {user && !canJoinRooms ? <MemberDashboardStrip /> : null}
+        {user && !canJoinRooms && showDashboard ? <MemberDashboardStrip /> : null}
 
 
         {!authLoading && !user ? (
@@ -245,6 +256,7 @@ function RoomsPage() {
         ) : null}
 
 
+        {showPricing ? (
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
           {roomIds.map((tier) => {
             const privileges = policy[tier] ?? NEW_ROOM_PRIVILEGES;
@@ -368,7 +380,9 @@ function RoomsPage() {
             );
           })}
         </div>
+        ) : null}
 
+        {showComparison ? (
         <Card className="mt-14 overflow-hidden border-border/70 bg-surface">
           <div className="p-6">
             <h2 className="font-display text-xl font-semibold">Full comparison</h2>
