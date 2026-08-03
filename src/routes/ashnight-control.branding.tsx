@@ -397,25 +397,60 @@ function LanguageCard() {
             />
           </div>
 
-          <div className="mt-6 space-y-6">
-            {COPY_GROUPS.map((group) => (
+          <div className="mt-6">
+            <Label className="text-xs text-muted-foreground">Find a word</Label>
+            <div className="relative mt-1 max-w-sm">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Search wording or where it appears…"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Room tier names such as “Ultimate” are edited per room under{" "}
+              <span className="font-medium text-foreground">Rooms &amp; pricing</span> — this page
+              handles the shared wording below.
+            </p>
+          </div>
+
+          <div className="mt-5 space-y-6">
+            {groups.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No wording matches “{search}”.
+              </p>
+            ) : null}
+            {groups.map((group) => (
               <section key={group.id}>
                 <h3 className="text-sm font-semibold">{group.title}</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">{group.blurb}</p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {group.keys.map((entry) => (
-                    <Field
-                      key={entry.key}
-                      label={entry.label}
-                      value={(draft.copy ?? {})[entry.key] ?? ""}
-                      placeholder={DEFAULT_COPY[entry.key] ?? ""}
-                      onChange={(v) => setWord(entry.key, v)}
-                    />
+                    <div key={entry.key} className="min-w-0">
+                      <Field
+                        label={entry.label}
+                        value={(draft.copy ?? {})[entry.key] ?? ""}
+                        placeholder={DEFAULT_COPY[entry.key] ?? ""}
+                        onChange={(v) => setWord(entry.key, v)}
+                      />
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {entry.usedIn.map((place) => (
+                          <span
+                            key={place}
+                            className="rounded-full border border-border/70 bg-secondary/60 px-2 py-0.5 text-[10px] text-muted-foreground"
+                          >
+                            {place}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </section>
             ))}
           </div>
+
 
           <Actions
             busy={busy}
