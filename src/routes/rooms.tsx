@@ -180,14 +180,15 @@ function RoomsPage() {
       <div className="mx-auto w-full max-w-6xl px-5 py-12">
         <h1 className="font-display text-3xl font-semibold sm:text-4xl">Membership rooms</h1>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-          Clients join a room through a paid subscription; placement is still confirmed manually
+          Clients pay a membership to onboard into a room, and placement is still confirmed manually
           by our team after vetting. Each room unlocks a different set of features and privileges.
-          Specialists never pay to join — they're placed free of charge by experience, quality
-          record and the type of work they're cleared for, and earn from each booking.
+          Specialists sign up free and are vetted the same way — their room is set and upgraded by
+          our team based on ratings and completed work, never bought.
         </p>
 
         {user ? <MemberDashboardStrip /> : null}
 
+        {user && canJoinRooms ? <SpecialistShowcase /> : null}
 
         {!authLoading && !user ? (
           <Card className="mt-6 border-primary/25 bg-panel p-5">
@@ -204,7 +205,20 @@ function RoomsPage() {
           </Card>
         ) : null}
 
-        {user && !membershipLoading && activeMembership ? (
+        {user && !canJoinRooms ? (
+          <Card className="mt-6 border-border/70 bg-panel p-5">
+            <p className="flex items-center gap-2 font-display text-base font-semibold">
+              <Lock className="size-4" /> Your room is set by our team
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              You're in the {profile?.room ? tierLabel(profile.room) : "unplaced"} room. Specialists
+              never pay for a room and can't upgrade themselves — our team promotes you as your
+              rating and completed jobs grow. Keep your rating high and your profile complete.
+            </p>
+          </Card>
+        ) : null}
+
+        {user && canJoinRooms && !membershipLoading && activeMembership ? (
           <Card className="mt-6 border-border/70 bg-panel p-5">
             <p className="text-sm text-muted-foreground">You're currently in</p>
             <p className="mt-1 font-display text-lg font-semibold">
@@ -213,13 +227,14 @@ function RoomsPage() {
           </Card>
         ) : null}
 
-        {user && !membershipLoading && !activeMembership ? (
+        {user && canJoinRooms && !membershipLoading && !activeMembership ? (
           <Card className="mt-6 border-dashed border-border/70 bg-panel/60 p-5">
             <p className="text-sm text-muted-foreground">
               You don't have an active membership yet. Pick a room below to get started.
             </p>
           </Card>
         ) : null}
+
 
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
           {roomIds.map((tier) => {
