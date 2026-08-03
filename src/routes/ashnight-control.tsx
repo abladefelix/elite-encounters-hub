@@ -85,7 +85,7 @@ const NAV: {
   { to: "/ashnight-control/performance", label: "Specialist performance", icon: Trophy, area: "performance" },
   { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck, area: "escrow" },
   { to: "/ashnight-control/moderation", label: "Moderation", icon: ShieldBan, area: "moderation" },
-  { to: "/ashnight-control/complaints", label: "Complaints", icon: LifeBuoy, area: "complaints" },
+  { to: "/ashnight-control/complaints", label: "Complaints", icon: MessageSquareWarning, area: "complaints" },
   { to: "/ashnight-control/notifications", label: "Notifications", icon: Bell, area: "notifications" },
   { to: "/ashnight-control/documents", label: "Invoices & receipts", icon: ReceiptText, area: "documents" },
   { to: "/ashnight-control/finance", label: "Finance & accounting", icon: Calculator, area: "finance" },
