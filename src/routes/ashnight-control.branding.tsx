@@ -12,7 +12,9 @@ import {
   Replace,
   RotateCcw,
   Save,
+  ScanSearch,
   Search,
+
   Shield,
   Trash2,
 } from "lucide-react";
