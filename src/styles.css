@@ -349,3 +349,25 @@ html.native-app body {
   }
 }
 
+/* Native shell: no visible scrollbars, no rubber-band bounce on the page —
+   scrolling should feel like a native list, not a web page in a frame. */
+html.native-app,
+html.native-app body,
+html.native-app * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html.native-app ::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+html.native-app,
+html.native-app body {
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+
