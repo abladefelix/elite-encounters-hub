@@ -1930,7 +1930,7 @@ function MessageActions({
   onDelete?: () => void;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-0.5 pb-5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+    <div className="flex shrink-0 items-center gap-0.5 pb-5 opacity-70 transition-opacity focus-within:opacity-100 group-hover:opacity-100 sm:opacity-0">
       <Button
         variant="ghost"
         size="icon"
