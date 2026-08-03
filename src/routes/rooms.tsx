@@ -132,7 +132,10 @@ function comparisonRows(policy: RoomPolicyMap, roomIds: Tier[]): ComparisonRow[]
 
 function RoomsPage() {
   const { policy, profiles, roomIds, profileOf } = useRoomSettings();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isSpecialist, isAdmin } = useAuth();
+  // Specialists never buy or change their own room — admin places and promotes
+  // them from the control room based on ratings and completed work.
+  const canJoinRooms = !isSpecialist || isAdmin;
   const rows = comparisonRows(policy, roomIds);
   const rank = (tier: Tier) => roomIds.indexOf(tier);
 
@@ -140,6 +143,7 @@ function RoomsPage() {
   const { data: membership, isLoading: membershipLoading } = useMyMembership(user?.id);
   const membershipCheckout = useServerFn(startMembershipCheckout);
   const [joining, setJoining] = useState<Tier | null>(null);
+
 
   async function joinRoom(room: Tier) {
     setJoining(room);
