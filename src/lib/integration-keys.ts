@@ -131,18 +131,33 @@ export const EXPECTED_KEYS: { key: string; label: string; description: string; s
       description: "Ashnight signs every sync request with this shared secret.",
       secret: true,
     },
+    {
+      key: "turnstile_site_key",
+      label: "Turnstile site key",
+      description: "Cloudflare Turnstile site key — draws the security check on sign-in and sign-up.",
+      secret: false,
+    },
+    {
+      key: "turnstile_secret_key",
+      label: "Turnstile secret key",
+      description: "Verifies each solved security check on the server. Never leaves the box.",
+      secret: true,
+    },
   ];
 
 /** Public values the member-facing app is allowed to read. */
 export interface PublicIntegrationConfig {
   paystack_public_key: string;
   livekit_url: string;
+  turnstile_site_key: string;
 }
 
 export const DEFAULT_PUBLIC_INTEGRATIONS: PublicIntegrationConfig = {
   paystack_public_key: "",
   livekit_url: "",
+  turnstile_site_key: "",
 };
+
 
 const QUERY_KEY = ["integration-keys"];
 
