@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { SpecialistCard } from "@/components/specialist-card";
+import { SpecialistTile } from "@/components/specialist-tile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useServices, useSpecialists, type ProfileRow } from "@/lib/queries";
@@ -94,6 +94,7 @@ function SpecialistsPage() {
   const [room, setRoom] = useState<Tier | "all">("all");
   const [service, setService] = useState("all");
   const [sort, setSort] = useState<SortKey>("rating");
+  const [availability, setAvailability] = useState<"all" | "online" | "verified">("all");
 
   // A specialist never browses the roster — they only meet a client once that
   // client opens a thread with them.
@@ -119,7 +120,10 @@ function SpecialistsPage() {
         s.headline.toLowerCase().includes(q);
       const serviceNames = serviceMap?.get(s.id) ?? [];
       const matchesService = service === "all" || serviceNames.includes(service);
-      return matchesRoom && matchesQuery && matchesService;
+      const matchesAvailability =
+        availability === "all" ||
+        (availability === "online" ? s.available : s.verified);
+      return matchesRoom && matchesQuery && matchesService && matchesAvailability;
     });
 
     return [...filtered].sort((a, b) => {
@@ -128,7 +132,7 @@ function SpecialistsPage() {
       if (sort === "experience") return b.years_experience - a.years_experience;
       return b.rating - a.rating;
     });
-  }, [profiles, query, service, sort, serviceMap, allowedRooms]);
+  }, [profiles, query, service, sort, serviceMap, allowedRooms, availability]);
 
   const hasAnySpecialists = (profiles?.length ?? 0) > 0;
 
@@ -169,8 +173,8 @@ function SpecialistsPage() {
           Your room decides who you can book — you can still browse everyone.
         </p>
 
-        <div className="mt-8 grid gap-3 rounded-xl border border-border/70 bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="relative">
+        <div className="mt-8 grid gap-3 rounded-xl border border-border/70 bg-surface p-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="relative lg:col-span-2">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
@@ -179,6 +183,21 @@ function SpecialistsPage() {
               className="pl-9"
             />
           </div>
+
+          <Select
+            value={availability}
+            onValueChange={(value) => setAvailability(value as typeof availability)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Availability" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Everyone</SelectItem>
+              <SelectItem value="online">Available now</SelectItem>
+              <SelectItem value="verified">Verified only</SelectItem>
+            </SelectContent>
+          </Select>
+
 
           <Select value={room} onValueChange={(value) => setRoom(value as Tier | "all")}>
             <SelectTrigger>
@@ -223,25 +242,27 @@ function SpecialistsPage() {
         </div>
 
         {isLoading ? (
-          <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <Skeleton key={index} className="h-64 rounded-xl" />
+          <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            {Array.from({ length: 12 }).map((_, index) => (
+              <Skeleton key={index} className="aspect-[4/5] rounded-lg" />
             ))}
           </div>
+
         ) : (
           <>
             <p className="mt-6 text-xs text-muted-foreground">
               {results.length} specialist{results.length === 1 ? "" : "s"} match your filters
             </p>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
               {results.map((specialist) => (
-                <SpecialistCard
+                <SpecialistTile
                   key={specialist.id}
                   specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
                 />
               ))}
             </div>
+
 
             {results.length === 0 && !hasAnySpecialists ? (
               <div className="mt-10 rounded-xl border border-dashed border-border p-12 text-center">
@@ -263,6 +284,7 @@ function SpecialistsPage() {
                     setQuery("");
                     setRoom("all");
                     setService("all");
+                    setAvailability("all");
                   }}
                 >
                   Reset filters
