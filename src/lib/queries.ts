@@ -693,6 +693,23 @@ export function useRatings(ratedId?: string) {
   });
 }
 
+/** Ratings this member has written — drives the "still to review" prompts. */
+export function useMyRatings(raterId?: string) {
+  return useQuery({
+    queryKey: ["ratings", "by-rater", raterId ?? "anon"],
+    enabled: Boolean(raterId),
+    queryFn: async () =>
+      unwrap<RatingRow[]>(
+        await supabase
+          .from("ratings")
+          .select("*")
+          .eq("rater_id", raterId!)
+          .order("created_at", { ascending: false }),
+      ),
+  });
+}
+
+
 export function useSubmitRating() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -28,11 +28,16 @@ export function RatingDialog({
   open,
   onOpenChange,
   onSubmit,
+  serviceName,
+  submitting,
 }: {
   specialistName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (draft: RatingDraft) => void;
+  /** The visit being reviewed, when the rating comes from a finished job. */
+  serviceName?: string | undefined;
+  submitting?: boolean | undefined;
 }) {
   const [stars, setStars] = useState(0);
   const [hover, setHover] = useState(0);
@@ -56,7 +61,9 @@ export function RatingDialog({
         <DialogHeader>
           <DialogTitle className="font-display">Rate {specialistName.split(" ")[0]}</DialogTitle>
           <DialogDescription>
-            Ratings stay on the specialist's Ashnight profile and feed their room review.
+            {serviceName
+              ? `How did "${serviceName}" go? Your rating is the evidence Ashnight uses to review ${specialistName.split(" ")[0]}'s room.`
+              : "Ratings stay on the specialist's Ashnight profile and feed their room review."}
           </DialogDescription>
         </DialogHeader>
 
@@ -130,13 +137,13 @@ export function RatingDialog({
           </Button>
           <Button
             variant="brass"
-            disabled={!stars}
+            disabled={!stars || Boolean(submitting)}
             onClick={() => {
               onSubmit({ stars, note: note.trim(), tags });
               close(false);
             }}
           >
-            <Star className="size-4" /> Post rating
+            <Star className="size-4" /> {submitting ? "Posting…" : "Post rating"}
           </Button>
         </DialogFooter>
       </DialogContent>
