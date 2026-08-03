@@ -2146,8 +2146,15 @@ const EMOJI_GROUPS: { label: string; emoji: string[] }[] = [
   },
 ];
 
-function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
+function EmojiPicker({
+  onPick,
+  extraGroups = [],
+}: {
+  onPick: (emoji: string) => void;
+  extraGroups?: { label: string; emoji: string[] }[];
+}) {
   const [open, setOpen] = useState(false);
+  const groups = [...extraGroups, ...EMOJI_GROUPS];
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -2161,9 +2168,9 @@ function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
           <Smile className="size-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" side="top" className="w-72 p-3">
+      <PopoverContent align="start" side="top" className="max-h-80 w-72 overflow-y-auto p-3">
         <div className="space-y-3">
-          {EMOJI_GROUPS.map((group) => (
+          {groups.map((group) => (
             <div key={group.label}>
               <p className="eyebrow mb-1.5">{group.label}</p>
               <div className="flex flex-wrap gap-1">
