@@ -12,3 +12,16 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# The control room and member-only surfaces must never be indexed.
+Disallow: /ashnight-control
+Disallow: /ashnight-control/
+Disallow: /messages
+Disallow: /wallet
+Disallow: /profile
+Disallow: /support
+Disallow: /payment/return
+Disallow: /reset-password
+Disallow: /api/
+
+Sitemap: https://meet-vetted-connect.lovable.app/sitemap.xml

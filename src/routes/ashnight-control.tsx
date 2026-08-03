@@ -58,8 +58,13 @@ import { useIsNativeApp } from "@/lib/native";
 
 
 export const Route = createFileRoute("/ashnight-control")({
+  // The control room lives on a private URL — keep it out of every index.
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow, noarchive" }],
+  }),
   component: AdminLayout,
 });
+
 
 const NAV: {
   to: string;

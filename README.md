@@ -405,6 +405,20 @@ database trigger using the admin's own rules, so contact details are blocked eve
 client is bypassed. Deposits are settled by the scheduled
 `/api/public/hooks/escrow-release` pass — see [docs/SETUP.md](docs/SETUP.md) §5a.
 
+### Scheduled jobs (already live)
+
+| Job | Schedule | What it does |
+| --- | --- | --- |
+| `ashnight-hourly-backup` | every hour at :05 | Off-site snapshot to Dropbox / Google Drive |
+| `ashnight-escrow-settlement` | every 15 minutes | Starts the clearing countdown on unconfirmed holds, auto-deposits cleared escrow once the admin hold window elapses with no dispute, and lapses expired client memberships (setting those accounts inactive until they repay) |
+
+Both jobs are database cron jobs. The settlement job reads the **job trigger secret**
+from the admin key vault at run time, so rotating that secret in
+`/ashnight-control/features` takes effect immediately with no re-scheduling. Admins can
+also run the pass on demand from `/ashnight-control/escrow`. Nothing about escrow
+deposits depends on a browser being open.
+
+
 ## Security model in one paragraph
 
 Every table has Row Level Security enabled with explicit grants. Roles live in a
