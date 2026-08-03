@@ -89,6 +89,29 @@ also means no confirmation mail has to be delivered before the platform works.
   (`smtp_host`, `smtp_port`, `smtp_user`, `smtp_password`, `smtp_from`); pick
   *Transport → My SMTP server* on the Email page to use them.
 
+## Abuse protection on sign-in and sign-up (Cloudflare Turnstile)
+
+Sign-in and sign-up can require a Cloudflare Turnstile challenge, verified **on the
+server** before a password is checked or an account is created.
+
+1. Create a Turnstile widget at <https://dash.cloudflare.com/?to=/:account/turnstile> and
+   add your domain(s).
+2. In **Control room → Server & keys**, save `turnstile_site_key` (public — mirrored to the
+   member app automatically) and `turnstile_secret_key` (secret — never leaves the server).
+3. **Control room → Features → Security** holds the *Sign-in & sign-up security check*
+   switch. It is on by default but stays dormant until both keys exist, so a fresh install
+   can never lock itself out of its own sign-in page.
+
+Enforcement details:
+
+- The sign-in path verifies the token inside `signInWithIdentifier` (`src/lib/captcha.server.ts`),
+  so credential stuffing costs one solved challenge per attempt and cannot be skipped by
+  calling the endpoint directly.
+- The sign-up path verifies the token with `verifyAuthCaptcha` before the account is created.
+- Tokens are single-use: a failed attempt clears the widget and a fresh challenge is drawn.
+- Every rejected challenge is written to the activity log as `captcha_failed` with the
+  Cloudflare error codes, so **Control room → Logs** shows automated pressure on the login page.
+
 ## Manual deploy sync (GitHub → live server)
 
 **Control room → Deploy** compares the configured GitHub branch with the commit the live
