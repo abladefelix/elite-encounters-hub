@@ -1617,6 +1617,62 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={clearOpen} onOpenChange={setClearOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear this chat history?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Every message here disappears from your view. {firstName} keeps their own copy, and
+              bookings, payments and escrow records stay exactly as they are. You get a short window
+              to undo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={clearing}>Keep history</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={clearing}
+              onClick={(event) => {
+                event.preventDefault();
+                void clearHistory();
+              }}
+            >
+              {clearing ? "Clearing…" : "Clear history"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!messageToDelete}
+        onOpenChange={(open) => {
+          if (!open) setMessageToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              It is removed for both of you. Anything already paid or held in escrow is unaffected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingMessage}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deletingMessage}
+              onClick={(event) => {
+                event.preventDefault();
+                if (messageToDelete) void removeMessage(messageToDelete);
+              }}
+            >
+              {deletingMessage ? "Deleting…" : "Delete message"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </TooltipProvider>
 
   );
