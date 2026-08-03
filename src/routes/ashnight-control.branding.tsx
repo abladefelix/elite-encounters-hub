@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  Globe,
   Languages,
+  LayoutTemplate,
   Loader2,
+  MapPin,
   MessageSquareHeart,
   Palette,
   Plus,
@@ -10,6 +13,7 @@ import {
   RotateCcw,
   Save,
   Search,
+  Shield,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
