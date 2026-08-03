@@ -22,6 +22,7 @@ export type FeatureFlagKey =
   | "specialistPortfolioUploads"
   | "ratingsEnabled"
   | "reportsEnabled"
+  | "captchaOnAuth"
   | "twoFactorAvailable"
   | "requireTwoFactorForAdmins"
   | "requireTwoFactorForSpecialists"
@@ -227,6 +228,12 @@ export const FEATURE_FLAGS: FeatureFlagMeta[] = [
     planned: true,
   },
   {
+    key: "captchaOnAuth",
+    label: "Sign-in & sign-up security check",
+    hint: "Show a Cloudflare Turnstile challenge on sign-in and sign-up. Needs Turnstile keys in the key vault.",
+    group: "Security",
+  },
+  {
     key: "auditLogging",
     label: "Admin audit logging",
     hint: "Record every admin change with who made it and when.",
@@ -251,6 +258,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   specialistPortfolioUploads: true,
   ratingsEnabled: true,
   reportsEnabled: true,
+  captchaOnAuth: true,
   twoFactorAvailable: true,
   requireTwoFactorForAdmins: false,
   requireTwoFactorForSpecialists: false,
