@@ -1062,7 +1062,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                 mode={call}
                 onEnd={() => {
                   setCall(null);
-                  systemNote("Call ended.");
+                  systemNote(t("chat.callEnded"));
                 }}
               />
             ) : null}
