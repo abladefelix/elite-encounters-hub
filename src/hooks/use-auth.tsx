@@ -47,14 +47,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setRoles([]);
       return;
     }
+
+    // Mobile networks drop the first request often enough that a single failure
+    // used to look like "you're signed out". Retry briefly before giving up,
+    // and never wipe a profile we already have.
+    const fetchProfile = async () => {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          // Contact and ID columns are not readable from the browser at all; the
+          // server function returns your own record only.
+          const row = await getMyFullProfile();
+          if (row) return row as ProfileRow;
+        } catch {
+          /* retry below */
+        }
+        await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+      }
+      return null;
+    };
+
     const [profileResult, rolesResult] = await Promise.all([
-      // Contact and ID columns are not readable from the browser at all; the
-      // server function returns your own record only.
-      getMyFullProfile().catch(() => null),
+      fetchProfile(),
       supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
-    setProfile((profileResult as ProfileRow | null) ?? null);
-    setRoles((rolesResult.data ?? []).map((row) => row.role));
+    setProfile((previous) => profileResult ?? previous);
+    if (rolesResult.data) setRoles(rolesResult.data.map((row) => row.role));
   }, []);
 
   useEffect(() => {
