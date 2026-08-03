@@ -130,9 +130,23 @@ function ProfilePage() {
   }, [profile]);
 
 
+  // Hydrate the local selection from the server exactly once per real change.
+  // Refetches return a fresh array each time; re-applying it blindly would wipe
+  // a specialist's unsaved de-selection before they hit Save.
+  const serverServiceKey = specialistServiceRows
+    ? specialistServiceRows
+        .map((row) => row.service_id)
+        .sort()
+        .join(",")
+    : null;
+  const hydratedServiceKey = useRef<string | null>(null);
   useEffect(() => {
-    if (specialistServiceRows) setServiceIds(specialistServiceRows.map((row) => row.service_id));
-  }, [specialistServiceRows]);
+    if (serverServiceKey === null) return;
+    if (hydratedServiceKey.current === serverServiceKey) return;
+    hydratedServiceKey.current = serverServiceKey;
+    setServiceIds(serverServiceKey ? serverServiceKey.split(",") : []);
+  }, [serverServiceKey]);
+
 
   if (loading) {
     return (
