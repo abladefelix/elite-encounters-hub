@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { CaptchaControlCard } from "@/components/admin/captcha-control-card";
 import { useRecordAudit } from "@/lib/audit-log";
 import {
   FEATURE_FLAGS,
@@ -84,6 +85,11 @@ function AdminFeatures() {
           </p>
         </Card>
       ) : null}
+
+      <CaptchaControlCard
+        enabled={flags.captchaOnAuth}
+        onToggle={(next) => toggle("captchaOnAuth", next)}
+      />
 
       {FLAG_GROUPS.map((group) => {
         const items = FEATURE_FLAGS.filter((flag) => flag.group === group);
