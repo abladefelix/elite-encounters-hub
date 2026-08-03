@@ -21,6 +21,7 @@ import {
   ShieldAlert,
   Send,
   ShieldCheck,
+  Smile,
   Star,
   Trash2,
   User as UserIcon,
@@ -47,6 +48,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -230,6 +240,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [removing, setRemoving] = useState(false);
   const queryClient = useQueryClient();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const draftRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
@@ -306,11 +317,18 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
    * "Clear chat" is per member: everything older than their own cleared-at
    * stamp drops out of their view while the other side keeps the full history.
    */
-  const clearedAt = activeThread
-    ? iAmClient
-      ? activeThread.client_cleared_at
-      : activeThread.specialist_cleared_at
-    : null;
+  const clearedAt = useMemo(() => {
+    if (!activeThread) return null;
+    const stamps = iAmClient
+      ? [activeThread.client_cleared_at, activeThread.client_hidden_at]
+      : [activeThread.specialist_cleared_at, activeThread.specialist_hidden_at];
+    const times = stamps
+      .filter((stamp): stamp is string => Boolean(stamp))
+      .map((stamp) => new Date(stamp).getTime())
+      .filter((time) => Number.isFinite(time));
+    if (!times.length) return null;
+    return new Date(Math.max(...times)).toISOString();
+  }, [activeThread, iAmClient]);
   const visibleMessages = useMemo(() => {
     if (!clearedAt) return messages;
     const cutoff = new Date(clearedAt).getTime();
@@ -373,9 +391,27 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     void markThreadRead(activeThread.id, iAmClient ? "client" : "specialist");
   }, [activeThread?.id, iAmClient, activeThread]);
 
+  // Opening a thread lands on the newest message straight away (no visible
+  // scroll from the top); later arrivals glide into view like a native app.
+  const jumpedThreadRef = useRef<string | null>(null);
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length]);
+    if (!activeThread?.id) return;
+    const first = jumpedThreadRef.current !== activeThread.id;
+    if (first) jumpedThreadRef.current = activeThread.id;
+    const node = bottomRef.current;
+    if (!node) return;
+    const behavior: ScrollBehavior = first ? "auto" : "smooth";
+    node.scrollIntoView({ behavior, block: "end" });
+    if (first) {
+      // The virtualised scroll area can still be laying out on first paint.
+      const timer = window.setTimeout(
+        () => bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" }),
+        120,
+      );
+      return () => window.clearTimeout(timer);
+    }
+    return;
+  }, [activeThread?.id, visibleMessages.length]);
 
   async function post(
     input: Partial<Omit<MessageRowType, "id" | "created_at" | "thread_id">> & { body: string },
@@ -454,7 +490,18 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     try {
       await post({ body: verdict.body, redacted: verdict.action === "mask" });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Message could not be sent");
+      // Never swallow the member's text: put it back in the composer so they
+      // can retry instead of retyping.
+      setDraft(body);
+      const raw = error instanceof Error ? error.message : "";
+      const offline =
+        /failed to fetch|network|load failed|typeerror/i.test(raw) ||
+        (typeof navigator !== "undefined" && navigator.onLine === false);
+      toast.error(offline ? "No connection — message not sent" : "Message could not be sent", {
+        description: offline
+          ? "Your message is still in the box. Check your connection and tap send again."
+          : raw || "Please try again in a moment.",
+      });
     }
   }
 
@@ -1398,8 +1445,16 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           }}
                         />
 
-                        <div className="flex w-full items-end gap-2 rounded-2xl border border-border/70 bg-surface-strong/60 px-4 py-2 transition-colors focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10">
+                        <div className="flex w-full items-end gap-2 rounded-2xl border border-border/70 bg-surface-strong/60 px-3 py-2 transition-colors focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 sm:px-4">
+                          <EmojiPicker
+                            onPick={(emoji) => {
+                              setDraft((current) => (current + emoji).slice(0, 1000));
+                              notifyTyping();
+                              draftRef.current?.focus();
+                            }}
+                          />
                           <Textarea
+                            ref={draftRef}
                             value={draft}
                             rows={1}
                             onChange={(event) => {
@@ -1415,7 +1470,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                             }}
                             placeholder={`Message ${firstName}…`}
                             maxLength={1000}
-                            className="max-h-32 min-h-9 min-w-0 flex-1 resize-none border-0 bg-transparent px-0 py-1.5 text-sm leading-relaxed shadow-none focus-visible:ring-0"
+                            /* 16px text keeps iOS from zooming the page on focus. */
+                            className="max-h-40 min-h-9 min-w-0 flex-1 resize-none border-0 bg-transparent px-0 py-1.5 text-base leading-relaxed shadow-none focus-visible:ring-0"
                           />
                           <Button
                             type="submit"
@@ -1792,23 +1848,27 @@ function MessageBubble({
       "https://www.google.com/maps/search/?api=1&query=" + message.body.trim();
     return (
       <div className={cn("group flex items-end gap-1", mine ? "justify-end" : "justify-start")}>
-        {mine ? (
-          <MessageActions mine onCopy={() => onCopy(message.body)} onDelete={onDelete} />
-        ) : null}
-        <div className="max-w-sm rounded-xl border border-border bg-card p-4">
-          <p className="eyebrow text-primary">Location shared</p>
-          <p className="mt-2 font-mono text-xs text-muted-foreground">
-            {lat}, {lng}
-          </p>
-          <a
-            href={mapUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
-          >
-            <MapPin className="size-4" /> Open in maps
-          </a>
-        </div>
+        <MessageActions
+          mine={mine}
+          body={message.body}
+          onCopy={() => onCopy(message.body)}
+          {...(mine ? { onDelete } : {})}
+        >
+          <div className="max-w-sm rounded-xl border border-border bg-card p-4">
+            <p className="eyebrow text-primary">Location shared</p>
+            <p className="mt-2 font-mono text-xs text-muted-foreground">
+              {lat}, {lng}
+            </p>
+            <a
+              href={mapUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              <MapPin className="size-4" /> Open in maps
+            </a>
+          </div>
+        </MessageActions>
       </div>
     );
   }
@@ -1879,79 +1939,142 @@ function MessageBubble({
 
   return (
     <div className={cn("group flex items-end gap-1", mine ? "justify-end" : "justify-start")}>
-      {mine ? (
-        <MessageActions mine onCopy={() => onCopy(message.body)} onDelete={onDelete} />
-      ) : null}
-      <div className="max-w-[85%]">
-        <div
-          className={cn(
-            "text-sm leading-relaxed shadow-sm",
-            message.attachment_url ? "rounded-2xl p-1.5" : "rounded-2xl px-4 py-2.5",
-            mine
-              ? "rounded-tr-none border border-primary/20 bg-primary text-primary-foreground"
-              : "rounded-tl-none border border-border/70 bg-card text-foreground",
-          )}
-        >
-          {message.attachment_url ? (
-            <MediaAttachment
-              url={message.attachment_url}
-              name={message.attachment_name ?? "Attachment"}
-            />
-          ) : (
-            message.body
-          )}
+      <MessageActions
+        mine={mine}
+        body={message.body}
+        onCopy={() => onCopy(message.body)}
+        {...(mine ? { onDelete } : {})}
+      >
+        <div className="max-w-[85%] select-none">
+          <div
+            className={cn(
+              "text-sm leading-relaxed shadow-sm",
+              message.attachment_url ? "rounded-2xl p-1.5" : "rounded-2xl px-4 py-2.5",
+              mine
+                ? "rounded-tr-none border border-primary/20 bg-primary text-primary-foreground"
+                : "rounded-tl-none border border-border/70 bg-card text-foreground",
+            )}
+          >
+            {message.attachment_url ? (
+              <MediaAttachment
+                url={message.attachment_url}
+                name={message.attachment_name ?? "Attachment"}
+              />
+            ) : (
+              message.body
+            )}
+          </div>
+          <p
+            className={cn(
+              "mt-1 flex items-center gap-1 text-[10px] text-muted-foreground",
+              mine ? "justify-end" : "justify-start",
+            )}
+          >
+            {timeLabel(message.created_at)}
+            {message.redacted ? " · redacted" : ""}
+          </p>
         </div>
-        <p
-          className={cn(
-            "mt-1 flex items-center gap-1 text-[10px] text-muted-foreground",
-            mine ? "justify-end" : "justify-start",
-          )}
-        >
-          {timeLabel(message.created_at)}
-          {message.redacted ? " · redacted" : ""}
-        </p>
-      </div>
-      {!mine ? <MessageActions onCopy={() => onCopy(message.body)} /> : null}
+      </MessageActions>
     </div>
   );
 }
 
 /**
- * Hover/tap actions on a single message: copy the text, and — for your own
- * messages — delete it for everyone in the thread.
+ * WhatsApp-style message actions: long-press on touch (or right-click on
+ * desktop) opens copy / delete for that single message. Nothing floats beside
+ * the bubble, so the transcript stays clean.
  */
 function MessageActions({
   mine = false,
+  body,
   onCopy,
   onDelete,
+  children,
 }: {
   mine?: boolean;
+  body: string;
   onCopy: () => void;
   onDelete?: () => void;
+  children: ReactNode;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-0.5 pb-5 opacity-70 transition-opacity focus-within:opacity-100 group-hover:opacity-100 sm:opacity-0">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7 text-muted-foreground"
-        aria-label="Copy message"
-        onClick={onCopy}
-      >
-        <Copy className="size-3.5" />
-      </Button>
-      {mine && onDelete ? (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuContent className="w-48">
+        <ContextMenuItem onSelect={onCopy}>
+          <Copy className="size-4" /> Copy text
+        </ContextMenuItem>
+        {mine && onDelete ? (
+          <ContextMenuItem
+            className="text-destructive focus:text-destructive"
+            onSelect={onDelete}
+          >
+            <Trash2 className="size-4" /> Delete message
+          </ContextMenuItem>
+        ) : null}
+        <ContextMenuSeparator />
+        <ContextMenuLabel className="truncate text-[11px] font-normal text-muted-foreground">
+          {body.slice(0, 40) || "Message"}
+        </ContextMenuLabel>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+
+/** Emoji tray — sending emoji never depends on the device keyboard. */
+const EMOJI_GROUPS: { label: string; emoji: string[] }[] = [
+  {
+    label: "Smileys",
+    emoji: ["😀", "😄", "😅", "😂", "🙂", "😉", "😍", "😘", "😎", "🤗", "🤔", "😐", "😴", "😢", "😭", "😡"],
+  },
+  {
+    label: "Gestures",
+    emoji: ["👍", "👎", "👏", "🙏", "🙌", "👌", "✌️", "🤝", "💪", "🫶", "👋", "🤙"],
+  },
+  {
+    label: "Life",
+    emoji: ["❤️", "🔥", "✨", "🎉", "💯", "⭐", "🧹", "🧼", "🫧", "🏠", "🕒", "📍", "💰", "🧾", "✅", "❌"],
+  },
+];
+
+function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button
+          type="button"
           variant="ghost"
           size="icon"
-          className="size-7 text-muted-foreground hover:text-destructive"
-          aria-label="Delete message"
-          onClick={onDelete}
+          className="size-8 shrink-0 rounded-full text-muted-foreground"
+          aria-label="Insert emoji"
         >
-          <Trash2 className="size-3.5" />
+          <Smile className="size-4" />
         </Button>
-      ) : null}
-    </div>
+      </PopoverTrigger>
+      <PopoverContent align="start" side="top" className="w-72 p-3">
+        <div className="space-y-3">
+          {EMOJI_GROUPS.map((group) => (
+            <div key={group.label}>
+              <p className="eyebrow mb-1.5">{group.label}</p>
+              <div className="flex flex-wrap gap-1">
+                {group.emoji.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    className="flex size-8 items-center justify-center rounded-md text-lg transition-colors hover:bg-secondary"
+                    onClick={() => onPick(emoji)}
+                    aria-label={`Insert ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
