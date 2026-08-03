@@ -234,14 +234,15 @@ function SpecialistsPage() {
               {results.length} specialist{results.length === 1 ? "" : "s"} match your filters
             </p>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
               {results.map((specialist) => (
-                <SpecialistCard
+                <SpecialistTile
                   key={specialist.id}
                   specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
                 />
               ))}
             </div>
+
 
             {results.length === 0 && !hasAnySpecialists ? (
               <div className="mt-10 rounded-xl border border-dashed border-border p-12 text-center">
