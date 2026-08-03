@@ -18,7 +18,6 @@ import {
   Sparkles,
   ShieldBan,
   LayoutDashboard,
-  LifeBuoy,
   Loader2,
   DatabaseBackup,
   Server,
