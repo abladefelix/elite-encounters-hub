@@ -245,6 +245,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [clearOpen, setClearOpen] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<MessageRowType | null>(null);
+  // Message the composer is replying to (WhatsApp-style quoted reply).
+  const [replyTo, setReplyTo] = useState<MessageRowType | null>(null);
   const [deletingMessage, setDeletingMessage] = useState(false);
   // Messages hidden from this device only — used when deleting somebody else's
   // message, which we can never remove from their side.
