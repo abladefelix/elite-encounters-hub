@@ -1801,7 +1801,10 @@ function MessageBubble({
   }
 
   return (
-    <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
+    <div className={cn("group flex items-end gap-1", mine ? "justify-end" : "justify-start")}>
+      {mine ? (
+        <MessageActions mine onCopy={() => onCopy(message.body)} onDelete={onDelete} />
+      ) : null}
       <div className="max-w-[78%]">
         <div
           className={cn(
@@ -1830,9 +1833,50 @@ function MessageBubble({
           {message.redacted ? " · redacted" : ""}
         </p>
       </div>
+      {!mine ? <MessageActions onCopy={() => onCopy(message.body)} /> : null}
     </div>
   );
 }
+
+/**
+ * Hover/tap actions on a single message: copy the text, and — for your own
+ * messages — delete it for everyone in the thread.
+ */
+function MessageActions({
+  mine = false,
+  onCopy,
+  onDelete,
+}: {
+  mine?: boolean;
+  onCopy: () => void;
+  onDelete?: () => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-0.5 pb-5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7 text-muted-foreground"
+        aria-label="Copy message"
+        onClick={onCopy}
+      >
+        <Copy className="size-3.5" />
+      </Button>
+      {mine && onDelete ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 text-muted-foreground hover:text-destructive"
+          aria-label="Delete message"
+          onClick={onDelete}
+        >
+          <Trash2 className="size-3.5" />
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 
 /** Live escrow status for a booking or gift, as the member sees it. */
 function EscrowStrip({ entry }: { entry: EscrowEntry }) {
