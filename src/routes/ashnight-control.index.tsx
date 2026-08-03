@@ -199,7 +199,13 @@ function AdminOverview() {
                 </p>
               </div>
             </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/ashnight-control/bookings">
+                Open <ArrowUpRight className="size-3.5" />
+              </Link>
+            </Button>
           </div>
+
 
           <div className="mt-8 flex h-48 items-end gap-3 sm:gap-5">
             {statusCounts.map((point) => (
