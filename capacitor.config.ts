@@ -63,8 +63,10 @@ const config: CapacitorConfig = {
     // The source art is a square 2732x2732 canvas with a centred mark, so
     // CENTER_CROP / aspectFill covers every phone shape without letter-boxing.
     SplashScreen: {
-      launchAutoHide: true,
-      launchShowDuration: 1200,
+      // The web app calls SplashScreen.hide() itself (see src/components/native-shell.tsx),
+      // so the OS must not race it with an automatic timeout.
+      launchAutoHide: false,
+      launchShowDuration: 3000,
       backgroundColor: "#0b0d12",
       androidScaleType: "CENTER_CROP",
       showSpinner: false,
