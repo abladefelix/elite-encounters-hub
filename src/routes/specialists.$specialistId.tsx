@@ -11,13 +11,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { PortfolioGallery } from "@/components/portfolio-gallery";
 import { TierBadge } from "@/components/tier-badge";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,10 +27,12 @@ import {
   useRatings,
   useServices,
   useSpecialistServices,
+  useStoredMedia,
   type ProfileRow,
 } from "@/lib/queries";
 import { useRoomSettings } from "@/lib/room-settings";
 import { initials, money } from "@/lib/types";
+
 
 export const Route = createFileRoute("/specialists/$specialistId")({
   loader: async ({ params }) => {
