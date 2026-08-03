@@ -919,6 +919,30 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                       </Button>
                     ) : null}
                   </div>
+
+                  {threadList.length ? (
+                    <div className="relative mt-3">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Search conversations"
+                        className="h-9 rounded-full pl-9 pr-9 text-xs"
+                        aria-label="Search conversations"
+                      />
+                      {search ? (
+                        <button
+                          type="button"
+                          aria-label="Clear search"
+                          onClick={() => setSearch("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   {selectMode ? (
                     <div className="mt-3 flex items-center gap-2">
                       <Button
@@ -928,13 +952,15 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         className="text-xs"
                         onClick={() =>
                           setSelectedIds(
-                            selectedIds.length === threadList.length
+                            selectedIds.length === visibleThreads.length
                               ? []
-                              : threadList.map((thread) => thread.id),
+                              : visibleThreads.map((thread) => thread.id),
                           )
                         }
                       >
-                        {selectedIds.length === threadList.length ? "Clear all" : "Select all"}
+                        {selectedIds.length === visibleThreads.length && visibleThreads.length
+                          ? "Clear all"
+                          : "Select all"}
                       </Button>
                       <Button
                         type="button"
@@ -954,6 +980,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                     </div>
                   ) : null}
                 </div>
+
                 <ScrollArea className="min-h-0 flex-1">
                   {threadsQuery.isLoading ? (
                     <p className="p-4 text-xs text-muted-foreground">Loading threads…</p>
