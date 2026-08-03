@@ -529,6 +529,9 @@ export type Database = {
           label: string
           paid_at: string | null
           payout_amount: number
+          payout_request_note: string
+          payout_request_state: Database["public"]["Enums"]["payout_request_state"]
+          payout_requested_at: string | null
           paystack_reference: string | null
           platform_fee: number
           release_at: string | null
@@ -553,6 +556,9 @@ export type Database = {
           label?: string
           paid_at?: string | null
           payout_amount?: number
+          payout_request_note?: string
+          payout_request_state?: Database["public"]["Enums"]["payout_request_state"]
+          payout_requested_at?: string | null
           paystack_reference?: string | null
           platform_fee?: number
           release_at?: string | null
@@ -577,6 +583,9 @@ export type Database = {
           label?: string
           paid_at?: string | null
           payout_amount?: number
+          payout_request_note?: string
+          payout_request_state?: Database["public"]["Enums"]["payout_request_state"]
+          payout_requested_at?: string | null
           paystack_reference?: string | null
           platform_fee?: number
           release_at?: string | null
@@ -1676,6 +1685,7 @@ export type Database = {
       journal_status: "draft" | "posted" | "void"
       membership_status: "active" | "past_due" | "cancelled"
       message_kind: "text" | "system" | "booking" | "gift" | "location"
+      payout_request_state: "none" | "requested" | "approved" | "declined"
       period_status: "open" | "closed"
       report_state: "open" | "reviewing" | "actioned" | "dismissed"
       tier:
@@ -1848,6 +1858,7 @@ export const Constants = {
       journal_status: ["draft", "posted", "void"],
       membership_status: ["active", "past_due", "cancelled"],
       message_kind: ["text", "system", "booking", "gift", "location"],
+      payout_request_state: ["none", "requested", "approved", "declined"],
       period_status: ["open", "closed"],
       report_state: ["open", "reviewing", "actioned", "dismissed"],
       tier: [
