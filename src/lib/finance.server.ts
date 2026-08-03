@@ -100,7 +100,7 @@ export async function syncLedger(admin: Admin) {
         sourceId: row.id,
         date: paidAt,
         memo: `${row.kind} payment — ${row.label}`,
-        reference: row.paystack_reference ?? "",
+        reference: row.reference || row.paystack_reference || "",
         lines,
       });
     }
@@ -117,7 +117,7 @@ export async function syncLedger(admin: Admin) {
         sourceId: row.id,
         date: settledOn,
         memo: `Payout released — ${row.label}`,
-        reference: row.paystack_reference ?? "",
+        reference: row.reference || row.paystack_reference || "",
         lines: [
           { code: "2000", debit: payout, credit: 0, description: "Escrow cleared" },
           { code: "1000", debit: 0, credit: payout, description: "Specialist payout" },
@@ -139,7 +139,7 @@ export async function syncLedger(admin: Admin) {
         sourceId: row.id,
         date: settledOn,
         memo: `Refund — ${row.label}`,
-        reference: row.paystack_reference ?? "",
+        reference: row.reference || row.paystack_reference || "",
         lines,
       });
     }
