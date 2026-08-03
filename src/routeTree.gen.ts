@@ -24,6 +24,7 @@ import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as AshnightControlIndexRouteImport } from './routes/ashnight-control.index'
 import { Route as AshnightControlAdminsRouteImport } from './routes/ashnight-control.admins'
+import { Route as AshnightControlAppearanceRouteImport } from './routes/ashnight-control.appearance'
 import { Route as AshnightControlBackupsRouteImport } from './routes/ashnight-control.backups'
 import { Route as AshnightControlBookingsRouteImport } from './routes/ashnight-control.bookings'
 import { Route as AshnightControlBrandingRouteImport } from './routes/ashnight-control.branding'
@@ -130,6 +131,12 @@ const AshnightControlAdminsRoute = AshnightControlAdminsRouteImport.update({
   path: '/admins',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const AshnightControlAppearanceRoute =
+  AshnightControlAppearanceRouteImport.update({
+    id: '/appearance',
+    path: '/appearance',
+    getParentRoute: () => AshnightControlRoute,
+  } as any)
 const AshnightControlBackupsRoute = AshnightControlBackupsRouteImport.update({
   id: '/backups',
   path: '/backups',
@@ -303,6 +310,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof WalletRoute
   '/welcome': typeof WelcomeRoute
   '/ashnight-control/admins': typeof AshnightControlAdminsRoute
+  '/ashnight-control/appearance': typeof AshnightControlAppearanceRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/branding': typeof AshnightControlBrandingRoute
@@ -349,6 +357,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof WalletRoute
   '/welcome': typeof WelcomeRoute
   '/ashnight-control/admins': typeof AshnightControlAdminsRoute
+  '/ashnight-control/appearance': typeof AshnightControlAppearanceRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/branding': typeof AshnightControlBrandingRoute
@@ -397,6 +406,7 @@ export interface FileRoutesById {
   '/wallet': typeof WalletRoute
   '/welcome': typeof WelcomeRoute
   '/ashnight-control/admins': typeof AshnightControlAdminsRoute
+  '/ashnight-control/appearance': typeof AshnightControlAppearanceRoute
   '/ashnight-control/backups': typeof AshnightControlBackupsRoute
   '/ashnight-control/bookings': typeof AshnightControlBookingsRoute
   '/ashnight-control/branding': typeof AshnightControlBrandingRoute
@@ -446,6 +456,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/welcome'
     | '/ashnight-control/admins'
+    | '/ashnight-control/appearance'
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/branding'
@@ -492,6 +503,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/welcome'
     | '/ashnight-control/admins'
+    | '/ashnight-control/appearance'
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/branding'
@@ -539,6 +551,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/welcome'
     | '/ashnight-control/admins'
+    | '/ashnight-control/appearance'
     | '/ashnight-control/backups'
     | '/ashnight-control/bookings'
     | '/ashnight-control/branding'
@@ -700,6 +713,13 @@ declare module '@tanstack/react-router' {
       path: '/admins'
       fullPath: '/ashnight-control/admins'
       preLoaderRoute: typeof AshnightControlAdminsRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
+    '/ashnight-control/appearance': {
+      id: '/ashnight-control/appearance'
+      path: '/appearance'
+      fullPath: '/ashnight-control/appearance'
+      preLoaderRoute: typeof AshnightControlAppearanceRouteImport
       parentRoute: typeof AshnightControlRoute
     }
     '/ashnight-control/backups': {
@@ -917,6 +937,7 @@ declare module '@tanstack/react-router' {
 
 interface AshnightControlRouteChildren {
   AshnightControlAdminsRoute: typeof AshnightControlAdminsRoute
+  AshnightControlAppearanceRoute: typeof AshnightControlAppearanceRoute
   AshnightControlBackupsRoute: typeof AshnightControlBackupsRoute
   AshnightControlBookingsRoute: typeof AshnightControlBookingsRoute
   AshnightControlBrandingRoute: typeof AshnightControlBrandingRoute
@@ -945,6 +966,7 @@ interface AshnightControlRouteChildren {
 
 const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlAdminsRoute: AshnightControlAdminsRoute,
+  AshnightControlAppearanceRoute: AshnightControlAppearanceRoute,
   AshnightControlBackupsRoute: AshnightControlBackupsRoute,
   AshnightControlBookingsRoute: AshnightControlBookingsRoute,
   AshnightControlBrandingRoute: AshnightControlBrandingRoute,
