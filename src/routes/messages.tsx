@@ -1129,7 +1129,38 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
           </>
         ) : null}
       </div>
+
+      <AlertDialog
+        open={Boolean(removeThread)}
+        onOpenChange={(open) => {
+          if (!open && !removing) setRemoveThread(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              It disappears from your list only — the other member keeps their copy, and bookings,
+              payments and escrow records are untouched. If they message you again, the thread comes
+              back.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removing}>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={removing}
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmRemoveThread();
+              }}
+            >
+              {removing ? "Removing…" : "Remove chat"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
+
   );
 }
 
