@@ -18,6 +18,7 @@ const PUBLIC_SECTIONS = [
   "features",
   "rooms",
   "platform",
+  "appearance",
   // Non-secret third-party values only (Paystack public key, LiveKit URL,
   // Turnstile site key) — the projection above never includes vault secrets.
   "integrations",

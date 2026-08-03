@@ -33,7 +33,8 @@ export type SettingsSection =
   | "welcome"
   | "finance"
   | "emoji"
-  | "calls";
+  | "calls"
+  | "appearance";
 
 type SettingsBlob = Partial<Record<SettingsSection, unknown>>;
 

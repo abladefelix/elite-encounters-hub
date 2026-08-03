@@ -2,13 +2,17 @@ import { Link } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
 
 import { useStoredMedia } from "@/lib/queries";
+import { TILE_ASPECT_CLASS, useAppearance } from "@/lib/appearance";
+import { cn } from "@/lib/utils";
 import { initials, type Specialist } from "@/lib/types";
 
 /**
  * Compact image-first tile for the specialist directory. All the detail lives on
- * the profile page — the grid only shows the photo and the name.
+ * the profile page — the grid only shows the photo and the name. The face crop
+ * follows the appearance settings an admin picks in the control room.
  */
 export function SpecialistTile({ specialist }: { specialist: Specialist }) {
+  const { appearance } = useAppearance();
   const { data: media } = useStoredMedia(
     specialist.avatarPath ? [{ bucket: "avatars" as const, value: specialist.avatarPath }] : [],
   );
@@ -20,7 +24,13 @@ export function SpecialistTile({ specialist }: { specialist: Specialist }) {
       params={{ specialistId: specialist.id }}
       className="group relative block overflow-hidden rounded-lg border border-border/70 bg-surface-strong transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elevated"
     >
-      <div className="aspect-square w-full overflow-hidden">
+      <div
+        className={cn(
+          "w-full overflow-hidden",
+          TILE_ASPECT_CLASS[appearance.tileAspect] ?? TILE_ASPECT_CLASS.square,
+        )}
+      >
+
         {avatarUrl ? (
           <img
             src={avatarUrl}

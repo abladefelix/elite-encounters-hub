@@ -14,7 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SpecialistTile } from "@/components/specialist-tile";
+import { SpecialistRows } from "@/components/specialist-rows";
+import { sectionEnabled, useAppearance } from "@/lib/appearance";
 import { TierBadge } from "@/components/tier-badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -147,10 +148,11 @@ function SpotlightCard({ specialist }: { specialist: Specialist }) {
   );
 }
 
-export function SpecialistShowcase({ limit = 9 }: { limit?: number }) {
+export function SpecialistShowcase() {
   const { profile, isSpecialist, isAdmin } = useAuth();
   const { data: profiles, isLoading } = useSpecialists("all");
   const { data: serviceMap } = useShowcaseServiceMap();
+  const { appearance } = useAppearance();
 
   // Your room decides which rooms you can see, cumulatively.
   const allowedRooms = useMemo(
@@ -168,7 +170,9 @@ export function SpecialistShowcase({ limit = 9 }: { limit?: number }) {
   }, [profiles, serviceMap, allowedRooms]);
 
   const spotlight = reachable[0];
-  const rest = reachable.slice(1, limit + 1);
+  // Admins choose which blocks of this showcase members actually see.
+  const showSpotlight = sectionEnabled(appearance, "spotlight");
+  const showRows = sectionEnabled(appearance, "rows");
   const onlineNow = reachable.filter((s) => s.online).length;
 
   // Specialists don't browse the roster at all.
@@ -204,19 +208,11 @@ export function SpecialistShowcase({ limit = 9 }: { limit?: number }) {
           </div>
         </div>
       ) : spotlight ? (
-        <div className="mt-5 space-y-4">
-          <SpotlightCard specialist={spotlight} />
-
-          {rest.length ? (
-            <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 lg:grid-cols-6">
-              {rest.map((specialist) => (
-                <div key={specialist.id} className="w-28 shrink-0 snap-start sm:w-auto">
-                  <SpecialistTile specialist={specialist} />
-                </div>
-              ))}
-            </div>
-          ) : null}
+        <div className="mt-5 space-y-6">
+          {showSpotlight ? <SpotlightCard specialist={spotlight} /> : null}
+          {showRows ? <SpecialistRows roster={reachable} /> : null}
         </div>
+
       ) : (
         <Card className="mt-5 border-dashed border-border/70 bg-panel/60 p-5 text-sm text-muted-foreground">
           No specialists are open to your room yet. Join or upgrade a room below to widen who you
