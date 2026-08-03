@@ -479,7 +479,18 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     try {
       await post({ body: verdict.body, redacted: verdict.action === "mask" });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Message could not be sent");
+      // Never swallow the member's text: put it back in the composer so they
+      // can retry instead of retyping.
+      setDraft(body);
+      const raw = error instanceof Error ? error.message : "";
+      const offline =
+        /failed to fetch|network|load failed|typeerror/i.test(raw) ||
+        (typeof navigator !== "undefined" && navigator.onLine === false);
+      toast.error(offline ? "No connection — message not sent" : "Message could not be sent", {
+        description: offline
+          ? "Your message is still in the box. Check your connection and tap send again."
+          : raw || "Please try again in a moment.",
+      });
     }
   }
 
