@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/types";
 import { useCopy } from "@/lib/locale";
+import { isNativeApp, nativePlatform } from "@/lib/native";
 
 export type CallMode = "audio" | "video";
 
