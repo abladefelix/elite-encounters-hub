@@ -137,6 +137,7 @@ function AdminEscrow() {
       if (!term) return true;
       const haystack = [
         entry.label,
+        entry.reference,
         entry.paystack_reference ?? "",
         nameById.get(entry.specialist_id) ?? "",
         nameById.get(entry.client_id) ?? "",
