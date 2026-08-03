@@ -265,9 +265,12 @@ function ProfilePage() {
           hourly_rate: fields.hourly_rate,
           years_experience: fields.years_experience,
           available: fields.available,
-          extra: writeCallPreferences(profile?.extra, calls),
         },
       });
+      // Call prefs merge server-side so a stale `extra` snapshot can never wipe
+      // freshly uploaded gallery photos or the intro clip.
+      await saveMyCallPreferences({ data: calls });
+
       if (isSpecialist) {
         await setSpecialistServices.mutateAsync({ specialistId: user.id, serviceIds });
       }
