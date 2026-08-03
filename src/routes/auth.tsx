@@ -21,6 +21,9 @@ import { BrandMark } from "@/components/brand-mark";
 import { BUILTIN_FIELDS, appliesTo, useSignupConfig } from "@/lib/signup-fields";
 import { useBranding } from "@/lib/branding";
 import { sendWelcomeMessage } from "@/lib/welcome.functions";
+import { CaptchaField } from "@/components/captcha-field";
+import { useCaptcha } from "@/lib/captcha";
+import { verifyAuthCaptcha } from "@/lib/captcha.functions";
 
 /** Only same-origin relative paths are ever used as a post-login destination. */
 function safeNext(value: unknown) {
@@ -114,6 +117,10 @@ export function AuthPage({
   const [acceptMarketing, setAcceptMarketing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
+  const captcha = useCaptcha();
+  const [signInToken, setSignInToken] = useState("");
+  const [signUpToken, setSignUpToken] = useState("");
+  const [captchaRound, setCaptchaRound] = useState(0);
   const [authMode, setAuthMode] = useState<"signin" | "signup">(
     intendedRole === "specialist" ? "signup" : "signin",
   );
@@ -160,9 +167,15 @@ export function AuthPage({
       toast.error("Enter your username or email address.");
       return;
     }
+    if (captcha.enabled && !signInToken) {
+      toast.error("Complete the security check first.");
+      return;
+    }
     setBusy(true);
     try {
-      const tokens = await signInWithIdentifier({ data: { identifier: who, password } });
+      const tokens = await signInWithIdentifier({
+        data: { identifier: who, password, captchaToken: signInToken },
+      });
       const { error } = await supabase.auth.setSession({
         access_token: tokens.accessToken,
         refresh_token: tokens.refreshToken,
@@ -170,6 +183,10 @@ export function AuthPage({
       if (error) throw new Error(error.message);
       toast.success("Welcome back.");
     } catch (error) {
+      // A solved challenge is single-use, so a failed attempt always needs a
+      // fresh one before the member can try again.
+      setSignInToken("");
+      setCaptchaRound((round) => round + 1);
       toast.error(readableError(error, "We couldn't sign you in."));
     } finally {
       setBusy(false);
@@ -270,7 +287,24 @@ export function AuthPage({
       return;
     }
 
+    if (captcha.enabled && !signUpToken) {
+      toast.error("Complete the security check first.");
+      return;
+    }
+
     setBusy(true);
+
+    // Verified server-side before the account is created, so automated
+    // sign-ups cannot walk the form.
+    try {
+      await verifyAuthCaptcha({ data: { token: signUpToken, action: "signup" } });
+    } catch (error) {
+      setBusy(false);
+      setSignUpToken("");
+      setCaptchaRound((round) => round + 1);
+      toast.error(readableError(error, "The security check failed. Try again."));
+      return;
+    }
 
     // Ask the server first so a clash is reported in plain English instead of a
     // raw database constraint error.
@@ -511,7 +545,12 @@ export function AuthPage({
                     onChange={(event) => setPassword(event.target.value)}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={busy}>
+                <CaptchaField onToken={setSignInToken} resetKey={captchaRound} />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={busy || (captcha.enabled && !signInToken)}
+                >
                   {busy ? <Loader2 className="size-4 animate-spin" /> : "Sign in"}
                 </Button>
                 <button
@@ -662,7 +701,12 @@ export function AuthPage({
                   ) : null}
                 </div>
 
-                <Button type="submit" className="w-full" disabled={busy}>
+                <CaptchaField onToken={setSignUpToken} resetKey={captchaRound} />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={busy || (captcha.enabled && !signUpToken)}
+                >
                   {busy ? <Loader2 className="size-4 animate-spin" /> : "Create account"}
                 </Button>
               </form>
