@@ -439,6 +439,14 @@ export const requestEscrowPayout = createServerFn({ method: "POST" })
     if (entry.state === "pending") throw new Error("This payment hasn't been confirmed yet.");
     if (entry.state === "released") throw new Error("This payout has already been deposited.");
     if (entry.state === "refunded") throw new Error("This payment was refunded to the member.");
+    // Funds only become requestable once the client has approved the visit
+    // (or the auto-confirm window closed) — that is what moves it to clearing.
+    if (entry.state === "held") {
+      throw new Error("The member hasn't confirmed the visit yet — you can request the release once they do.");
+    }
+    if (entry.state === "disputed") {
+      throw new Error("An issue was raised on this job. Ashnight will resolve it before any payout.");
+    }
     if (entry.payout_request_state === "requested") {
       throw new Error("You've already requested this payout — Ashnight is reviewing it.");
     }
