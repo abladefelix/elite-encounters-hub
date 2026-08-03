@@ -1364,6 +1364,16 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                                 onConfirm={(id) => void confirmAndReview(id)}
                                 onDispute={(id, reason) => void raiseIssue(id, reason)}
                                 onCopy={(body) => void copyMessage(body)}
+                                onReply={(target) => {
+                                  const quoted = target.body.trim()
+                                    ? target.body.trim().slice(0, 160)
+                                    : (target.attachment_name ?? "attachment");
+                                  setDraft((current) =>
+                                    `> ${quoted}\n${current}`.slice(0, 1000),
+                                  );
+                                  draftRef.current?.focus();
+                                }}
+                                onReport={() => setReportOpen(true)}
                                 onDelete={() => setMessageToDelete(message)}
                               />
                             </div>
