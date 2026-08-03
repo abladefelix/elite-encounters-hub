@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2 } from "lucide-react";
+
+import { getCallToken } from "@/lib/livekit.functions";
+
+const LiveKitCall = lazy(() => import("@/components/chat/livekit-call"));
+
 import {
   Mic,
   MicOff,
