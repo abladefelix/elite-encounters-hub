@@ -16,6 +16,8 @@ import { ThemeProvider } from "../components/theme-provider";
 import { MobileTabBar } from "../components/mobile-tab-bar";
 import { IncomingCallWatcher } from "../components/chat/incoming-call-watcher";
 import { NativeShell } from "../components/native-shell";
+import { WordingOverrides } from "../lib/phrase-overrides";
+
 
 import { AuthProvider } from "../hooks/use-auth";
 import { RoomSettingsProvider } from "../lib/room-settings";
