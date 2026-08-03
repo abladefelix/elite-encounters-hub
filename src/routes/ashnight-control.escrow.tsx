@@ -715,8 +715,11 @@ function AdminEscrow() {
                             : ""}
                         </Badge>
                       ) : null}
+                      <span className="block font-mono text-[11px] text-foreground/80">
+                        {entry.reference}
+                      </span>
                       <span className="block text-xs text-muted-foreground">
-                        {entry.paystack_reference}
+                        {entry.paystack_reference ? `gateway ${entry.paystack_reference}` : ""}
                         {entry.admin_note ? ` · ${entry.admin_note}` : ""}
                         {entry.dispute_reason ? ` · ${entry.dispute_reason}` : ""}
                       </span>
