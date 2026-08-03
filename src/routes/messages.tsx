@@ -154,6 +154,23 @@ function timeLabel(iso: string) {
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
+/** Stable per-day key used to group the transcript into date sections. */
+function dayKey(iso: string) {
+  return new Date(iso).toDateString();
+}
+
+/** "Today" / "Yesterday" / a short date for the day separators. */
+function dayLabel(iso: string) {
+  const date = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (dayKey(iso) === today.toDateString()) return "Today";
+  if (dayKey(iso) === yesterday.toDateString()) return "Yesterday";
+  return date.toLocaleDateString("en-GH", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+
 function MessagesPage() {
   const { loading, user, profile } = useAuth();
 
