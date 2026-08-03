@@ -1996,7 +1996,7 @@ function MediaAttachment({ url, name }: { url: string; name: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="block w-full overflow-hidden rounded-lg"
+        className="block w-full overflow-hidden rounded-xl bg-surface-strong"
         aria-label={`Open ${name}`}
       >
         {isImage ? (
@@ -2004,10 +2004,10 @@ function MediaAttachment({ url, name }: { url: string; name: string }) {
             src={url}
             alt={name}
             loading="lazy"
-            className="max-h-64 w-full rounded-lg object-cover"
+            className="max-h-64 w-full rounded-xl object-cover"
           />
         ) : (
-          <video src={url} muted playsInline className="max-h-64 w-full rounded-lg object-cover" />
+          <video src={url} muted playsInline className="max-h-64 w-full rounded-xl object-cover" />
         )}
       </button>
 
