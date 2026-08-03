@@ -36,11 +36,16 @@ const config: CapacitorConfig = {
     ],
   },
   ios: {
-    contentInset: "always",
+    // "never" keeps the web view edge to edge; the app paints its own safe areas
+    // (see html.native-app rules in src/styles.css). "always" left OS-coloured
+    // bars at the top and bottom of the screen.
+    contentInset: "never",
+    backgroundColor: "#0b0d12",
     limitsNavigationsToAppBoundDomains: false,
   },
   android: {
     allowMixedContent: false,
+    backgroundColor: "#0b0d12",
   },
   plugins: {
     Keyboard: {
@@ -48,8 +53,12 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
     StatusBar: {
-      overlaysWebView: false,
+      // Draw under the status bar so there is no black strip above the app.
+      overlaysWebView: true,
+      style: "DARK",
+      backgroundColor: "#00000000",
     },
+
     // Icons/splash art is generated from assets/ by `npm run mobile:assets`.
     SplashScreen: {
       launchAutoHide: true,
