@@ -1927,79 +1927,142 @@ function MessageBubble({
 
   return (
     <div className={cn("group flex items-end gap-1", mine ? "justify-end" : "justify-start")}>
-      {mine ? (
-        <MessageActions mine onCopy={() => onCopy(message.body)} onDelete={onDelete} />
-      ) : null}
-      <div className="max-w-[85%]">
-        <div
-          className={cn(
-            "text-sm leading-relaxed shadow-sm",
-            message.attachment_url ? "rounded-2xl p-1.5" : "rounded-2xl px-4 py-2.5",
-            mine
-              ? "rounded-tr-none border border-primary/20 bg-primary text-primary-foreground"
-              : "rounded-tl-none border border-border/70 bg-card text-foreground",
-          )}
-        >
-          {message.attachment_url ? (
-            <MediaAttachment
-              url={message.attachment_url}
-              name={message.attachment_name ?? "Attachment"}
-            />
-          ) : (
-            message.body
-          )}
+      <MessageActions
+        mine={mine}
+        body={message.body}
+        onCopy={() => onCopy(message.body)}
+        {...(mine ? { onDelete } : {})}
+      >
+        <div className="max-w-[85%] select-none">
+          <div
+            className={cn(
+              "text-sm leading-relaxed shadow-sm",
+              message.attachment_url ? "rounded-2xl p-1.5" : "rounded-2xl px-4 py-2.5",
+              mine
+                ? "rounded-tr-none border border-primary/20 bg-primary text-primary-foreground"
+                : "rounded-tl-none border border-border/70 bg-card text-foreground",
+            )}
+          >
+            {message.attachment_url ? (
+              <MediaAttachment
+                url={message.attachment_url}
+                name={message.attachment_name ?? "Attachment"}
+              />
+            ) : (
+              message.body
+            )}
+          </div>
+          <p
+            className={cn(
+              "mt-1 flex items-center gap-1 text-[10px] text-muted-foreground",
+              mine ? "justify-end" : "justify-start",
+            )}
+          >
+            {timeLabel(message.created_at)}
+            {message.redacted ? " · redacted" : ""}
+          </p>
         </div>
-        <p
-          className={cn(
-            "mt-1 flex items-center gap-1 text-[10px] text-muted-foreground",
-            mine ? "justify-end" : "justify-start",
-          )}
-        >
-          {timeLabel(message.created_at)}
-          {message.redacted ? " · redacted" : ""}
-        </p>
-      </div>
-      {!mine ? <MessageActions onCopy={() => onCopy(message.body)} /> : null}
+      </MessageActions>
     </div>
   );
 }
 
 /**
- * Hover/tap actions on a single message: copy the text, and — for your own
- * messages — delete it for everyone in the thread.
+ * WhatsApp-style message actions: long-press on touch (or right-click on
+ * desktop) opens copy / delete for that single message. Nothing floats beside
+ * the bubble, so the transcript stays clean.
  */
 function MessageActions({
   mine = false,
+  body,
   onCopy,
   onDelete,
+  children,
 }: {
   mine?: boolean;
+  body: string;
   onCopy: () => void;
   onDelete?: () => void;
+  children: ReactNode;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-0.5 pb-5 opacity-70 transition-opacity focus-within:opacity-100 group-hover:opacity-100 sm:opacity-0">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7 text-muted-foreground"
-        aria-label="Copy message"
-        onClick={onCopy}
-      >
-        <Copy className="size-3.5" />
-      </Button>
-      {mine && onDelete ? (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuContent className="w-48">
+        <ContextMenuItem onSelect={onCopy}>
+          <Copy className="size-4" /> Copy text
+        </ContextMenuItem>
+        {mine && onDelete ? (
+          <ContextMenuItem
+            className="text-destructive focus:text-destructive"
+            onSelect={onDelete}
+          >
+            <Trash2 className="size-4" /> Delete message
+          </ContextMenuItem>
+        ) : null}
+        <ContextMenuSeparator />
+        <ContextMenuLabel className="truncate text-[11px] font-normal text-muted-foreground">
+          {body.slice(0, 40) || "Message"}
+        </ContextMenuLabel>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+
+/** Emoji tray — sending emoji never depends on the device keyboard. */
+const EMOJI_GROUPS: { label: string; emoji: string[] }[] = [
+  {
+    label: "Smileys",
+    emoji: ["😀", "😄", "😅", "😂", "🙂", "😉", "😍", "😘", "😎", "🤗", "🤔", "😐", "😴", "😢", "😭", "😡"],
+  },
+  {
+    label: "Gestures",
+    emoji: ["👍", "👎", "👏", "🙏", "🙌", "👌", "✌️", "🤝", "💪", "🫶", "👋", "🤙"],
+  },
+  {
+    label: "Life",
+    emoji: ["❤️", "🔥", "✨", "🎉", "💯", "⭐", "🧹", "🧼", "🫧", "🏠", "🕒", "📍", "💰", "🧾", "✅", "❌"],
+  },
+];
+
+function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button
+          type="button"
           variant="ghost"
           size="icon"
-          className="size-7 text-muted-foreground hover:text-destructive"
-          aria-label="Delete message"
-          onClick={onDelete}
+          className="size-8 shrink-0 rounded-full text-muted-foreground"
+          aria-label="Insert emoji"
         >
-          <Trash2 className="size-3.5" />
+          <Smile className="size-4" />
         </Button>
-      ) : null}
-    </div>
+      </PopoverTrigger>
+      <PopoverContent align="start" side="top" className="w-72 p-3">
+        <div className="space-y-3">
+          {EMOJI_GROUPS.map((group) => (
+            <div key={group.label}>
+              <p className="eyebrow mb-1.5">{group.label}</p>
+              <div className="flex flex-wrap gap-1">
+                {group.emoji.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    className="flex size-8 items-center justify-center rounded-md text-lg transition-colors hover:bg-secondary"
+                    onClick={() => onPick(emoji)}
+                    aria-label={`Insert ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
