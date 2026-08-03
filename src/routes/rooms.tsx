@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, LogIn, Users } from "lucide-react";
+import { Check, Lock, LogIn, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { SiteHeader } from "@/components/site-header";
 import { MemberDashboardStrip } from "@/components/member-dashboard-strip";
+import { SpecialistShowcase } from "@/components/specialist-showcase";
 import { SiteFooter } from "@/components/site-footer";
 import { TierBadge } from "@/components/tier-badge";
 import { useAuth } from "@/hooks/use-auth";
@@ -132,7 +133,10 @@ function comparisonRows(policy: RoomPolicyMap, roomIds: Tier[]): ComparisonRow[]
 
 function RoomsPage() {
   const { policy, profiles, roomIds, profileOf } = useRoomSettings();
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile: myProfile, loading: authLoading, isSpecialist, isAdmin } = useAuth();
+  // Specialists never buy or change their own room — admin places and promotes
+  // them from the control room based on ratings and completed work.
+  const canJoinRooms = !isSpecialist || isAdmin;
   const rows = comparisonRows(policy, roomIds);
   const rank = (tier: Tier) => roomIds.indexOf(tier);
 
@@ -140,6 +144,7 @@ function RoomsPage() {
   const { data: membership, isLoading: membershipLoading } = useMyMembership(user?.id);
   const membershipCheckout = useServerFn(startMembershipCheckout);
   const [joining, setJoining] = useState<Tier | null>(null);
+
 
   async function joinRoom(room: Tier) {
     setJoining(room);
@@ -176,14 +181,15 @@ function RoomsPage() {
       <div className="mx-auto w-full max-w-6xl px-5 py-12">
         <h1 className="font-display text-3xl font-semibold sm:text-4xl">Membership rooms</h1>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-          Clients join a room through a paid subscription; placement is still confirmed manually
+          Clients pay a membership to onboard into a room, and placement is still confirmed manually
           by our team after vetting. Each room unlocks a different set of features and privileges.
-          Specialists never pay to join — they're placed free of charge by experience, quality
-          record and the type of work they're cleared for, and earn from each booking.
+          Specialists sign up free and are vetted the same way — their room is set and upgraded by
+          our team based on ratings and completed work, never bought.
         </p>
 
         {user ? <MemberDashboardStrip /> : null}
 
+        {user && canJoinRooms ? <SpecialistShowcase /> : null}
 
         {!authLoading && !user ? (
           <Card className="mt-6 border-primary/25 bg-panel p-5">
@@ -200,7 +206,20 @@ function RoomsPage() {
           </Card>
         ) : null}
 
-        {user && !membershipLoading && activeMembership ? (
+        {user && !canJoinRooms ? (
+          <Card className="mt-6 border-border/70 bg-panel p-5">
+            <p className="flex items-center gap-2 font-display text-base font-semibold">
+              <Lock className="size-4" /> Your room is set by our team
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              You're in the {myProfile?.room ? tierLabel(myProfile.room) : "unplaced"} room. Specialists
+              never pay for a room and can't upgrade themselves — our team promotes you as your
+              rating and completed jobs grow. Keep your rating high and your profile complete.
+            </p>
+          </Card>
+        ) : null}
+
+        {user && canJoinRooms && !membershipLoading && activeMembership ? (
           <Card className="mt-6 border-border/70 bg-panel p-5">
             <p className="text-sm text-muted-foreground">You're currently in</p>
             <p className="mt-1 font-display text-lg font-semibold">
@@ -209,13 +228,14 @@ function RoomsPage() {
           </Card>
         ) : null}
 
-        {user && !membershipLoading && !activeMembership ? (
+        {user && canJoinRooms && !membershipLoading && !activeMembership ? (
           <Card className="mt-6 border-dashed border-border/70 bg-panel/60 p-5">
             <p className="text-sm text-muted-foreground">
               You don't have an active membership yet. Pick a room below to get started.
             </p>
           </Card>
         ) : null}
+
 
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
           {roomIds.map((tier) => {
@@ -304,11 +324,19 @@ function RoomsPage() {
                   <Button asChild variant={tier === "premium" ? "brass" : "soft"} className="mt-7 w-full">
                     <Link to="/auth">Sign in to join</Link>
                   </Button>
+                ) : !canJoinRooms ? (
+                  <p className="mt-7 flex items-center gap-2 rounded-md border border-border/60 bg-background/50 px-3 py-2 text-xs text-muted-foreground">
+                    <Lock className="size-3.5 shrink-0" />
+                    {myProfile?.room === tier
+                      ? "Your current room — set by our team."
+                      : "Admin places specialists in rooms by rating."}
+                  </p>
                 ) : isCurrentRoom ? (
                   <Button variant="soft" className="mt-7 w-full" disabled>
                     Your current room
                   </Button>
                 ) : (
+
                   <div className="mt-7 space-y-2">
                     <Button
                       variant={tier === "premium" ? "brass" : "soft"}
