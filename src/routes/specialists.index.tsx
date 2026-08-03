@@ -269,16 +269,31 @@ function SpecialistsPage() {
           <>
             <p className="mt-6 text-xs text-muted-foreground">
               {results.length} specialist{results.length === 1 ? "" : "s"} match your filters
+              {pageCount > 1 ? ` · page ${Math.min(page, pageCount)} of ${pageCount}` : ""}
             </p>
 
             <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-              {results.map((specialist) => (
+              {visible.map((specialist) => (
                 <SpecialistTile
                   key={specialist.id}
                   specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
                 />
               ))}
             </div>
+
+            <RosterPagination
+              page={Math.min(page, pageCount)}
+              pageCount={pageCount}
+              total={results.length}
+              from={results.length === 0 ? 0 : pageStart + 1}
+              to={pageStart + visible.length}
+              onPageChange={(next) => {
+                setPage(next);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
+
+
 
 
             {results.length === 0 && !hasAnySpecialists ? (
