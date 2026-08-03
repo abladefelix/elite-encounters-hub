@@ -24,7 +24,9 @@ import {
   useDocumentTemplates,
   type DocumentTemplate,
 } from "@/lib/document-templates";
+import { downloadDocumentPdf } from "@/lib/document-pdf";
 import { money } from "@/lib/types";
+
 import { formatStamp } from "@/lib/utils";
 
 import {
@@ -293,9 +295,27 @@ export function DocumentCard({
   const printId = `doc-${row.id}-${template.id}`;
   const heading = row.kind === "invoice" ? template.invoiceHeading : template.receiptHeading;
 
+  async function savePdf() {
+    try {
+      await downloadDocumentPdf({
+        row,
+        template,
+        lines,
+        heading,
+        stamp: (value) => (value ? formatStamp(value) : "—"),
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not build the PDF.");
+    }
+  }
+
+  /** Print via a hidden frame; if the browser refuses, hand back a PDF file. */
   function print() {
     const node = document.getElementById(printId);
-    if (!node) return;
+    if (!node) {
+      void savePdf();
+      return;
+    }
 
     let iframe = document.getElementById(
       "ashnight-print-frame",
@@ -316,8 +336,8 @@ export function DocumentCard({
 
     const win = iframe.contentWindow;
     const doc = win?.document;
-    if (!doc || !win) {
-      toast.error("Unable to open the print preview.");
+    if (!doc || !win || typeof win.print !== "function") {
+      void savePdf();
       return;
     }
 
@@ -338,13 +358,18 @@ export function DocumentCard({
       </style></head><body>${node.innerHTML}</body></html>`,
     );
     doc.close();
-    win.focus();
 
     // Give the browser a moment to render the frame before printing.
     setTimeout(() => {
-      win.print();
+      try {
+        win.focus();
+        win.print();
+      } catch {
+        void savePdf();
+      }
     }, 250);
   }
+
 
 
   return (
@@ -433,7 +458,7 @@ export function DocumentCard({
           <Button size="sm" variant="outline" onClick={print}>
             <Printer className="size-4" /> Print
           </Button>
-          <Button size="sm" variant="ghost" onClick={print}>
+          <Button size="sm" variant="ghost" onClick={() => void savePdf()}>
             <Download className="size-4" /> Save as PDF
           </Button>
         </div>
