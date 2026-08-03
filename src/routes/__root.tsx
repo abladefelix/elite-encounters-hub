@@ -16,6 +16,8 @@ import { ThemeProvider } from "../components/theme-provider";
 import { MobileTabBar } from "../components/mobile-tab-bar";
 import { IncomingCallWatcher } from "../components/chat/incoming-call-watcher";
 import { NativeShell } from "../components/native-shell";
+import { WordingOverrides } from "../lib/phrase-overrides";
+
 
 import { AuthProvider } from "../hooks/use-auth";
 import { RoomSettingsProvider } from "../lib/room-settings";
@@ -154,7 +156,10 @@ function RootComponent() {
                 <IncomingCallWatcher />
                 {/* Native-only shell behaviour (status bar, keyboard, back button). No-op on web. */}
                 <NativeShell />
+                {/* Applies the admin's site-wide wording rules to every rendered string. */}
+                <WordingOverrides />
                 <Toaster position="top-center" />
+
               </EscrowProvider>
             </ServiceCatalogProvider>
           </RoomSettingsProvider>

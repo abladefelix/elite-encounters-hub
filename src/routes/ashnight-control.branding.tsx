@@ -1,6 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Languages, Loader2, MessageSquareHeart, Palette, RotateCcw, Save, Search } from "lucide-react";
+import {
+  Languages,
+  Loader2,
+  MessageSquareHeart,
+  Palette,
+  Plus,
+  Replace,
+  RotateCcw,
+  Save,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { BrandMark } from "@/components/brand-mark";
@@ -34,6 +45,12 @@ import {
   useWelcomeSettings,
   type WelcomeSettings,
 } from "@/lib/welcome-message";
+import {
+  clearPhraseHits,
+  newPhraseRule,
+  readPhraseHits,
+  type PhraseRule,
+} from "@/lib/phrase-overrides";
 
 export const Route = createFileRoute("/ashnight-control/branding")({
   head: () => ({
@@ -74,6 +91,7 @@ function AdminBranding() {
       <BrandingCard />
       <WelcomeCard />
       <LanguageCard />
+      <SiteWordingCard />
     </div>
   );
 }
@@ -368,7 +386,7 @@ function LanguageCard() {
   }
 
   return (
-    <Card className="border-border/70 bg-panel p-5 sm:p-6">
+    <Card className="border-border/70 bg-panel p-5 sm:p-6" data-no-reword>
       <SectionHead
         icon={<Languages className="size-4" />}
         title="Language & wording"
@@ -479,7 +497,204 @@ function LanguageCard() {
   );
 }
 
+
+/* ------------------------------------------------------- site-wide wording */
+
+/**
+ * Free-form find/replace across the whole site and app.
+ *
+ * The keyed dictionary above covers the platform's core nouns; this covers
+ * everything else — sentences, buttons, notices, headings — by rewriting
+ * rendered text wherever it appears. The card is marked `data-no-reword` so the
+ * rules never rewrite the editor showing them.
+ */
+function SiteWordingCard() {
+  const { locale, save, loading } = useLocaleSettings();
+  const [rules, setRules] = useState<PhraseRule[]>(locale.phrases ?? []);
+  const [busy, setBusy] = useState(false);
+  const [hits, setHits] = useState(() => readPhraseHits());
+
+  useEffect(() => setRules(locale.phrases ?? []), [locale.phrases]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setHits(readPhraseHits()), 4000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  function update(id: string, patch: Partial<PhraseRule>) {
+    setRules((prev) => prev.map((rule) => (rule.id === id ? { ...rule, ...patch } : rule)));
+  }
+
+  async function commit(next: PhraseRule[]) {
+    const cleaned = next.filter((rule) => rule.find.trim().length > 0);
+    setBusy(true);
+    try {
+      await save({ ...locale, phrases: cleaned });
+      toast.success(
+        cleaned.length === 0
+          ? "Site-wide wording rules cleared"
+          : `${cleaned.length} wording rule${cleaned.length === 1 ? "" : "s"} live site-wide`,
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the wording rules");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="border-border/70 bg-panel p-5 sm:p-6" data-no-reword>
+      <SectionHead
+        icon={<Replace className="size-4" />}
+        title="Site-wide find &amp; replace"
+        blurb="Change any wording anywhere — inside sentences, buttons, notices and emails — across the website and the mobile app. Applies instantly to every member, no deploy."
+      />
+
+      {loading ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="mt-5 space-y-3">
+            {rules.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border/70 p-4 text-xs text-muted-foreground">
+                No site-wide rules yet. Add one to rename anything the platform says — for example
+                replace “Specialist” with “Cleaner”, or “Room” with “Tier”, everywhere at once.
+              </p>
+            ) : null}
+
+            {rules.map((rule) => {
+              const seen = Object.entries(hits[rule.id] ?? {}).sort((a, b) => b[1] - a[1]);
+              return (
+                <div key={rule.id} className="rounded-lg border border-border/70 bg-background/40 p-3">
+                  <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                    <Field
+                      label="Find this wording"
+                      value={rule.find}
+                      placeholder="Specialist"
+                      onChange={(v) => update(rule.id, { find: v })}
+                    />
+                    <Field
+                      label="Replace with"
+                      value={rule.replace}
+                      placeholder="Cleaner"
+                      onChange={(v) => update(rule.id, { replace: v })}
+                    />
+                    <div className="flex items-end">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Remove this rule"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setRules((prev) => prev.filter((r) => r.id !== rule.id))}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-4">
+                    <ToggleLine
+                      label="Live"
+                      hint="Turn off to pause without deleting"
+                      checked={rule.enabled}
+                      onChange={(v) => update(rule.id, { enabled: v })}
+                    />
+                    <ToggleLine
+                      label="Whole words only"
+                      hint="“cat” won’t change “category”"
+                      checked={rule.wholeWord}
+                      onChange={(v) => update(rule.id, { wholeWord: v })}
+                    />
+                    <ToggleLine
+                      label="Match capitals exactly"
+                      hint="Off also handles Title Case and UPPERCASE"
+                      checked={rule.matchCase}
+                      onChange={(v) => update(rule.id, { matchCase: v })}
+                    />
+                  </div>
+
+                  {seen.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-1">
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Seen on
+                      </span>
+                      {seen.slice(0, 8).map(([path, count]) => (
+                        <span
+                          key={path}
+                          className="rounded-full border border-border/70 bg-secondary/60 px-2 py-0.5 text-[10px] text-muted-foreground"
+                        >
+                          {path} · {count}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setRules((prev) => [...prev, newPhraseRule()])}
+            >
+              <Plus className="mr-2 size-3.5" /> Add wording rule
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                clearPhraseHits();
+                setHits({});
+                toast.success("Usage tracking reset");
+              }}
+            >
+              <RotateCcw className="mr-2 size-3.5" /> Reset usage tracking
+            </Button>
+          </div>
+
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            “Seen on” builds up as pages are visited, so you can confirm a rule only changes the
+            screens you expect. Room tier names stay under Rooms &amp; pricing.
+          </p>
+
+          <Actions
+            busy={busy}
+            onSave={() => void commit(rules)}
+            onReset={() => void commit([])}
+            resetLabel="Clear all rules"
+          />
+        </>
+      )}
+    </Card>
+  );
+}
+
+function ToggleLine({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2">
+      <Switch checked={checked} onCheckedChange={onChange} />
+      <span className="min-w-0">
+        <span className="block text-xs font-medium">{label}</span>
+        <span className="block text-[10px] text-muted-foreground">{hint}</span>
+      </span>
+    </label>
+  );
+}
+
 /* ------------------------------------------------------------------- pieces */
+
 
 function SectionHead({
   icon,
