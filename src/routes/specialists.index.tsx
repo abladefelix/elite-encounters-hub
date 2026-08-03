@@ -284,6 +284,7 @@ function SpecialistsPage() {
                     setQuery("");
                     setRoom("all");
                     setService("all");
+                    setAvailability("all");
                   }}
                 >
                   Reset filters
