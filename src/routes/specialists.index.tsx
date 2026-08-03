@@ -154,6 +154,11 @@ function SpecialistsPage() {
     setPage((current) => Math.min(current, pageCount));
   }, [pageCount]);
 
+  const mapped = useMemo(
+    () => results.map((specialist) => toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])),
+    [results, serviceMap],
+  );
+
   const filtersActive =
     query.trim() !== "" || room !== "all" || service !== "all" || availability !== "all";
 
