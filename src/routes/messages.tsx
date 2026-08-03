@@ -161,6 +161,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const photoRef = useRef<HTMLInputElement>(null);
 
   const { canCall, can, platform, giftsFor, moderation } = useRoomSettings();
+  const { t } = useCopy();
+
   const { flags } = useFeatureFlags();
   const threadsQuery = useThreads(userId);
   const threadList = useMemo(() => threadsQuery.data ?? [], [threadsQuery.data]);
