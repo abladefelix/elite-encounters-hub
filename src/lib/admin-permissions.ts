@@ -44,6 +44,7 @@ export const ADMIN_AREAS: AdminArea[] = [
   { key: "signup", label: "Sign-up form", group: "Platform" },
   { key: "features", label: "Features", group: "Platform" },
   { key: "branding", label: "Brand & wording", group: "Platform" },
+  { key: "appearance", label: "Appearance & layout", group: "Platform" },
   { key: "settings", label: "Keys & security", group: "Platform" },
   { key: "email", label: "Email & domain", group: "Platform" },
   { key: "backups", label: "Backups", group: "Platform" },

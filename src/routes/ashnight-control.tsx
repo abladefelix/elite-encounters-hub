@@ -94,6 +94,7 @@ const NAV: {
   { to: "/ashnight-control/signup", label: "Sign-up form", icon: ClipboardList, area: "signup" },
   { to: "/ashnight-control/features", label: "Features", icon: ToggleLeft, area: "features" },
   { to: "/ashnight-control/branding", label: "Brand & wording", icon: Palette, area: "branding" },
+  { to: "/ashnight-control/appearance", label: "Appearance & layout", icon: Palette, area: "appearance" },
   { to: "/ashnight-control/settings", label: "Keys & security", icon: KeyRound, area: "settings" },
   { to: "/ashnight-control/email", label: "Email & domain", icon: Mail, area: "email" },
   { to: "/ashnight-control/backups", label: "Backups", icon: DatabaseBackup, area: "backups" },
