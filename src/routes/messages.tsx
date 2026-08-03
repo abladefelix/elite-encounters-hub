@@ -21,6 +21,7 @@ import {
   ShieldAlert,
   Send,
   ShieldCheck,
+  Smile,
   Star,
   Trash2,
   User as UserIcon,
