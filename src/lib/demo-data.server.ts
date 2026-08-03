@@ -39,6 +39,26 @@ const AVATARS = [
   "/__l5e/assets-v1/363f4e6b-6dbd-4d93-9988-32f1177068d9/demo-avatar-8.jpg",
 ];
 
+/** Finished-work photos used for specialist galleries. */
+const WORK_PHOTOS = [
+  "/__l5e/assets-v1/c7d743ba-febd-4c1b-b8dc-6ced7a4c695c/demo-work-1.jpg",
+  "/__l5e/assets-v1/5ad6d33a-b7e0-40c0-917d-c755943b63de/demo-work-2.jpg",
+  "/__l5e/assets-v1/c5e6659b-9200-4012-8580-b78fff689d37/demo-work-3.jpg",
+  "/__l5e/assets-v1/2a4cd6af-e01c-4c6c-9632-4dd2aa3907c8/demo-work-4.jpg",
+];
+
+/** Sample intro clip, so every demo specialist has a playable video. */
+const INTRO_VIDEO = "/__l5e/assets-v1/754962e7-7959-4f72-9a73-f680e2fb12cd/demo-intro-clip.mp4";
+
+/** Rotates the gallery so each demo specialist shows a different first photo. */
+function galleryFor(index: number, size = 4) {
+  return Array.from(
+    { length: Math.min(size, WORK_PHOTOS.length) },
+    (_, offset) => WORK_PHOTOS[(index + offset) % WORK_PHOTOS.length]!,
+  );
+}
+
+
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
