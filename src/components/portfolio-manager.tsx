@@ -14,7 +14,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MAX_PHOTO_MB, MAX_PORTFOLIO_PHOTOS, MAX_VIDEO_MB } from "@/components/portfolio-picker";
+import {
+  MAX_PHOTO_MB,
+  MAX_PORTFOLIO_PHOTOS,
+  MAX_VIDEO_MB,
+  MAX_VIDEO_SECONDS,
+} from "@/components/portfolio-picker";
+import { validateMediaFile } from "@/lib/media-validation";
 import { uploadPortfolioFile } from "@/lib/queries";
 import { getMyPortfolio, saveMyPortfolio } from "@/lib/specialist-media.functions";
 
@@ -52,20 +58,23 @@ export function PortfolioManager({ userId }: { userId: string }) {
   async function addPhotos(files: FileList | null) {
     if (!files?.length) return;
     const incoming = Array.from(files);
-    const tooBig = incoming.find((file) => file.size > MAX_PHOTO_MB * 1024 * 1024);
-    if (tooBig) {
-      toast.error(`${tooBig.name} is over ${MAX_PHOTO_MB}MB.`);
-      return;
-    }
     const room = MAX_PORTFOLIO_PHOTOS - photos.length;
     if (room <= 0) {
       toast.error(`You can show up to ${MAX_PORTFOLIO_PHOTOS} photos.`);
       return;
     }
+    const chosen = incoming.slice(0, room);
+    for (const file of chosen) {
+      const problem = await validateMediaFile(file, { kind: "image", maxMB: MAX_PHOTO_MB });
+      if (problem) {
+        toast.error(problem);
+        return;
+      }
+    }
     setBusy(true);
     try {
       const paths: string[] = [];
-      for (const file of incoming.slice(0, room)) {
+      for (const file of chosen) {
         paths.push(await uploadPortfolioFile(userId, file, "photo"));
       }
       await commit([...photos.map((photo) => photo.path), ...paths], video?.path ?? null);
@@ -78,8 +87,13 @@ export function PortfolioManager({ userId }: { userId: string }) {
 
   async function replaceVideo(file: File | undefined) {
     if (!file) return;
-    if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
-      toast.error(`The video is over ${MAX_VIDEO_MB}MB. Trim it and try again.`);
+    const problem = await validateMediaFile(file, {
+      kind: "video",
+      maxMB: MAX_VIDEO_MB,
+      maxSeconds: MAX_VIDEO_SECONDS,
+    });
+    if (problem) {
+      toast.error(problem);
       return;
     }
     setBusy(true);

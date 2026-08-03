@@ -386,13 +386,22 @@ export function useThreads(userId: string | undefined) {
   const query = useQuery({
     queryKey: ["threads", userId],
     enabled: Boolean(userId),
-    queryFn: async () =>
-      unwrap<ThreadRow[]>(
+    queryFn: async () => {
+      const rows = unwrap<ThreadRow[]>(
         await supabase
           .from("threads")
           .select("*")
           .order("last_message_at", { ascending: false }),
-      ),
+      );
+      // A member can remove a conversation from their own list. It stays
+      // removed until the other side sends something newer.
+      return rows.filter((thread) => {
+        const hiddenAt =
+          thread.client_id === userId ? thread.client_hidden_at : thread.specialist_hidden_at;
+        if (!hiddenAt) return true;
+        return new Date(thread.last_message_at).getTime() > new Date(hiddenAt).getTime();
+      });
+    },
   });
 
   useEffect(() => {
@@ -485,6 +494,19 @@ export async function openThread(clientId: string, specialistId: string, room: T
     .single();
   if (error) throw new Error(error.message);
   return data;
+}
+
+/**
+ * Removes a conversation from the caller's own list. The thread and its history
+ * stay intact for the other member, and it returns to the list if they send a
+ * newer message.
+ */
+export async function hideThread(threadId: string, side: "client" | "specialist") {
+  const now = new Date().toISOString();
+  const patch: Tables["threads"]["Update"] =
+    side === "client" ? { client_hidden_at: now } : { specialist_hidden_at: now };
+  const { error } = await supabase.from("threads").update(patch).eq("id", threadId);
+  if (error) throw new Error(error.message);
 }
 
 export async function markThreadRead(threadId: string, side: "client" | "specialist") {

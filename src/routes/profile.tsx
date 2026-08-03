@@ -30,6 +30,7 @@ import {
 } from "@/lib/queries";
 
 import { useServiceCatalog } from "@/lib/service-catalog";
+import { validateMediaFile } from "@/lib/media-validation";
 import { initials, money } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -195,12 +196,13 @@ function ProfilePage() {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file || !user) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Choose an image file");
-      return;
-    }
-    if (file.size > MAX_AVATAR_BYTES) {
-      toast.error("Image is too large — pick one under 1.5MB");
+    const problem = await validateMediaFile(file, {
+      kind: "image",
+      maxMB: MAX_AVATAR_BYTES / (1024 * 1024),
+      minPixels: 128,
+    });
+    if (problem) {
+      toast.error(problem);
       return;
     }
     setUploading(true);

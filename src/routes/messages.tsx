@@ -18,6 +18,7 @@ import {
   Send,
   ShieldCheck,
   Star,
+  Trash2,
   Video,
 } from "lucide-react";
 
@@ -57,6 +58,7 @@ import {
 } from "@/lib/payments.functions";
 import { useAuth } from "@/hooks/use-auth";
 import {
+  hideThread,
   markThreadRead,
   uploadAttachment,
   useBookings,
@@ -77,6 +79,7 @@ import {
 import { useRoomSettings } from "@/lib/room-settings";
 import { useCopy } from "@/lib/locale";
 
+import { validateMediaFile } from "@/lib/media-validation";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { moderateMessage } from "@/lib/moderation";
 import {
@@ -330,6 +333,16 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     const allowed = kindLabel === "photo" ? photosAllowed : filesAllowed;
     if (!allowed) {
       toast(`${kindLabel === "photo" ? "Photo" : "File"} sharing isn't included in the ${tierLabel(room)} room`);
+      return;
+    }
+    const problem = await validateMediaFile(
+      file,
+      kindLabel === "photo"
+        ? { kind: "image", maxMB: 10 }
+        : { kind: "document", maxMB: 20 },
+    );
+    if (problem) {
+      toast.error(problem);
       return;
     }
     try {
@@ -646,16 +659,20 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           : item.specialist_last_read_at,
                       ).getTime();
                     return (
-                      <button
+                      <div
                         key={item.id}
+                        className={cn(
+                          "group relative flex w-full items-start gap-3 border-b border-border/50 transition-colors hover:bg-secondary/60",
+                          item.id === activeThread?.id && "bg-secondary",
+                        )}
+                      >
+                      <button
+                        type="button"
                         onClick={() => {
                           setActiveThreadId(item.id);
                           setShowListOnMobile(false);
                         }}
-                        className={cn(
-                          "flex w-full gap-3 border-b border-border/50 p-4 text-left transition-colors hover:bg-secondary/60",
-                          item.id === activeThread?.id && "bg-secondary",
-                        )}
+                        className="flex min-w-0 flex-1 gap-3 p-4 text-left"
                       >
                         <Avatar className="size-10 border border-border">
                           {other?.avatar_url ? <AvatarImage src={other.avatar_url} alt={name} /> : null}
@@ -680,6 +697,17 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           </Badge>
                         ) : null}
                       </button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Remove conversation with ${name}`}
+                          className="mr-2 mt-3 size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => setRemoveThread(item)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     );
                   })}
                   {!threadsQuery.isLoading && !threadList.length ? (
