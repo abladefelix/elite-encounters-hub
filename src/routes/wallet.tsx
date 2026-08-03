@@ -297,7 +297,7 @@ function WalletBody({ userId, isSpecialist }: { userId: string; isSpecialist: bo
             </Card>
             <p className="mt-3 text-xs text-muted-foreground">
               Need a printable copy?{" "}
-              <Link to="/support" className="text-primary underline-offset-4 hover:underline">
+              <Link to="/support" search={{ tab: "complaints" }} className="text-primary underline-offset-4 hover:underline">
                 Open your inbox &amp; documents
               </Link>
               .

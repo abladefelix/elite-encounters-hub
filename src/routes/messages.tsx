@@ -18,10 +18,23 @@ import {
   Send,
   ShieldCheck,
   Star,
+  Trash2,
   Video,
 } from "lucide-react";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +70,7 @@ import {
 } from "@/lib/payments.functions";
 import { useAuth } from "@/hooks/use-auth";
 import {
+  hideThread,
   markThreadRead,
   uploadAttachment,
   useBookings,
@@ -77,6 +91,7 @@ import {
 import { useRoomSettings } from "@/lib/room-settings";
 import { useCopy } from "@/lib/locale";
 
+import { validateMediaFile } from "@/lib/media-validation";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { moderateMessage } from "@/lib/moderation";
 import {
@@ -158,6 +173,9 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [reportOpen, setReportOpen] = useState(false);
   const [ratingOpen, setRatingOpen] = useState(false);
   const [showListOnMobile, setShowListOnMobile] = useState(true);
+  const [removeThread, setRemoveThread] = useState<ThreadRow | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const queryClient = useQueryClient();
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
@@ -330,6 +348,16 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     const allowed = kindLabel === "photo" ? photosAllowed : filesAllowed;
     if (!allowed) {
       toast(`${kindLabel === "photo" ? "Photo" : "File"} sharing isn't included in the ${tierLabel(room)} room`);
+      return;
+    }
+    const problem = await validateMediaFile(
+      file,
+      kindLabel === "photo"
+        ? { kind: "image", maxMB: 10 }
+        : { kind: "document", maxMB: 20 },
+    );
+    if (problem) {
+      toast.error(problem);
       return;
     }
     try {
@@ -589,6 +617,23 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     );
   }
 
+  /** Clears a conversation from this member's own list only. */
+  async function confirmRemoveThread() {
+    if (!removeThread) return;
+    setRemoving(true);
+    try {
+      await hideThread(removeThread.id, removeThread.client_id === userId ? "client" : "specialist");
+      if (activeThreadId === removeThread.id) setActiveThreadId("");
+      await queryClient.invalidateQueries({ queryKey: ["threads"] });
+      toast.success("Conversation removed from your list");
+      setRemoveThread(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't remove that conversation");
+    } finally {
+      setRemoving(false);
+    }
+  }
+
   function openGift() {
     if (!escrow.tipsEnabled) {
       toast("Cash gifts are switched off by Ashnight right now.");
@@ -646,16 +691,20 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           : item.specialist_last_read_at,
                       ).getTime();
                     return (
-                      <button
+                      <div
                         key={item.id}
+                        className={cn(
+                          "group relative flex w-full items-start gap-3 border-b border-border/50 transition-colors hover:bg-secondary/60",
+                          item.id === activeThread?.id && "bg-secondary",
+                        )}
+                      >
+                      <button
+                        type="button"
                         onClick={() => {
                           setActiveThreadId(item.id);
                           setShowListOnMobile(false);
                         }}
-                        className={cn(
-                          "flex w-full gap-3 border-b border-border/50 p-4 text-left transition-colors hover:bg-secondary/60",
-                          item.id === activeThread?.id && "bg-secondary",
-                        )}
+                        className="flex min-w-0 flex-1 gap-3 p-4 text-left"
                       >
                         <Avatar className="size-10 border border-border">
                           {other?.avatar_url ? <AvatarImage src={other.avatar_url} alt={name} /> : null}
@@ -680,6 +729,17 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           </Badge>
                         ) : null}
                       </button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Remove conversation with ${name}`}
+                          className="mr-2 mt-3 size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => setRemoveThread(item)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     );
                   })}
                   {!threadsQuery.isLoading && !threadList.length ? (
@@ -1069,7 +1129,38 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
           </>
         ) : null}
       </div>
+
+      <AlertDialog
+        open={Boolean(removeThread)}
+        onOpenChange={(open) => {
+          if (!open && !removing) setRemoveThread(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              It disappears from your list only — the other member keeps their copy, and bookings,
+              payments and escrow records are untouched. If they message you again, the thread comes
+              back.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removing}>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={removing}
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmRemoveThread();
+              }}
+            >
+              {removing ? "Removing…" : "Remove chat"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
+
   );
 }
 

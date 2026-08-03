@@ -10,6 +10,8 @@ import { useRef, useState } from "react";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { validateMediaFile } from "@/lib/media-validation";
+
 import { Button } from "@/components/ui/button";
 
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
@@ -48,13 +50,22 @@ export function LogoPicker({
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Pick an image file — PNG, JPG, WebP or SVG.");
-      return;
-    }
-    if (file.size > MAX_SOURCE_BYTES) {
-      toast.error("That image is larger than 8MB. Pick a smaller file.");
-      return;
+    const isSvg = file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg");
+    if (isSvg) {
+      if (file.size > MAX_SOURCE_BYTES) {
+        toast.error("That image is larger than 8MB. Pick a smaller file.");
+        return;
+      }
+    } else {
+      const problem = await validateMediaFile(file, {
+        kind: "image",
+        maxMB: MAX_SOURCE_BYTES / (1024 * 1024),
+        minPixels: 64,
+      });
+      if (problem) {
+        toast.error(problem);
+        return;
+      }
     }
     setBusy(true);
     try {

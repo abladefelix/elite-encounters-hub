@@ -10,10 +10,12 @@ import { useEffect, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { validateMediaFile } from "@/lib/media-validation";
 
 export const MAX_PORTFOLIO_PHOTOS = 6;
 export const MAX_PHOTO_MB = 8;
 export const MAX_VIDEO_MB = 60;
+export const MAX_VIDEO_SECONDS = 180;
 
 interface Props {
   photos: File[];
@@ -41,26 +43,33 @@ export function PortfolioPicker({
     [previews, videoPreview],
   );
 
-  function addPhotos(files: FileList | null) {
+  async function addPhotos(files: FileList | null) {
     if (!files?.length) return;
     const incoming = Array.from(files);
-    const tooBig = incoming.find((file) => file.size > MAX_PHOTO_MB * 1024 * 1024);
-    if (tooBig) {
-      onReject(`${tooBig.name} is over ${MAX_PHOTO_MB}MB.`);
-      return;
-    }
     const room = MAX_PORTFOLIO_PHOTOS - photos.length;
     if (room <= 0) {
       onReject(`You can attach up to ${MAX_PORTFOLIO_PHOTOS} photos.`);
       return;
     }
+    for (const file of incoming.slice(0, room)) {
+      const problem = await validateMediaFile(file, { kind: "image", maxMB: MAX_PHOTO_MB });
+      if (problem) {
+        onReject(problem);
+        return;
+      }
+    }
     onPhotosChange([...photos, ...incoming.slice(0, room)]);
   }
 
-  function setVideo(file: File | undefined) {
+  async function setVideo(file: File | undefined) {
     if (!file) return;
-    if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
-      onReject(`The video is over ${MAX_VIDEO_MB}MB. Trim it and try again.`);
+    const problem = await validateMediaFile(file, {
+      kind: "video",
+      maxMB: MAX_VIDEO_MB,
+      maxSeconds: MAX_VIDEO_SECONDS,
+    });
+    if (problem) {
+      onReject(problem);
       return;
     }
     onVideoChange(file);
@@ -103,7 +112,7 @@ export function PortfolioPicker({
           multiple
           className="hidden"
           onChange={(event) => {
-            addPhotos(event.target.files);
+            void addPhotos(event.target.files);
             event.target.value = "";
           }}
         />
@@ -133,7 +142,7 @@ export function PortfolioPicker({
           accept="video/*"
           className="hidden"
           onChange={(event) => {
-            setVideo(event.target.files?.[0]);
+            void setVideo(event.target.files?.[0]);
             event.target.value = "";
           }}
         />
