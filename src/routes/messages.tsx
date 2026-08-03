@@ -1095,7 +1095,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                               Open conversation
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              variant="destructive"
+                              className="text-destructive focus:text-destructive"
                               onSelect={() => setRemoveThread(item)}
                             >
                               <Trash2 className="size-4" /> Remove from my list
