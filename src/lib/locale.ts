@@ -262,6 +262,12 @@ export interface LocaleSettings {
   currencyLabel: string;
   /** Overrides keyed by copy key. Missing keys fall back to the defaults. */
   copy: Record<string, string>;
+  /**
+   * Free-form find/replace rules applied to every rendered string on the site
+   * and in the app, for copy that lives inside sentences rather than the keyed
+   * dictionary above. See `phrase-overrides.tsx`.
+   */
+  phrases?: import("./phrase-overrides").PhraseRule[];
 }
 
 export const DEFAULT_LOCALE_SETTINGS: LocaleSettings = {
@@ -269,7 +275,9 @@ export const DEFAULT_LOCALE_SETTINGS: LocaleSettings = {
   formatLocale: "",
   currencyLabel: "GHS",
   copy: {},
+  phrases: [],
 };
+
 
 export function useLocaleSettings() {
   const { value, save, loading } = useSettingsSection<LocaleSettings>(
