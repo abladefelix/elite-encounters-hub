@@ -227,10 +227,18 @@ function AdminOverview() {
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-center gap-2">
-            <IconContainer icon={DoorOpen} tone="accent" size="sm" />
-            <h2 className="font-display text-base font-semibold">Room balance</h2>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <IconContainer icon={DoorOpen} tone="accent" size="sm" />
+              <h2 className="font-display text-base font-semibold">Room balance</h2>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/ashnight-control/rooms">
+                Manage <ArrowUpRight className="size-3.5" />
+              </Link>
+            </Button>
           </div>
+
           <div className="mt-6 space-y-5">
             {distribution.map((row) => {
               const ratio = row.specialists
