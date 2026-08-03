@@ -414,6 +414,7 @@ export const createSpecialistQuote = createServerFn({ method: "POST" })
  * waiting silently for the hold window.
  */
 export const requestEscrowPayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator((input) =>
     z
       .object({
@@ -422,7 +423,6 @@ export const requestEscrowPayout = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .middleware([requireSupabaseAuth])
   .handler(async ({ data, context }) => {
     const { adminClient } = await import("./payments.server");
     const admin = await adminClient();
