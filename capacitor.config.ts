@@ -60,6 +60,8 @@ const config: CapacitorConfig = {
     },
 
     // Icons/splash art is generated from assets/ by `npm run mobile:assets`.
+    // The source art is a square 2732x2732 canvas with a centred mark, so
+    // CENTER_CROP / aspectFill covers every phone shape without letter-boxing.
     SplashScreen: {
       launchAutoHide: true,
       launchShowDuration: 1200,
@@ -67,7 +69,8 @@ const config: CapacitorConfig = {
       androidScaleType: "CENTER_CROP",
       showSpinner: false,
       splashFullScreen: true,
-      splashImmersive: false,
+      splashImmersive: true,
+      useDialog: false,
     },
   },
 
