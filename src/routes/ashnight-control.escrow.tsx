@@ -703,6 +703,17 @@ function AdminEscrow() {
                         {entry.kind === "gift" ? <Gift className="size-3.5 text-primary" /> : null}
                         {entry.label}
                       </span>
+                      {entry.payout_request_state === "requested" ? (
+                        <Badge
+                          variant="outline"
+                          className="ml-1 border-accent/40 text-[10px] text-accent"
+                        >
+                          Release requested
+                          {entry.payout_requested_at
+                            ? ` · ${relativeTime(entry.payout_requested_at)}`
+                            : ""}
+                        </Badge>
+                      ) : null}
                       <span className="block text-xs text-muted-foreground">
                         {entry.paystack_reference}
                         {entry.admin_note ? ` · ${entry.admin_note}` : ""}
