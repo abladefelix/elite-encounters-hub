@@ -24,7 +24,9 @@ import {
   useDocumentTemplates,
   type DocumentTemplate,
 } from "@/lib/document-templates";
+import { downloadDocumentPdf } from "@/lib/document-pdf";
 import { money } from "@/lib/types";
+
 import { formatStamp } from "@/lib/utils";
 
 import {
