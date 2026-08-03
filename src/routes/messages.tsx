@@ -1497,25 +1497,29 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           </Button>
                         ) : null}
 
-                        <Input
-                          value={draft}
-                          onChange={(event) => {
-                            setDraft(event.target.value);
-                            if (event.target.value.trim()) notifyTyping();
-                            else notifyStopped();
-                          }}
-                          placeholder={`Message ${firstName}…`}
-                          maxLength={1000}
-                        />
-                        <Button
-                          type="submit"
-                          size="icon"
-                          variant="soft"
-                          disabled={!draft.trim() || sendMessage.isPending}
-                          aria-label="Send message"
-                        >
-                          <Send className="size-4" />
-                        </Button>
+                        <div className="flex min-w-0 flex-1 items-center gap-1 rounded-full border border-border/70 bg-surface-strong/60 pl-4 pr-1.5 py-1 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 transition-colors">
+                          <Input
+                            value={draft}
+                            onChange={(event) => {
+                              setDraft(event.target.value);
+                              if (event.target.value.trim()) notifyTyping();
+                              else notifyStopped();
+                            }}
+                            placeholder={`Message ${firstName}…`}
+                            maxLength={1000}
+                            className="h-9 min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+                          />
+                          <Button
+                            type="submit"
+                            size="icon"
+                            variant="ghost"
+                            className="size-9 shrink-0 rounded-full text-accent hover:text-accent"
+                            disabled={!draft.trim() || sendMessage.isPending}
+                            aria-label="Send message"
+                          >
+                            <Send className="size-4" />
+                          </Button>
+                        </div>
                       </form>
                     </div>
                   </>
