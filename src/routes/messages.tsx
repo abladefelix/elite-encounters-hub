@@ -6,8 +6,12 @@ import {
   Banknote,
   CheckCheck,
   Copy,
+  Download,
   Eraser,
+  ExternalLink,
   Flag,
+  Reply,
+
   Gift as GiftIcon,
   Image as ImageIcon,
   Lock,
