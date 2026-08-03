@@ -1752,12 +1752,15 @@ function MessageBubble({
 }) {
   if (message.kind === "system") {
     return (
-      <p className="mx-auto flex max-w-md items-center gap-2 rounded-full border border-border bg-background/60 px-4 py-2 text-center text-xs text-muted-foreground">
-        <ShieldCheck className="size-3.5 shrink-0 text-accent" />
-        {message.body}
-      </p>
+      <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-3">
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-accent/60 text-accent">
+          <ShieldCheck className="size-3" />
+        </span>
+        <p className="text-[12px] leading-snug text-muted-foreground">{message.body}</p>
+      </div>
     );
   }
+
 
   if (message.kind === "gift") {
     return (
