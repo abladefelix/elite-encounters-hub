@@ -94,6 +94,7 @@ function SpecialistsPage() {
   const [room, setRoom] = useState<Tier | "all">("all");
   const [service, setService] = useState("all");
   const [sort, setSort] = useState<SortKey>("rating");
+  const [availability, setAvailability] = useState<"all" | "online" | "verified">("all");
 
   // A specialist never browses the roster — they only meet a client once that
   // client opens a thread with them.
