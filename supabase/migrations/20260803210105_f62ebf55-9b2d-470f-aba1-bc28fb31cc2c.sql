@@ -1,0 +1,1 @@
+grant execute on function private.run_escrow_settlement() to postgres;
