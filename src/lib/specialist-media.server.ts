@@ -112,7 +112,7 @@ export async function writePortfolio(
 
   const { error: saveError } = await supabaseAdmin
     .from("profiles")
-    .update({ extra })
+    .update({ extra: extra as never })
     .eq("id", userId);
   if (saveError) throw new Error(saveError.message);
 }
