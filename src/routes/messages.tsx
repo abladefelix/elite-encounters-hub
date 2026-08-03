@@ -46,6 +46,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1371,62 +1372,12 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                       />
 
                       <form
-
-                        className="mt-3 flex items-center gap-2"
+                        className="mt-3 space-y-2"
                         onSubmit={(event) => {
                           event.preventDefault();
                           void submit();
                         }}
                       >
-                        {iAmClient ? (
-                          <>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="soft"
-                                  size="icon"
-                                  aria-label="Request service & pay with Paystack"
-                                  onClick={openRequest}
-                                >
-                                  {bookingsOpen ? (
-                                    <Banknote className="size-4" />
-                                  ) : (
-                                    <Lock className="size-4 opacity-60" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {bookingsOpen
-                                  ? "Request service & pay with Paystack"
-                                  : "Booking requests are paused"}
-                              </TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="Send a cash gift"
-                                  onClick={openGift}
-                                >
-                                  {giftsAllowed ? (
-                                    <GiftIcon className="size-4" />
-                                  ) : (
-                                    <Lock className="size-4 opacity-60" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {giftsAllowed
-                                  ? `Send a cash gift (${roomGifts.length} available in your room)`
-                                  : "Cash gifts are unavailable here"}
-                              </TooltipContent>
-                            </Tooltip>
-                          </>
-                        ) : null}
-
                         <input
                           ref={fileRef}
                           type="file"
@@ -1446,80 +1397,139 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                             event.target.value = "";
                           }}
                         />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Attach file"
-                          onClick={() =>
-                            filesAllowed
-                              ? fileRef.current?.click()
-                              : toast(`File sharing isn't included in the ${tierLabel(room)} room`)
-                          }
-                        >
-                          {filesAllowed ? (
-                            <Paperclip className="size-4" />
-                          ) : (
-                            <Lock className="size-4 opacity-60" />
-                          )}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Send photo"
-                          onClick={() =>
-                            photosAllowed
-                              ? photoRef.current?.click()
-                              : toast(`Photo sharing isn't included in the ${tierLabel(room)} room`)
-                          }
-                        >
-                          {photosAllowed ? (
-                            <ImageIcon className="size-4" />
-                          ) : (
-                            <Lock className="size-4 opacity-60" />
-                          )}
-                        </Button>
 
-                        {locationAllowed ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Share my location"
-                            disabled={locating}
-                            onClick={() => void shareLocation()}
-                          >
-                            {locating ? (
-                              <Loader2 className="size-4 animate-spin" />
-                            ) : (
-                              <MapPin className="size-4" />
-                            )}
-                          </Button>
-                        ) : null}
-
-                        <div className="flex min-w-0 flex-1 items-center gap-1 rounded-full border border-border/70 bg-surface-strong/60 pl-4 pr-1.5 py-1 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 transition-colors">
-                          <Input
+                        <div className="flex w-full items-end gap-2 rounded-2xl border border-border/70 bg-surface-strong/60 px-4 py-2 transition-colors focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10">
+                          <Textarea
                             value={draft}
+                            rows={1}
                             onChange={(event) => {
                               setDraft(event.target.value);
                               if (event.target.value.trim()) notifyTyping();
                               else notifyStopped();
                             }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" && !event.shiftKey) {
+                                event.preventDefault();
+                                void submit();
+                              }
+                            }}
                             placeholder={`Message ${firstName}…`}
                             maxLength={1000}
-                            className="h-9 min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+                            className="max-h-32 min-h-9 min-w-0 flex-1 resize-none border-0 bg-transparent px-0 py-1.5 text-sm leading-relaxed shadow-none focus-visible:ring-0"
                           />
                           <Button
                             type="submit"
                             size="icon"
-                            variant="ghost"
-                            className="size-9 shrink-0 rounded-full text-accent hover:text-accent"
+                            variant="brass"
+                            className="size-9 shrink-0 rounded-full"
                             disabled={!draft.trim() || sendMessage.isPending}
                             aria-label="Send message"
                           >
                             <Send className="size-4" />
                           </Button>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1">
+                          {iAmClient ? (
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Request service & pay with Paystack"
+                                    onClick={openRequest}
+                                  >
+                                    {bookingsOpen ? (
+                                      <Banknote className="size-4" />
+                                    ) : (
+                                      <Lock className="size-4 opacity-60" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {bookingsOpen
+                                    ? "Request service & pay with Paystack"
+                                    : "Booking requests are paused"}
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Send a cash gift"
+                                    onClick={openGift}
+                                  >
+                                    {giftsAllowed ? (
+                                      <GiftIcon className="size-4" />
+                                    ) : (
+                                      <Lock className="size-4 opacity-60" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {giftsAllowed
+                                    ? `Send a cash gift (${roomGifts.length} available in your room)`
+                                    : "Cash gifts are unavailable here"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </>
+                          ) : null}
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Attach file"
+                            onClick={() =>
+                              filesAllowed
+                                ? fileRef.current?.click()
+                                : toast(`File sharing isn't included in the ${tierLabel(room)} room`)
+                            }
+                          >
+                            {filesAllowed ? (
+                              <Paperclip className="size-4" />
+                            ) : (
+                              <Lock className="size-4 opacity-60" />
+                            )}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Send photo"
+                            onClick={() =>
+                              photosAllowed
+                                ? photoRef.current?.click()
+                                : toast(`Photo sharing isn't included in the ${tierLabel(room)} room`)
+                            }
+                          >
+                            {photosAllowed ? (
+                              <ImageIcon className="size-4" />
+                            ) : (
+                              <Lock className="size-4 opacity-60" />
+                            )}
+                          </Button>
+
+                          {locationAllowed ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Share my location"
+                              disabled={locating}
+                              onClick={() => void shareLocation()}
+                            >
+                              {locating ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <MapPin className="size-4" />
+                              )}
+                            </Button>
+                          ) : null}
                         </div>
                       </form>
                     </div>
@@ -1781,7 +1791,10 @@ function MessageBubble({
       message.attachment_url ??
       "https://www.google.com/maps/search/?api=1&query=" + message.body.trim();
     return (
-      <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
+      <div className={cn("group flex items-end gap-1", mine ? "justify-end" : "justify-start")}>
+        {mine ? (
+          <MessageActions mine onCopy={() => onCopy(message.body)} onDelete={onDelete} />
+        ) : null}
         <div className="max-w-sm rounded-xl border border-border bg-card p-4">
           <p className="eyebrow text-primary">Location shared</p>
           <p className="mt-2 font-mono text-xs text-muted-foreground">
@@ -1917,7 +1930,7 @@ function MessageActions({
   onDelete?: () => void;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-0.5 pb-5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+    <div className="flex shrink-0 items-center gap-0.5 pb-5 opacity-70 transition-opacity focus-within:opacity-100 group-hover:opacity-100 sm:opacity-0">
       <Button
         variant="ghost"
         size="icon"
