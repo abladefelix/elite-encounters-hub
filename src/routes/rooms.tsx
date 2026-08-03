@@ -178,18 +178,26 @@ function RoomsPage() {
     <div className="min-h-screen">
       <SiteHeader />
 
-      <div className="mx-auto w-full max-w-6xl px-5 py-12">
-        <h1 className="font-display text-3xl font-semibold sm:text-4xl">Membership rooms</h1>
-        <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-          Clients pay a membership to onboard into a room, and placement is still confirmed manually
-          by our team after vetting. Each room unlocks a different set of features and privileges.
-          Specialists sign up free and are vetted the same way — their room is set and upgraded by
-          our team based on ratings and completed work, never bought.
-        </p>
+      <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:py-12">
+        {user && canJoinRooms ? (
+          <div className="space-y-8">
+            <SpecialistShowcase />
+            <MemberDashboardStrip />
+          </div>
+        ) : null}
 
-        {user ? <MemberDashboardStrip /> : null}
+        <div className={user && canJoinRooms ? "mt-12 border-t border-border/60 pt-10" : undefined}>
+          <h1 className="font-display text-3xl font-semibold sm:text-4xl">Membership rooms</h1>
+          <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+            Clients pay a membership to onboard into a room, and placement is still confirmed
+            manually by our team after vetting. Each room unlocks a different set of features and
+            privileges. Specialists sign up free and are vetted the same way — their room is set and
+            upgraded by our team based on ratings and completed work, never bought.
+          </p>
+        </div>
 
-        {user && canJoinRooms ? <SpecialistShowcase /> : null}
+        {user && !canJoinRooms ? <MemberDashboardStrip /> : null}
+
 
         {!authLoading && !user ? (
           <Card className="mt-6 border-primary/25 bg-panel p-5">
