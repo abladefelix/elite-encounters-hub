@@ -8,7 +8,6 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Film, ImagePlus, Loader2, X } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -20,13 +19,15 @@ import {
   MAX_VIDEO_MB,
   MAX_VIDEO_SECONDS,
 } from "@/components/portfolio-picker";
+import { UploadProgressList } from "@/components/upload-progress-list";
+import { useUploadQueue } from "@/hooks/use-upload-queue";
 import { validateMediaFile } from "@/lib/media-validation";
-import { uploadPortfolioFile } from "@/lib/queries";
+import { safeName } from "@/lib/upload-progress";
 import { getMyPortfolio, saveMyPortfolio } from "@/lib/specialist-media.functions";
 
 export function PortfolioManager({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
-  const [busy, setBusy] = useState(false);
+  const uploads = useUploadQueue();
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-portfolio", userId],
@@ -71,17 +72,24 @@ export function PortfolioManager({ userId }: { userId: string }) {
         return;
       }
     }
-    setBusy(true);
-    try {
-      const paths: string[] = [];
-      for (const file of chosen) {
-        paths.push(await uploadPortfolioFile(userId, file, "photo"));
-      }
-      await commit([...photos.map((photo) => photo.path), ...paths], video?.path ?? null);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Couldn't upload those photos");
-    } finally {
-      setBusy(false);
+    // Each file gets its own progress row, so one failure can be retried
+    // without re-picking the whole batch.
+    for (const file of chosen) {
+      uploads.start({
+        bucket: "attachments",
+        path: `${userId}/portfolio/photo-${Date.now()}-${safeName(file.name)}`,
+        file,
+        onStored: async (storedPath) => {
+          const current =
+            (queryClient.getQueryData(["my-portfolio", userId]) as
+              | { photos: { path: string }[]; video: { path: string } | null }
+              | undefined) ?? { photos, video };
+          await commit(
+            [...current.photos.map((photo) => photo.path), storedPath],
+            current.video?.path ?? null,
+          );
+        },
+      });
     }
   }
 
@@ -96,18 +104,17 @@ export function PortfolioManager({ userId }: { userId: string }) {
       toast.error(problem);
       return;
     }
-    setBusy(true);
-    try {
-      const path = await uploadPortfolioFile(userId, file, "video");
-      await commit(
-        photos.map((photo) => photo.path),
-        path,
-      );
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Couldn't upload that video");
-    } finally {
-      setBusy(false);
-    }
+    uploads.start({
+      bucket: "attachments",
+      path: `${userId}/portfolio/video-${Date.now()}-${safeName(file.name)}`,
+      file,
+      onStored: async (storedPath) => {
+        await commit(
+          photos.map((photo) => photo.path),
+          storedPath,
+        );
+      },
+    });
   }
 
   return (
@@ -120,10 +127,18 @@ export function PortfolioManager({ userId }: { userId: string }) {
             {MAX_PORTFOLIO_PHOTOS} photos, {MAX_PHOTO_MB}MB each.
           </p>
         </div>
-        {busy || save.isPending ? (
+        {uploads.busy || save.isPending ? (
           <Loader2 className="size-4 animate-spin text-muted-foreground" />
         ) : null}
       </div>
+
+      <UploadProgressList
+        tasks={uploads.tasks}
+        onRetry={uploads.retry}
+        onCancel={uploads.cancel}
+        onDismiss={uploads.dismiss}
+        className="mt-4"
+      />
 
       {isLoading ? (
         <Skeleton className="mt-4 h-32 w-full rounded-lg" />
@@ -142,7 +157,7 @@ export function PortfolioManager({ userId }: { userId: string }) {
                   <button
                     type="button"
                     aria-label={`Remove work photo ${index + 1}`}
-                    disabled={busy || save.isPending}
+                    disabled={uploads.busy || save.isPending}
                     onClick={() =>
                       void commit(
                         photos.filter((item) => item.path !== photo.path).map((item) => item.path),
@@ -194,7 +209,7 @@ export function PortfolioManager({ userId }: { userId: string }) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  disabled={busy || save.isPending}
+                  disabled={uploads.busy || save.isPending}
                   onClick={() => void commit(photos.map((photo) => photo.path), null)}
                 >
                   <X className="size-3.5" /> Remove video

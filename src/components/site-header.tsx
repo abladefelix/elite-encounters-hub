@@ -110,7 +110,7 @@ export function SiteHeader() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-72 bg-surface">
-              <nav className="mt-12 flex flex-col gap-1">
+              <nav className="flex flex-col gap-1">
 
                 {[
                   ...NAV,
@@ -142,7 +142,7 @@ export function SiteHeader() {
               </nav>
 
               {platform.memberThemeChoice ? (
-                <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2.5">
+                <div className="mt-2 flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2.5">
                   <span className="text-sm text-muted-foreground">Appearance</span>
                   <ThemeToggle />
                 </div>

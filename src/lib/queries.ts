@@ -509,6 +509,14 @@ export async function hideThread(threadId: string, side: "client" | "specialist"
   if (error) throw new Error(error.message);
 }
 
+/** Puts a removed conversation back in this member's list (the undo action). */
+export async function unhideThread(threadId: string, side: "client" | "specialist") {
+  const patch: Tables["threads"]["Update"] =
+    side === "client" ? { client_hidden_at: null } : { specialist_hidden_at: null };
+  const { error } = await supabase.from("threads").update(patch).eq("id", threadId);
+  if (error) throw new Error(error.message);
+}
+
 export async function markThreadRead(threadId: string, side: "client" | "specialist") {
   const now = new Date().toISOString();
   const patch: Tables["threads"]["Update"] =
