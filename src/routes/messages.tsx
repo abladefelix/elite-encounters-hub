@@ -83,7 +83,10 @@ import {
 } from "@/lib/payments.functions";
 import { useAuth } from "@/hooks/use-auth";
 import {
+  clearThread,
+  deleteOwnMessage,
   hideThread,
+  restoreThreadHistory,
   unhideThread,
   markThreadRead,
   useBookings,
