@@ -240,6 +240,18 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [clearing, setClearing] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<MessageRowType | null>(null);
   const [deletingMessage, setDeletingMessage] = useState(false);
+  // Messages hidden from this device only — used when deleting somebody else's
+  // message, which we can never remove from their side.
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(HIDDEN_MESSAGES_KEY);
+      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+      return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+    } catch {
+      return [];
+    }
+  });
   const uploads = useUploadQueue();
   const [removing, setRemoving] = useState(false);
   const queryClient = useQueryClient();
