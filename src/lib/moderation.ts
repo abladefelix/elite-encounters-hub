@@ -154,17 +154,32 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** Lookbehind is unsupported on iOS WebViews older than 16.4. */
+const SUPPORTS_LOOKBEHIND = (() => {
+  try {
+    // eslint-disable-next-line prefer-regex-literals
+    new RegExp("(?<!a)b");
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
 /** Words or phrases from the admin list. Case-insensitive, whole-phrase. */
 export function detectFlaggedWords(text: string, words: string[]): Finding[] {
   const out: Finding[] = [];
   for (const word of words) {
     const term = word.trim();
     if (term.length < 2) continue;
-    const pattern = new RegExp(`(?<![\\p{L}])${escapeRegExp(term)}(?![\\p{L}])`, "giu");
+    const escaped = escapeRegExp(term);
+    const pattern = SUPPORTS_LOOKBEHIND
+      ? new RegExp(`(?<![\\p{L}])${escaped}(?![\\p{L}])`, "giu")
+      : new RegExp(`\\b${escaped}\\b`, "gi");
     collect(text, pattern, "word", out);
   }
   return dedupe(out);
 }
+
 
 function dedupe(findings: Finding[]): Finding[] {
   const sorted = [...findings].sort((a, b) => a.start - b.start || b.end - a.end);
