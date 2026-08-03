@@ -1169,37 +1169,6 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         </p>
                       </div>
                       <div className="ml-auto flex items-center gap-1">
-                        {canRatePeer ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label={`Rate ${peerName}`}
-                                onClick={() => setRatingOpen(true)}
-                              >
-                                <Star className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Rate your visit with {firstName}</TooltipContent>
-                          </Tooltip>
-                        ) : null}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`${t("chat.report")} ${peerName}`}
-                              onClick={() => setReportOpen(true)}
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              <Flag className="size-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {t("chat.report")} this member to trust &amp; safety
-                          </TooltipContent>
-                        </Tooltip>
                         <CallControl
                           allowed={audioAllowed}
                           label={t("chat.voice").toLowerCase()}
@@ -1220,7 +1189,55 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         >
                           <Video className="size-4" />
                         </CallControl>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" aria-label="Conversation options">
+                              <MoreVertical className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-60">
+                            <DropdownMenuLabel className="truncate text-xs">
+                              {peerName}
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {iAmClient && peerId ? (
+                              <DropdownMenuItem asChild>
+                                <Link
+                                  to="/specialists/$specialistId"
+                                  params={{ specialistId: peerId }}
+                                >
+                                  <UserIcon className="size-4" /> View profile
+                                </Link>
+                              </DropdownMenuItem>
+                            ) : null}
+                            {canRatePeer ? (
+                              <DropdownMenuItem onSelect={() => setRatingOpen(true)}>
+                                <Star className="size-4" /> Rate your visit
+                              </DropdownMenuItem>
+                            ) : null}
+                            <DropdownMenuItem onSelect={() => setReportOpen(true)}>
+                              <Flag className="size-4" /> {t("chat.report")} to trust &amp; safety
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onSelect={() => setClearOpen(true)}
+                            >
+                              <Eraser className="size-4" /> Clear chat history
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onSelect={() =>
+                                setRemoveThread(activeThread as ThreadRow)
+                              }
+                            >
+                              <Trash2 className="size-4" /> Remove conversation
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
+
                     </header>
 
                     {!audioAllowed && !videoAllowed ? (
