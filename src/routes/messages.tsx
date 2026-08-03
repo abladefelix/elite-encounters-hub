@@ -1434,8 +1434,16 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           }}
                         />
 
-                        <div className="flex w-full items-end gap-2 rounded-2xl border border-border/70 bg-surface-strong/60 px-4 py-2 transition-colors focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10">
+                        <div className="flex w-full items-end gap-2 rounded-2xl border border-border/70 bg-surface-strong/60 px-3 py-2 transition-colors focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 sm:px-4">
+                          <EmojiPicker
+                            onPick={(emoji) => {
+                              setDraft((current) => (current + emoji).slice(0, 1000));
+                              notifyTyping();
+                              draftRef.current?.focus();
+                            }}
+                          />
                           <Textarea
+                            ref={draftRef}
                             value={draft}
                             rows={1}
                             onChange={(event) => {
@@ -1451,7 +1459,8 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                             }}
                             placeholder={`Message ${firstName}…`}
                             maxLength={1000}
-                            className="max-h-32 min-h-9 min-w-0 flex-1 resize-none border-0 bg-transparent px-0 py-1.5 text-sm leading-relaxed shadow-none focus-visible:ring-0"
+                            /* 16px text keeps iOS from zooming the page on focus. */
+                            className="max-h-40 min-h-9 min-w-0 flex-1 resize-none border-0 bg-transparent px-0 py-1.5 text-base leading-relaxed shadow-none focus-visible:ring-0"
                           />
                           <Button
                             type="submit"
