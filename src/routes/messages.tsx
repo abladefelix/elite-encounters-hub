@@ -270,6 +270,35 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const firstName = peerName.split(" ")[0] ?? peerName;
   const room: Tier = activeThread?.room ?? profile?.room ?? "basic";
 
+  /** Conversations matching the sidebar search box. */
+  const visibleThreads = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return threadList;
+    return threadList.filter((thread) => {
+      const otherId = thread.client_id === userId ? thread.specialist_id : thread.client_id;
+      const name = peopleById.get(otherId)?.display_name ?? "";
+      return (
+        name.toLowerCase().includes(term) ||
+        (thread.last_message ?? "").toLowerCase().includes(term)
+      );
+    });
+  }, [threadList, search, peopleById, userId]);
+
+  /**
+   * "Clear chat" is per member: everything older than their own cleared-at
+   * stamp drops out of their view while the other side keeps the full history.
+   */
+  const clearedAt = activeThread
+    ? iAmClient
+      ? activeThread.client_cleared_at
+      : activeThread.specialist_cleared_at
+    : null;
+  const visibleMessages = useMemo(() => {
+    if (!clearedAt) return messages;
+    const cutoff = new Date(clearedAt).getTime();
+    return messages.filter((message) => new Date(message.created_at).getTime() > cutoff);
+  }, [messages, clearedAt]);
+
   // Live device presence: the availability switch only reads "Available now"
   // while the member's device is actually reachable.
   const peerOnline = useIsOnline(peerId || undefined, peer?.last_seen_at ?? null);
