@@ -242,11 +242,12 @@ function SpecialistsPage() {
         </div>
 
         {isLoading ? (
-          <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <Skeleton key={index} className="h-64 rounded-xl" />
+          <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            {Array.from({ length: 12 }).map((_, index) => (
+              <Skeleton key={index} className="aspect-[4/5] rounded-lg" />
             ))}
           </div>
+
         ) : (
           <>
             <p className="mt-6 text-xs text-muted-foreground">
