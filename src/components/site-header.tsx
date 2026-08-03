@@ -110,7 +110,8 @@ export function SiteHeader() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-72 bg-surface">
-              <nav className="mt-8 flex flex-col gap-1">
+              <nav className="mt-12 flex flex-col gap-1">
+
                 {[
                   ...NAV,
                   ...(user
