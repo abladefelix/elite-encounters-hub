@@ -141,7 +141,13 @@ import {
   type EscrowEntry,
 } from "@/lib/escrow";
 import { tierLabel, initials, money, type Tier } from "@/lib/types";
+import { packsForRoom, useEmojiPacks } from "@/lib/chat-emoji";
 import { cn } from "@/lib/utils";
+
+/** Local-only list of messages this device has hidden. */
+const HIDDEN_MESSAGES_KEY = "ashnight-hidden-messages-v1";
+
+
 
 export const Route = createFileRoute("/messages")({
   head: () => ({
