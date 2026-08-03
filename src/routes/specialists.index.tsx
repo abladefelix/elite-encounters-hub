@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, SlidersHorizontal } from "lucide-react";
 
@@ -16,6 +16,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SpecialistTile } from "@/components/specialist-tile";
+import { RosterPagination } from "@/components/roster-pagination";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useServices, useSpecialists, type ProfileRow } from "@/lib/queries";
@@ -136,6 +137,22 @@ function SpecialistsPage() {
 
   const hasAnySpecialists = (profiles?.length ?? 0) > 0;
 
+  // Big rosters get paged so the grid stays fast and scannable on mobile.
+  const PAGE_SIZE = 24;
+  const [page, setPage] = useState(1);
+  const pageCount = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+
+  // Any filter change (or a shrinking result set) sends you back to page one.
+  useEffect(() => {
+    setPage(1);
+  }, [query, room, service, sort, availability]);
+  useEffect(() => {
+    setPage((current) => Math.min(current, pageCount));
+  }, [pageCount]);
+
+  const pageStart = (Math.min(page, pageCount) - 1) * PAGE_SIZE;
+  const visible = results.slice(pageStart, pageStart + PAGE_SIZE);
+
   if (!canBrowse) {
     return (
       <div className="min-h-screen">
@@ -252,16 +269,31 @@ function SpecialistsPage() {
           <>
             <p className="mt-6 text-xs text-muted-foreground">
               {results.length} specialist{results.length === 1 ? "" : "s"} match your filters
+              {pageCount > 1 ? ` · page ${Math.min(page, pageCount)} of ${pageCount}` : ""}
             </p>
 
             <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-              {results.map((specialist) => (
+              {visible.map((specialist) => (
                 <SpecialistTile
                   key={specialist.id}
                   specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
                 />
               ))}
             </div>
+
+            <RosterPagination
+              page={Math.min(page, pageCount)}
+              pageCount={pageCount}
+              total={results.length}
+              from={results.length === 0 ? 0 : pageStart + 1}
+              to={pageStart + visible.length}
+              onPageChange={(next) => {
+                setPage(next);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
+
+
 
 
             {results.length === 0 && !hasAnySpecialists ? (
