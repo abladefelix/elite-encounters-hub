@@ -1,8 +1,10 @@
+import { Link, type LinkComponentProps } from "@tanstack/react-router";
+
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { IconContainer } from "@/components/ui/icon-container";
 import type { LucideIcon } from "lucide-react";
-import { TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { ArrowUpRight, TrendingDown, TrendingUp, Minus } from "lucide-react";
 
 export function StatCard({
   label,
@@ -12,6 +14,9 @@ export function StatCard({
   tone = "default",
   trend,
   className,
+  to,
+  params,
+  search,
 }: {
   label: string;
   value: string;
@@ -20,6 +25,10 @@ export function StatCard({
   tone?: "default" | "soft" | "accent" | "warning" | "destructive" | "success";
   trend?: { value: number; label?: string };
   className?: string;
+  /** When set, the whole card becomes a link to this admin/app route. */
+  to?: LinkComponentProps["to"];
+  params?: LinkComponentProps["params"];
+  search?: LinkComponentProps["search"];
 }) {
   const TrendIcon = trend
     ? trend.value > 0
@@ -29,13 +38,18 @@ export function StatCard({
         : Minus
     : null;
 
-  return (
+  const card = (
     <Card
       className={cn(
         "group relative overflow-hidden p-5 hover:shadow-elevated",
+        to && "cursor-pointer transition-colors hover:border-primary/40",
         className,
       )}
     >
+      {to ? (
+        <ArrowUpRight className="absolute right-3 top-3 size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+      ) : null}
+
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
