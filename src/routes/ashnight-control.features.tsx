@@ -106,6 +106,9 @@ function AdminFeatures() {
         onToggle={(next) => toggle("captchaOnAuth", next)}
       />
 
+      <EmojiPackCard />
+
+
       {FLAG_GROUPS.map((group) => {
         const items = FEATURE_FLAGS.filter((flag) => flag.group === group);
         if (!items.length) return null;
