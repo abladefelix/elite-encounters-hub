@@ -326,7 +326,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
 
   /* specialists */
   const specialistIds: string[] = [];
-  for (const person of SPECIALISTS) {
+  for (const [personIndex, person] of SPECIALISTS.entries()) {
     const id = await ensureUser(`${person.username}@${DEMO_DOMAIN}`, {
       display_name: person.name,
       username: person.username,
@@ -364,7 +364,14 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
         terms_accepted_at: hoursAgo(900),
         privacy_accepted_at: hoursAgo(900),
         last_seen_at: hoursAgo(1),
-        extra: { demo: true } as never,
+        // Gallery photos and an intro clip, so client-facing profiles look
+        // complete straight after seeding.
+        extra: {
+          demo: true,
+          portfolio_photos: galleryFor(personIndex),
+          portfolio_video: INTRO_VIDEO,
+        } as never,
+
       },
       { onConflict: "id" },
     ), "profiles");
