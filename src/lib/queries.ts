@@ -223,12 +223,19 @@ export function useProfilesByIds(ids: string[]) {
   return useQuery({
     queryKey: ["profiles", "by-ids", key.join(",")],
     enabled: key.length > 0,
+    // Availability is a live signal: a specialist can switch it off mid-thread,
+    // so never serve a cached "Available now" to the other side.
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    refetchInterval: 30_000,
     queryFn: async () =>
       unwrap<ProfileRow[]>(
         await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).in("id", key),
       ),
   });
 }
+
 
 /** Uploads a chat attachment and returns a signed URL the thread can render. */
 export async function uploadAttachment(threadId: string, file: File) {
