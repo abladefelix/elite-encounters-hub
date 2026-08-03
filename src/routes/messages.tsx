@@ -623,6 +623,22 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     );
   }
 
+  /**
+   * Client confirms the visit, then gets asked to rate it straight away — the
+   * rating is the performance record Ashnight uses for room placement.
+   */
+  async function confirmAndReview(escrowId: string) {
+    const entry = escrowEntries.find((row) => row.id === escrowId);
+    await confirmComplete(escrowId);
+    if (!iAmClient) return;
+    const booking = entry?.booking_id ? bookingsById.get(entry.booking_id) : undefined;
+    if (booking && ratedBookingIds.has(booking.id)) return;
+    setRatingBooking(booking ?? null);
+    setRatingOpen(true);
+  }
+
+
+
   /** Clears a conversation from this member's own list only. */
   async function confirmRemoveThread() {
     if (!removeThread) return;
