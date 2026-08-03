@@ -208,7 +208,9 @@ export function useIntegrationKeyMutations() {
       if (error) throw new Error(error.message);
 
       // Mirror non-secret values so member-facing code can read them.
-      if (!row.is_secret && (row.key === "paystack_public_key" || row.key === "livekit_url")) {
+      const mirrored = ["paystack_public_key", "livekit_url", "turnstile_site_key"];
+      if (!row.is_secret && mirrored.includes(row.key)) {
+
         await publicConfig.save({ ...publicConfig.value, [row.key]: input.value });
       }
       return row;
