@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Languages, Loader2, MessageSquareHeart, Palette, RotateCcw, Save } from "lucide-react";
+import { Languages, Loader2, MessageSquareHeart, Palette, RotateCcw, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { BrandMark } from "@/components/brand-mark";
