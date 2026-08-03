@@ -22,12 +22,15 @@ import { CallOverlay, type CallMode } from "@/components/chat/call-overlay";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { ringChannelName, sendRing, type RingPayload } from "@/lib/call-ring";
+import { readCallPreferences } from "@/lib/call-preferences";
 
 type Invite = { threadId: string; mode: CallMode; fromId: string; fromName: string };
 
 export function IncomingCallWatcher() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const userId = user?.id;
+  // The member's own call settings from /profile decide whether we ring at all.
+  const prefs = readCallPreferences(profile?.extra);
   const [invite, setInvite] = useState<Invite | null>(null);
   const [active, setActive] = useState<Invite | null>(null);
 
@@ -37,6 +40,18 @@ export function IncomingCallWatcher() {
       .channel(ringChannelName(userId), { config: { broadcast: { self: false } } })
       .on("broadcast", { event: "ring" }, ({ payload }: { payload: RingPayload }) => {
         if (payload.kind === "invite") {
+          if (!prefs.acceptCalls) {
+            // Calls turned off: decline quietly instead of ringing.
+            void sendRing(payload.fromId, {
+              kind: "decline",
+              fromId: userId,
+              fromName: "The other member",
+            });
+            return;
+          }
+          if (prefs.vibrate && typeof navigator !== "undefined" && "vibrate" in navigator) {
+            navigator.vibrate?.([400, 200, 400]);
+          }
           setInvite({
             threadId: payload.threadId,
             mode: payload.mode,
@@ -54,7 +69,39 @@ export function IncomingCallWatcher() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, prefs.acceptCalls, prefs.vibrate]);
+
+  // Ringtone: a short repeating chime while the invite dialog is open.
+  useEffect(() => {
+    if (!invite || active || !prefs.ringtone) return;
+    let stopped = false;
+    const AudioCtor =
+      typeof window === "undefined"
+        ? undefined
+        : window.AudioContext ??
+          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtor) return;
+    const context = new AudioCtor();
+    const chime = () => {
+      if (stopped) return;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.5);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start();
+      oscillator.stop(context.currentTime + 0.55);
+    };
+    chime();
+    const timer = setInterval(chime, 1800);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+      void context.close().catch(() => undefined);
+    };
+  }, [invite, active, prefs.ringtone]);
 
   const decline = useCallback(() => {
     if (!invite) return;
