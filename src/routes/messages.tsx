@@ -5,21 +5,27 @@ import {
   ArrowLeft,
   Banknote,
   CheckCheck,
+  Copy,
+  Eraser,
   Flag,
   Gift as GiftIcon,
   Image as ImageIcon,
   Lock,
   Loader2,
   MapPin,
+  MoreVertical,
   Paperclip,
   Phone,
   Plus,
+  Search,
   ShieldAlert,
   Send,
   ShieldCheck,
   Star,
   Trash2,
+  User as UserIcon,
   Video,
+  X,
 } from "lucide-react";
 
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,6 +49,15 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -77,7 +92,10 @@ import {
 } from "@/lib/payments.functions";
 import { useAuth } from "@/hooks/use-auth";
 import {
+  clearThread,
+  deleteOwnMessage,
   hideThread,
+  restoreThreadHistory,
   unhideThread,
   markThreadRead,
   useBookings,
@@ -136,6 +154,23 @@ function timeLabel(iso: string) {
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
+/** Stable per-day key used to group the transcript into date sections. */
+function dayKey(iso: string) {
+  return new Date(iso).toDateString();
+}
+
+/** "Today" / "Yesterday" / a short date for the day separators. */
+function dayLabel(iso: string) {
+  const date = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (dayKey(iso) === today.toDateString()) return "Today";
+  if (dayKey(iso) === yesterday.toDateString()) return "Yesterday";
+  return date.toLocaleDateString("en-GH", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+
 function MessagesPage() {
   const { loading, user, profile } = useAuth();
 
@@ -185,6 +220,11 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [removeThread, setRemoveThread] = useState<ThreadRow | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [clearOpen, setClearOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<MessageRowType | null>(null);
+  const [deletingMessage, setDeletingMessage] = useState(false);
   const uploads = useUploadQueue();
   const [removing, setRemoving] = useState(false);
   const queryClient = useQueryClient();
@@ -246,6 +286,35 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const peerName = peer?.display_name ?? "Ashnight member";
   const firstName = peerName.split(" ")[0] ?? peerName;
   const room: Tier = activeThread?.room ?? profile?.room ?? "basic";
+
+  /** Conversations matching the sidebar search box. */
+  const visibleThreads = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return threadList;
+    return threadList.filter((thread) => {
+      const otherId = thread.client_id === userId ? thread.specialist_id : thread.client_id;
+      const name = peopleById.get(otherId)?.display_name ?? "";
+      return (
+        name.toLowerCase().includes(term) ||
+        (thread.last_message ?? "").toLowerCase().includes(term)
+      );
+    });
+  }, [threadList, search, peopleById, userId]);
+
+  /**
+   * "Clear chat" is per member: everything older than their own cleared-at
+   * stamp drops out of their view while the other side keeps the full history.
+   */
+  const clearedAt = activeThread
+    ? iAmClient
+      ? activeThread.client_cleared_at
+      : activeThread.specialist_cleared_at
+    : null;
+  const visibleMessages = useMemo(() => {
+    if (!clearedAt) return messages;
+    const cutoff = new Date(clearedAt).getTime();
+    return messages.filter((message) => new Date(message.created_at).getTime() > cutoff);
+  }, [messages, clearedAt]);
 
   // Live device presence: the availability switch only reads "Available now"
   // while the member's device is actually reachable.
@@ -744,6 +813,70 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     }
   }
 
+  /**
+   * Hides the history of the open thread for this member only, with a short
+   * undo window that rolls the stamp back to whatever it was before.
+   */
+  async function clearHistory() {
+    if (!activeThread) return;
+    const side = sideOf(activeThread);
+    const previous = clearedAt;
+    setClearing(true);
+    try {
+      await clearThread(activeThread.id, side);
+      await queryClient.invalidateQueries({ queryKey: ["threads"] });
+      setClearOpen(false);
+      toast.success("Chat cleared from your view", {
+        description: `${firstName} keeps their copy. Bookings, payments and escrow records are untouched.`,
+        duration: 8000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            void (async () => {
+              try {
+                await restoreThreadHistory(activeThread.id, side, previous);
+                await queryClient.invalidateQueries({ queryKey: ["threads"] });
+                toast.success("History restored");
+              } catch (error) {
+                toast.error(
+                  error instanceof Error ? error.message : "Couldn't restore that history",
+                );
+              }
+            })();
+          },
+        },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't clear this chat");
+    } finally {
+      setClearing(false);
+    }
+  }
+
+  /** Deletes one of my own messages for both sides of the thread. */
+  async function removeMessage(message: MessageRowType) {
+    setDeletingMessage(true);
+    try {
+      await deleteOwnMessage(message.id);
+      await queryClient.invalidateQueries({ queryKey: ["messages", message.thread_id] });
+      setMessageToDelete(null);
+      toast.success("Message deleted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't delete that message");
+    } finally {
+      setDeletingMessage(false);
+    }
+  }
+
+  async function copyMessage(body: string) {
+    try {
+      await navigator.clipboard.writeText(body);
+      toast.success("Message copied");
+    } catch {
+      toast.error("Your browser blocked the clipboard");
+    }
+  }
+
 
   function openGift() {
     if (!escrow.tipsEnabled) {
@@ -803,6 +936,30 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                       </Button>
                     ) : null}
                   </div>
+
+                  {threadList.length ? (
+                    <div className="relative mt-3">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Search conversations"
+                        className="h-9 rounded-full pl-9 pr-9 text-xs"
+                        aria-label="Search conversations"
+                      />
+                      {search ? (
+                        <button
+                          type="button"
+                          aria-label="Clear search"
+                          onClick={() => setSearch("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   {selectMode ? (
                     <div className="mt-3 flex items-center gap-2">
                       <Button
@@ -812,13 +969,15 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         className="text-xs"
                         onClick={() =>
                           setSelectedIds(
-                            selectedIds.length === threadList.length
+                            selectedIds.length === visibleThreads.length
                               ? []
-                              : threadList.map((thread) => thread.id),
+                              : visibleThreads.map((thread) => thread.id),
                           )
                         }
                       >
-                        {selectedIds.length === threadList.length ? "Clear all" : "Select all"}
+                        {selectedIds.length === visibleThreads.length && visibleThreads.length
+                          ? "Clear all"
+                          : "Select all"}
                       </Button>
                       <Button
                         type="button"
@@ -838,11 +997,12 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                     </div>
                   ) : null}
                 </div>
+
                 <ScrollArea className="min-h-0 flex-1">
                   {threadsQuery.isLoading ? (
                     <p className="p-4 text-xs text-muted-foreground">Loading threads…</p>
                   ) : null}
-                  {threadList.map((item) => {
+                  {visibleThreads.map((item) => {
                     const otherId = item.client_id === userId ? item.specialist_id : item.client_id;
                     const other = peopleById.get(otherId);
                     const name = other?.display_name ?? "Ashnight member";
@@ -899,12 +1059,24 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         </Avatar>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="truncate text-sm font-semibold">{name}</p>
+                            <p
+                              className={cn(
+                                "truncate text-sm",
+                                unread ? "font-semibold" : "font-medium",
+                              )}
+                            >
+                              {name}
+                            </p>
                             <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
                               {timeLabel(item.last_message_at)}
                             </span>
                           </div>
-                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                          <p
+                            className={cn(
+                              "mt-1 truncate text-xs",
+                              unread ? "text-foreground" : "text-muted-foreground",
+                            )}
+                          >
                             {item.last_message || "No messages yet"}
                           </p>
                         </div>
@@ -916,25 +1088,49 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                       </button>
                       )}
                         {selectMode ? null : (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Remove conversation with ${name}`}
-                          className="mr-2 mt-3 size-8 shrink-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => setRemoveThread(item)}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Options for the conversation with ${name}`}
+                              className="mr-2 mt-3 size-8 shrink-0 text-muted-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                            >
+                              <MoreVertical className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-52">
+                            <DropdownMenuLabel className="truncate text-xs">{name}</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setActiveThreadId(item.id);
+                                setShowListOnMobile(false);
+                              }}
+                            >
+                              Open conversation
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onSelect={() => setRemoveThread(item)}
+                            >
+                              <Trash2 className="size-4" /> Remove from my list
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         )}
                       </div>
                     );
                   })}
-                  {!threadsQuery.isLoading && !threadList.length ? (
+                  {!threadsQuery.isLoading && !visibleThreads.length ? (
                     <p className="p-4 text-xs text-muted-foreground">
-                      No conversations yet. Open one from a specialist profile.
+                      {threadList.length
+                        ? `No conversations match “${search}”.`
+                        : "No conversations yet. Open one from a specialist profile."}
                     </p>
                   ) : null}
+
                 </ScrollArea>
               </aside>
 
@@ -990,37 +1186,6 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         </p>
                       </div>
                       <div className="ml-auto flex items-center gap-1">
-                        {canRatePeer ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label={`Rate ${peerName}`}
-                                onClick={() => setRatingOpen(true)}
-                              >
-                                <Star className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Rate your visit with {firstName}</TooltipContent>
-                          </Tooltip>
-                        ) : null}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`${t("chat.report")} ${peerName}`}
-                              onClick={() => setReportOpen(true)}
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              <Flag className="size-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {t("chat.report")} this member to trust &amp; safety
-                          </TooltipContent>
-                        </Tooltip>
                         <CallControl
                           allowed={audioAllowed}
                           label={t("chat.voice").toLowerCase()}
@@ -1041,7 +1206,55 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                         >
                           <Video className="size-4" />
                         </CallControl>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" aria-label="Conversation options">
+                              <MoreVertical className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-60">
+                            <DropdownMenuLabel className="truncate text-xs">
+                              {peerName}
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {iAmClient && peerId ? (
+                              <DropdownMenuItem asChild>
+                                <Link
+                                  to="/specialists/$specialistId"
+                                  params={{ specialistId: peerId }}
+                                >
+                                  <UserIcon className="size-4" /> View profile
+                                </Link>
+                              </DropdownMenuItem>
+                            ) : null}
+                            {canRatePeer ? (
+                              <DropdownMenuItem onSelect={() => setRatingOpen(true)}>
+                                <Star className="size-4" /> Rate your visit
+                              </DropdownMenuItem>
+                            ) : null}
+                            <DropdownMenuItem onSelect={() => setReportOpen(true)}>
+                              <Flag className="size-4" /> {t("chat.report")} to trust &amp; safety
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onSelect={() => setClearOpen(true)}
+                            >
+                              <Eraser className="size-4" /> Clear chat history
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onSelect={() =>
+                                setRemoveThread(activeThread as ThreadRow)
+                              }
+                            >
+                              <Trash2 className="size-4" /> Remove conversation
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
+
                     </header>
 
                     {!audioAllowed && !videoAllowed ? (
@@ -1054,33 +1267,64 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
                     <ScrollArea className="min-h-0 flex-1">
                       <div className="space-y-4 p-4 sm:p-6">
-                        {messages.map((message) => (
-                          <MessageBubble
-                            key={message.id}
-                            message={message}
-                            mine={message.author_id === userId}
-                            peerFirstName={firstName}
-                            escrow={
-                              message.escrow_id
-                                ? escrowEntries.find((entry) => entry.id === message.escrow_id)
-                                : undefined
-                            }
-                            canResolve={iAmClient}
-                            booking={
-                              message.booking_id ? bookingsById.get(message.booking_id) : undefined
-                            }
-                            canPay={iAmClient && bookingsOpen}
-                            paying={
-                              !!message.booking_id && payingBookingId === message.booking_id
-                            }
-                            onPay={(id) => void payBooking(id)}
-                            onConfirm={(id) => void confirmAndReview(id)}
-                            onDispute={(id, reason) => void raiseIssue(id, reason)}
-                          />
-                        ))}
+                        {clearedAt ? (
+                          <p className="mx-auto flex max-w-md items-center justify-center gap-2 rounded-full border border-dashed border-border bg-background/60 px-4 py-1.5 text-center text-[11px] text-muted-foreground">
+                            <Eraser className="size-3 shrink-0" />
+                            Older messages are hidden from your view only
+                          </p>
+                        ) : null}
+                        {visibleMessages.map((message, index) => {
+                          const previous = visibleMessages[index - 1];
+                          const showDay =
+                            !previous || dayKey(previous.created_at) !== dayKey(message.created_at);
+                          return (
+                            <div key={message.id} className="space-y-4">
+                              {showDay ? (
+                                <div className="flex items-center gap-3">
+                                  <Separator className="flex-1" />
+                                  <span className="eyebrow shrink-0 text-[10px]">
+                                    {dayLabel(message.created_at)}
+                                  </span>
+                                  <Separator className="flex-1" />
+                                </div>
+                              ) : null}
+                              <MessageBubble
+                                message={message}
+                                mine={message.author_id === userId}
+                                peerFirstName={firstName}
+                                escrow={
+                                  message.escrow_id
+                                    ? escrowEntries.find((entry) => entry.id === message.escrow_id)
+                                    : undefined
+                                }
+                                canResolve={iAmClient}
+                                booking={
+                                  message.booking_id
+                                    ? bookingsById.get(message.booking_id)
+                                    : undefined
+                                }
+                                canPay={iAmClient && bookingsOpen}
+                                paying={
+                                  !!message.booking_id && payingBookingId === message.booking_id
+                                }
+                                onPay={(id) => void payBooking(id)}
+                                onConfirm={(id) => void confirmAndReview(id)}
+                                onDispute={(id, reason) => void raiseIssue(id, reason)}
+                                onCopy={(body) => void copyMessage(body)}
+                                onDelete={() => setMessageToDelete(message)}
+                              />
+                            </div>
+                          );
+                        })}
+                        {!visibleMessages.length && !messagesQuery.isLoading ? (
+                          <p className="py-10 text-center text-xs text-muted-foreground">
+                            No messages here yet — say hello to {firstName}.
+                          </p>
+                        ) : null}
                         <div ref={bottomRef} />
                       </div>
                     </ScrollArea>
+
 
                     <div className="shrink-0 border-t border-border/70 p-3 sm:p-4">
                       {iAmClient ? (
@@ -1373,6 +1617,62 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={clearOpen} onOpenChange={setClearOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear this chat history?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Every message here disappears from your view. {firstName} keeps their own copy, and
+              bookings, payments and escrow records stay exactly as they are. You get a short window
+              to undo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={clearing}>Keep history</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={clearing}
+              onClick={(event) => {
+                event.preventDefault();
+                void clearHistory();
+              }}
+            >
+              {clearing ? "Clearing…" : "Clear history"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!messageToDelete}
+        onOpenChange={(open) => {
+          if (!open) setMessageToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              It is removed for both of you. Anything already paid or held in escrow is unaffected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingMessage}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deletingMessage}
+              onClick={(event) => {
+                event.preventDefault();
+                if (messageToDelete) void removeMessage(messageToDelete);
+              }}
+            >
+              {deletingMessage ? "Deleting…" : "Delete message"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </TooltipProvider>
 
   );
@@ -1429,6 +1729,8 @@ function MessageBubble({
   onPay,
   onConfirm,
   onDispute,
+  onCopy,
+  onDelete,
 }: {
   message: MessageRowType;
   mine: boolean;
@@ -1441,6 +1743,8 @@ function MessageBubble({
   onPay: (id: string) => void;
   onConfirm: (id: string) => void;
   onDispute: (id: string, reason: string) => void;
+  onCopy: (body: string) => void;
+  onDelete: () => void;
 }) {
   if (message.kind === "system") {
     return (
@@ -1553,7 +1857,10 @@ function MessageBubble({
   }
 
   return (
-    <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
+    <div className={cn("group flex items-end gap-1", mine ? "justify-end" : "justify-start")}>
+      {mine ? (
+        <MessageActions mine onCopy={() => onCopy(message.body)} onDelete={onDelete} />
+      ) : null}
       <div className="max-w-[78%]">
         <div
           className={cn(
@@ -1582,9 +1889,50 @@ function MessageBubble({
           {message.redacted ? " · redacted" : ""}
         </p>
       </div>
+      {!mine ? <MessageActions onCopy={() => onCopy(message.body)} /> : null}
     </div>
   );
 }
+
+/**
+ * Hover/tap actions on a single message: copy the text, and — for your own
+ * messages — delete it for everyone in the thread.
+ */
+function MessageActions({
+  mine = false,
+  onCopy,
+  onDelete,
+}: {
+  mine?: boolean;
+  onCopy: () => void;
+  onDelete?: () => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-0.5 pb-5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7 text-muted-foreground"
+        aria-label="Copy message"
+        onClick={onCopy}
+      >
+        <Copy className="size-3.5" />
+      </Button>
+      {mine && onDelete ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 text-muted-foreground hover:text-destructive"
+          aria-label="Delete message"
+          onClick={onDelete}
+        >
+          <Trash2 className="size-3.5" />
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 
 /** Live escrow status for a booking or gift, as the member sees it. */
 function EscrowStrip({ entry }: { entry: EscrowEntry }) {

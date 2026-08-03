@@ -1489,6 +1489,7 @@ export type Database = {
       }
       threads: {
         Row: {
+          client_cleared_at: string | null
           client_hidden_at: string | null
           client_id: string
           client_last_read_at: string
@@ -1498,12 +1499,14 @@ export type Database = {
           last_message: string
           last_message_at: string
           room: Database["public"]["Enums"]["tier"] | null
+          specialist_cleared_at: string | null
           specialist_hidden_at: string | null
           specialist_id: string
           specialist_last_read_at: string
           updated_at: string
         }
         Insert: {
+          client_cleared_at?: string | null
           client_hidden_at?: string | null
           client_id: string
           client_last_read_at?: string
@@ -1513,12 +1516,14 @@ export type Database = {
           last_message?: string
           last_message_at?: string
           room?: Database["public"]["Enums"]["tier"] | null
+          specialist_cleared_at?: string | null
           specialist_hidden_at?: string | null
           specialist_id: string
           specialist_last_read_at?: string
           updated_at?: string
         }
         Update: {
+          client_cleared_at?: string | null
           client_hidden_at?: string | null
           client_id?: string
           client_last_read_at?: string
@@ -1528,6 +1533,7 @@ export type Database = {
           last_message?: string
           last_message_at?: string
           room?: Database["public"]["Enums"]["tier"] | null
+          specialist_cleared_at?: string | null
           specialist_hidden_at?: string | null
           specialist_id?: string
           specialist_last_read_at?: string
