@@ -10,7 +10,6 @@ import { useSettingsSection } from "./platform-settings";
 export type DirectoryLayout = "rows" | "grid";
 export type TileAspect = "square" | "portrait" | "tall";
 export type Density = "compact" | "cozy" | "roomy";
-export type ThemeMode = "light" | "dark" | "member";
 
 /** Composable blocks on the signed-in client landing page (`/rooms`). */
 export const PAGE_SECTIONS = [
@@ -48,8 +47,6 @@ export interface AppearanceSettings {
   cornerRadius: number;
   /** Body/heading type scale multiplier for member pages. */
   fontScale: number;
-  /** Default theme members land on. `member` keeps their own choice. */
-  themeMode: ThemeMode;
   /** Optional accent override (hex). Empty keeps the brass design token. */
   accentColor: string;
   /** Which roster rows are shown, in order. */
@@ -66,7 +63,6 @@ export const DEFAULT_APPEARANCE: AppearanceSettings = {
   density: "cozy",
   cornerRadius: 0.75,
   fontScale: 1,
-  themeMode: "member",
   accentColor: "",
   rosterGroups: ["online", "top", "new"],
   sections: ["spotlight", "rows", "dashboard", "pricing", "comparison"],

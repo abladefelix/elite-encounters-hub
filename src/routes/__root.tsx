@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "../components/ui/sonner";
 import { ThemeProvider } from "../components/theme-provider";
+import { AppearanceStyles } from "../components/appearance-styles";
 import { MobileTabBar } from "../components/mobile-tab-bar";
 import { IncomingCallWatcher } from "../components/chat/incoming-call-watcher";
 import { NativeShell } from "../components/native-shell";
@@ -174,6 +175,8 @@ function RootComponent() {
                 <NativeShell />
                 {/* Applies the admin's site-wide wording rules to every rendered string. */}
                 <WordingOverrides />
+                {/* Applies the admin's appearance settings to member pages. */}
+                <AppearanceStyles />
                 <Toaster position="top-center" />
 
                 </PresenceProvider>
