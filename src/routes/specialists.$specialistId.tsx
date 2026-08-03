@@ -102,7 +102,13 @@ function SpecialistProfile() {
   const { data: allServices } = useServices(true);
   const { data: reviews } = useRatings(specialist.id);
 
+  const { data: media } = useStoredMedia(
+    specialist.avatar_url ? [{ bucket: "avatars" as const, value: specialist.avatar_url }] : [],
+  );
+  const avatarUrl = specialist.avatar_url ? media?.[specialist.avatar_url] : undefined;
+
   const serviceNames = (serviceLinks ?? [])
+
     .map((link) => allServices?.find((service) => service.id === link.service_id)?.name)
     .filter((name): name is string => Boolean(name));
 
