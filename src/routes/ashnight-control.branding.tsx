@@ -550,6 +550,8 @@ function SiteWordingCard() {
   const [rules, setRules] = useState<PhraseRule[]>(locale.phrases ?? []);
   const [busy, setBusy] = useState(false);
   const [hits, setHits] = useState(() => readPhraseHits());
+  const [previewOpen, setPreviewOpen] = useState(false);
+
 
   useEffect(() => setRules(locale.phrases ?? []), [locale.phrases]);
 
