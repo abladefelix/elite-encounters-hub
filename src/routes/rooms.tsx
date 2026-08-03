@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, LogIn, Users } from "lucide-react";
+import { Check, Lock, LogIn, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { SiteHeader } from "@/components/site-header";
 import { MemberDashboardStrip } from "@/components/member-dashboard-strip";
+import { SpecialistShowcase } from "@/components/specialist-showcase";
 import { SiteFooter } from "@/components/site-footer";
 import { TierBadge } from "@/components/tier-badge";
 import { useAuth } from "@/hooks/use-auth";
@@ -132,7 +133,7 @@ function comparisonRows(policy: RoomPolicyMap, roomIds: Tier[]): ComparisonRow[]
 
 function RoomsPage() {
   const { policy, profiles, roomIds, profileOf } = useRoomSettings();
-  const { user, loading: authLoading, isSpecialist, isAdmin } = useAuth();
+  const { user, profile: myProfile, loading: authLoading, isSpecialist, isAdmin } = useAuth();
   // Specialists never buy or change their own room — admin places and promotes
   // them from the control room based on ratings and completed work.
   const canJoinRooms = !isSpecialist || isAdmin;
@@ -211,7 +212,7 @@ function RoomsPage() {
               <Lock className="size-4" /> Your room is set by our team
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              You're in the {profile?.room ? tierLabel(profile.room) : "unplaced"} room. Specialists
+              You're in the {myProfile?.room ? tierLabel(myProfile.room) : "unplaced"} room. Specialists
               never pay for a room and can't upgrade themselves — our team promotes you as your
               rating and completed jobs grow. Keep your rating high and your profile complete.
             </p>
