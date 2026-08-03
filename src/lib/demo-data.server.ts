@@ -361,6 +361,9 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
         dislikes: person.dislikes,
         ghana_card_number: person.card,
         ghana_card_expiry: "2031-06-30",
+        ghana_card_front_url: person.avatar,
+        ghana_card_back_url: person.avatar,
+
         terms_accepted_at: hoursAgo(900),
         privacy_accepted_at: hoursAgo(900),
         last_seen_at: hoursAgo(1),
