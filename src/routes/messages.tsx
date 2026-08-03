@@ -22,7 +22,19 @@ import {
   Video,
 } from "lucide-react";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -161,6 +173,9 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [reportOpen, setReportOpen] = useState(false);
   const [ratingOpen, setRatingOpen] = useState(false);
   const [showListOnMobile, setShowListOnMobile] = useState(true);
+  const [removeThread, setRemoveThread] = useState<ThreadRow | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const queryClient = useQueryClient();
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
@@ -600,6 +615,23 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
         onError: (error) => toast.error(error.message),
       },
     );
+  }
+
+  /** Clears a conversation from this member's own list only. */
+  async function confirmRemoveThread() {
+    if (!removeThread) return;
+    setRemoving(true);
+    try {
+      await hideThread(removeThread.id, removeThread.client_id === userId ? "client" : "specialist");
+      if (activeThreadId === removeThread.id) setActiveThreadId(undefined);
+      await queryClient.invalidateQueries({ queryKey: ["threads"] });
+      toast.success("Conversation removed from your list");
+      setRemoveThread(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't remove that conversation");
+    } finally {
+      setRemoving(false);
+    }
   }
 
   function openGift() {
