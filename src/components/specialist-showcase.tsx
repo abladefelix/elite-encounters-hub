@@ -14,7 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SpecialistTile } from "@/components/specialist-tile";
+import { SpecialistRows } from "@/components/specialist-rows";
+import { sectionEnabled, useAppearance } from "@/lib/appearance";
 import { TierBadge } from "@/components/tier-badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -151,6 +152,7 @@ export function SpecialistShowcase({ limit = 9 }: { limit?: number }) {
   const { profile, isSpecialist, isAdmin } = useAuth();
   const { data: profiles, isLoading } = useSpecialists("all");
   const { data: serviceMap } = useShowcaseServiceMap();
+  const { appearance } = useAppearance();
 
   // Your room decides which rooms you can see, cumulatively.
   const allowedRooms = useMemo(
@@ -168,7 +170,9 @@ export function SpecialistShowcase({ limit = 9 }: { limit?: number }) {
   }, [profiles, serviceMap, allowedRooms]);
 
   const spotlight = reachable[0];
-  const rest = reachable.slice(1, limit + 1);
+  // Admins choose which blocks of this showcase members actually see.
+  const showSpotlight = sectionEnabled(appearance, "spotlight");
+  const showRows = sectionEnabled(appearance, "rows");
   const onlineNow = reachable.filter((s) => s.online).length;
 
   // Specialists don't browse the roster at all.
