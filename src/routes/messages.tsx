@@ -6,8 +6,12 @@ import {
   Banknote,
   CheckCheck,
   Copy,
+  Download,
   Eraser,
+  ExternalLink,
   Flag,
+  Reply,
+
   Gift as GiftIcon,
   Image as ImageIcon,
   Lock,
@@ -1360,6 +1364,16 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                                 onConfirm={(id) => void confirmAndReview(id)}
                                 onDispute={(id, reason) => void raiseIssue(id, reason)}
                                 onCopy={(body) => void copyMessage(body)}
+                                onReply={(target) => {
+                                  const quoted = target.body.trim()
+                                    ? target.body.trim().slice(0, 160)
+                                    : (target.attachment_name ?? "attachment");
+                                  setDraft((current) =>
+                                    `> ${quoted}\n${current}`.slice(0, 1000),
+                                  );
+                                  draftRef.current?.focus();
+                                }}
+                                onReport={() => setReportOpen(true)}
                                 onDelete={() => setMessageToDelete(message)}
                               />
                             </div>
@@ -1802,6 +1816,8 @@ function MessageBubble({
   onDispute,
   onCopy,
   onDelete,
+  onReply,
+  onReport,
 }: {
   message: MessageRowType;
   mine: boolean;
@@ -1816,6 +1832,9 @@ function MessageBubble({
   onDispute: (id: string, reason: string) => void;
   onCopy: (body: string) => void;
   onDelete: () => void;
+  onReply: (message: MessageRowType) => void;
+  onReport: () => void;
+
 }) {
   if (message.kind === "system") {
     return (
@@ -1852,6 +1871,9 @@ function MessageBubble({
           mine={mine}
           body={message.body}
           onCopy={() => onCopy(message.body)}
+          onReply={() => onReply(message)}
+          onReport={onReport}
+          attachmentUrl={message.attachment_url}
           {...(mine ? { onDelete } : {})}
         >
           <div className="max-w-sm rounded-xl border border-border bg-card p-4">
@@ -1943,6 +1965,9 @@ function MessageBubble({
         mine={mine}
         body={message.body}
         onCopy={() => onCopy(message.body)}
+        onReply={() => onReply(message)}
+        onReport={onReport}
+        attachmentUrl={message.attachment_url}
         {...(mine ? { onDelete } : {})}
       >
         <div className="max-w-[85%] select-none">
@@ -1987,39 +2012,78 @@ function MessageBubble({
 function MessageActions({
   mine = false,
   body,
+  attachmentUrl,
   onCopy,
+  onReply,
+  onReport,
   onDelete,
   children,
 }: {
   mine?: boolean;
   body: string;
+  attachmentUrl?: string | null;
   onCopy: () => void;
+  onReply?: () => void;
+  onReport?: () => void;
   onDelete?: () => void;
   children: ReactNode;
 }) {
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-      <ContextMenuContent className="w-48">
-        <ContextMenuItem onSelect={onCopy}>
-          <Copy className="size-4" /> Copy text
-        </ContextMenuItem>
-        {mine && onDelete ? (
-          <ContextMenuItem
-            className="text-destructive focus:text-destructive"
-            onSelect={onDelete}
-          >
-            <Trash2 className="size-4" /> Delete message
+      <ContextMenuContent className="w-56">
+        {onReply ? (
+          <ContextMenuItem onSelect={onReply}>
+            <Reply className="size-4" /> Reply
           </ContextMenuItem>
+        ) : null}
+        {body.trim() ? (
+          <ContextMenuItem onSelect={onCopy}>
+            <Copy className="size-4" /> Copy text
+          </ContextMenuItem>
+        ) : null}
+        {attachmentUrl ? (
+          <>
+            <ContextMenuItem asChild>
+              <a href={attachmentUrl} target="_blank" rel="noreferrer">
+                <ExternalLink className="size-4" /> Open attachment
+              </a>
+            </ContextMenuItem>
+            <ContextMenuItem asChild>
+              <a href={attachmentUrl} download target="_blank" rel="noreferrer">
+                <Download className="size-4" /> Save attachment
+              </a>
+            </ContextMenuItem>
+          </>
+        ) : null}
+        {!mine && onReport ? (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem onSelect={onReport}>
+              <Flag className="size-4" /> Report message
+            </ContextMenuItem>
+          </>
+        ) : null}
+        {mine && onDelete ? (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={onDelete}
+            >
+              <Trash2 className="size-4" /> Delete message
+            </ContextMenuItem>
+          </>
         ) : null}
         <ContextMenuSeparator />
         <ContextMenuLabel className="truncate text-[11px] font-normal text-muted-foreground">
-          {body.slice(0, 40) || "Message"}
+          {body.slice(0, 40) || "Attachment"}
         </ContextMenuLabel>
       </ContextMenuContent>
     </ContextMenu>
   );
 }
+
 
 /** Emoji tray — sending emoji never depends on the device keyboard. */
 const EMOJI_GROUPS: { label: string; emoji: string[] }[] = [

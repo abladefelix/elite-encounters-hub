@@ -157,6 +157,7 @@ function AdminOverview() {
           hint={`${memberships.length} total memberships`}
           icon={TrendingUp}
           tone="default"
+          to="/ashnight-control/users"
         />
         <StatCard
           label="Escrow held & clearing"
@@ -164,6 +165,7 @@ function AdminOverview() {
           hint={`${money(totals.disputed)} frozen in disputes`}
           icon={ArrowUpRight}
           tone="success"
+          to="/ashnight-control/escrow"
         />
         <StatCard
           label="Vetted specialists"
@@ -171,6 +173,7 @@ function AdminOverview() {
           hint="Across three rooms"
           icon={Users}
           tone="accent"
+          to="/ashnight-control/rooms"
         />
         <StatCard
           label="Needs attention"
@@ -178,8 +181,10 @@ function AdminOverview() {
           hint={`${pendingVetting} vetting · ${openDisputes} disputes · ${openReports} reports`}
           icon={AlertTriangle}
           tone="warning"
+          to="/ashnight-control/vetting"
         />
       </div>
+
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-6 lg:col-span-2">
@@ -194,7 +199,13 @@ function AdminOverview() {
                 </p>
               </div>
             </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/ashnight-control/bookings">
+                Open <ArrowUpRight className="size-3.5" />
+              </Link>
+            </Button>
           </div>
+
 
           <div className="mt-8 flex h-48 items-end gap-3 sm:gap-5">
             {statusCounts.map((point) => (
@@ -216,10 +227,18 @@ function AdminOverview() {
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-center gap-2">
-            <IconContainer icon={DoorOpen} tone="accent" size="sm" />
-            <h2 className="font-display text-base font-semibold">Room balance</h2>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <IconContainer icon={DoorOpen} tone="accent" size="sm" />
+              <h2 className="font-display text-base font-semibold">Room balance</h2>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/ashnight-control/rooms">
+                Manage <ArrowUpRight className="size-3.5" />
+              </Link>
+            </Button>
           </div>
+
           <div className="mt-6 space-y-5">
             {distribution.map((row) => {
               const ratio = row.specialists
@@ -260,16 +279,22 @@ function AdminOverview() {
           ) : (
             <ul className="mt-4 divide-y divide-border/60">
               {queue.map((applicant) => (
-                <li key={applicant.id} className="flex items-center gap-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{applicant.full_name}</p>
-                    <p className="text-xs capitalize text-muted-foreground">
-                      {applicant.applied_role} · {applicant.city}
-                    </p>
-                  </div>
-                  <TierBadge tier={applicant.suggested_room} showIcon />
+                <li key={applicant.id}>
+                  <Link
+                    to="/ashnight-control/vetting"
+                    className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-muted/60"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{applicant.full_name}</p>
+                      <p className="text-xs capitalize text-muted-foreground">
+                        {applicant.applied_role} · {applicant.city}
+                      </p>
+                    </div>
+                    <TierBadge tier={applicant.suggested_room} showIcon />
+                  </Link>
                 </li>
               ))}
+
             </ul>
           )}
         </Card>
@@ -286,25 +311,31 @@ function AdminOverview() {
           ) : (
             <ul className="mt-4 divide-y divide-border/60">
               {bookings.slice(0, 4).map((booking) => (
-                <li key={booking.id} className="flex items-center gap-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{booking.service_name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {profileById.get(booking.specialist_id)?.display_name ?? "—"} ·{" "}
-                      {booking.scheduled_for
-                        ? new Date(booking.scheduled_for).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "numeric",
-                          })
-                        : "unscheduled"}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-sm font-medium">
-                    {money(booking.hours * booking.rate)}
-                  </span>
+                <li key={booking.id}>
+                  <Link
+                    to="/ashnight-control/bookings"
+                    className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-muted/60"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{booking.service_name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {profileById.get(booking.specialist_id)?.display_name ?? "—"} ·{" "}
+                        {booking.scheduled_for
+                          ? new Date(booking.scheduled_for).toLocaleString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                            })
+                          : "unscheduled"}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm font-medium">
+                      {money(booking.hours * booking.rate)}
+                    </span>
+                  </Link>
                 </li>
               ))}
+
             </ul>
           )}
         </Card>
