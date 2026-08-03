@@ -20,7 +20,17 @@ export function NativeShell() {
     cleanups.push(() => document.documentElement.classList.remove("native-app"));
 
     void (async () => {
+      // Hide the splash as soon as React has mounted, so the OS timeout never
+      // decides for us (that timeout is what leaves a blank frame behind).
+      try {
+        const { SplashScreen } = await import("@capacitor/splash-screen");
+        await SplashScreen.hide({ fadeOutDuration: 200 });
+      } catch {
+        /* plugin unavailable — harmless */
+      }
+
       // Status bar: overlay the web view and match the app chrome.
+
       try {
         const { StatusBar, Style } = await import("@capacitor/status-bar");
         const dark = document.documentElement.classList.contains("dark");
