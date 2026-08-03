@@ -148,7 +148,7 @@ function SpotlightCard({ specialist }: { specialist: Specialist }) {
   );
 }
 
-export function SpecialistShowcase({ limit = 9 }: { limit?: number }) {
+export function SpecialistShowcase() {
   const { profile, isSpecialist, isAdmin } = useAuth();
   const { data: profiles, isLoading } = useSpecialists("all");
   const { data: serviceMap } = useShowcaseServiceMap();
