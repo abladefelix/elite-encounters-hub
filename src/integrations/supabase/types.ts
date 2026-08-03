@@ -950,7 +950,6 @@ export type Database = {
           kind: Database["public"]["Enums"]["message_kind"]
           redacted: boolean
           reply_to_id: string | null
-          reply_to_id: string | null
           thread_id: string
         }
         Insert: {
@@ -965,7 +964,6 @@ export type Database = {
           kind?: Database["public"]["Enums"]["message_kind"]
           redacted?: boolean
           reply_to_id?: string | null
-          reply_to_id?: string | null
           thread_id: string
         }
         Update: {
@@ -979,7 +977,6 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["message_kind"]
           redacted?: boolean
-          reply_to_id?: string | null
           reply_to_id?: string | null
           thread_id?: string
         }
