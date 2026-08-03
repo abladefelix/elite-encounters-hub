@@ -209,9 +209,24 @@ export const startMembershipCheckout = createServerFn({ method: "POST" })
     const { adminClient, initializeTransaction, reference, roomPrice, serverSettings } =
       await import("./payments.server");
     const admin = await adminClient();
+
+    // Only clients buy memberships. Specialists join free and are placed (and
+    // promoted) by admin on rating, so they can never pay their way up a room.
+    const { data: roles } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const roleList = (roles ?? []).map((row) => row.role);
+    if (roleList.includes("specialist") && !roleList.includes("admin")) {
+      throw new Error(
+        "Specialists don't pay for rooms — your room is set and upgraded by our team based on your ratings.",
+      );
+    }
+
     const settings = await serverSettings();
     const price = roomPrice(settings, data.room);
     const ref = reference("MB");
+
 
     const { error } = await admin.from("memberships").insert({
       user_id: context.userId,
