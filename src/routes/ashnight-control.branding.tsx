@@ -504,6 +504,39 @@ function LanguageCard() {
 
 /* ------------------------------------------------------- site-wide wording */
 
+const SCOPE_OPTIONS: { value: PhraseRule["scope"]; label: string; hint: string; icon: React.ReactNode }[] = [
+  {
+    value: "everywhere",
+    label: "Everywhere",
+    hint: "Every page and screen",
+    icon: <Globe className="size-3.5" />,
+  },
+  {
+    value: "routes",
+    label: "Only on pages",
+    hint: "Limit to specific URLs",
+    icon: <MapPin className="size-3.5" />,
+  },
+  {
+    value: "exclude-routes",
+    label: "Everywhere except pages",
+    hint: "Skip specific URLs",
+    icon: <Shield className="size-3.5" />,
+  },
+  {
+    value: "selectors",
+    label: "Only in sections",
+    hint: "Limit to CSS selectors",
+    icon: <LayoutTemplate className="size-3.5" />,
+  },
+  {
+    value: "exclude-admin",
+    label: "Everywhere except admin",
+    hint: "Skip /ashnight-control/*",
+    icon: <Shield className="size-3.5" />,
+  },
+];
+
 /**
  * Free-form find/replace across the whole site and app.
  *
@@ -537,7 +570,7 @@ function SiteWordingCard() {
       toast.success(
         cleaned.length === 0
           ? "Site-wide wording rules cleared"
-          : `${cleaned.length} wording rule${cleaned.length === 1 ? "" : "s"} live site-wide`,
+          : `${cleaned.length} wording rule${cleaned.length === 1 ? "" : "s"} live`,
       );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not save the wording rules");
@@ -568,6 +601,7 @@ function SiteWordingCard() {
 
             {rules.map((rule) => {
               const seen = Object.entries(hits[rule.id] ?? {}).sort((a, b) => b[1] - a[1]);
+              const scope = SCOPE_OPTIONS.find((s) => s.value === rule.scope) ?? SCOPE_OPTIONS[0];
               return (
                 <div key={rule.id} className="rounded-lg border border-border/70 bg-background/40 p-3">
                   <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
@@ -617,6 +651,106 @@ function SiteWordingCard() {
                     />
                   </div>
 
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Apply this rule</Label>
+                      <Select
+                        value={rule.scope}
+                        onValueChange={(value) =>
+                          update(rule.id, { scope: value as PhraseRule["scope"] })
+                        }
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue>
+                            <span className="flex items-center gap-2">
+                              {scope.icon}
+                              <span>{scope.label}</span>
+                            </span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SCOPE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <span className="flex items-center gap-2">
+                                {option.icon}
+                                <span>{option.label}</span>
+                              </span>
+                              <span className="block text-[10px] text-muted-foreground">
+                                {option.hint}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {(rule.scope === "routes" || rule.scope === "exclude-routes") && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground">
+                          {rule.scope === "routes" ? "Only on these pages" : "Except these pages"}
+                        </Label>
+                        <Input
+                          className="mt-1"
+                          value={rule.paths.join(", ")}
+                          placeholder="/messages, /specialists/*, /rooms"
+                          onChange={(event) =>
+                            update(rule.id, {
+                              paths: event.target.value
+                                .split(/[,\n]+/)
+                                .map((s) => s.trim())
+                                .filter(Boolean),
+                            })
+                          }
+                        />
+                        <p className="mt-1 text-[10px] text-muted-foreground">
+                          Comma-separated paths. Use * for wildcards.
+                        </p>
+                      </div>
+                    )}
+
+                    {rule.scope === "selectors" && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Only inside these sections</Label>
+                        <Input
+                          className="mt-1"
+                          value={rule.selectors.join(", ")}
+                          placeholder=".chat-header, [data-section='hero']"
+                          onChange={(event) =>
+                            update(rule.id, {
+                              selectors: event.target.value
+                                .split(/[,\n]+/)
+                                .map((s) => s.trim())
+                                .filter(Boolean),
+                            })
+                          }
+                        />
+                        <p className="mt-1 text-[10px] text-muted-foreground">
+                          Comma-separated CSS selectors.
+                        </p>
+                      </div>
+                    )}
+
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Exclude sections (optional)</Label>
+                      <Input
+                        className="mt-1"
+                        value={rule.excludeSelectors.join(", ")}
+                        placeholder=".admin-only, [data-no-reword]"
+                        onChange={(event) =>
+                          update(rule.id, {
+                            excludeSelectors: event.target.value
+                              .split(/[,\n]+/)
+                              .map((s) => s.trim())
+                              .filter(Boolean),
+                          })
+                        }
+                      />
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        CSS selectors to skip even if the rule otherwise matches.
+                      </p>
+                    </div>
+                  </div>
+
                   {seen.length > 0 ? (
                     <div className="mt-3 flex flex-wrap items-center gap-1">
                       <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -660,7 +794,8 @@ function SiteWordingCard() {
 
           <p className="mt-3 text-[11px] text-muted-foreground">
             “Seen on” builds up as pages are visited, so you can confirm a rule only changes the
-            screens you expect. Room tier names stay under Rooms &amp; pricing.
+            screens you expect. Use the scope dropdown to change a word in one place without
+            changing it everywhere. Room tier names stay under Rooms &amp; pricing.
           </p>
 
           <Actions
