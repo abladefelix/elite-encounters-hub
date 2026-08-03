@@ -1280,12 +1280,13 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           return (
                             <div key={message.id} className="space-y-4">
                               {showDay ? (
-                                <div className="flex items-center gap-3">
-                                  <Separator className="flex-1" />
-                                  <span className="eyebrow shrink-0 text-[10px]">
+                                <div className="relative flex items-center justify-center py-1">
+                                  <div className="absolute inset-0 flex items-center">
+                                    <Separator className="w-full" />
+                                  </div>
+                                  <span className="relative bg-background px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                                     {dayLabel(message.created_at)}
                                   </span>
-                                  <Separator className="flex-1" />
                                 </div>
                               ) : null}
                               <MessageBubble
@@ -1497,25 +1498,29 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           </Button>
                         ) : null}
 
-                        <Input
-                          value={draft}
-                          onChange={(event) => {
-                            setDraft(event.target.value);
-                            if (event.target.value.trim()) notifyTyping();
-                            else notifyStopped();
-                          }}
-                          placeholder={`Message ${firstName}…`}
-                          maxLength={1000}
-                        />
-                        <Button
-                          type="submit"
-                          size="icon"
-                          variant="soft"
-                          disabled={!draft.trim() || sendMessage.isPending}
-                          aria-label="Send message"
-                        >
-                          <Send className="size-4" />
-                        </Button>
+                        <div className="flex min-w-0 flex-1 items-center gap-1 rounded-full border border-border/70 bg-surface-strong/60 pl-4 pr-1.5 py-1 focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 transition-colors">
+                          <Input
+                            value={draft}
+                            onChange={(event) => {
+                              setDraft(event.target.value);
+                              if (event.target.value.trim()) notifyTyping();
+                              else notifyStopped();
+                            }}
+                            placeholder={`Message ${firstName}…`}
+                            maxLength={1000}
+                            className="h-9 min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+                          />
+                          <Button
+                            type="submit"
+                            size="icon"
+                            variant="ghost"
+                            className="size-9 shrink-0 rounded-full text-accent hover:text-accent"
+                            disabled={!draft.trim() || sendMessage.isPending}
+                            aria-label="Send message"
+                          >
+                            <Send className="size-4" />
+                          </Button>
+                        </div>
                       </form>
                     </div>
                   </>
@@ -1748,12 +1753,15 @@ function MessageBubble({
 }) {
   if (message.kind === "system") {
     return (
-      <p className="mx-auto flex max-w-md items-center gap-2 rounded-full border border-border bg-background/60 px-4 py-2 text-center text-xs text-muted-foreground">
-        <ShieldCheck className="size-3.5 shrink-0 text-accent" />
-        {message.body}
-      </p>
+      <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-3">
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-accent/60 text-accent">
+          <ShieldCheck className="size-3" />
+        </span>
+        <p className="text-[12px] leading-snug text-muted-foreground">{message.body}</p>
+      </div>
     );
   }
+
 
   if (message.kind === "gift") {
     return (
@@ -1861,13 +1869,14 @@ function MessageBubble({
       {mine ? (
         <MessageActions mine onCopy={() => onCopy(message.body)} onDelete={onDelete} />
       ) : null}
-      <div className="max-w-[78%]">
+      <div className="max-w-[85%]">
         <div
           className={cn(
-            "rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+            "text-sm leading-relaxed shadow-sm",
+            message.attachment_url ? "rounded-2xl p-1.5" : "rounded-2xl px-4 py-2.5",
             mine
-              ? "rounded-br-sm bg-primary text-primary-foreground"
-              : "rounded-bl-sm bg-surface-strong text-foreground",
+              ? "rounded-tr-none border border-primary/20 bg-primary text-primary-foreground"
+              : "rounded-tl-none border border-border/70 bg-card text-foreground",
           )}
         >
           {message.attachment_url ? (
@@ -1988,7 +1997,7 @@ function MediaAttachment({ url, name }: { url: string; name: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="block w-full overflow-hidden rounded-lg"
+        className="block w-full overflow-hidden rounded-xl bg-surface-strong"
         aria-label={`Open ${name}`}
       >
         {isImage ? (
@@ -1996,10 +2005,10 @@ function MediaAttachment({ url, name }: { url: string; name: string }) {
             src={url}
             alt={name}
             loading="lazy"
-            className="max-h-64 w-full rounded-lg object-cover"
+            className="max-h-64 w-full rounded-xl object-cover"
           />
         ) : (
-          <video src={url} muted playsInline className="max-h-64 w-full rounded-lg object-cover" />
+          <video src={url} muted playsInline className="max-h-64 w-full rounded-xl object-cover" />
         )}
       </button>
 
