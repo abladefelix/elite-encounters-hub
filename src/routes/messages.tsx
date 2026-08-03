@@ -1861,6 +1861,9 @@ function MessageBubble({
           mine={mine}
           body={message.body}
           onCopy={() => onCopy(message.body)}
+          onReply={() => onReply(message)}
+          onReport={onReport}
+          attachmentUrl={message.attachment_url}
           {...(mine ? { onDelete } : {})}
         >
           <div className="max-w-sm rounded-xl border border-border bg-card p-4">
