@@ -41,6 +41,16 @@ export const getCallToken = createServerFn({ method: "POST" })
       throw new Error("You are not part of this conversation.");
     }
 
+    // Admins can force the direct peer-to-peer engine platform-wide; honour
+    // that here so the choice can't be bypassed from a member's browser.
+    const { data: callSettings } = await supabase.rpc("settings_section", {
+      _section: "calls",
+    });
+    const engine = (callSettings as { engine?: string } | null)?.engine ?? "auto";
+    if (engine === "webrtc") {
+      return { configured: false, url: "", token: "", room: "" };
+    }
+
     const { readLiveKitConfig, isLiveKitConfigured, mintLiveKitToken } = await import(
       "@/lib/livekit.server"
     );
