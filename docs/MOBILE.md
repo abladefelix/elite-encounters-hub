@@ -184,3 +184,16 @@ Deleting the app first is required: iOS caches both the old launch image and a
 previously denied microphone decision. After reinstalling, the first call shows
 the system prompt. If it was denied earlier, re-enable it in
 **Settings → Ashnight → Microphone / Camera**.
+
+## Calls while the app is closed
+
+In-app ringing (Realtime `call-ring:<userId>` channel) only reaches a member
+while Ashnight is open or backgrounded with the web view alive. Ringing a fully
+closed app requires an OS-level push: VoIP push (PushKit + CallKit) on iOS and a
+high-priority FCM data message on Android, delivered from the server when a call
+invite is created.
+
+Members already control this from **Profile → Calls**
+(`profiles.extra.calls`): accept calls, ring when the app is closed, ringtone
+and vibrate. `ringWhenClosed` is stored and honoured the moment the native push
+service is wired up — nothing pretends to work before then.

@@ -17,6 +17,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { IconContainer } from "@/components/ui/icon-container";
 import { TierBadge } from "@/components/tier-badge";
 import { TwoFactorCard } from "@/components/two-factor-card";
+import { PhoneCall } from "lucide-react";
+import {
+  DEFAULT_CALL_PREFERENCES,
+  readCallPreferences,
+  writeCallPreferences,
+  type CallPreferences,
+} from "@/lib/call-preferences";
 import { PortfolioManager } from "@/components/portfolio-manager";
 
 import { useFeatureFlags } from "@/lib/feature-flags";
@@ -111,10 +118,12 @@ function ProfilePage() {
   const [serviceIds, setServiceIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [calls, setCalls] = useState<CallPreferences>(DEFAULT_CALL_PREFERENCES);
 
   useEffect(() => {
     if (!profile) return;
     setFields(toFields(profile));
+    setCalls(readCallPreferences(profile.extra));
     const stored = profile.avatar_url;
     if (!stored) {
       setAvatarUrl(null);
@@ -255,6 +264,7 @@ function ProfilePage() {
           hourly_rate: fields.hourly_rate,
           years_experience: fields.years_experience,
           available: fields.available,
+          extra: writeCallPreferences(profile?.extra, calls),
         },
       });
       if (isSpecialist) {
@@ -497,6 +507,55 @@ function ProfilePage() {
           </Button>
         </div>
 
+        {/* call preferences */}
+        <Card className="mt-8 border-border/70 bg-panel p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <IconContainer icon={PhoneCall} />
+            <div className="min-w-0">
+              <p className="font-display text-base font-semibold">Calls</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Voice and video calls always ring while Ashnight is open. Background ringing when
+                the app is fully closed needs the native push service — turn it on here and it
+                starts working the moment that goes live on your device.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <CallToggle
+              label="Accept incoming calls"
+              hint="Off means callers see you as unreachable and can only message you."
+              checked={calls.acceptCalls}
+              onChange={(flag) => setCalls((prev) => ({ ...prev, acceptCalls: flag }))}
+            />
+            <CallToggle
+              label="Ring when the app is closed"
+              hint="Uses a system notification so the call reaches you outside the app."
+              checked={calls.ringWhenClosed}
+              disabled={!calls.acceptCalls}
+              onChange={(flag) => setCalls((prev) => ({ ...prev, ringWhenClosed: flag }))}
+            />
+            <CallToggle
+              label="Play a ringtone"
+              hint="Off keeps calls silent — you'll only see the banner."
+              checked={calls.ringtone}
+              disabled={!calls.acceptCalls}
+              onChange={(flag) => setCalls((prev) => ({ ...prev, ringtone: flag }))}
+            />
+            <CallToggle
+              label="Vibrate"
+              hint="Applies on the phone app only."
+              checked={calls.vibrate}
+              disabled={!calls.acceptCalls}
+              onChange={(flag) => setCalls((prev) => ({ ...prev, vibrate: flag }))}
+            />
+          </div>
+
+          <p className="mt-4 text-xs text-muted-foreground">
+            Saved with the Save profile button above.
+          </p>
+        </Card>
+
         {/* account security */}
         <TwoFactorCard
           className="mt-8"
@@ -540,6 +599,41 @@ function TextField({
         onChange={(event) => onChange(event.target.value)}
       />
       {hint ? <p className="mt-1.5 text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function CallToggle({
+  label,
+  hint,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (flag: boolean) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-lg border border-border/70 bg-background px-4 py-3.5",
+        disabled && "opacity-60",
+      )}
+    >
+      <div className="min-w-0">
+        <p className="text-sm font-medium">{label}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
+      </div>
+      <Switch
+        checked={checked}
+        disabled={disabled}
+        aria-label={label}
+        onCheckedChange={onChange}
+        className="shrink-0"
+      />
     </div>
   );
 }

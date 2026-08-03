@@ -205,7 +205,22 @@ function AdminAppearance() {
               </div>
             </div>
 
-            <div className="mt-5 rounded-xl border border-border bg-surface p-4">
+            <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-border bg-surface px-4 py-3.5">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Shuffle faces in each row</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Samples the whole group and reshuffles on every visit, so the strips never look
+                  the same twice. Off shows a fixed order (most available, highest rated, and so on).
+                </p>
+              </div>
+              <Switch
+                checked={draft.shuffleRows}
+                aria-label="Shuffle faces in each row"
+                onCheckedChange={(checked) => set("shuffleRows", checked)}
+              />
+            </div>
+
+            <div className="mt-4 rounded-xl border border-border bg-surface p-4">
               <p className="text-sm font-medium">Rows shown, in order</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Each row is a swipeable strip of faces. Empty rows are skipped automatically.

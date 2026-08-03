@@ -154,6 +154,14 @@ function SpecialistsPage() {
     setPage((current) => Math.min(current, pageCount));
   }, [pageCount]);
 
+  const mapped = useMemo(
+    () => results.map((specialist) => toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])),
+    [results, serviceMap],
+  );
+
+  const filtersActive =
+    query.trim() !== "" || room !== "all" || service !== "all" || availability !== "all";
+
   const pageStart = (Math.min(page, pageCount) - 1) * PAGE_SIZE;
   const visible = results.slice(pageStart, pageStart + PAGE_SIZE);
 
@@ -281,9 +289,12 @@ function SpecialistsPage() {
             {rowsLayout ? (
               <div className="mt-5">
                 <SpecialistRows
-                  roster={results.map((specialist) =>
-                    toSpecialist(specialist, serviceMap?.get(specialist.id) ?? []),
-                  )}
+                  roster={mapped}
+                  // Filters and sort stay meaningful in the row layout: the
+                  // member's own selection leads, in their chosen order.
+                  {...(filtersActive
+                    ? { leadRow: { label: "Matching your filters", items: mapped } }
+                    : {})}
                 />
               </div>
             ) : (

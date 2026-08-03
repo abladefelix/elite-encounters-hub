@@ -8,12 +8,22 @@
  */
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { SpecialistTile } from "@/components/specialist-tile";
 import { DENSITY_GAP, ROSTER_GROUPS, useAppearance } from "@/lib/appearance";
 import type { Specialist } from "@/lib/types";
+
+/** Fisher-Yates shuffle on a copy, so rows never mutate the caller's roster. */
+function shuffled<T>(list: T[]) {
+  const next = [...list];
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    [next[index], next[swap]] = [next[swap] as T, next[index] as T];
+  }
+  return next;
+}
 
 /** Splits a roster into the admin-selected groups, dropping empty ones. */
 export function groupRoster(roster: Specialist[], groups: readonly string[]) {
@@ -94,16 +104,30 @@ function SwipeRow({
 export function SpecialistRows({
   roster,
   showBrowseAll = false,
+  leadRow,
 }: {
   roster: Specialist[];
   showBrowseAll?: boolean;
+  /** Optional first row — used to keep the member's own filters and sort visible. */
+  leadRow?: { label: string; items: Specialist[] };
 }) {
   const { appearance } = useAppearance();
   const gap = DENSITY_GAP[appearance.density] ?? DENSITY_GAP.cozy;
-  const rows = groupRoster(roster, appearance.rosterGroups).map((row) => ({
-    ...row,
-    items: row.items.slice(0, Math.max(4, appearance.rowSize)),
-  }));
+  const limit = Math.max(4, appearance.rowSize);
+  // Shuffling is re-rolled per mount so the strips look different each visit,
+  // but stays stable while the member scrolls and taps through.
+  const rows = useMemo(() => {
+    const grouped = groupRoster(roster, appearance.rosterGroups).map((row) => ({
+      ...row,
+      // A shuffled row samples the whole group instead of always the same head.
+      items: (appearance.shuffleRows ? shuffled(row.items) : row.items).slice(0, limit),
+    }));
+    // The lead row always keeps the member's chosen sort order — never shuffled.
+    return leadRow && leadRow.items.length
+      ? [{ key: "__lead", label: leadRow.label, items: leadRow.items.slice(0, limit) }, ...grouped]
+      : grouped;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roster, appearance.rosterGroups, appearance.shuffleRows, limit, leadRow?.label, leadRow?.items]);
 
   if (!rows.length) return null;
 
