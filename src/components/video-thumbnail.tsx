@@ -81,8 +81,12 @@ export function VideoThumbnail({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl p-3">
-          <DialogTitle className="sr-only">{label}</DialogTitle>
+        {/* The close X sits top-right, so the player starts below it — otherwise
+            it lands on the video's own mute/volume control. */}
+        <DialogContent className="max-w-2xl p-3 pt-12">
+          <DialogTitle className="absolute left-4 top-4 text-sm font-medium text-muted-foreground">
+            {label}
+          </DialogTitle>
           {open ? (
             <video
               src={url}
@@ -94,6 +98,7 @@ export function VideoThumbnail({
           ) : null}
         </DialogContent>
       </Dialog>
+
     </>
   );
 }
