@@ -34,7 +34,9 @@ export function readCallPreferences(extra: unknown): CallPreferences {
       : undefined;
   if (!source) return { ...DEFAULT_CALL_PREFERENCES };
   const bool = (key: keyof CallPreferences) =>
-    typeof source[key] === "boolean" ? (source[key] as boolean) : DEFAULT_CALL_PREFERENCES[key];
+    typeof source[key] === "boolean"
+      ? (source[key] as boolean)
+      : (DEFAULT_CALL_PREFERENCES[key] ?? true);
   return {
     acceptCalls: bool("acceptCalls"),
     ringWhenClosed: bool("ringWhenClosed"),
