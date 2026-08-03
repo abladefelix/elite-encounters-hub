@@ -13,6 +13,13 @@
  * lazily rendered dialogs are covered too. Anything inside an element marked
  * `data-no-reword` is left alone — that is how the admin editor itself avoids
  * rewriting the very words being edited.
+ *
+ * Each rule can be scoped so a word changes in one place but not everywhere:
+ * - everywhere: every page and screen
+ * - routes: only on listed path patterns (supports `*` wildcards)
+ * - exclude-routes: everywhere except listed paths
+ * - selectors: only inside listed CSS selectors
+ * - exclude-admin: everywhere except the control room
  */
 import { useEffect, useMemo } from "react";
 
@@ -29,6 +36,21 @@ export interface PhraseRule {
   /** Only match standalone words, so "cat" never hits "category". */
   wholeWord: boolean;
   enabled: boolean;
+  /**
+   * Where this rule applies.
+   * - everywhere: every page and screen
+   * - routes: only on the listed paths
+   * - exclude-routes: everywhere except the listed paths
+   * - selectors: only inside the listed CSS selectors
+   * - exclude-admin: everywhere except /ashnight-control/*
+   */
+  scope: "everywhere" | "routes" | "exclude-routes" | "selectors" | "exclude-admin";
+  /** Path patterns when scope is routes/exclude-routes. Supports * wildcards. */
+  paths: string[];
+  /** CSS selectors when scope is selectors. */
+  selectors: string[];
+  /** CSS selectors to skip even when a broader rule matches. */
+  excludeSelectors: string[];
 }
 
 export function newPhraseRule(): PhraseRule {
@@ -39,6 +61,10 @@ export function newPhraseRule(): PhraseRule {
     matchCase: false,
     wholeWord: true,
     enabled: true,
+    scope: "everywhere",
+    paths: [],
+    selectors: [],
+    excludeSelectors: [],
   };
 }
 
@@ -89,11 +115,20 @@ function matchShape(source: string, replacement: string) {
   return replacement;
 }
 
+export interface RuleContext {
+  path: string;
+  element?: Element | null;
+}
+
 interface CompiledRule {
   id: string;
   pattern: RegExp;
   replace: string;
   matchCase: boolean;
+  scope: PhraseRule["scope"];
+  paths: string[];
+  selectors: string[];
+  excludeSelectors: string[];
 }
 
 export function compileRules(rules: PhraseRule[]): CompiledRule[] {
@@ -107,18 +142,60 @@ export function compileRules(rules: PhraseRule[]): CompiledRule[] {
         pattern: new RegExp(source, rule.matchCase ? "gu" : "giu"),
         replace: rule.replace,
         matchCase: rule.matchCase,
+        scope: rule.scope ?? "everywhere",
+        paths: rule.paths ?? [],
+        selectors: rule.selectors ?? [],
+        excludeSelectors: rule.excludeSelectors ?? [],
       };
     });
+}
+
+function pathMatches(path: string, pattern: string): boolean {
+  const normalized = path.replace(/\/$/, "") || "/";
+  const pat = pattern.replace(/\/$/, "") || "/";
+  if (pat === normalized) return true;
+  if (pat.endsWith("/*")) {
+    const prefix = pat.slice(0, -1).replace(/\/$/, "");
+    return normalized === prefix || normalized.startsWith(prefix + "/");
+  }
+  const regex = new RegExp("^" + escapeRegExp(pat).replace(/\\\*$/, ".*") + "$");
+  return regex.test(normalized);
+}
+
+function ruleApplies(rule: CompiledRule, ctx: RuleContext): boolean {
+  if (ctx.element && rule.excludeSelectors.length > 0) {
+    if (rule.excludeSelectors.some((sel) => ctx.element!.closest(sel))) return false;
+  }
+
+  switch (rule.scope) {
+    case "everywhere":
+      return true;
+    case "exclude-admin":
+      return !ctx.path.startsWith("/ashnight-control");
+    case "routes":
+      if (rule.paths.length === 0) return false;
+      return rule.paths.some((p) => pathMatches(ctx.path, p));
+    case "exclude-routes":
+      if (rule.paths.length === 0) return true;
+      return !rule.paths.some((p) => pathMatches(ctx.path, p));
+    case "selectors":
+      if (!ctx.element || rule.selectors.length === 0) return false;
+      return rule.selectors.some((sel) => ctx.element!.closest(sel));
+    default:
+      return true;
+  }
 }
 
 /** Applies every rule to one string, returning the text and per-rule hit counts. */
 export function applyRules(
   input: string,
   compiled: CompiledRule[],
+  ctx: RuleContext,
   hits?: Record<string, number>,
 ) {
   let output = input;
   for (const rule of compiled) {
+    if (!ruleApplies(rule, ctx)) continue;
     rule.pattern.lastIndex = 0;
     if (!rule.pattern.test(output)) continue;
     rule.pattern.lastIndex = 0;
@@ -131,9 +208,9 @@ export function applyRules(
 }
 
 /** Counts how many times each rule would fire against a block of text. */
-export function countMatches(text: string, rules: PhraseRule[]) {
+export function countMatches(text: string, rules: PhraseRule[], ctx: RuleContext = { path: "/" }) {
   const hits: Record<string, number> = {};
-  applyRules(text, compileRules(rules), hits);
+  applyRules(text, compileRules(rules), ctx, hits);
   return hits;
 }
 
@@ -163,7 +240,7 @@ export function WordingOverrides() {
     let scheduled = 0;
     const hits: Record<string, number> = {};
 
-    function rewriteText(root: Node) {
+    function rewriteText(root: Node, ctx: RuleContext) {
       const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
       const pending: Text[] = [];
       let current = walker.nextNode();
@@ -174,18 +251,18 @@ export function WordingOverrides() {
       for (const textNode of pending) {
         const value = textNode.nodeValue;
         if (!value || !value.trim() || shouldSkip(textNode)) continue;
-        const next = applyRules(value, compiled, hits);
+        const next = applyRules(value, compiled, { ...ctx, element: textNode.parentElement }, hits);
         if (next !== value) textNode.nodeValue = next;
       }
     }
 
-    function rewriteAttributes(root: ParentNode) {
+    function rewriteAttributes(root: ParentNode, ctx: RuleContext) {
       for (const attr of ATTRS) {
         for (const element of Array.from(root.querySelectorAll(`[${attr}]`))) {
           if (element.closest("[data-no-reword]")) continue;
           const value = element.getAttribute(attr);
           if (!value || !value.trim()) continue;
-          const next = applyRules(value, compiled, hits);
+          const next = applyRules(value, compiled, { ...ctx, element }, hits);
           if (next !== value) element.setAttribute(attr, next);
         }
       }
@@ -209,11 +286,12 @@ export function WordingOverrides() {
     }
 
     function run() {
+      const ctx: RuleContext = { path: window.location.pathname };
       observer.disconnect();
-      rewriteText(document.body);
-      rewriteAttributes(document.body);
+      rewriteText(document.body, ctx);
+      rewriteAttributes(document.body, ctx);
       const title = document.title;
-      const nextTitle = applyRules(title, compiled);
+      const nextTitle = applyRules(title, compiled, ctx);
       if (nextTitle !== title) document.title = nextTitle;
       persistHits();
       observer.observe(document.body, { childList: true, subtree: true, characterData: true });
