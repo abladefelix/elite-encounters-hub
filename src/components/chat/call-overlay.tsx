@@ -107,10 +107,16 @@ export function CallOverlay({
         });
       } catch {
         if (!cancelled) {
+          const native = isNativeApp();
+          const where = native
+            ? nativePlatform() === "ios"
+              ? "Open iPhone Settings → Ashnight and turn on Microphone (and Camera for video), then try the call again."
+              : "Open Settings → Apps → Ashnight → Permissions and allow Microphone (and Camera for video), then try again."
+            : "Check your browser permissions for this site.";
           setMediaError(
             mode === "video"
-              ? "Camera and mic blocked — the call continues without your video."
-              : "Microphone blocked — check your browser permissions.",
+              ? `Camera and mic blocked. ${where}`
+              : `Microphone blocked. ${where}`,
           );
         }
       }
