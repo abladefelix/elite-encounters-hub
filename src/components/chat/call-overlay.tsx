@@ -50,7 +50,66 @@ function formatDuration(seconds: number) {
  * participants who both open this overlay on the same thread establish an
  * actual WebRTC peer connection and exchange live media, no simulation.
  */
-export function CallOverlay({
+export interface CallProps {
+  threadId: string;
+  selfId: string;
+  /** Whoever clicked "start call" makes the offer; the other side answers. */
+  isCaller: boolean;
+  peerName: string;
+  mode: CallMode;
+  onEnd: () => void;
+}
+
+/**
+ * Picks the call engine.
+ *
+ * When an admin has saved LiveKit credentials in the control room vault, calls
+ * run through LiveKit's relay infrastructure — far more reliable on mobile data
+ * and behind firewalls. Without credentials, Ashnight falls back to the built-in
+ * direct peer-to-peer call so calling never simply stops working.
+ */
+export function CallOverlay(props: CallProps) {
+  const fetchToken = useServerFn(getCallToken);
+  const { data, isPending, isError } = useQuery({
+    queryKey: ["call-token", props.threadId, props.mode],
+    queryFn: () => fetchToken({ data: { threadId: props.threadId, mode: props.mode } }),
+    retry: false,
+    staleTime: 0,
+    gcTime: 0,
+  });
+
+  if (isPending) {
+    return (
+      <Dialog open onOpenChange={(open) => !open && props.onEnd()}>
+        <DialogContent className="max-w-sm border-border/70 bg-panel">
+          <DialogTitle className="sr-only">Starting call</DialogTitle>
+          <div className="flex items-center gap-3 py-4 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> Setting up the call…
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!isError && data?.configured) {
+    return (
+      <Suspense fallback={null}>
+        <LiveKitCall
+          url={data.url}
+          token={data.token}
+          peerName={props.peerName}
+          mode={props.mode}
+          onEnd={props.onEnd}
+        />
+      </Suspense>
+    );
+  }
+
+  return <PeerCall {...props} />;
+}
+
+function PeerCall({
+
   threadId,
   selfId,
   isCaller,
