@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 
 import { getCallToken } from "@/lib/livekit.functions";
+import { useCallEngine } from "@/lib/call-engine";
+
 
 const LiveKitCall = lazy(() => import("@/components/chat/livekit-call"));
 
@@ -70,15 +72,23 @@ export interface CallProps {
  */
 export function CallOverlay(props: CallProps) {
   const fetchToken = useServerFn(getCallToken);
+  const { engine, loading: engineLoading } = useCallEngine();
+  const forcePeer = engine === "webrtc";
+
   const { data, isPending, isError } = useQuery({
     queryKey: ["call-token", props.threadId, props.mode],
     queryFn: () => fetchToken({ data: { threadId: props.threadId, mode: props.mode } }),
+    enabled: !forcePeer && !engineLoading,
     retry: false,
     staleTime: 0,
     gcTime: 0,
   });
 
-  if (isPending) {
+  if (forcePeer) {
+    return <PeerCall {...props} />;
+  }
+
+  if (engineLoading || isPending) {
     return (
       <Dialog open onOpenChange={(open) => !open && props.onEnd()}>
         <DialogContent className="max-w-sm border-border/70 bg-panel">
@@ -90,6 +100,7 @@ export function CallOverlay(props: CallProps) {
       </Dialog>
     );
   }
+
 
   if (!isError && data?.configured) {
     return (

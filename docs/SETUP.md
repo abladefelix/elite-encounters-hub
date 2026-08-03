@@ -384,6 +384,11 @@ Ashnight has two call engines and chooses automatically:
 Join tokens are minted server-side (`src/lib/livekit.functions.ts`), scoped to the single
 chat thread, and only after the server confirms the caller is a participant of that
 thread. The API secret never reaches the browser, and tokens expire after one hour.
+Which engine is used is an admin choice: **Control room → Feature switches → Call engine**
+offers *Automatic* (LiveKit when keys exist), *LiveKit relay*, or *Direct peer-to-peer*. The
+choice is stored in platform settings and enforced server-side when minting tokens, so you
+can A/B reliability on real devices and roll back instantly without a deploy.
+
 Calls are additionally gated per room, so you can offer audio-only on Basic and full
 video on Ultimate.
 

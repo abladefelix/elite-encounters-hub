@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { CaptchaControlCard } from "@/components/admin/captcha-control-card";
+import { CallEngineCard } from "@/components/admin/call-engine-card";
+import { useCallEngine } from "@/lib/call-engine";
 import { useRecordAudit } from "@/lib/audit-log";
 import {
   FEATURE_FLAGS,
@@ -38,6 +40,7 @@ export const Route = createFileRoute("/ashnight-control/features")({
 function AdminFeatures() {
   const { flags, setFlag, reset, loading } = useFeatureFlags();
   const recordAudit = useRecordAudit();
+  const { engine, setEngine, loading: engineLoading } = useCallEngine();
 
   function toggle(key: FeatureFlagKey, next: boolean) {
     void setFlag(key, next);
@@ -85,6 +88,18 @@ function AdminFeatures() {
           </p>
         </Card>
       ) : null}
+
+      <CallEngineCard
+        engine={engine}
+        disabled={engineLoading}
+        onChange={(next) => {
+          void setEngine(next);
+          toast(`Calls now use ${next === "webrtc" ? "direct peer-to-peer" : next === "livekit" ? "the LiveKit relay" : "automatic engine selection"}`);
+          if (flags.auditLogging) {
+            recordAudit.mutate({ area: "features", action: "call-engine", target: next });
+          }
+        }}
+      />
 
       <CaptchaControlCard
         enabled={flags.captchaOnAuth}
