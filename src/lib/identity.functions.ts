@@ -169,3 +169,22 @@ export const releaseAbandonedSignups = createServerFn({ method: "POST" })
     await assertAdminArea(context.userId, "users");
     return run(data.hours);
   });
+
+/** Saves the caller's own call preferences without touching other `extra` keys. */
+export const saveMyCallPreferences = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input) =>
+    z
+      .object({
+        acceptCalls: z.boolean(),
+        ringWhenClosed: z.boolean(),
+        ringtone: z.boolean(),
+        vibrate: z.boolean(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { saveCallPreferences } = await import("./identity.server");
+    await saveCallPreferences(context.userId, data);
+    return { ok: true };
+  });

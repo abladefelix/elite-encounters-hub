@@ -573,3 +573,23 @@ export async function assertAdminExport(userId: string, area: string) {
   }
 }
 
+
+/**
+ * Merges a member's call preferences into `profiles.extra` server-side.
+ *
+ * `extra` also carries the portfolio photo/video paths, so it must never be
+ * overwritten from a snapshot the browser read minutes earlier — that silently
+ * wiped freshly uploaded gallery media. Reading and merging here keeps every
+ * other key intact.
+ */
+export async function saveCallPreferences(userId: string, calls: Record<string, boolean>) {
+  const db = await admin();
+  const { data, error } = await db.from("profiles").select("extra").eq("id", userId).maybeSingle();
+  if (error) throw new Error(error.message);
+  const extra = { ...((data?.extra ?? {}) as Record<string, unknown>), calls };
+  const { error: saveError } = await db
+    .from("profiles")
+    .update({ extra: extra as never })
+    .eq("id", userId);
+  if (saveError) throw new Error(saveError.message);
+}

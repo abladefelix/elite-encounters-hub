@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/carousel";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { VideoThumbnail } from "@/components/video-thumbnail";
 import { getSpecialistMedia } from "@/lib/specialist-media.functions";
 
 export function PortfolioGallery({
@@ -85,15 +86,10 @@ export function PortfolioGallery({
           <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Film className="size-3.5" /> Intro video
           </p>
-          <video
-            src={video.url}
-            controls
-            playsInline
-            preload="metadata"
-            className="w-full rounded-lg border border-border/60"
-          />
+          <VideoThumbnail url={video.url} label={`${name} — intro video`} />
         </div>
       ) : null}
+
     </Card>
   );
 }

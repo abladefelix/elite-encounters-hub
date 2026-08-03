@@ -21,10 +21,11 @@ import { PhoneCall } from "lucide-react";
 import {
   DEFAULT_CALL_PREFERENCES,
   readCallPreferences,
-  writeCallPreferences,
   type CallPreferences,
 } from "@/lib/call-preferences";
+import { saveMyCallPreferences } from "@/lib/identity.functions";
 import { PortfolioManager } from "@/components/portfolio-manager";
+
 
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
@@ -264,9 +265,12 @@ function ProfilePage() {
           hourly_rate: fields.hourly_rate,
           years_experience: fields.years_experience,
           available: fields.available,
-          extra: writeCallPreferences(profile?.extra, calls),
         },
       });
+      // Call prefs merge server-side so a stale `extra` snapshot can never wipe
+      // freshly uploaded gallery photos or the intro clip.
+      await saveMyCallPreferences({ data: calls });
+
       if (isSpecialist) {
         await setSpecialistServices.mutateAsync({ specialistId: user.id, serviceIds });
       }
