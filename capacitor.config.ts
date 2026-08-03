@@ -50,7 +50,18 @@ const config: CapacitorConfig = {
     StatusBar: {
       overlaysWebView: false,
     },
+    // Icons/splash art is generated from assets/ by `npm run mobile:assets`.
+    SplashScreen: {
+      launchAutoHide: true,
+      launchShowDuration: 1200,
+      backgroundColor: "#0b0d12",
+      androidScaleType: "CENTER_CROP",
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: false,
+    },
   },
+
 };
 
 export default config;
