@@ -230,6 +230,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [removing, setRemoving] = useState(false);
   const queryClient = useQueryClient();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const draftRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
