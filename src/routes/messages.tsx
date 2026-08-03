@@ -796,6 +796,70 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     }
   }
 
+  /**
+   * Hides the history of the open thread for this member only, with a short
+   * undo window that rolls the stamp back to whatever it was before.
+   */
+  async function clearHistory() {
+    if (!activeThread) return;
+    const side = sideOf(activeThread);
+    const previous = clearedAt;
+    setClearing(true);
+    try {
+      await clearThread(activeThread.id, side);
+      await queryClient.invalidateQueries({ queryKey: ["threads"] });
+      setClearOpen(false);
+      toast.success("Chat cleared from your view", {
+        description: `${firstName} keeps their copy. Bookings, payments and escrow records are untouched.`,
+        duration: 8000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            void (async () => {
+              try {
+                await restoreThreadHistory(activeThread.id, side, previous);
+                await queryClient.invalidateQueries({ queryKey: ["threads"] });
+                toast.success("History restored");
+              } catch (error) {
+                toast.error(
+                  error instanceof Error ? error.message : "Couldn't restore that history",
+                );
+              }
+            })();
+          },
+        },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't clear this chat");
+    } finally {
+      setClearing(false);
+    }
+  }
+
+  /** Deletes one of my own messages for both sides of the thread. */
+  async function removeMessage(message: MessageRowType) {
+    setDeletingMessage(true);
+    try {
+      await deleteOwnMessage(message.id);
+      await queryClient.invalidateQueries({ queryKey: ["messages", message.thread_id] });
+      setMessageToDelete(null);
+      toast.success("Message deleted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't delete that message");
+    } finally {
+      setDeletingMessage(false);
+    }
+  }
+
+  async function copyMessage(body: string) {
+    try {
+      await navigator.clipboard.writeText(body);
+      toast.success("Message copied");
+    } catch {
+      toast.error("Your browser blocked the clipboard");
+    }
+  }
+
 
   function openGift() {
     if (!escrow.tipsEnabled) {
