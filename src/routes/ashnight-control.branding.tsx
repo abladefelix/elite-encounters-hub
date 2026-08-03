@@ -601,7 +601,7 @@ function SiteWordingCard() {
 
             {rules.map((rule) => {
               const seen = Object.entries(hits[rule.id] ?? {}).sort((a, b) => b[1] - a[1]);
-              const scope = SCOPE_OPTIONS.find((s) => s.value === rule.scope) ?? SCOPE_OPTIONS[0];
+              const scope = SCOPE_OPTIONS.find((s) => s.value === rule.scope) ?? SCOPE_OPTIONS[0]!;
               return (
                 <div key={rule.id} className="rounded-lg border border-border/70 bg-background/40 p-3">
                   <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
