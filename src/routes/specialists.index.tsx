@@ -120,7 +120,10 @@ function SpecialistsPage() {
         s.headline.toLowerCase().includes(q);
       const serviceNames = serviceMap?.get(s.id) ?? [];
       const matchesService = service === "all" || serviceNames.includes(service);
-      return matchesRoom && matchesQuery && matchesService;
+      const matchesAvailability =
+        availability === "all" ||
+        (availability === "online" ? s.available : s.verified);
+      return matchesRoom && matchesQuery && matchesService && matchesAvailability;
     });
 
     return [...filtered].sort((a, b) => {
@@ -129,7 +132,7 @@ function SpecialistsPage() {
       if (sort === "experience") return b.years_experience - a.years_experience;
       return b.rating - a.rating;
     });
-  }, [profiles, query, service, sort, serviceMap, allowedRooms]);
+  }, [profiles, query, service, sort, serviceMap, allowedRooms, availability]);
 
   const hasAnySpecialists = (profiles?.length ?? 0) > 0;
 
