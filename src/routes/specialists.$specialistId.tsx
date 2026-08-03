@@ -137,10 +137,14 @@ function SpecialistProfile() {
         <Card className="mt-4 border-border/70 bg-panel p-6 sm:p-8">
           <div className="flex flex-wrap items-start gap-5">
             <Avatar className="size-20 border border-border">
+              {avatarUrl ? (
+                <AvatarImage src={avatarUrl} alt={specialist.display_name} />
+              ) : null}
               <AvatarFallback className="bg-surface-strong font-display text-xl font-semibold">
                 {initials(specialist.display_name || "Ashnight")}
               </AvatarFallback>
             </Avatar>
+
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-3">
@@ -194,8 +198,17 @@ function SpecialistProfile() {
           </div>
         </Card>
 
+        <div className="mt-6">
+          <PortfolioGallery
+            specialistId={specialist.id}
+            name={specialist.display_name}
+            enabled={Boolean(user)}
+          />
+        </div>
+
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <Card className="border-border/70 bg-surface p-6 lg:col-span-2">
+
             <h2 className="eyebrow">About</h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               {specialist.bio || "This specialist hasn't added a bio yet."}
