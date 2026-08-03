@@ -1840,23 +1840,27 @@ function MessageBubble({
       "https://www.google.com/maps/search/?api=1&query=" + message.body.trim();
     return (
       <div className={cn("group flex items-end gap-1", mine ? "justify-end" : "justify-start")}>
-        {mine ? (
-          <MessageActions mine onCopy={() => onCopy(message.body)} onDelete={onDelete} />
-        ) : null}
-        <div className="max-w-sm rounded-xl border border-border bg-card p-4">
-          <p className="eyebrow text-primary">Location shared</p>
-          <p className="mt-2 font-mono text-xs text-muted-foreground">
-            {lat}, {lng}
-          </p>
-          <a
-            href={mapUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
-          >
-            <MapPin className="size-4" /> Open in maps
-          </a>
-        </div>
+        <MessageActions
+          mine={mine}
+          body={message.body}
+          onCopy={() => onCopy(message.body)}
+          {...(mine ? { onDelete } : {})}
+        >
+          <div className="max-w-sm rounded-xl border border-border bg-card p-4">
+            <p className="eyebrow text-primary">Location shared</p>
+            <p className="mt-2 font-mono text-xs text-muted-foreground">
+              {lat}, {lng}
+            </p>
+            <a
+              href={mapUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              <MapPin className="size-4" /> Open in maps
+            </a>
+          </div>
+        </MessageActions>
       </div>
     );
   }
