@@ -466,7 +466,8 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       admin_note: "Strong references. Confirm weekend availability.",
       card: "GHA-700500505-5",
       avatar: AVATARS[4]!,
-      portfolio: [AVATARS[0]!, AVATARS[1]!, AVATARS[2]!],
+      portfolio: galleryFor(0),
+      video: INTRO_VIDEO as string | null,
     },
     {
       username: "comfort.anaba",
@@ -487,7 +488,8 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       admin_note: "Awaiting second reference.",
       card: "GHA-700600606-6",
       avatar: AVATARS[5]!,
-      portfolio: [AVATARS[3]!, AVATARS[6]!],
+      portfolio: galleryFor(2, 2),
+      video: INTRO_VIDEO as string | null,
     },
     {
       username: "samuel.ofori",
@@ -509,6 +511,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       card: "GHA-700700707-7",
       avatar: AVATARS[6]!,
       portfolio: [] as string[],
+      video: null as string | null,
     },
     {
       username: "ibrahim.fuseini",
@@ -530,6 +533,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       card: "GHA-700800808-8",
       avatar: AVATARS[7]!,
       portfolio: [] as string[],
+      video: null as string | null,
     },
   ];
 
@@ -579,7 +583,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
         extra: {
           demo: true,
           portfolio_photos: person.portfolio,
-          portfolio_video: null,
+          portfolio_video: person.video,
         } as never,
       },
       { onConflict: "id" },
