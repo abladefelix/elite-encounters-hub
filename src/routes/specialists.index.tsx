@@ -137,6 +137,22 @@ function SpecialistsPage() {
 
   const hasAnySpecialists = (profiles?.length ?? 0) > 0;
 
+  // Big rosters get paged so the grid stays fast and scannable on mobile.
+  const PAGE_SIZE = 24;
+  const [page, setPage] = useState(1);
+  const pageCount = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+
+  // Any filter change (or a shrinking result set) sends you back to page one.
+  useEffect(() => {
+    setPage(1);
+  }, [query, room, service, sort, availability]);
+  useEffect(() => {
+    setPage((current) => Math.min(current, pageCount));
+  }, [pageCount]);
+
+  const pageStart = (Math.min(page, pageCount) - 1) * PAGE_SIZE;
+  const visible = results.slice(pageStart, pageStart + PAGE_SIZE);
+
   if (!canBrowse) {
     return (
       <div className="min-h-screen">
