@@ -380,9 +380,27 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
     void markThreadRead(activeThread.id, iAmClient ? "client" : "specialist");
   }, [activeThread?.id, iAmClient, activeThread]);
 
+  // Opening a thread lands on the newest message straight away (no visible
+  // scroll from the top); later arrivals glide into view like a native app.
+  const jumpedThreadRef = useRef<string | null>(null);
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length]);
+    if (!activeThread?.id) return;
+    const first = jumpedThreadRef.current !== activeThread.id;
+    if (first) jumpedThreadRef.current = activeThread.id;
+    const node = bottomRef.current;
+    if (!node) return;
+    const behavior: ScrollBehavior = first ? "auto" : "smooth";
+    node.scrollIntoView({ behavior, block: "end" });
+    if (first) {
+      // The virtualised scroll area can still be laying out on first paint.
+      const timer = window.setTimeout(
+        () => bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" }),
+        120,
+      );
+      return () => window.clearTimeout(timer);
+    }
+    return;
+  }, [activeThread?.id, visibleMessages.length]);
 
   async function post(
     input: Partial<Omit<MessageRowType, "id" | "created_at" | "thread_id">> & { body: string },
