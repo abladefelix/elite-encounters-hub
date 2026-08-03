@@ -131,15 +131,42 @@ interface CompiledRule {
   excludeSelectors: string[];
 }
 
+/**
+ * Older iOS WebViews (Safari < 16.4) throw a SyntaxError when a lookbehind
+ * group is compiled, which would blank the whole app. Detect support once and
+ * fall back to a word-boundary pattern on those devices.
+ */
+const SUPPORTS_LOOKBEHIND = (() => {
+  try {
+    // eslint-disable-next-line prefer-regex-literals
+    new RegExp("(?<!a)b");
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+function buildPattern(body: string, wholeWord: boolean, matchCase: boolean): RegExp {
+  const flags = matchCase ? "gu" : "giu";
+  if (!wholeWord) return new RegExp(body, flags);
+  if (SUPPORTS_LOOKBEHIND) {
+    try {
+      return new RegExp(`(?<![\\p{L}\\d])${body}(?![\\p{L}\\d])`, flags);
+    } catch {
+      /* fall through to the boundary variant */
+    }
+  }
+  return new RegExp(`\\b${body}\\b`, matchCase ? "g" : "gi");
+}
+
 export function compileRules(rules: PhraseRule[]): CompiledRule[] {
   return rules
     .filter((rule) => rule.enabled && rule.find.trim().length > 0)
     .map((rule) => {
       const body = escapeRegExp(rule.find.trim());
-      const source = rule.wholeWord ? `(?<![\\p{L}\\d])${body}(?![\\p{L}\\d])` : body;
       return {
         id: rule.id,
-        pattern: new RegExp(source, rule.matchCase ? "gu" : "giu"),
+        pattern: buildPattern(body, Boolean(rule.wholeWord), rule.matchCase),
         replace: rule.replace,
         matchCase: rule.matchCase,
         scope: rule.scope ?? "everywhere",
@@ -149,6 +176,7 @@ export function compileRules(rules: PhraseRule[]): CompiledRule[] {
       };
     });
 }
+
 
 function pathMatches(path: string, pattern: string): boolean {
   const normalized = path.replace(/\/$/, "") || "/";
