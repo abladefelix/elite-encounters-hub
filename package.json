@@ -15,6 +15,8 @@
     "mobile:add:ios": "cap add ios",
     "mobile:add:android": "cap add android",
     "mobile:sync": "cap sync",
+    "mobile:assets": "capacitor-assets generate --iconBackgroundColor \"#0b0d12\" --iconBackgroundColorDark \"#0b0d12\" --splashBackgroundColor \"#0b0d12\" --splashBackgroundColorDark \"#0b0d12\"",
+
     "mobile:open:ios": "cap open ios",
     "mobile:open:android": "cap open android"
   },

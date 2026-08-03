@@ -103,16 +103,28 @@ the runtime permission dialog was accepted in **Settings → Apps → Ashnight**
 
 ## 5. Icons and splash screen
 
-Export your Ashnight logo (the two interconnected brass circles) at 1024×1024 PNG
-with no transparency, then generate every size:
+The brand artwork is already in the repo — nothing to draw:
+
+| File | Used for |
+| --- | --- |
+| `assets/icon.png` (1024×1024) | iOS + Android app icon |
+| `assets/icon-foreground.png` / `assets/icon-background.png` | Android adaptive icon layers |
+| `assets/splash.png` / `assets/splash-dark.png` (2732×2732) | launch splash, light + dark |
+| `public/apple-touch-icon.png`, `public/icon-192.png`, `public/icon-512.png`, `public/icon-maskable-512.png`, `public/manifest.webmanifest` | Add-to-Home-Screen icon on the mobile website |
+
+Generate every platform size after `cap add` (and any time you replace the
+artwork above):
 
 ```bash
-npx @capacitor/assets generate --iconBackgroundColor "#0b0d12" --splashBackgroundColor "#0b0d12"
+npm run mobile:assets   # writes into android/ and ios/
+npm run mobile:sync
 ```
 
-Place the source at `assets/icon.png` and `assets/splash.png` before running it.
-Updating the logo in **Admin → Brand & wording** changes the in-app logo
-immediately; store icons must be regenerated and resubmitted.
+Splash behaviour (colour, duration, no spinner) is set under `plugins.SplashScreen`
+in `capacitor.config.ts`. Updating the logo in **Admin → Brand & wording**
+changes the in-app logo immediately; store icons and the splash must be
+regenerated with the commands above and resubmitted.
+
 
 ---
 
