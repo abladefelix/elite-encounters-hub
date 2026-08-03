@@ -476,6 +476,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       booking_id: input.booking_id ?? null,
       attachment_url: input.attachment_url ?? null,
       attachment_name: input.attachment_name ?? null,
+      reply_to_id: input.reply_to_id ?? null,
         redacted: input.redacted ?? false,
       });
     } catch (error) {
@@ -534,10 +535,16 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       toast.warning("Heads up — this was flagged for review");
     }
 
+    const quoted = replyTo;
     setDraft("");
+    setReplyTo(null);
     notifyStopped();
     try {
-      await post({ body: verdict.body, redacted: verdict.action === "mask" });
+      await post({
+        body: verdict.body,
+        redacted: verdict.action === "mask",
+        reply_to_id: quoted?.id ?? null,
+      });
     } catch (error) {
       // Never swallow the member's text: put it back in the composer so they
       // can retry instead of retyping.
@@ -1375,7 +1382,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           const showDay =
                             !previous || dayKey(previous.created_at) !== dayKey(message.created_at);
                           return (
-                            <div key={message.id} className="space-y-4">
+                            <div key={message.id} id={`msg-${message.id}`} className="space-y-4">
                               {showDay ? (
                                 <div className="relative flex items-center justify-center py-1">
                                   <div className="absolute inset-0 flex items-center">
@@ -1389,6 +1396,35 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                               <MessageBubble
                                 message={message}
                                 mine={message.author_id === userId}
+                                repliedTo={
+                                  message.reply_to_id
+                                    ? messages.find((row) => row.id === message.reply_to_id)
+                                    : undefined
+                                }
+                                repliedToMine={
+                                  message.reply_to_id
+                                    ? messages.find((row) => row.id === message.reply_to_id)
+                                        ?.author_id === userId
+                                    : false
+                                }
+                                onJumpTo={(id) => {
+                                  const node = document.getElementById(`msg-${id}`);
+                                  if (!node) {
+                                    toast("That message isn't in your view any more.");
+                                    return;
+                                  }
+                                  node.scrollIntoView({ behavior: "smooth", block: "center" });
+                                  node.classList.add("ring-2", "ring-primary/60", "rounded-2xl");
+                                  window.setTimeout(
+                                    () =>
+                                      node.classList.remove(
+                                        "ring-2",
+                                        "ring-primary/60",
+                                        "rounded-2xl",
+                                      ),
+                                    1400,
+                                  );
+                                }}
                                 peerFirstName={firstName}
                                 escrow={
                                   message.escrow_id
@@ -1410,12 +1446,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                                 onDispute={(id, reason) => void raiseIssue(id, reason)}
                                 onCopy={(body) => void copyMessage(body)}
                                 onReply={(target) => {
-                                  const quoted = target.body.trim()
-                                    ? target.body.trim().slice(0, 160)
-                                    : (target.attachment_name ?? "attachment");
-                                  setDraft((current) =>
-                                    `> ${quoted}\n${current}`.slice(0, 1000),
-                                  );
+                                  setReplyTo(target);
                                   draftRef.current?.focus();
                                 }}
                                 onReport={() => setReportOpen(true)}
