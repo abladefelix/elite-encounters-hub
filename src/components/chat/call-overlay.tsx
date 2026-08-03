@@ -57,7 +57,9 @@ export function CallOverlay({
   mode: CallMode;
   onEnd: () => void;
 }) {
+  const { t } = useCopy();
   const [seconds, setSeconds] = useState(0);
+
   const [connected, setConnected] = useState(false);
   const [muted, setMuted] = useState(false);
   const [cameraOn, setCameraOn] = useState(mode === "video");
