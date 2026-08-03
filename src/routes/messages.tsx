@@ -1791,7 +1791,10 @@ function MessageBubble({
       message.attachment_url ??
       "https://www.google.com/maps/search/?api=1&query=" + message.body.trim();
     return (
-      <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
+      <div className={cn("group flex items-end gap-1", mine ? "justify-end" : "justify-start")}>
+        {mine ? (
+          <MessageActions mine onCopy={() => onCopy(message.body)} onDelete={onDelete} />
+        ) : null}
         <div className="max-w-sm rounded-xl border border-border bg-card p-4">
           <p className="eyebrow text-primary">Location shared</p>
           <p className="mt-2 font-mono text-xs text-muted-foreground">
