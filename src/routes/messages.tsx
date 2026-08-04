@@ -1009,7 +1009,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
   return (
     <TooltipProvider>
-      <div className="flex min-h-screen flex-col">
+      <div className="flex h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] flex-col overflow-hidden md:h-screen">
         <SiteHeader />
 
         <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-0 py-0 sm:px-5 sm:py-8">
