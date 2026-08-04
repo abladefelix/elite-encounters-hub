@@ -4,7 +4,13 @@
 //     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
+import { builtinModules } from "node:module";
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+
+/** `node:`-prefixed builtins the Cloudflare runtime provides with node compat on. */
+const NODE_BUILTINS: string[] = builtinModules
+  .filter((id) => !id.startsWith("_") || id.startsWith("_http") || id.startsWith("_stream"))
+  .map((id) => (id.startsWith("node:") ? id : `node:${id}`));
 
 export default defineConfig({
   tanstackStart: {
@@ -12,7 +18,38 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  // Keep the platform's default Cloudflare/nitro setup. Turning node compat off
-  // here broke every server function in production (all `_serverFn` calls 500'd,
-  // which is why the signed-in shell got stuck on "Loading your profile…").
+  nitro: {
+    // Two constraints have to hold at once on the Cloudflare runtime:
+    //
+    // 1. Since 2026-08-04 the runtime REJECTS an explicit `nodejs_compat`
+    //    compatibility flag (it is the default now) — every request 502s.
+    // 2. The bundle still has to resolve `node:*` builtins (TanStack Start keeps
+    //    its request context in `node:async_hooks`). Without that mapping every
+    //    server function dies with "No Start context found in AsyncLocalStorage",
+    //    which is what left the signed-in app stuck on "Loading your profile…".
+    //
+    // So: turn nitro's nodeCompat off (it is the thing that emits the flag) and
+    // re-add the node builtin externals/aliases/injects it would have added.
+    cloudflare: { nodeCompat: false },
+    rolldownConfig: { platform: "node" },
+    unenv: [
+      {
+        meta: { name: "ashnight:cloudflare-node-compat" },
+        external: NODE_BUILTINS,
+        alias: Object.fromEntries(
+          NODE_BUILTINS.flatMap((id) => [
+            [id, id],
+            [id.replace("node:", ""), id],
+          ]),
+        ),
+        inject: {
+          global: "unenv/polyfill/globalthis",
+          process: "node:process",
+          clearImmediate: ["node:timers", "clearImmediate"],
+          setImmediate: ["node:timers", "setImmediate"],
+          Buffer: ["node:buffer", "Buffer"],
+        },
+      },
+    ],
+  } as never,
 });
