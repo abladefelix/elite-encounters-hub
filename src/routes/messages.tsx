@@ -1012,9 +1012,9 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
       <div className="min-h-screen">
         <SiteHeader />
 
-        <div className="mx-auto w-full max-w-6xl px-0 py-0 sm:px-5 sm:py-8">
-          <Card className="overflow-hidden border-border/70 bg-surface p-0">
-            <div className="grid h-[calc(100svh-7rem)] sm:h-[76vh] md:grid-cols-[300px_1fr]">
+        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-0 py-0 sm:px-5 sm:py-8">
+          <Card className="flex flex-1 flex-col overflow-hidden border-border/70 bg-surface p-0">
+            <div className="grid flex-1 md:grid-cols-[300px_1fr]">
               {/* thread list */}
               <aside
                 className={cn(
