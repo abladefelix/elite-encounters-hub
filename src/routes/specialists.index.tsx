@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Lock, Search, SlidersHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,7 +92,7 @@ function useSpecialistServiceMap() {
 }
 
 function SpecialistsPage() {
-  const { profile, isSpecialist, isAdmin } = useAuth();
+  const { user, profile, isSpecialist, isAdmin } = useAuth();
   const [query, setQuery] = useState("");
   const [room, setRoom] = useState<Tier | "all">("all");
   const [service, setService] = useState("all");
@@ -325,10 +325,25 @@ function SpecialistsPage() {
 
             {results.length === 0 && !hasAnySpecialists ? (
               <div className="mt-10 rounded-xl border border-dashed border-border p-12 text-center">
-                <p className="font-display text-lg font-semibold">No specialists yet</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  We're still onboarding vetted specialists. Check back soon.
-                </p>
+                {!user ? (
+                  <>
+                    <Lock className="mx-auto size-8 text-muted-foreground" />
+                    <p className="mt-4 font-display text-lg font-semibold">Members-only roster</p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Sign in to browse our vetted Ash specialists and book your first clean.
+                    </p>
+                    <Button asChild variant="brass" className="mt-5">
+                      <Link to="/auth">Sign in to browse</Link>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-display text-lg font-semibold">No specialists yet</p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      We're still onboarding vetted specialists. Check back soon.
+                    </p>
+                  </>
+                )}
               </div>
             ) : results.length === 0 ? (
               <div className="mt-10 rounded-xl border border-dashed border-border p-12 text-center">
