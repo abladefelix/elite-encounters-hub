@@ -102,3 +102,24 @@ This document outlines the proposed implementation for specialist groups within 
 - **Admin**: Full CRUD on Groups.
 - **Specialist**: Read group membership, participate in group bookings.
 - **Client**: Browse active groups, book groups.
+
+## 7. Additional Considerations
+
+### Vetting Requirements
+- A Group can only be `active` if the **Lead Specialist** is approved and not suspended.
+- Individual members who are suspended will be automatically flagged in the Group Team Management view, preventing the group from being booked if a critical member is unavailable.
+
+### Notification Workflow
+- **Booking Requested**: Notification sent to Lead Specialist.
+- **Booking Accepted**: Notification sent to Lead Specialist + System Message in the thread.
+- **Booking Scheduled**: Calendar invite/notification sent to ALL group members.
+- **Payment Released**: Payout notification sent to Lead Specialist.
+
+### Escrow Boundaries
+- Group bookings are treated as a single escrow unit. 
+- Disputes filed by the client freeze the *entire* group payout. 
+- Partial releases are not supported in V1 to maintain simplicity and prevent breaking the current escrow state machine.
+
+### Future Extensibility
+- **Service Specialization**: Groups could offer services that individuals cannot (e.g., "Full Mansion Reset" requiring 4+ people).
+- **Automated Payout Splitting**: Configuring \% shares for each member in the Admin Group Editor.
