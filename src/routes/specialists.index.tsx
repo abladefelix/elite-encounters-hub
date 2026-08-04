@@ -92,7 +92,7 @@ function useSpecialistServiceMap() {
 }
 
 function SpecialistsPage() {
-  const { profile, isSpecialist, isAdmin } = useAuth();
+  const { user, profile, isSpecialist, isAdmin } = useAuth();
   const [query, setQuery] = useState("");
   const [room, setRoom] = useState<Tier | "all">("all");
   const [service, setService] = useState("all");
