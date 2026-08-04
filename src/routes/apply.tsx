@@ -48,15 +48,14 @@ export const Route = createFileRoute("/apply")({
   ): {
     role?: "client" | "specialist";
     room?: "basic" | "premium" | "ultimate";
-  } => ({
-    role: search["role"] === "specialist" ? "specialist" : "client",
-    room:
-      search["room"] === "basic" ||
-      search["room"] === "premium" ||
-      search["room"] === "ultimate"
-        ? search["room"]
-        : undefined,
-  }),
+  } => {
+    const role = search["role"] === "specialist" ? "specialist" : "client";
+    const room = search["room"];
+    if (room === "basic" || room === "premium" || room === "ultimate") {
+      return { role, room };
+    }
+    return { role };
+  },
   head: () => ({
     meta: [
       { title: "Apply to Join Ashnight — Manual Vetting for Every Member" },
