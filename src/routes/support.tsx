@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { useBranding } from "@/lib/branding";
+import { isNativeApp } from "@/lib/native";
 import {
   useDocumentTemplates,
   type DocumentTemplate,
