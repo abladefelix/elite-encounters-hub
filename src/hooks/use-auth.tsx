@@ -129,8 +129,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (enforcing || !active) return;
       enforcing = true;
       try {
-        await registerCurrentSession({ data: device() });
-        const result = await validateCurrentSession();
+        let result = await validateCurrentSession();
+        if (!result.valid && result.reason === "This session is no longer registered.") {
+          await registerCurrentSession({ data: device() });
+          result = await validateCurrentSession();
+        }
         if (!result.valid && active) {
           toast.error(result.reason || "Your session has ended. Please sign in again.");
           await supabase.auth.signOut();
