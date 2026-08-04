@@ -129,13 +129,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await validateCurrentSession();
         if (!result.valid && active) {
           toast.error(result.reason || "Your session has ended. Please sign in again.");
-          await signOut();
+          await supabase.auth.signOut();
           window.location.assign("/auth");
         }
       } catch (error) {
         if (!active) return;
         toast.error(error instanceof Error ? error.message : "Your session has ended.");
-        await signOut();
+        await supabase.auth.signOut();
         window.location.assign("/auth");
       }
     };
@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const onVisible = () => { if (document.visibilityState === "visible") void enforce(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => { active = false; window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
-  }, [session?.user?.id, signOut]);
+  }, [session?.user?.id]);
 
   // A member banned, suspended or deactivated mid-session loses access immediately.
   useEffect(() => {
