@@ -46,14 +46,15 @@ export async function sessionPolicy(): Promise<SessionPolicy> {
 
 export async function registerSession(input: {
   userId: string;
-  accessToken: string;
+  accessToken?: string;
+  authSessionId?: string;
   deviceId: string;
   deviceName: string;
   userAgent: string;
   ip: string;
 }) {
   const client = await admin();
-  const authSessionId = tokenSessionId(input.accessToken);
+  const authSessionId = input.authSessionId ?? tokenSessionId(input.accessToken ?? "");
   if (!authSessionId) throw new Error("The authentication session could not be registered.");
   const { data: existing } = await client
     .from("active_sessions")
@@ -101,13 +102,24 @@ export async function registerSession(input: {
     absolute_expires_at: expiresIn(policy.absoluteTimeoutHours, 3_600_000),
   };
   const { error } = await client.from("active_sessions").insert(row);
+  // Registration can race with another protected query during first render.
+  // Keep the row that won rather than turning a healthy login into a 500.
+  if (error?.code === "23505") {
+    const { data: winner } = await client
+      .from("active_sessions")
+      .select("revoked_at, revoked_reason")
+      .eq("auth_session_id", authSessionId)
+      .maybeSingle();
+    if (winner?.revoked_at) throw new Error(winner.revoked_reason || "This session was ended.");
+    if (winner) return { policy, authSessionId };
+  }
   if (error) throw new Error(error.message);
   return { policy, authSessionId };
 }
 
-export async function validateSession(userId: string, accessToken: string) {
+export async function validateSession(userId: string, accessToken?: string, verifiedSessionId?: string) {
   const client = await admin();
-  const authSessionId = tokenSessionId(accessToken);
+  const authSessionId = verifiedSessionId ?? tokenSessionId(accessToken ?? "");
   if (!authSessionId) return { valid: false, reason: "Session identity is missing." };
   const { data } = await client
     .from("active_sessions")

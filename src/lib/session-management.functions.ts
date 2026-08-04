@@ -9,7 +9,8 @@ export const validateCurrentSession = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const header = getRequestHeader("authorization") ?? "";
     const { validateSession } = await import("./session-management.server");
-    return validateSession(context.userId, header.replace(/^Bearer\s+/i, ""));
+    const authSessionId = typeof context.claims["session_id"] === "string" ? context.claims["session_id"] : undefined;
+    return validateSession(context.userId, header.replace(/^Bearer\s+/i, ""), authSessionId);
   });
 
 export const registerCurrentSession = createServerFn({ method: "POST" })
@@ -21,6 +22,7 @@ export const registerCurrentSession = createServerFn({ method: "POST" })
     return registerSession({
       userId: context.userId,
       accessToken: header.replace(/^Bearer\s+/i, ""),
+      ...(typeof context.claims["session_id"] === "string" ? { authSessionId: context.claims["session_id"] } : {}),
       deviceId: data.deviceId,
       deviceName: data.deviceName,
       userAgent: getRequestHeader("user-agent") ?? "",
