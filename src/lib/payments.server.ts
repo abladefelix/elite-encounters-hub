@@ -250,7 +250,7 @@ export async function finalizeReference(
       user_id: first.client_id,
       kind: "payment",
       title: "Group booking payment received",
-      body: `GHS ${groupBooking.total.toLocaleString()} is secured in escrow for the full specialist team.`,
+      body: `GHS ${groupBooking.total.toLocaleString()} is secured in escrow for the full Ash group.`,
       link: "/wallet",
     });
     await issueDocument({

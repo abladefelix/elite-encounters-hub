@@ -40,7 +40,8 @@ export const Route = createFileRoute("/ashnight-control/demo")({
 
 const COVERAGE = [
   "6 services in the catalogue",
-  "4 vetted specialists with Ghanaian portraits, rooms and rates",
+  "8 vetted specialists with Ghanaian portraits, rooms and rates",
+  "3 bookable Ash groups with rosters, services and escrow splits",
   "4 clients with memberships (one past due)",
   "4 vetting applications across every status",
   "4 chat threads with 28 messages, one redacted",
