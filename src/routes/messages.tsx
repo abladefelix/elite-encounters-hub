@@ -1246,7 +1246,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
               {/* conversation */}
               <section
                 className={cn(
-                  "flex min-h-0 min-w-0 flex-col",
+                  "relative flex min-h-0 min-w-0 flex-col overflow-hidden",
                   showListOnMobile ? "hidden md:flex" : "flex",
                 )}
               >
@@ -1256,7 +1256,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                   </div>
                 ) : (
                   <>
-                    <header className="flex shrink-0 items-center gap-3 border-b border-border/70 p-4">
+                    <header className="flex shrink-0 items-center gap-3 border-b border-border/70 bg-surface p-4 z-10">
                       <Button
                         variant="ghost"
                         size="icon"
