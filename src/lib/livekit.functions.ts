@@ -10,7 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession } from "@/lib/active-session-middleware";
 
 const inputSchema = z.object({
   threadId: z.string().uuid(),
@@ -25,7 +25,7 @@ export interface CallTokenResult {
 }
 
 export const getCallToken = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .inputValidator((input: unknown) => inputSchema.parse(input))
   .handler(async ({ data, context }): Promise<CallTokenResult> => {
     const { supabase, userId } = context;

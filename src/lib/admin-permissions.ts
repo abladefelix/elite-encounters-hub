@@ -64,6 +64,7 @@ export const DEFAULT_ADMIN_AREAS = [
   "overview",
   "vetting",
   "users",
+  "sessions",
   "groups",
   "bookings",
   "moderation",

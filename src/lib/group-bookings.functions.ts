@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession } from "@/lib/active-session-middleware";
 
 export const listBookableGroups = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("specialist_groups")

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession } from "@/lib/active-session-middleware";
 
 const room = z.enum(["basic", "premium", "ultimate", "room4", "room5", "room6", "room7", "room8"]);
 const groupInput = z.object({
@@ -30,7 +30,7 @@ const groupInput = z.object({
 });
 
 export const listAdminGroups = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .handler(async ({ context }) => {
     const [{ assertAdminArea }, { listGroupsForAdmin }] = await Promise.all([
       import("./identity.server"),

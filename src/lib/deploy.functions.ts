@@ -4,7 +4,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession } from "@/lib/active-session-middleware";
 
 /**
  * Admin gate for this area. Holding the admin role is not enough — the caller's
@@ -16,7 +16,7 @@ async function assertAdminArea(context: { userId: string }) {
 }
 
 export const getDeployStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .handler(async ({ context }) => {
     await assertAdminArea(context as never);
     const { deployStatus } = await import("./deploy.server");

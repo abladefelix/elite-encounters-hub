@@ -30,6 +30,7 @@ import {
   Trophy,
   Users,
   UserCog,
+  MonitorSmartphone,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -78,6 +79,7 @@ const NAV: {
   { to: "/ashnight-control", label: "Overview", icon: LayoutDashboard, area: "overview", exact: true },
   { to: "/ashnight-control/vetting", label: "Vetting queue", icon: BadgeCheck, area: "vetting" },
   { to: "/ashnight-control/users", label: "Users", icon: Users, area: "users" },
+  { to: "/ashnight-control/sessions", label: "Sessions", icon: MonitorSmartphone, area: "sessions" },
   { to: "/ashnight-control/admins", label: "Admin roles", icon: UserCog, area: "admins", superOnly: true },
   { to: "/ashnight-control/rooms", label: "Rooms", icon: DoorOpen, area: "rooms" },
   { to: "/ashnight-control/services", label: "Services", icon: Sparkles, area: "services" },
