@@ -173,8 +173,18 @@ export function AuthPage({
     }
     setBusy(true);
     try {
+      let deviceId = localStorage.getItem("ashnight:device-id");
+      if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        localStorage.setItem("ashnight:device-id", deviceId);
+      }
+      const deviceName = /android/i.test(navigator.userAgent)
+        ? "Android device"
+        : /iphone|ipad/i.test(navigator.userAgent)
+          ? "Apple mobile device"
+          : `${navigator.platform || "Web"} browser`;
       const tokens = await signInWithIdentifier({
-        data: { identifier: who, password, captchaToken: signInToken },
+        data: { identifier: who, password, captchaToken: signInToken, deviceId, deviceName },
       });
       const { error } = await supabase.auth.setSession({
         access_token: tokens.accessToken,

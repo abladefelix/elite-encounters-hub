@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { endMySessionsAfterPasswordChange } from "@/lib/session-management.functions";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -48,8 +49,13 @@ function ResetPasswordPage() {
       toast.error(error.message);
       return;
     }
-    toast.success("Password updated.");
-    void navigate({ to: "/", replace: true });
+    try {
+      await endMySessionsAfterPasswordChange();
+    } finally {
+      await supabase.auth.signOut();
+    }
+    toast.success("Password updated. Sign in again on every device.");
+    void navigate({ to: "/auth", replace: true });
   }
 
   return (

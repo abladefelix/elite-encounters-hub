@@ -247,6 +247,10 @@ export async function updateUser(input: UpdateUserInput) {
     const { error } = await client.auth.admin.updateUserById(input.userId, credentials);
     if (error) throw new Error(error.message);
   }
+  if (credentials.password) {
+    const { revokeAllSessions } = await import("./session-management.server");
+    await revokeAllSessions(input.userId, "Password changed by an administrator", input.actorId);
+  }
 
   const patch = clean(input.fields);
   if (Object.keys(patch).length) {

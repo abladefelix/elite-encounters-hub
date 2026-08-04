@@ -12,6 +12,22 @@ export const validateCurrentSession = createServerFn({ method: "POST" })
     return validateSession(context.userId, header.replace(/^Bearer\s+/i, ""));
   });
 
+export const registerCurrentSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input) => z.object({ deviceId: z.string().min(8).max(200), deviceName: z.string().trim().min(2).max(120) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const header = getRequestHeader("authorization") ?? "";
+    const { registerSession } = await import("./session-management.server");
+    return registerSession({
+      userId: context.userId,
+      accessToken: header.replace(/^Bearer\s+/i, ""),
+      deviceId: data.deviceId,
+      deviceName: data.deviceName,
+      userAgent: getRequestHeader("user-agent") ?? "",
+      ip: getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for") ?? "",
+    });
+  });
+
 export const endMySessionsAfterPasswordChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isBlocked, type AccountStatus } from "@/lib/account-status";
 import type { Database } from "@/integrations/supabase/types";
 import { getMyFullProfile } from "@/lib/profile-reads.functions";
+import { registerCurrentSession, validateCurrentSession } from "@/lib/session-management.functions";
 
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 export type AppRole = Database["public"]["Enums"]["app_role"];
@@ -109,6 +110,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.subscription.unsubscribe();
     };
   }, [loadIdentity, queryClient]);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    let active = true;
+    const device = () => {
+      let deviceId = localStorage.getItem("ashnight:device-id");
+      if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        localStorage.setItem("ashnight:device-id", deviceId);
+      }
+      const deviceName = /android/i.test(navigator.userAgent) ? "Android device" : /iphone|ipad/i.test(navigator.userAgent) ? "Apple mobile device" : `${navigator.platform || "Web"} browser`;
+      return { deviceId, deviceName };
+    };
+    const enforce = async () => {
+      try {
+        await registerCurrentSession({ data: device() });
+        const result = await validateCurrentSession();
+        if (!result.valid && active) {
+          toast.error(result.reason || "Your session has ended. Please sign in again.");
+          await signOut();
+          window.location.assign("/auth");
+        }
+      } catch (error) {
+        if (!active) return;
+        toast.error(error instanceof Error ? error.message : "Your session has ended.");
+        await signOut();
+        window.location.assign("/auth");
+      }
+    };
+    void enforce();
+    const timer = window.setInterval(() => void enforce(), 60_000);
+    const onVisible = () => { if (document.visibilityState === "visible") void enforce(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { active = false; window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
+  }, [session?.user?.id, signOut]);
 
   // A member banned, suspended or deactivated mid-session loses access immediately.
   useEffect(() => {

@@ -55,7 +55,17 @@ export async function registerSession(input: {
   const client = await admin();
   const authSessionId = tokenSessionId(input.accessToken);
   if (!authSessionId) throw new Error("The authentication session could not be registered.");
+  const { data: existing } = await client
+    .from("active_sessions")
+    .select("id, revoked_at, revoked_reason")
+    .eq("auth_session_id", authSessionId)
+    .maybeSingle();
+  if (existing?.revoked_at) throw new Error(existing.revoked_reason || "This session was ended.");
   const policy = await sessionPolicy();
+  if (existing) {
+    await client.from("active_sessions").update({ last_seen_at: new Date().toISOString(), idle_expires_at: expiresIn(policy.idleTimeoutMinutes, 60_000) }).eq("id", existing.id);
+    return { policy, authSessionId };
+  }
   const now = new Date().toISOString();
   await client
     .from("active_sessions")

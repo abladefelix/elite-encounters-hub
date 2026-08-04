@@ -37,6 +37,8 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
         identifier,
         password: z.string().min(6).max(200),
         captchaToken: z.string().trim().max(2048).optional(),
+        deviceId: z.string().min(8).max(200),
+        deviceName: z.string().trim().min(2).max(120),
       })
       .parse(input),
   )
@@ -53,6 +55,8 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
     return run(data.identifier, data.password, {
       ip,
       userAgent: getRequestHeader("user-agent") ?? "",
+      deviceId: data.deviceId,
+      deviceName: data.deviceName,
     });
   });
 
