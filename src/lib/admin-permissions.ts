@@ -33,7 +33,7 @@ export const ADMIN_AREAS: AdminArea[] = [
   { key: "sessions", label: "Session management", group: "Trust & safety" },
   { key: "rooms", label: "Rooms", group: "Operations" },
   { key: "services", label: "Services & add-ons", group: "Operations" },
-  { key: "groups", label: "Specialist groups", group: "Operations" },
+  { key: "groups", label: "Ash groups", group: "Operations" },
   { key: "bookings", label: "Bookings", group: "Operations" },
   { key: "performance", label: "Specialist performance", group: "Operations" },
   { key: "escrow", label: "Escrow & gifts", group: "Money" },

@@ -16,6 +16,7 @@ export interface DemoManifest {
   seededAt: string;
   userIds: string[];
   serviceIds: string[];
+  groupIds?: string[];
   counts: Record<string, number>;
 }
 
@@ -165,6 +166,82 @@ const SPECIALISTS: SpecialistSeed[] = [
     avatar: AVATARS[3]!,
     phone: "0244040404",
     card: "GHA-700400404-4",
+  },
+  {
+    username: "mavis.ansah",
+    name: "Mavis Ansah",
+    city: "Accra",
+    locality: "Spintex",
+    headline: "Post-renovation dust and fine-detail specialist",
+    bio: "Five years restoring homes after building work. I focus on fine dust extraction, glass, fixtures and a careful room-by-room handover.",
+    room: "premium",
+    rate: 135,
+    years: 5,
+    rating: 4.9,
+    jobs: 226,
+    languages: ["English", "Ga", "Twi"],
+    likes: ["Detailed briefs", "Post-build resets"],
+    dislikes: ["Unfinished contractor work"],
+    avatar: AVATARS[4]!,
+    phone: "0244090909",
+    card: "GHA-700900909-9",
+  },
+  {
+    username: "efua.amissah",
+    name: "Efua Amissah",
+    city: "Cape Coast",
+    locality: "Pedu",
+    headline: "Guesthouse and short-let turnover specialist",
+    bio: "I prepare guest rooms, kitchens and shared spaces for same-day arrivals with linen checks and a photo-ready finish.",
+    room: "basic",
+    rate: 80,
+    years: 4,
+    rating: 4.82,
+    jobs: 173,
+    languages: ["English", "Fante"],
+    likes: ["Turnover schedules", "Linen care"],
+    dislikes: ["Missing access instructions"],
+    avatar: AVATARS[5]!,
+    phone: "0244101010",
+    card: "GHA-701001010-0",
+  },
+  {
+    username: "nana.amoako",
+    name: "Nana Ama Amoako",
+    city: "Kumasi",
+    locality: "Danyame",
+    headline: "Premium household care and organisation",
+    bio: "Eight years supporting large households with deep cleaning, careful organisation and discreet recurring service.",
+    room: "ultimate",
+    rate: 175,
+    years: 8,
+    rating: 4.95,
+    jobs: 387,
+    languages: ["English", "Twi"],
+    likes: ["Household systems", "Recurring clients"],
+    dislikes: ["Unlabelled delicate items"],
+    avatar: AVATARS[6]!,
+    phone: "0244111111",
+    card: "GHA-701101111-1",
+  },
+  {
+    username: "dzifa.agbeko",
+    name: "Dzifa Agbeko",
+    city: "Tema",
+    locality: "Community 12",
+    headline: "Floor care, kitchens and busy family homes",
+    bio: "Six years handling high-traffic family homes. Strong on floor care, kitchen resets and practical maintenance plans.",
+    room: "premium",
+    rate: 125,
+    years: 6,
+    rating: 4.89,
+    jobs: 241,
+    languages: ["English", "Ewe", "Ga"],
+    likes: ["Family homes", "Floor care"],
+    dislikes: ["Unsafe work areas"],
+    avatar: AVATARS[7]!,
+    phone: "0244121212",
+    card: "GHA-701201212-2",
   },
 ];
 
@@ -442,6 +519,116 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
   );
   must(await client.from("specialist_services").insert(links), "specialist_services");
   counts["specialist_services"] = links.length;
+
+  /* Ash groups — client-facing group profiles with fixed rosters, services
+     and payout shares. Groups are assembled while inactive, then published
+     only after their full structure is valid. */
+  const ashGroupSeeds = [
+    {
+      name: "Accra Premier Ash Group",
+      slug: "accra-premier-ash-group",
+      description: "A detail-led Accra crew for deep cleaning, household upkeep and move-day turnarounds.",
+      room: "premium" as Tier,
+      baseRate: 360,
+      members: [
+        { specialist: 0, role: "Group lead", lead: true, share: 40 },
+        { specialist: 1, role: "Kitchen & bathroom specialist", lead: false, share: 32 },
+        { specialist: 4, role: "Detail specialist", lead: false, share: 28 },
+      ],
+      services: [
+        { service: 1, rate: 420, minimumHours: 3 },
+        { service: 2, rate: 450, minimumHours: 4 },
+        { service: 4, rate: 360, minimumHours: 3 },
+      ],
+    },
+    {
+      name: "Golden Stool Ash Group",
+      slug: "golden-stool-ash-group",
+      description: "A Kumasi-based crew for premium household care, recurring upkeep and large family homes.",
+      room: "ultimate" as Tier,
+      baseRate: 390,
+      members: [
+        { specialist: 6, role: "Group lead", lead: true, share: 42 },
+        { specialist: 1, role: "Deep-clean specialist", lead: false, share: 30 },
+        { specialist: 2, role: "Housekeeping specialist", lead: false, share: 28 },
+      ],
+      services: [
+        { service: 1, rate: 480, minimumHours: 4 },
+        { service: 4, rate: 390, minimumHours: 3 },
+        { service: 5, rate: 370, minimumHours: 3 },
+      ],
+    },
+    {
+      name: "Coastal Care Ash Group",
+      slug: "coastal-care-ash-group",
+      description: "A flexible coastal crew for short-let turnovers, standard visits and move-in preparation.",
+      room: "basic" as Tier,
+      baseRate: 210,
+      members: [
+        { specialist: 3, role: "Group lead", lead: true, share: 38 },
+        { specialist: 5, role: "Turnover specialist", lead: false, share: 34 },
+        { specialist: 7, role: "Floor-care specialist", lead: false, share: 28 },
+      ],
+      services: [
+        { service: 0, rate: 210, minimumHours: 2 },
+        { service: 2, rate: 300, minimumHours: 3 },
+        { service: 5, rate: 240, minimumHours: 2 },
+      ],
+    },
+  ];
+  const groupIds: string[] = [];
+  for (const group of ashGroupSeeds) {
+    const leadMember = group.members.find((member) => member.lead);
+    const leadSpecialist = leadMember ? SPECIALISTS[leadMember.specialist] : undefined;
+    if (!leadSpecialist) throw new Error(`Demo seed failed at Ash groups: ${group.name} has no valid lead.`);
+    const { data: groupRow, error: groupError } = await client
+      .from("specialist_groups")
+      .insert({
+        name: group.name,
+        slug: group.slug,
+        description: group.description,
+        cover_url: leadSpecialist.avatar,
+        room: group.room,
+        pricing_model: "hourly",
+        base_rate: group.baseRate,
+        capacity: group.members.length,
+        available: true,
+        active: false,
+        created_by: actorId,
+      })
+      .select("id")
+      .single();
+    if (groupError) throw new Error(`Demo seed failed at Ash groups: ${groupError.message}`);
+    groupIds.push(groupRow.id);
+    const memberRows = group.members.map((member) => {
+      const specialistId = specialistIds[member.specialist];
+      if (!specialistId) throw new Error(`Demo seed failed at Ash groups: missing specialist for ${group.name}.`);
+      return {
+        group_id: groupRow.id,
+        specialist_id: specialistId,
+        role_label: member.role,
+        is_lead: member.lead,
+        share_pct: member.share,
+        active: true,
+        added_by: actorId,
+      };
+    });
+    must(await client.from("specialist_group_members").insert(memberRows), "Ash group members");
+    const serviceRowsForGroup = group.services.map((service) => {
+      const serviceId = serviceIds[service.service];
+      if (!serviceId) throw new Error(`Demo seed failed at Ash groups: missing service for ${group.name}.`);
+      return {
+        group_id: groupRow.id,
+        service_id: serviceId,
+        rate: service.rate,
+        minimum_hours: service.minimumHours,
+        active: true,
+      };
+    });
+    must(await client.from("specialist_group_services").insert(serviceRowsForGroup), "Ash group services");
+    must(await client.from("specialist_groups").update({ active: true }).eq("id", groupRow.id), "publish Ash group");
+  }
+  counts["ash_groups"] = groupIds.length;
 
   /* vetting queue — every applicant gets a real linked account with uploads,
      so the review panel can show photos, ID scans and (for specialists) a
@@ -986,6 +1173,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
     seededAt: new Date().toISOString(),
     userIds: [...specialistIds, ...clientIds, ...applicantIds],
     serviceIds,
+    groupIds,
     counts,
   };
   await writeManifest(manifest);
@@ -1015,6 +1203,22 @@ export async function clearDemoData(
   }
   const userIds = [...found];
 
+  const knownGroupSlugs = [
+    "accra-premier-ash-group",
+    "golden-stool-ash-group",
+    "coastal-care-ash-group",
+  ];
+  const { data: knownGroups } = await client
+    .from("specialist_groups")
+    .select("id")
+    .in("slug", knownGroupSlugs);
+  const groupIds = [...new Set([...(manifest?.groupIds ?? []), ...(knownGroups ?? []).map((group) => group.id)])];
+  if (groupIds.length) {
+    await client.from("specialist_groups").update({ active: false }).in("id", groupIds);
+    await client.from("specialist_group_members").delete().in("group_id", groupIds);
+    await client.from("specialist_group_services").delete().in("group_id", groupIds);
+    await client.from("specialist_groups").delete().in("id", groupIds);
+  }
 
   if (userIds.length) {
     const both = (table: "threads" | "bookings" | "escrow_entries") =>

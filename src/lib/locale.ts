@@ -124,8 +124,8 @@ export const COPY_GROUPS = [
       },
       {
         key: "nav.groups",
-        label: "Specialist teams link",
-        value: "Teams",
+        label: "Ash groups link",
+        value: "Ash groups",
         usedIn: ["Header nav (desktop)", "Mobile menu"],
       },
       {
