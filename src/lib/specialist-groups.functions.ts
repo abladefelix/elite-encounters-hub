@@ -54,12 +54,12 @@ export const saveSpecialistGroup = createServerFn({ method: "POST" })
 
 export const changeSpecialistGroupStatus = createServerFn({ method: "POST" })
   .middleware([requireActiveSession])
-  .validator((input) => z.object({ id: z.string().uuid(), active: z.boolean() }).parse(input))
+  .validator((input) => z.object({ id: z.string().uuid(), status: z.enum(["draft", "active", "paused"]) }).parse(input))
   .handler(async ({ data, context }) => {
-    const [{ assertAdminArea }, { setGroupActive }] = await Promise.all([
+    const [{ assertAdminArea }, { setGroupStatus }] = await Promise.all([
       import("./identity.server"),
       import("./specialist-groups.server"),
     ]);
     await assertAdminArea(context.userId, "groups");
-    return setGroupActive(data.id, data.active, context.userId);
+    return setGroupStatus(data.id, data.status, context.userId);
   });

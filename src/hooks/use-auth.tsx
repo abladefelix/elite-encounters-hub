@@ -114,6 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!session?.user) return;
     let active = true;
+    let enforcing = false;
+    let resumeTimer: number | undefined;
     const device = () => {
       let deviceId = localStorage.getItem("ashnight:device-id");
       if (!deviceId) {
@@ -124,6 +126,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { deviceId, deviceName };
     };
     const enforce = async () => {
+      if (enforcing || !active) return;
+      enforcing = true;
       try {
         await registerCurrentSession({ data: device() });
         const result = await validateCurrentSession();
@@ -133,17 +137,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           window.location.assign("/auth");
         }
       } catch (error) {
-        if (!active) return;
-        toast.error(error instanceof Error ? error.message : "Your session has ended.");
-        await supabase.auth.signOut();
-        window.location.assign("/auth");
+        // Resume can briefly race token refresh or network reconnection. A
+        // transport failure is not proof that the authenticated session ended,
+        // so retain it and let the next heartbeat validate again.
+        if (active) console.warn("Session validation deferred after a temporary failure", error);
+      } finally {
+        enforcing = false;
       }
     };
     void enforce();
     const timer = window.setInterval(() => void enforce(), 60_000);
-    const onVisible = () => { if (document.visibilityState === "visible") void enforce(); };
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (resumeTimer) window.clearTimeout(resumeTimer);
+      resumeTimer = window.setTimeout(() => void enforce(), 750);
+    };
     document.addEventListener("visibilitychange", onVisible);
-    return () => { active = false; window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
+    return () => { active = false; window.clearInterval(timer); if (resumeTimer) window.clearTimeout(resumeTimer); document.removeEventListener("visibilitychange", onVisible); };
   }, [session?.user?.id]);
 
   // A member banned, suspended or deactivated mid-session loses access immediately.
