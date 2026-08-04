@@ -41,7 +41,7 @@ export const listAdminGroups = createServerFn({ method: "GET" })
   });
 
 export const saveSpecialistGroup = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .validator((input) => groupInput.parse(input))
   .handler(async ({ data, context }) => {
     const [{ assertAdminArea }, { saveGroup }] = await Promise.all([
@@ -53,7 +53,7 @@ export const saveSpecialistGroup = createServerFn({ method: "POST" })
   });
 
 export const changeSpecialistGroupStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .validator((input) => z.object({ id: z.string().uuid(), active: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     const [{ assertAdminArea }, { setGroupActive }] = await Promise.all([

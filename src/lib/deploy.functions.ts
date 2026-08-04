@@ -24,7 +24,7 @@ export const getDeployStatus = createServerFn({ method: "POST" })
   });
 
 export const syncFromGithub = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .handler(async ({ context }) => {
     await assertAdminArea(context as never);
     const { runDeploySync } = await import("./deploy.server");
