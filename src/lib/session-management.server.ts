@@ -1,0 +1,144 @@
+import type { Database } from "@/integrations/supabase/types";
+
+import { admin, logActivity } from "./identity.server";
+
+export interface SessionPolicy {
+  maxConcurrentSessions: number;
+  idleTimeoutMinutes: number;
+  absoluteTimeoutHours: number;
+}
+
+export const DEFAULT_SESSION_POLICY: SessionPolicy = {
+  maxConcurrentSessions: 1,
+  idleTimeoutMinutes: 30,
+  absoluteTimeoutHours: 24,
+};
+
+function expiresIn(amount: number, unitMs: number) {
+  return new Date(Date.now() + amount * unitMs).toISOString();
+}
+
+export function tokenSessionId(accessToken: string) {
+  try {
+    const part = accessToken.split(".")[1];
+    if (!part) return null;
+    const payload = JSON.parse(Buffer.from(part, "base64url").toString("utf8")) as {
+      session_id?: string;
+      sub?: string;
+    };
+    return payload.session_id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function sessionPolicy(): Promise<SessionPolicy> {
+  const client = await admin();
+  const { data } = await client.from("platform_settings").select("data").eq("id", true).maybeSingle();
+  const blob = (data?.data ?? {}) as Record<string, unknown>;
+  const stored = (blob["security"] ?? {}) as Partial<SessionPolicy>;
+  return {
+    maxConcurrentSessions: Math.min(10, Math.max(1, Number(stored.maxConcurrentSessions) || 1)),
+    idleTimeoutMinutes: Math.min(10080, Math.max(5, Number(stored.idleTimeoutMinutes) || 30)),
+    absoluteTimeoutHours: Math.min(720, Math.max(1, Number(stored.absoluteTimeoutHours) || 24)),
+  };
+}
+
+export async function registerSession(input: {
+  userId: string;
+  accessToken: string;
+  deviceId: string;
+  deviceName: string;
+  userAgent: string;
+  ip: string;
+}) {
+  const client = await admin();
+  const authSessionId = tokenSessionId(input.accessToken);
+  if (!authSessionId) throw new Error("The authentication session could not be registered.");
+  const policy = await sessionPolicy();
+  const now = new Date().toISOString();
+  await client
+    .from("active_sessions")
+    .update({ revoked_at: now, revoked_reason: "Session expired" })
+    .eq("user_id", input.userId)
+    .is("revoked_at", null)
+    .or(`idle_expires_at.lte.${now},absolute_expires_at.lte.${now}`);
+
+  const { data: active } = await client
+    .from("active_sessions")
+    .select("id, auth_session_id")
+    .eq("user_id", input.userId)
+    .is("revoked_at", null)
+    .order("last_seen_at", { ascending: true });
+
+  const overflow = Math.max(0, (active?.length ?? 0) - policy.maxConcurrentSessions + 1);
+  const displaced = (active ?? []).slice(0, overflow);
+  if (displaced.length) {
+    await client
+      .from("active_sessions")
+      .update({ revoked_at: now, revoked_reason: "Concurrent session limit reached" })
+      .in("id", displaced.map((row) => row.id));
+  }
+
+  const row: Database["public"]["Tables"]["active_sessions"]["Insert"] = {
+    user_id: input.userId,
+    auth_session_id: authSessionId,
+    device_id: input.deviceId,
+    device_name: input.deviceName || "Unknown device",
+    user_agent: input.userAgent,
+    ip_address: input.ip,
+    idle_expires_at: expiresIn(policy.idleTimeoutMinutes, 60_000),
+    absolute_expires_at: expiresIn(policy.absoluteTimeoutHours, 3_600_000),
+  };
+  const { error } = await client.from("active_sessions").insert(row);
+  if (error) throw new Error(error.message);
+  return { policy, authSessionId };
+}
+
+export async function validateSession(userId: string, accessToken: string) {
+  const client = await admin();
+  const authSessionId = tokenSessionId(accessToken);
+  if (!authSessionId) return { valid: false, reason: "Session identity is missing." };
+  const { data } = await client
+    .from("active_sessions")
+    .select("id, revoked_at, revoked_reason, idle_expires_at, absolute_expires_at")
+    .eq("user_id", userId)
+    .eq("auth_session_id", authSessionId)
+    .maybeSingle();
+  if (!data) return { valid: false, reason: "This session is no longer registered." };
+  if (data.revoked_at) return { valid: false, reason: data.revoked_reason || "This session was ended." };
+  const now = Date.now();
+  if (new Date(data.idle_expires_at).getTime() <= now) return { valid: false, reason: "Your session expired due to inactivity." };
+  if (new Date(data.absolute_expires_at).getTime() <= now) return { valid: false, reason: "Your session reached its maximum duration." };
+  const policy = await sessionPolicy();
+  await client.from("active_sessions").update({
+    last_seen_at: new Date().toISOString(),
+    idle_expires_at: expiresIn(policy.idleTimeoutMinutes, 60_000),
+  }).eq("id", data.id);
+  return { valid: true, reason: "" };
+}
+
+export async function revokeAllSessions(userId: string, reason: string, actorId?: string) {
+  const client = await admin();
+  await client.from("active_sessions").update({ revoked_at: new Date().toISOString(), revoked_reason: reason }).eq("user_id", userId).is("revoked_at", null);
+  await client.auth.admin.signOut(userId, "global");
+  await logActivity({ area: "auth", event: "sessions_revoked", severity: "warn", actorId: actorId ?? userId, target: userId, details: { reason } });
+  return { ok: true };
+}
+
+export async function revokeSession(sessionId: string, actorId: string) {
+  const client = await admin();
+  const { data } = await client.from("active_sessions").select("user_id").eq("id", sessionId).maybeSingle();
+  if (!data) throw new Error("That session no longer exists.");
+  return revokeAllSessions(data.user_id, "Ended by an administrator", actorId);
+}
+
+export async function listSessionsForAdmin() {
+  const client = await admin();
+  const { data, error } = await client.from("active_sessions").select("*").order("last_seen_at", { ascending: false }).limit(500);
+  if (error) throw new Error(error.message);
+  const ids = [...new Set((data ?? []).map((row) => row.user_id))];
+  const { data: profiles } = ids.length ? await client.from("profiles").select("id, display_name, username").in("id", ids) : { data: [] };
+  const names = new Map((profiles ?? []).map((row) => [row.id, row]));
+  return (data ?? []).map((row) => ({ ...row, profile: names.get(row.user_id) ?? null }));
+}
