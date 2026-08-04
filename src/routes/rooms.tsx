@@ -64,10 +64,11 @@ function useMyMembership(userId: string | undefined) {
     queryKey: ["my-membership", userId],
     enabled: Boolean(userId),
     queryFn: async () => {
+      if (!userId) return null;
       const { data, error } = await supabase
         .from("memberships")
         .select("*")
-        .eq("user_id", userId!)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -189,6 +190,7 @@ function RoomsPage() {
 
   const activeMembership =
     membership && membership.status === "active" ? membership : null;
+  const currentRoom = (activeMembership?.room ?? myProfile?.room ?? null) as Tier | null;
 
   return (
     <div className="min-h-screen">
@@ -253,16 +255,16 @@ function RoomsPage() {
           </Card>
         ) : null}
 
-        {user && canJoinRooms && !membershipLoading && activeMembership ? (
+        {user && canJoinRooms && !membershipLoading && currentRoom ? (
           <Card className="mt-6 border-border/70 bg-panel p-5">
             <p className="text-sm text-muted-foreground">You're currently in</p>
             <p className="mt-1 font-display text-lg font-semibold">
-              {tierLabel(activeMembership.room)} Room
+              {tierLabel(currentRoom)} Room
             </p>
           </Card>
         ) : null}
 
-        {user && canJoinRooms && !membershipLoading && !activeMembership ? (
+        {user && canJoinRooms && !membershipLoading && !currentRoom ? (
           <Card className="mt-6 border-dashed border-border/70 bg-panel/60 p-5">
             <p className="text-sm text-muted-foreground">
               You don't have an active membership yet. Pick a room below to get started.
@@ -277,11 +279,9 @@ function RoomsPage() {
             const privileges = policy[tier] ?? NEW_ROOM_PRIVILEGES;
             const profile = profileOf(tier);
             const specialistCount = specialistCounts[tier] ?? 0;
-            const isCurrentRoom = activeMembership?.room === tier;
-            const isUpgrade =
-              Boolean(activeMembership) &&
-              !isCurrentRoom &&
-              rank(tier) > rank(activeMembership!.room as Tier);
+            const isCurrentRoom = currentRoom === tier;
+            const isUpgrade = currentRoom !== null && rank(tier) > rank(currentRoom);
+            const isDowngrade = currentRoom !== null && rank(tier) < rank(currentRoom);
 
             return (
               <Card
@@ -372,7 +372,7 @@ function RoomsPage() {
                   </Button>
                 ) : (
 
-                  <div className="mt-7 space-y-2">
+                  <div className="mt-7">
                     <Button
                       variant={tier === "premium" ? "brass" : "soft"}
                       className="w-full"
@@ -381,13 +381,7 @@ function RoomsPage() {
                     >
                       {joining === tier
                         ? "Opening Paystack…"
-                        : `${isUpgrade ? "Upgrade" : "Join"} for ${money(profile.priceMonthly)}/mo`}
-                    </Button>
-                    <Button asChild variant="ghost" className="w-full">
-                      <Link to="/apply" search={{ role: "client", room: tier }}>
-                        {isUpgrade ? "Apply to upgrade to" : "Apply for"}{" "}
-                        {profile.name.replace(" Room", "")}
-                      </Link>
+                        : `${isUpgrade ? "Upgrade" : isDowngrade ? "Downgrade" : "Join"} to ${profile.name.replace(" Room", "")} · ${money(profile.priceMonthly)}/mo`}
                     </Button>
                   </div>
                 )}
