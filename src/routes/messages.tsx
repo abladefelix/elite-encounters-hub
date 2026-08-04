@@ -1470,7 +1470,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                     </ScrollArea>
 
 
-                    <div className="shrink-0 border-t border-border/70 p-3 sm:p-4">
+                    <div className="shrink-0 border-t border-border/70 bg-surface p-3 sm:p-4 z-10">
                       {iAmClient ? (
                         <Button variant="brass" className="w-full" onClick={openRequest}>
                           {bookingsOpen ? (
