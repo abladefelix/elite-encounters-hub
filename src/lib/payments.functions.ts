@@ -354,7 +354,7 @@ export const confirmEscrowComplete = createServerFn({ method: "POST" })
     const admin = await adminClient();
     const { data: entry } = await admin
       .from("escrow_entries")
-      .select("id, client_id, state, booking_id")
+      .select("id, client_id, state, booking_id, group_booking_id")
       .eq("id", data.escrowId)
       .maybeSingle();
     if (!entry) throw new Error("That payment no longer exists.");
@@ -362,7 +362,9 @@ export const confirmEscrowComplete = createServerFn({ method: "POST" })
     if (entry.state !== "held") throw new Error("This payment isn't waiting for confirmation.");
 
     const settings = await serverSettings();
-    const { error } = await admin
+    const target = entry.group_booking_id
+      ? admin.from("escrow_entries").update({ state: "clearing", release_at: hoursFromNow(settings.escrow.holdHours ?? 24), admin_note: "Member confirmed the group visit — clearing window started." }).eq("group_booking_id", entry.group_booking_id).eq("state", "held")
+      : admin
       .from("escrow_entries")
       .update({
         state: "clearing",
@@ -370,9 +372,13 @@ export const confirmEscrowComplete = createServerFn({ method: "POST" })
         admin_note: "Member confirmed the visit — clearing window started.",
       })
       .eq("id", entry.id);
+    const { error } = await target;
     if (error) throw new Error(error.message);
     if (entry.booking_id) {
       await admin.from("bookings").update({ status: "completed" }).eq("id", entry.booking_id);
+    }
+    if (entry.group_booking_id) {
+      await admin.from("group_bookings").update({ status: "completed" }).eq("id", entry.group_booking_id);
     }
     return { ok: true };
   });
