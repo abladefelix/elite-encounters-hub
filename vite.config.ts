@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    // From 2026-08-04 the Cloudflare runtime rejects an explicit `nodejs_compat`
+    // compatibility flag (it became the default), which made every deployed
+    // request fail with a 502. Node compat is still on — we just stop nitro from
+    // emitting the now-invalid flag.
+    cloudflare: { nodeCompat: false },
+  },
 });
