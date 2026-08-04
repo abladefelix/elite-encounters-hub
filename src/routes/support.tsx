@@ -314,6 +314,12 @@ export function DocumentCard({
 
   /** Print via a hidden frame; if the browser refuses, hand back a PDF file. */
   function print() {
+    // The native shell has no print pipeline — go straight to the PDF/share sheet.
+    if (isNativeApp()) {
+      void savePdf();
+      return;
+    }
+
     const node = document.getElementById(printId);
     if (!node) {
       void savePdf();
