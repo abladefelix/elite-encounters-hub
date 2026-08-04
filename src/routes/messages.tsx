@@ -1009,12 +1009,12 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen">
+      <div className="flex h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] flex-col overflow-hidden md:h-screen">
         <SiteHeader />
 
-        <div className="mx-auto w-full max-w-6xl px-0 py-0 sm:px-5 sm:py-8">
-          <Card className="overflow-hidden border-border/70 bg-surface p-0">
-            <div className="grid h-[calc(100svh-7rem)] sm:h-[76vh] md:grid-cols-[300px_1fr]">
+        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-0 py-0 sm:px-5 sm:py-8">
+          <Card className="flex flex-1 flex-col overflow-hidden border-border/70 bg-surface p-0">
+            <div className="grid flex-1 overflow-hidden md:grid-cols-[300px_1fr]">
               {/* thread list */}
               <aside
                 className={cn(
@@ -1246,7 +1246,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
               {/* conversation */}
               <section
                 className={cn(
-                  "flex min-h-0 min-w-0 flex-col",
+                  "relative flex min-h-0 min-w-0 flex-col overflow-hidden",
                   showListOnMobile ? "hidden md:flex" : "flex",
                 )}
               >
@@ -1256,7 +1256,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                   </div>
                 ) : (
                   <>
-                    <header className="flex shrink-0 items-center gap-3 border-b border-border/70 p-4">
+                    <header className="flex shrink-0 items-center gap-3 border-b border-border/70 bg-surface p-4 z-10">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -1470,7 +1470,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                     </ScrollArea>
 
 
-                    <div className="shrink-0 border-t border-border/70 p-3 sm:p-4">
+                    <div className="shrink-0 border-t border-border/70 bg-surface p-3 sm:p-4 z-10">
                       {iAmClient ? (
                         <Button variant="brass" className="w-full" onClick={openRequest}>
                           {bookingsOpen ? (
