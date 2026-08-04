@@ -183,12 +183,16 @@ export function AuthPage({
         : /iphone|ipad/i.test(navigator.userAgent)
           ? "Apple mobile device"
           : `${navigator.platform || "Web"} browser`;
-      const tokens = await signInWithIdentifier({
+      const result = await signInWithIdentifier({
         data: { identifier: who, password, captchaToken: signInToken, deviceId, deviceName },
       });
+      if (!result.ok) {
+        toast.error(result.message);
+        return;
+      }
       const { error } = await supabase.auth.setSession({
-        access_token: tokens.accessToken,
-        refresh_token: tokens.refreshToken,
+        access_token: result.accessToken,
+        refresh_token: result.refreshToken,
       });
       if (error) throw new Error(error.message);
       toast.success("Welcome back.");

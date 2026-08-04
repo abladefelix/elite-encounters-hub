@@ -43,21 +43,29 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const ip =
-      getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for") ?? "";
+    try {
+      const ip =
+        getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for") ?? "";
 
-    // Abuse protection: a forged or replayed challenge never reaches the
-    // password check, so credential stuffing costs a Turnstile solve per try.
-    const { assertHuman } = await import("./captcha.server");
-    await assertHuman(data.captchaToken, { ip, action: "signin" });
+      // Abuse protection: a forged or replayed challenge never reaches the
+      // password check, so credential stuffing costs a Turnstile solve per try.
+      const { assertHuman } = await import("./captcha.server");
+      await assertHuman(data.captchaToken, { ip, action: "signin" });
 
-    const { signInWithIdentifier: run } = await import("./identity.server");
-    return run(data.identifier, data.password, {
-      ip,
-      userAgent: getRequestHeader("user-agent") ?? "",
-      deviceId: data.deviceId,
-      deviceName: data.deviceName,
-    });
+      const { signInWithIdentifier: run } = await import("./identity.server");
+      const tokens = await run(data.identifier, data.password, {
+        ip,
+        userAgent: getRequestHeader("user-agent") ?? "",
+        deviceId: data.deviceId,
+        deviceName: data.deviceName,
+      });
+      return { ok: true as const, ...tokens };
+    } catch (error) {
+      return {
+        ok: false as const,
+        message: error instanceof Error ? error.message : "We couldn't sign you in.",
+      };
+    }
   });
 
 
