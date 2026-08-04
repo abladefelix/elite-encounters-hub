@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    // Nitro defaults the worker's compatibility_date to "today". From 2026-08-04
+    // the runtime rejects an explicit `nodejs_compat` flag (it became the
+    // default), which made every deployed request fail with a 502. Pinning the
+    // date before that cutoff keeps the emitted flag valid.
+    compatibilityDate: "2026-07-01",
+  },
 });
