@@ -384,7 +384,7 @@ function RoomsPage() {
                         : `${isUpgrade ? "Upgrade" : "Join"} for ${money(profile.priceMonthly)}/mo`}
                     </Button>
                     <Button asChild variant="ghost" className="w-full">
-                      <Link to="/apply">
+                      <Link to="/apply" search={{ role: "client", room: tier }}>
                         {isUpgrade ? "Apply to upgrade to" : "Apply for"}{" "}
                         {profile.name.replace(" Room", "")}
                       </Link>
