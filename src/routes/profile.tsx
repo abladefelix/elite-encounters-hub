@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Heart, ThumbsDown, Sparkles, X, Save, ShieldCheck, LogIn, RefreshCw } from "lucide-react";
+import { Camera, Heart, ThumbsDown, Sparkles, X, Save, ShieldCheck, LogIn, RefreshCw, KeyRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,6 +41,8 @@ import { useServiceCatalog } from "@/lib/service-catalog";
 import { validateMediaFile } from "@/lib/media-validation";
 import { initials, money } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { endMySessionsAfterPasswordChange } from "@/lib/session-management.functions";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -120,6 +122,9 @@ function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [calls, setCalls] = useState<CallPreferences>(DEFAULT_CALL_PREFERENCES);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
