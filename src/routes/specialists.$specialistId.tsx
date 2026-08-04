@@ -123,8 +123,8 @@ function SpecialistProfile() {
     }
     setStarting(true);
     try {
-      await openThread(user.id, specialist.id, specialist.room);
-      void navigate({ to: "/messages" });
+      const thread = await openThread(user.id, specialist.id, specialist.room);
+      void navigate({ to: "/messages", search: { thread: thread.id } });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't open that chat.");
     } finally {

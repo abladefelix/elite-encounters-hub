@@ -150,6 +150,9 @@ const HIDDEN_MESSAGES_KEY = "ashnight-hidden-messages-v1";
 
 
 export const Route = createFileRoute("/messages")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    thread: typeof search.thread === "string" ? search.thread : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Messages — Chat, Call & Book | Ashnight" },
@@ -194,6 +197,7 @@ function dayLabel(iso: string) {
 
 function MessagesPage() {
   const { loading, user, profile } = useAuth();
+  const { thread } = Route.useSearch();
 
   if (loading) {
     return (
@@ -221,11 +225,19 @@ function MessagesPage() {
     );
   }
 
-  return <MessagesInbox userId={user.id} profile={profile} />;
+  return <MessagesInbox userId={user.id} profile={profile} initialThreadId={thread} />;
 }
 
-function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRow | null }) {
-  const [activeThreadId, setActiveThreadId] = useState("");
+function MessagesInbox({
+  userId,
+  profile,
+  initialThreadId,
+}: {
+  userId: string;
+  profile: ProfileRow | null;
+  initialThreadId?: string;
+}) {
+  const [activeThreadId, setActiveThreadId] = useState(initialThreadId ?? "");
   const [draft, setDraft] = useState("");
   const [call, setCall] = useState<CallMode | null>(null);
   const [locating, setLocating] = useState(false);
@@ -237,7 +249,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
   const [ratingOpen, setRatingOpen] = useState(false);
   /** Booking the open rating dialog belongs to, when it followed a visit. */
   const [ratingBooking, setRatingBooking] = useState<BookingRow | null>(null);
-  const [showListOnMobile, setShowListOnMobile] = useState(true);
+  const [showListOnMobile, setShowListOnMobile] = useState(!initialThreadId);
   const [removeThread, setRemoveThread] = useState<ThreadRow | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
