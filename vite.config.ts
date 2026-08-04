@@ -13,10 +13,10 @@ export default defineConfig({
     server: { entry: "server" },
   },
   nitro: {
-    // Nitro defaults the worker's compatibility_date to "today". From 2026-08-04
-    // the runtime rejects an explicit `nodejs_compat` flag (it became the
-    // default), which made every deployed request fail with a 502. Pinning the
-    // date before that cutoff keeps the emitted flag valid.
-    compatibilityDate: "2026-07-01",
+    // From 2026-08-04 the Cloudflare runtime rejects an explicit `nodejs_compat`
+    // compatibility flag (it became the default), which made every deployed
+    // request fail with a 502. Node compat is still on — we just stop nitro from
+    // emitting the now-invalid flag.
+    cloudflare: { nodeCompat: false },
   },
 });
