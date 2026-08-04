@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Lock, Search, SlidersHorizontal } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { ChevronLeft, ChevronRight, Lock, Search, SlidersHorizontal, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,11 +19,14 @@ import { SiteFooter } from "@/components/site-footer";
 import { SpecialistTile } from "@/components/specialist-tile";
 import { RosterPagination } from "@/components/roster-pagination";
 import { SpecialistRows } from "@/components/specialist-rows";
+import { GroupBookingDialog, type BookableGroup } from "@/components/group-booking-dialog";
+import { GroupSpecialistTile } from "@/components/group-specialist-tile";
 import { useAppearance } from "@/lib/appearance";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useServices, useSpecialists, type ProfileRow } from "@/lib/queries";
 import { ALL_TIERS, accessibleTiers, tierLabel, type Specialist, type Tier } from "@/lib/types";
+import { listBookableGroups } from "@/lib/group-bookings.functions";
 
 export const Route = createFileRoute("/specialists/")({
   head: () => ({
@@ -98,6 +102,9 @@ function SpecialistsPage() {
   const [service, setService] = useState("all");
   const [sort, setSort] = useState<SortKey>("rating");
   const [availability, setAvailability] = useState<"all" | "online" | "verified">("all");
+  const [selectedGroup, setSelectedGroup] = useState<BookableGroup | null>(null);
+  const teamScroller = useRef<HTMLDivElement>(null);
+  const listGroups = useServerFn(listBookableGroups);
 
   // A specialist never browses the roster — they only meet a client once that
   // client opens a thread with them.
@@ -111,6 +118,23 @@ function SpecialistsPage() {
   const { data: profiles, isLoading } = useSpecialists(room);
   const { data: serviceMap } = useSpecialistServiceMap();
   const { data: allServices } = useServices();
+  const groups = useQuery({
+    queryKey: ["bookable-groups", user?.id ?? "anon"],
+    enabled: Boolean(user) && canBrowse,
+    queryFn: () => listGroups(),
+  });
+
+  const visibleGroups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (groups.data ?? []).filter((group) => {
+      const serviceNames = group.specialist_group_services.map((item) => item.services?.name).filter(Boolean);
+      const memberNames = group.specialist_group_members.map((member) => member.profiles?.display_name ?? "");
+      const matchesRoom = allowedRooms.includes(group.room as Tier) && (room === "all" || group.room === room);
+      const matchesQuery = !q || [group.name, group.description, ...memberNames, ...serviceNames].some((value) => value?.toLowerCase().includes(q));
+      const matchesService = service === "all" || serviceNames.includes(service);
+      return matchesRoom && matchesQuery && matchesService;
+    });
+  }, [groups.data, query, room, service, allowedRooms]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -270,6 +294,11 @@ function SpecialistsPage() {
           </Select>
         </div>
 
+        {visibleGroups.length > 0 ? <section className="mt-8 border-b border-border/70 pb-8">
+          <div className="flex items-center justify-between gap-3"><div><div className="flex items-center gap-2"><Users className="size-4 text-primary" /><h2 className="font-display text-lg font-semibold">Specialist teams</h2></div><p className="mt-1 text-xs text-muted-foreground">Admin-assigned crews that work, chat, and receive protected payment as one group.</p></div><div className="hidden gap-1 sm:flex"><Button size="icon" variant="soft" aria-label="Scroll teams left" onClick={() => teamScroller.current?.scrollBy({ left: -500, behavior: "smooth" })}><ChevronLeft className="size-4" /></Button><Button size="icon" variant="soft" aria-label="Scroll teams right" onClick={() => teamScroller.current?.scrollBy({ left: 500, behavior: "smooth" })}><ChevronRight className="size-4" /></Button></div></div>
+          <div ref={teamScroller} className="-mx-5 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">{visibleGroups.map((group) => <div key={group.id} className="w-36 shrink-0 snap-start sm:w-40"><GroupSpecialistTile group={group} onSelect={() => setSelectedGroup(group)} /></div>)}</div>
+        </section> : null}
+
         {isLoading ? (
           <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             {Array.from({ length: 12 }).map((_, index) => (
@@ -383,6 +412,7 @@ function SpecialistsPage() {
       </div>
 
       <SiteFooter />
+      <GroupBookingDialog group={selectedGroup} onClose={() => setSelectedGroup(null)} />
     </div>
   );
 }
