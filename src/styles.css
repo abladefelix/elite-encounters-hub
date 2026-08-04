@@ -324,6 +324,12 @@
   body {
     padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
   }
+  /* Chat owns the visible viewport and reserves its tab-bar space itself.
+     Keeping body padding as well would move its header/composer off-screen. */
+  body:has([data-chat-shell]) {
+    padding-bottom: 0;
+    overflow: hidden;
+  }
   /* The admin control room is not an app shell — no tab bar, no reserved space. */
   body:has([data-admin-shell]) {
     padding-bottom: 0;
@@ -346,6 +352,9 @@ html.native-app body {
 @media (max-width: 767px) {
   html.native-app body {
     padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+  }
+  html.native-app body:has([data-chat-shell]) {
+    padding-bottom: 0;
   }
 }
 

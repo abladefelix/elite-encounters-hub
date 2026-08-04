@@ -1009,12 +1009,15 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
   return (
     <TooltipProvider>
-      <div className="flex h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] flex-col overflow-hidden md:h-screen">
+      <div
+        data-chat-shell
+        className="fixed inset-x-0 top-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] flex min-h-0 flex-col overflow-hidden bg-background md:relative md:inset-auto md:h-screen"
+      >
         <SiteHeader />
 
-        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-0 py-0 sm:px-5 sm:py-8">
-          <Card className="flex flex-1 flex-col overflow-hidden border-border/70 bg-surface p-0">
-            <div className="grid flex-1 overflow-hidden md:grid-cols-[300px_1fr]">
+        <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-hidden px-0 py-0 sm:px-5 sm:py-8">
+          <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-border/70 bg-surface p-0">
+            <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-[300px_minmax(0,1fr)]">
               {/* thread list */}
               <aside
                 className={cn(
@@ -1256,7 +1259,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                   </div>
                 ) : (
                   <>
-                    <header className="flex shrink-0 items-center gap-3 border-b border-border/70 bg-surface p-4 z-10">
+                    <header className="z-10 grid shrink-0 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border/70 bg-surface px-3 py-2.5 sm:gap-3 sm:p-4">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -1266,13 +1269,13 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                       >
                         <ArrowLeft className="size-4" />
                       </Button>
-                      <Avatar className="size-10 border border-border">
+                      <Avatar className="size-9 shrink-0 border border-border sm:size-10">
                         {peer?.avatar_url ? <AvatarImage src={peer.avatar_url} alt={peerName} /> : null}
                         <AvatarFallback className="bg-surface-strong text-xs">
                           {initials(peerName)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="min-w-0">
+                      <div className="min-w-0 overflow-hidden">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-semibold">{peerName}</p>
                           {peer?.room ? (
@@ -1294,7 +1297,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                           ) : null}
                         </p>
                       </div>
-                      <div className="ml-auto flex items-center gap-1">
+                      <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
                         <CallControl
                           allowed={audioAllowed}
                           label={t("chat.voice").toLowerCase()}
@@ -1374,7 +1377,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                     ) : null}
 
 
-                    <ScrollArea className="min-h-0 flex-1">
+                    <ScrollArea className="h-0 min-h-0 flex-1">
                       <div className="space-y-4 p-4 sm:p-6">
                         {clearedAt ? (
                           <p className="mx-auto flex max-w-md items-center justify-center gap-2 rounded-full border border-dashed border-border bg-background/60 px-4 py-1.5 text-center text-[11px] text-muted-foreground">
@@ -1470,7 +1473,7 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
                     </ScrollArea>
 
 
-                    <div className="shrink-0 border-t border-border/70 bg-surface p-3 sm:p-4 z-10">
+                    <div className="z-10 max-h-[55%] shrink-0 overflow-y-auto overscroll-contain border-t border-border/70 bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:max-h-none sm:overflow-visible sm:p-4">
                       {iAmClient ? (
                         <Button variant="brass" className="w-full" onClick={openRequest}>
                           {bookingsOpen ? (
