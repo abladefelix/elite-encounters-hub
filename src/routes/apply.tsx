@@ -43,9 +43,19 @@ const applicationSchema = z.object({
 type FieldErrors = Partial<Record<keyof z.infer<typeof applicationSchema>, string>>;
 
 export const Route = createFileRoute("/apply")({
-  validateSearch: (search: Record<string, unknown>): { role?: "client" | "specialist" } => ({
-    role: search["role"] === "specialist" ? "specialist" : "client",
-  }),
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    role?: "client" | "specialist";
+    room?: "basic" | "premium" | "ultimate";
+  } => {
+    const role = search["role"] === "specialist" ? "specialist" : "client";
+    const room = search["room"];
+    if (room === "basic" || room === "premium" || room === "ultimate") {
+      return { role, room };
+    }
+    return { role };
+  },
   head: () => ({
     meta: [
       { title: "Apply to Join Ashnight — Manual Vetting for Every Member" },
@@ -66,7 +76,7 @@ export const Route = createFileRoute("/apply")({
 });
 
 function ApplyPage() {
-  const { role: intendedRole } = useSearch({ from: "/apply" });
+  const { role: intendedRole, room: intendedRoom } = useSearch({ from: "/apply" });
   const { user, loading: authLoading } = useAuth();
   const { data: applications, isLoading: applicationsLoading } = useApplications();
   const submitApplication = useSubmitApplication();
@@ -74,11 +84,22 @@ function ApplyPage() {
   const { selectableServices } = useServiceCatalog();
 
   const [role, setRole] = useState<"client" | "specialist">(intendedRole ?? "client");
-  const [room, setRoom] = useState<"basic" | "premium" | "ultimate">("premium");
+  const [room, setRoom] = useState<"basic" | "premium" | "ultimate">(
+    intendedRoom ?? "premium",
+  );
   const [services, setServices] = useState<string[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
 
-  const existingApplication = applications?.find((app) => app.user_id === user?.id);
+  // A completed or rejected historical application must not block a new room
+  // request. Only an application that is currently being reviewed for this
+  // role and room represents an active request.
+  const existingApplication = applications?.find(
+    (app) =>
+      app.user_id === user?.id &&
+      app.applied_role === (intendedRole ?? "client") &&
+      (!intendedRoom || app.suggested_room === intendedRoom) &&
+      (app.status === "pending" || app.status === "in_review"),
+  );
 
   if (authLoading || (user && applicationsLoading)) {
     return (
@@ -122,7 +143,6 @@ function ApplyPage() {
       pending: "Your application is in the queue — we review every one by hand.",
       in_review: "We're actively reviewing your application right now.",
       approved: "You're approved! Head to your profile to finish setting up.",
-      rejected: "Your application wasn't approved this time.",
     };
     return (
       <div className="min-h-screen">
@@ -180,12 +200,16 @@ function ApplyPage() {
 
     setErrors({});
     const { fullName, phone, city, about } = parsed.data;
+    if (!user) {
+      toast.error("Please sign in again before submitting your application");
+      return;
+    }
     submitApplication.mutate(
       {
-        user_id: user!.id,
+        user_id: user.id,
         applied_role: role,
         full_name: fullName,
-        email: user!.email ?? "",
+        email: user.email ?? "",
         phone,
         city,
         suggested_room: room,
