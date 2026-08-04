@@ -291,6 +291,7 @@ export function DocumentCard({
 }) {
   const lines = useMemo(() => documentLines(row), [row]);
   const { active } = useDocumentTemplates();
+  const { branding } = useBranding();
   const template = templateProp ?? active;
   const printId = `doc-${row.id}-${template.id}`;
   const heading = row.kind === "invoice" ? template.invoiceHeading : template.receiptHeading;
@@ -303,6 +304,7 @@ export function DocumentCard({
         lines,
         heading,
         stamp: (value) => (value ? formatStamp(value) : "—"),
+        logoUrl: (branding.logoUrl ?? "").trim() || undefined,
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not build the PDF.");
