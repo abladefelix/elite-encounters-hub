@@ -131,8 +131,15 @@ regenerated with the commands above and resubmitted.
 ## 6. Build and release
 
 ```bash
+npm run mobile:build:android  # test APK → android/app/build/outputs/apk/debug/app-debug.apk
 npm run mobile:open:android   # Android Studio → Build → Generate Signed Bundle (.aab)
 npm run mobile:open:ios       # Xcode → Product → Archive → Distribute App
+```
+
+Install the test APK on a connected Android device with:
+
+```bash
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
 Keep the Android keystore and its passwords somewhere safe — losing it means you

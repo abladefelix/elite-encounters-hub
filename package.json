@@ -18,7 +18,8 @@
     "mobile:permissions": "node scripts/native-permissions.mjs",
     "mobile:assets": "capacitor-assets generate --iconBackgroundColor \"#0b0d12\" --iconBackgroundColorDark \"#0b0d12\" --splashBackgroundColor \"#0b0d12\" --splashBackgroundColorDark \"#0b0d12\"",
     "mobile:open:ios": "cap open ios",
-    "mobile:open:android": "cap open android"
+    "mobile:open:android": "cap open android",
+    "mobile:build:android": "bun run mobile:sync && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",
