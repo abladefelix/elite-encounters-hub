@@ -36,6 +36,7 @@ import { Route as AshnightControlEmailRouteImport } from './routes/ashnight-cont
 import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
 import { Route as AshnightControlFeaturesRouteImport } from './routes/ashnight-control.features'
 import { Route as AshnightControlFinanceRouteImport } from './routes/ashnight-control.finance'
+import { Route as AshnightControlGroupsRouteImport } from './routes/ashnight-control.groups'
 import { Route as AshnightControlLogsRouteImport } from './routes/ashnight-control.logs'
 import { Route as AshnightControlModerationRouteImport } from './routes/ashnight-control.moderation'
 import { Route as AshnightControlNotificationsRouteImport } from './routes/ashnight-control.notifications'
@@ -194,6 +195,11 @@ const AshnightControlFinanceRoute = AshnightControlFinanceRouteImport.update({
   path: '/finance',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const AshnightControlGroupsRoute = AshnightControlGroupsRouteImport.update({
+  id: '/groups',
+  path: '/groups',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlLogsRoute = AshnightControlLogsRouteImport.update({
   id: '/logs',
   path: '/logs',
@@ -322,6 +328,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/finance': typeof AshnightControlFinanceRoute
+  '/ashnight-control/groups': typeof AshnightControlGroupsRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
@@ -369,6 +376,7 @@ export interface FileRoutesByTo {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/finance': typeof AshnightControlFinanceRoute
+  '/ashnight-control/groups': typeof AshnightControlGroupsRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
@@ -418,6 +426,7 @@ export interface FileRoutesById {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/finance': typeof AshnightControlFinanceRoute
+  '/ashnight-control/groups': typeof AshnightControlGroupsRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
@@ -468,6 +477,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/finance'
+    | '/ashnight-control/groups'
     | '/ashnight-control/logs'
     | '/ashnight-control/moderation'
     | '/ashnight-control/notifications'
@@ -515,6 +525,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/finance'
+    | '/ashnight-control/groups'
     | '/ashnight-control/logs'
     | '/ashnight-control/moderation'
     | '/ashnight-control/notifications'
@@ -563,6 +574,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/finance'
+    | '/ashnight-control/groups'
     | '/ashnight-control/logs'
     | '/ashnight-control/moderation'
     | '/ashnight-control/notifications'
@@ -799,6 +811,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlFinanceRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/groups': {
+      id: '/ashnight-control/groups'
+      path: '/groups'
+      fullPath: '/ashnight-control/groups'
+      preLoaderRoute: typeof AshnightControlGroupsRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/logs': {
       id: '/ashnight-control/logs'
       path: '/logs'
@@ -949,6 +968,7 @@ interface AshnightControlRouteChildren {
   AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
   AshnightControlFeaturesRoute: typeof AshnightControlFeaturesRoute
   AshnightControlFinanceRoute: typeof AshnightControlFinanceRoute
+  AshnightControlGroupsRoute: typeof AshnightControlGroupsRoute
   AshnightControlLogsRoute: typeof AshnightControlLogsRoute
   AshnightControlModerationRoute: typeof AshnightControlModerationRoute
   AshnightControlNotificationsRoute: typeof AshnightControlNotificationsRoute
@@ -978,6 +998,7 @@ const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlEscrowRoute: AshnightControlEscrowRoute,
   AshnightControlFeaturesRoute: AshnightControlFeaturesRoute,
   AshnightControlFinanceRoute: AshnightControlFinanceRoute,
+  AshnightControlGroupsRoute: AshnightControlGroupsRoute,
   AshnightControlLogsRoute: AshnightControlLogsRoute,
   AshnightControlModerationRoute: AshnightControlModerationRoute,
   AshnightControlNotificationsRoute: AshnightControlNotificationsRoute,
@@ -1022,13 +1043,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

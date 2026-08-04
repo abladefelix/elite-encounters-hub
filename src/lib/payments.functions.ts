@@ -125,6 +125,52 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
     return { authorizationUrl: init.authorization_url, reference: ref, amount: total };
   });
 
+/** Client books and pays for an admin-curated specialist group in one checkout. */
+export const startGroupBookingCheckout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input) => checkoutBase.extend({
+    groupId: z.string().uuid(),
+    serviceId: z.string().uuid(),
+    hours: z.number().positive().max(48),
+    scheduledFor: z.string().datetime().nullable().optional(),
+    notes: z.string().trim().max(1200).optional(),
+    addons: z.array(z.string().trim().min(1).max(120)).max(20).optional(),
+  }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { adminClient, initializeTransaction, reference, serverSettings } = await import("./payments.server");
+    const admin = await adminClient();
+    const ref = reference("GRP");
+    const { data: snapshot, error } = await admin.rpc("create_group_booking_snapshot", {
+      _group_id: data.groupId,
+      _service_id: data.serviceId,
+      _hours: data.hours,
+      _requesting_user: context.userId,
+      ...(data.scheduledFor ? { _scheduled_for: data.scheduledFor } : {}),
+      _notes: data.notes ?? "",
+      _addons: data.addons ?? [],
+      _paystack_reference: ref,
+    });
+    if (error) throw new Error(error.message);
+    const booking = snapshot as unknown as { group_booking_id: string; thread_id: string; total: number; service_name: string; lead_id: string };
+    try {
+      const init = await initializeTransaction({
+        email: String(context.claims["email"] ?? "") || `${context.userId}@members.ashnight`,
+        amountGhs: booking.total,
+        reference: ref,
+        callbackUrl: data.callbackUrl,
+        channel: data.channel,
+        metadata: { purpose: "group_booking", group_booking_id: booking.group_booking_id, thread_id: booking.thread_id },
+      });
+      return { authorizationUrl: init.authorization_url, reference: ref, amount: booking.total, groupBookingId: booking.group_booking_id, threadId: booking.thread_id };
+    } catch (paymentError) {
+      await admin.rpc("cancel_unpaid_group_booking", {
+        _group_booking_id: booking.group_booking_id,
+        _requesting_user: context.userId,
+      });
+      throw paymentError;
+    }
+  });
+
 /** Client sends a cash gift in chat. */
 export const startGiftCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -263,6 +309,7 @@ export const confirmPayment = createServerFn({ method: "POST" })
         .from("escrow_entries")
         .select("client_id, amount, kind")
         .eq("paystack_reference", data.reference)
+        .limit(1)
         .maybeSingle(),
       admin
         .from("memberships")
@@ -277,6 +324,17 @@ export const confirmPayment = createServerFn({ method: "POST" })
     const verified = await verifyTransaction(data.reference);
     if (verified.status !== "success") {
       return { status: verified.status, applied: false, amount: verified.amount / 100 };
+    }
+    if (verified.currency !== "GHS") throw new Error("The confirmed payment currency is invalid.");
+    const { data: allEntries } = await admin
+      .from("escrow_entries")
+      .select("amount")
+      .eq("paystack_reference", data.reference);
+    const expected = allEntries?.length
+      ? allEntries.reduce((sum, row) => sum + row.amount, 0)
+      : membership?.amount ?? 0;
+    if (verified.amount !== expected * 100) {
+      throw new Error("The confirmed payment amount does not match this checkout.");
     }
     const result = await finalizeReference(data.reference, verified.channel);
     return {
