@@ -175,16 +175,18 @@ export async function saveGroup(input: SaveGroupInput) {
   return { id: groupId };
 }
 
-export async function setGroupActive(id: string, active: boolean, actorId: string) {
+export async function setGroupStatus(id: string, status: "draft" | "active" | "paused", actorId: string) {
   const admin = await client();
-  const { error } = await admin.from("specialist_groups").update({ active }).eq("id", id);
+  const active = status !== "draft";
+  const available = status === "active";
+  const { error } = await admin.from("specialist_groups").update({ active, available }).eq("id", id);
   if (error) throw new Error(error.message);
   await admin.from("admin_audit_log").insert({
     actor_id: actorId,
     area: "groups",
-    action: active ? "group.activated" : "group.deactivated",
+    action: `group.${status}`,
     target: id,
-    note: active ? "Group opened for client booking." : "Group hidden from new bookings.",
+    note: status === "active" ? "Group opened for client booking." : status === "paused" ? "Group paused for new bookings." : "Group returned to draft and hidden from clients.",
   });
   return { ok: true };
 }

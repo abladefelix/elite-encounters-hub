@@ -49,6 +49,7 @@ export const Route = createFileRoute("/specialists/")({
 });
 
 type SortKey = "rating" | "rate-low" | "rate-high" | "experience";
+type ResultType = "all" | "specialists" | "groups";
 
 function toSpecialist(profile: ProfileRow, serviceNames: string[]): Specialist {
   return {
@@ -102,6 +103,7 @@ function SpecialistsPage() {
   const [service, setService] = useState("all");
   const [sort, setSort] = useState<SortKey>("rating");
   const [availability, setAvailability] = useState<"all" | "online" | "verified">("all");
+  const [resultType, setResultType] = useState<ResultType>("all");
   const [selectedGroup, setSelectedGroup] = useState<BookableGroup | null>(null);
   const teamScroller = useRef<HTMLDivElement>(null);
   const listGroups = useServerFn(listBookableGroups);
@@ -173,7 +175,7 @@ function SpecialistsPage() {
   // Any filter change (or a shrinking result set) sends you back to page one.
   useEffect(() => {
     setPage(1);
-  }, [query, room, service, sort, availability]);
+  }, [query, room, service, sort, availability, resultType]);
   useEffect(() => {
     setPage((current) => Math.min(current, pageCount));
   }, [pageCount]);
@@ -184,7 +186,7 @@ function SpecialistsPage() {
   );
 
   const filtersActive =
-    query.trim() !== "" || room !== "all" || service !== "all" || availability !== "all";
+    query.trim() !== "" || room !== "all" || service !== "all" || availability !== "all" || resultType !== "all";
 
   const pageStart = (Math.min(page, pageCount) - 1) * PAGE_SIZE;
   const visible = results.slice(pageStart, pageStart + PAGE_SIZE);
@@ -226,7 +228,7 @@ function SpecialistsPage() {
           Your room decides who you can book — you can still browse everyone.
         </p>
 
-        <div className="mt-8 grid gap-3 rounded-xl border border-border/70 bg-surface p-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-8 grid gap-3 rounded-xl border border-border/70 bg-surface p-4 sm:grid-cols-2 lg:grid-cols-6">
           <div className="relative lg:col-span-2">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -236,6 +238,18 @@ function SpecialistsPage() {
               className="pl-9"
             />
           </div>
+
+          <Select value={resultType} onValueChange={(value) => setResultType(value as ResultType)}>
+            <SelectTrigger>
+              <Users className="size-4 text-muted-foreground" />
+              <SelectValue placeholder="Listing type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Specialists &amp; Ash groups</SelectItem>
+              <SelectItem value="specialists">Specialists only</SelectItem>
+              <SelectItem value="groups">Ash groups only</SelectItem>
+            </SelectContent>
+          </Select>
 
           <Select
             value={availability}
@@ -294,12 +308,14 @@ function SpecialistsPage() {
           </Select>
         </div>
 
-        {visibleGroups.length > 0 ? <section className="mt-8 border-b border-border/70 pb-8">
+        {resultType !== "specialists" && visibleGroups.length > 0 ? <section className="mt-8 border-b border-border/70 pb-8">
           <div className="flex items-center justify-between gap-3"><div><div className="flex items-center gap-2"><Users className="size-4 text-primary" /><h2 className="font-display text-lg font-semibold">Ash groups</h2></div><p className="mt-1 text-xs text-muted-foreground">Admin-assigned crews that work, chat, and receive protected payment as one Ash group.</p></div><div className="hidden gap-1 sm:flex"><Button size="icon" variant="soft" aria-label="Scroll Ash groups left" onClick={() => teamScroller.current?.scrollBy({ left: -500, behavior: "smooth" })}><ChevronLeft className="size-4" /></Button><Button size="icon" variant="soft" aria-label="Scroll Ash groups right" onClick={() => teamScroller.current?.scrollBy({ left: 500, behavior: "smooth" })}><ChevronRight className="size-4" /></Button></div></div>
           <div ref={teamScroller} className="-mx-5 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">{visibleGroups.map((group) => <div key={group.id} className="w-36 shrink-0 snap-start sm:w-40"><GroupSpecialistTile group={group} onSelect={() => setSelectedGroup(group)} /></div>)}</div>
         </section> : null}
 
-        {isLoading ? (
+        {resultType === "groups" ? (
+          !groups.isLoading && visibleGroups.length === 0 ? <div className="mt-10 rounded-xl border border-dashed border-border p-12 text-center"><p className="font-display text-lg font-semibold">No Ash groups match</p><p className="mt-2 text-sm text-muted-foreground">Try widening the room or service filters.</p></div> : null
+        ) : isLoading ? (
           <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             {Array.from({ length: 12 }).map((_, index) => (
               <Skeleton key={index} className="aspect-[4/5] rounded-lg" />
@@ -388,6 +404,7 @@ function SpecialistsPage() {
                     setRoom("all");
                     setService("all");
                     setAvailability("all");
+                    setResultType("all");
                   }}
                 >
                   Reset filters
