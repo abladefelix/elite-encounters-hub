@@ -8,7 +8,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession as requireSupabaseAuth } from "@/lib/active-session-middleware";
 
 const tier = z.enum(["basic", "premium", "ultimate"]);
 

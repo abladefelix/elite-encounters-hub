@@ -3,7 +3,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession as requireSupabaseAuth } from "@/lib/active-session-middleware";
 
 /**
  * Admin gate for this area. Holding the admin role is not enough — the caller's

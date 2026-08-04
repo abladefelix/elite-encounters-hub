@@ -9,7 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader, getRequestHost } from "@tanstack/react-start/server";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession as requireSupabaseAuth } from "@/lib/active-session-middleware";
 
 export interface ServerIdentity {
   /** Public IPv4 of the host running the app, when it could be resolved. */

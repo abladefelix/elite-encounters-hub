@@ -8,7 +8,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession as requireSupabaseAuth } from "@/lib/active-session-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
 export type FullProfile = Database["public"]["Tables"]["profiles"]["Row"] & {
