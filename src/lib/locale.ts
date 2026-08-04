@@ -123,6 +123,12 @@ export const COPY_GROUPS = [
         usedIn: ["Header nav (desktop)", "Mobile menu", "Mobile tab bar"],
       },
       {
+        key: "nav.groups",
+        label: "Specialist teams link",
+        value: "Teams",
+        usedIn: ["Header nav (desktop)", "Mobile menu"],
+      },
+      {
         key: "nav.rooms",
         label: "Rooms link",
         value: "Rooms",
