@@ -15,7 +15,7 @@ export const requireActiveSession = createMiddleware({ type: "function" })
       await registerSession({
         userId: context.userId,
         accessToken: token,
-        authSessionId,
+        ...(authSessionId ? { authSessionId } : {}),
         deviceId: `existing-${context.userId}`,
         deviceName: "Existing signed-in device",
         userAgent: request.headers.get("user-agent") ?? "",

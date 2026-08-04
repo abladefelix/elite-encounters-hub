@@ -22,7 +22,7 @@ export const registerCurrentSession = createServerFn({ method: "POST" })
     return registerSession({
       userId: context.userId,
       accessToken: header.replace(/^Bearer\s+/i, ""),
-      authSessionId: typeof context.claims["session_id"] === "string" ? context.claims["session_id"] : undefined,
+      ...(typeof context.claims["session_id"] === "string" ? { authSessionId: context.claims["session_id"] } : {}),
       deviceId: data.deviceId,
       deviceName: data.deviceName,
       userAgent: getRequestHeader("user-agent") ?? "",
