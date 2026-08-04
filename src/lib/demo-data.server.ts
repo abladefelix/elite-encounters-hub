@@ -578,13 +578,16 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
   ];
   const groupIds: string[] = [];
   for (const group of ashGroupSeeds) {
+    const leadMember = group.members.find((member) => member.lead);
+    const leadSpecialist = leadMember ? SPECIALISTS[leadMember.specialist] : undefined;
+    if (!leadSpecialist) throw new Error(`Demo seed failed at Ash groups: ${group.name} has no valid lead.`);
     const { data: groupRow, error: groupError } = await client
       .from("specialist_groups")
       .insert({
         name: group.name,
         slug: group.slug,
         description: group.description,
-        cover_url: SPECIALISTS[group.members[0]!.specialist]!.avatar,
+        cover_url: leadSpecialist.avatar,
         room: group.room,
         pricing_model: "hourly",
         base_rate: group.baseRate,
@@ -597,22 +600,32 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       .single();
     if (groupError) throw new Error(`Demo seed failed at Ash groups: ${groupError.message}`);
     groupIds.push(groupRow.id);
-    must(await client.from("specialist_group_members").insert(group.members.map((member) => ({
-      group_id: groupRow.id,
-      specialist_id: specialistIds[member.specialist]!,
-      role_label: member.role,
-      is_lead: member.lead,
-      share_pct: member.share,
-      active: true,
-      added_by: actorId,
-    }))), "Ash group members");
-    must(await client.from("specialist_group_services").insert(group.services.map((service) => ({
-      group_id: groupRow.id,
-      service_id: serviceIds[service.service]!,
-      rate: service.rate,
-      minimum_hours: service.minimumHours,
-      active: true,
-    }))), "Ash group services");
+    const memberRows = group.members.map((member) => {
+      const specialistId = specialistIds[member.specialist];
+      if (!specialistId) throw new Error(`Demo seed failed at Ash groups: missing specialist for ${group.name}.`);
+      return {
+        group_id: groupRow.id,
+        specialist_id: specialistId,
+        role_label: member.role,
+        is_lead: member.lead,
+        share_pct: member.share,
+        active: true,
+        added_by: actorId,
+      };
+    });
+    must(await client.from("specialist_group_members").insert(memberRows), "Ash group members");
+    const serviceRowsForGroup = group.services.map((service) => {
+      const serviceId = serviceIds[service.service];
+      if (!serviceId) throw new Error(`Demo seed failed at Ash groups: missing service for ${group.name}.`);
+      return {
+        group_id: groupRow.id,
+        service_id: serviceId,
+        rate: service.rate,
+        minimum_hours: service.minimumHours,
+        active: true,
+      };
+    });
+    must(await client.from("specialist_group_services").insert(serviceRowsForGroup), "Ash group services");
     must(await client.from("specialist_groups").update({ active: true }).eq("id", groupRow.id), "publish Ash group");
   }
   counts["ash_groups"] = groupIds.length;
