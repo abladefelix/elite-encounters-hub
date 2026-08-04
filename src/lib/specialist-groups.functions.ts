@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession } from "@/lib/active-session-middleware";
 
 const room = z.enum(["basic", "premium", "ultimate", "room4", "room5", "room6", "room7", "room8"]);
 const groupInput = z.object({
@@ -30,7 +30,7 @@ const groupInput = z.object({
 });
 
 export const listAdminGroups = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .handler(async ({ context }) => {
     const [{ assertAdminArea }, { listGroupsForAdmin }] = await Promise.all([
       import("./identity.server"),
@@ -41,7 +41,7 @@ export const listAdminGroups = createServerFn({ method: "GET" })
   });
 
 export const saveSpecialistGroup = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .validator((input) => groupInput.parse(input))
   .handler(async ({ data, context }) => {
     const [{ assertAdminArea }, { saveGroup }] = await Promise.all([
@@ -53,7 +53,7 @@ export const saveSpecialistGroup = createServerFn({ method: "POST" })
   });
 
 export const changeSpecialistGroupStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .validator((input) => z.object({ id: z.string().uuid(), active: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     const [{ assertAdminArea }, { setGroupActive }] = await Promise.all([

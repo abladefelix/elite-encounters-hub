@@ -6,7 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession as requireSupabaseAuth } from "@/lib/active-session-middleware";
 import type { PortfolioMedia } from "./specialist-media.server";
 
 /** Photos and intro clip of a listed specialist, for a signed-in member. */

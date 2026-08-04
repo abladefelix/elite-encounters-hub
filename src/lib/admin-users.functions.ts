@@ -5,7 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession } from "@/lib/active-session-middleware";
 
 const roles = z.array(z.enum(["client", "specialist", "admin"]));
 
@@ -47,7 +47,7 @@ const fields = z
 
 /** Email, verification state and roles for one account. */
 export const getUserAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .validator((input) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { assertAdminArea } = await import("./identity.server");
@@ -57,7 +57,7 @@ export const getUserAccount = createServerFn({ method: "POST" })
   });
 
 export const createUserAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .validator((input) =>
     z
       .object({
@@ -77,7 +77,7 @@ export const createUserAccount = createServerFn({ method: "POST" })
   });
 
 export const updateUserAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .validator((input) =>
     z
       .object({
@@ -97,7 +97,7 @@ export const updateUserAccount = createServerFn({ method: "POST" })
   });
 
 export const deleteUserAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .validator((input) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { assertAdminArea } = await import("./identity.server");

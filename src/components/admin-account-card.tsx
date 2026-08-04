@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useRecordAudit } from "@/lib/audit-log";
+import { endMySessionsAfterPasswordChange } from "@/lib/session-management.functions";
 
 export function AdminAccountCard() {
   const { session } = useAuth();
@@ -45,6 +46,12 @@ export function AdminAccountCard() {
     setBusy(false);
     if (error) {
       toast.error(error.message);
+      return;
+    }
+    if (payload.password) {
+      await endMySessionsAfterPasswordChange();
+      await supabase.auth.signOut();
+      window.location.assign("/auth");
       return;
     }
     setPassword("");

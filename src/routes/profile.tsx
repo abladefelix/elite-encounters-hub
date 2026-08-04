@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Heart, ThumbsDown, Sparkles, X, Save, ShieldCheck, LogIn, RefreshCw } from "lucide-react";
+import { Camera, Heart, ThumbsDown, Sparkles, X, Save, ShieldCheck, LogIn, RefreshCw, KeyRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,6 +41,8 @@ import { useServiceCatalog } from "@/lib/service-catalog";
 import { validateMediaFile } from "@/lib/media-validation";
 import { initials, money } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { endMySessionsAfterPasswordChange } from "@/lib/session-management.functions";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -120,6 +122,20 @@ function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [calls, setCalls] = useState<CallPreferences>(DEFAULT_CALL_PREFERENCES);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  async function changePassword() {
+    if (newPassword.length < 10) { toast.error("Use at least 10 characters for your new password."); return; }
+    if (newPassword !== confirmPassword) { toast.error("The two passwords do not match."); return; }
+    setChangingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) { setChangingPassword(false); toast.error(error.message); return; }
+    try { await endMySessionsAfterPasswordChange(); } finally { await supabase.auth.signOut(); }
+    toast.success("Password changed. Sign in again on every device.");
+    window.location.assign("/auth");
+  }
 
   useEffect(() => {
     if (!profile) return;
@@ -561,6 +577,11 @@ function ProfilePage() {
         </Card>
 
         {/* account security */}
+        <Card className="mt-8 border-border/70 bg-panel p-5 sm:p-6">
+          <div className="flex items-start gap-3"><IconContainer icon={KeyRound} /><div><h2 className="font-display text-base font-semibold">Change password</h2><p className="mt-1 text-xs text-muted-foreground">For your security, changing your password immediately signs out every device.</p></div></div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2"><div><Label htmlFor="new-password">New password</Label><Input id="new-password" className="mt-2" type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></div><div><Label htmlFor="confirm-password">Repeat password</Label><Input id="confirm-password" className="mt-2" type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></div></div>
+          <Button className="mt-4" disabled={changingPassword} onClick={() => void changePassword()}>{changingPassword ? <RefreshCw className="size-4 animate-spin" /> : <KeyRound className="size-4" />} Change password</Button>
+        </Card>
         <TwoFactorCard
           className="mt-8"
           available={flags.twoFactorAvailable}

@@ -47,6 +47,57 @@ export type Database = {
         }
         Relationships: []
       }
+      active_sessions: {
+        Row: {
+          absolute_expires_at: string
+          auth_session_id: string
+          created_at: string
+          device_id: string
+          device_name: string
+          id: string
+          idle_expires_at: string
+          ip_address: string
+          last_seen_at: string
+          revoked_at: string | null
+          revoked_reason: string
+          updated_at: string
+          user_agent: string
+          user_id: string
+        }
+        Insert: {
+          absolute_expires_at: string
+          auth_session_id: string
+          created_at?: string
+          device_id: string
+          device_name?: string
+          id?: string
+          idle_expires_at: string
+          ip_address?: string
+          last_seen_at?: string
+          revoked_at?: string | null
+          revoked_reason?: string
+          updated_at?: string
+          user_agent?: string
+          user_id: string
+        }
+        Update: {
+          absolute_expires_at?: string
+          auth_session_id?: string
+          created_at?: string
+          device_id?: string
+          device_name?: string
+          id?: string
+          idle_expires_at?: string
+          ip_address?: string
+          last_seen_at?: string
+          revoked_at?: string | null
+          revoked_reason?: string
+          updated_at?: string
+          user_agent?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       activity_log: {
         Row: {
           actor_id: string | null

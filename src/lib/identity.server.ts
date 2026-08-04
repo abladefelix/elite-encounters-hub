@@ -288,7 +288,7 @@ export interface SignInResult {
 export async function signInWithIdentifier(
   identifier: string,
   password: string,
-  meta: { ip?: string | undefined; userAgent?: string | undefined },
+  meta: { ip?: string | undefined; userAgent?: string | undefined; deviceId: string; deviceName: string },
 ): Promise<SignInResult> {
   const client = await admin();
   const raw = identifier.trim();
@@ -381,6 +381,16 @@ export async function signInWithIdentifier(
   }
 
 
+
+  const { registerSession } = await import("./session-management.server");
+  await registerSession({
+    userId: data.session.user.id,
+    accessToken: data.session.access_token,
+    deviceId: meta.deviceId,
+    deviceName: meta.deviceName,
+    userAgent: meta.userAgent ?? "",
+    ip: meta.ip ?? "",
+  });
 
   await logActivity({
     area: "auth",
