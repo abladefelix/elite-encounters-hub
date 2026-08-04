@@ -16,6 +16,7 @@ import { useCopy } from "@/lib/locale";
 
 const NAV = [
   { to: "/specialists", copyKey: "nav.specialists" },
+  { to: "/groups", copyKey: "nav.groups" },
   { to: "/rooms", copyKey: "nav.rooms" },
   { to: "/messages", copyKey: "nav.messages" },
   { to: "/wallet", copyKey: "nav.wallet" },

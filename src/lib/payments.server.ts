@@ -195,6 +195,84 @@ export async function finalizeReference(
   const admin = await adminClient();
   const settings = await serverSettings();
 
+  const { data: groupEntries, error: groupEntriesError } = await admin
+    .from("escrow_entries")
+    .select("*")
+    .eq("paystack_reference", ref)
+    .not("group_booking_id", "is", null)
+    .order("created_at");
+  if (groupEntriesError) throw new Error(groupEntriesError.message);
+  if (groupEntries?.length) {
+    if (groupEntries.every((row) => row.state !== "pending")) return { applied: false, detail: "Already applied" };
+    const first = groupEntries[0];
+    if (!first?.group_booking_id || !first.thread_id) throw new Error("The group payment record is incomplete.");
+    const now = new Date().toISOString();
+    const requireConfirm = settings.escrow.requireClientConfirm ?? true;
+    const escrowed = settings.escrow.escrowEnabled ?? true;
+    const state: Database["public"]["Enums"]["escrow_state"] = !escrowed ? "released" : requireConfirm ? "held" : "clearing";
+    const patch: Database["public"]["Tables"]["escrow_entries"]["Update"] = {
+      state,
+      paid_at: now,
+      ...(state === "released" ? { released_at: now } : {}),
+      ...(state === "clearing" ? { release_at: hoursFromNow(first.hold_hours || (settings.escrow.holdHours ?? 24)) } : {}),
+      admin_note: paidChannel ? `Group payment confirmed via Paystack (${paidChannel}).` : "Group payment confirmed via Paystack.",
+    };
+    const { error: escrowError } = await admin
+      .from("escrow_entries")
+      .update(patch)
+      .eq("paystack_reference", ref)
+      .eq("state", "pending");
+    if (escrowError) throw new Error(escrowError.message);
+    const { data: groupBooking, error: bookingError } = await admin
+      .from("group_bookings")
+      .update({ status: "paid", paid_at: now })
+      .eq("id", first.group_booking_id)
+      .select("service_name, hours, scheduled_for, subtotal, platform_fee, total")
+      .single();
+    if (bookingError) throw new Error(bookingError.message);
+    await admin.from("messages").insert({
+      thread_id: first.thread_id,
+      author_id: null,
+      kind: "system",
+      body: `Group payment confirmed — GHS ${groupBooking.total.toLocaleString()} is secured across ${groupEntries.length} specialist escrow accounts.`,
+    });
+    const when = groupBooking.scheduled_for
+      ? new Date(groupBooking.scheduled_for).toLocaleString("en-GH", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+      : "the next available slot";
+    await admin.from("notifications").insert(groupEntries.map((row) => ({
+      user_id: row.specialist_id,
+      kind: "booking",
+      title: "Group payment approved — job confirmed",
+      body: `${groupBooking.service_name} · ${groupBooking.hours}h for ${when}. Your GHS ${row.payout_amount.toLocaleString()} allocation is secured in escrow.`,
+      link: "/messages",
+    })));
+    await admin.from("notifications").insert({
+      user_id: first.client_id,
+      kind: "payment",
+      title: "Group booking payment received",
+      body: `GHS ${groupBooking.total.toLocaleString()} is secured in escrow for the full specialist team.`,
+      link: "/wallet",
+    });
+    await issueDocument({
+      kind: "receipt",
+      clientId: first.client_id,
+      specialistId: null,
+      groupBookingId: first.group_booking_id,
+      title: `Group booking — ${groupBooking.service_name}`,
+      subtotal: groupBooking.subtotal,
+      platformFee: groupBooking.platform_fee,
+      total: groupBooking.total,
+      lines: [
+        { label: `${groupBooking.service_name} (${groupBooking.hours}h)`, quantity: Number(groupBooking.hours), unitAmount: Math.round(groupBooking.subtotal / Number(groupBooking.hours)), amount: groupBooking.subtotal },
+        { label: "Ashnight service fee", quantity: 1, unitAmount: groupBooking.platform_fee, amount: groupBooking.platform_fee },
+      ],
+      paystackReference: ref,
+      paid: true,
+      notes: "Paid in full. Each specialist allocation is held and released independently under the group escrow terms.",
+    });
+    return { applied: true, detail: `Group booking ${first.group_booking_id} paid across ${groupEntries.length} escrow legs` };
+  }
+
   const { data: entry } = await admin
     .from("escrow_entries")
     .select("*")
@@ -550,6 +628,7 @@ export async function issueDocument(input: {
   specialistId?: string | null;
   bookingId?: string | null;
   escrowId?: string | null;
+  groupBookingId?: string | null;
   title: string;
   subtotal: number;
   platformFee: number;
@@ -581,6 +660,7 @@ export async function issueDocument(input: {
       specialist_id: input.specialistId ?? null,
       booking_id: input.bookingId ?? null,
       escrow_id: input.escrowId ?? null,
+      group_booking_id: input.groupBookingId ?? null,
       title: input.title,
       currency: "GHS",
       subtotal: input.subtotal,

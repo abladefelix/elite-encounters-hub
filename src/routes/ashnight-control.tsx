@@ -81,6 +81,7 @@ const NAV: {
   { to: "/ashnight-control/admins", label: "Admin roles", icon: UserCog, area: "admins", superOnly: true },
   { to: "/ashnight-control/rooms", label: "Rooms", icon: DoorOpen, area: "rooms" },
   { to: "/ashnight-control/services", label: "Services", icon: Sparkles, area: "services" },
+  { to: "/ashnight-control/groups", label: "Specialist groups", icon: Users, area: "groups" },
   { to: "/ashnight-control/bookings", label: "Bookings", icon: CalendarCheck, area: "bookings" },
   { to: "/ashnight-control/performance", label: "Specialist performance", icon: Trophy, area: "performance" },
   { to: "/ashnight-control/escrow", label: "Escrow & gifts", icon: ShieldCheck, area: "escrow" },

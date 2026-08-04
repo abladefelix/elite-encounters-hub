@@ -229,6 +229,8 @@ export type Database = {
           addons: string[]
           client_id: string
           created_at: string
+          group_booking_id: string | null
+          group_booking_member_id: string | null
           hours: number
           id: string
           notes: string
@@ -247,6 +249,8 @@ export type Database = {
           addons?: string[]
           client_id: string
           created_at?: string
+          group_booking_id?: string | null
+          group_booking_member_id?: string | null
           hours?: number
           id?: string
           notes?: string
@@ -265,6 +269,8 @@ export type Database = {
           addons?: string[]
           client_id?: string
           created_at?: string
+          group_booking_id?: string | null
+          group_booking_member_id?: string | null
           hours?: number
           id?: string
           notes?: string
@@ -292,6 +298,20 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_group_booking_id_fkey"
+            columns: ["group_booking_id"]
+            isOneToOne: false
+            referencedRelation: "group_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_group_booking_member_id_fkey"
+            columns: ["group_booking_member_id"]
+            isOneToOne: false
+            referencedRelation: "group_booking_members"
             referencedColumns: ["id"]
           },
           {
@@ -414,6 +434,7 @@ export type Database = {
           created_at: string
           currency: string
           escrow_id: string | null
+          group_booking_id: string | null
           id: string
           issued_at: string
           kind: Database["public"]["Enums"]["document_kind"]
@@ -435,6 +456,7 @@ export type Database = {
           created_at?: string
           currency?: string
           escrow_id?: string | null
+          group_booking_id?: string | null
           id?: string
           issued_at?: string
           kind: Database["public"]["Enums"]["document_kind"]
@@ -456,6 +478,7 @@ export type Database = {
           created_at?: string
           currency?: string
           escrow_id?: string | null
+          group_booking_id?: string | null
           id?: string
           issued_at?: string
           kind?: Database["public"]["Enums"]["document_kind"]
@@ -501,6 +524,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "documents_group_booking_id_fkey"
+            columns: ["group_booking_id"]
+            isOneToOne: false
+            referencedRelation: "group_bookings"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "documents_specialist_id_fkey"
             columns: ["specialist_id"]
             isOneToOne: false
@@ -526,6 +556,8 @@ export type Database = {
           dispute_reason: string | null
           disputed_at: string | null
           gift_key: string | null
+          group_booking_id: string | null
+          group_booking_member_id: string | null
           hold_hours: number
           id: string
           kind: Database["public"]["Enums"]["escrow_kind"]
@@ -554,6 +586,8 @@ export type Database = {
           dispute_reason?: string | null
           disputed_at?: string | null
           gift_key?: string | null
+          group_booking_id?: string | null
+          group_booking_member_id?: string | null
           hold_hours?: number
           id?: string
           kind?: Database["public"]["Enums"]["escrow_kind"]
@@ -582,6 +616,8 @@ export type Database = {
           dispute_reason?: string | null
           disputed_at?: string | null
           gift_key?: string | null
+          group_booking_id?: string | null
+          group_booking_member_id?: string | null
           hold_hours?: number
           id?: string
           kind?: Database["public"]["Enums"]["escrow_kind"]
@@ -621,6 +657,20 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_entries_group_booking_id_fkey"
+            columns: ["group_booking_id"]
+            isOneToOne: false
+            referencedRelation: "group_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_entries_group_booking_member_id_fkey"
+            columns: ["group_booking_member_id"]
+            isOneToOne: false
+            referencedRelation: "group_booking_members"
             referencedColumns: ["id"]
           },
           {
@@ -720,6 +770,174 @@ export type Database = {
             columns: ["entry_id"]
             isOneToOne: false
             referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_booking_members: {
+        Row: {
+          allocated_amount: number
+          completed_at: string | null
+          created_at: string
+          group_booking_id: string
+          id: string
+          is_lead: boolean
+          payout_amount: number
+          platform_fee: number
+          role_label: string
+          share_pct: number
+          specialist_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          allocated_amount: number
+          completed_at?: string | null
+          created_at?: string
+          group_booking_id: string
+          id?: string
+          is_lead?: boolean
+          payout_amount: number
+          platform_fee?: number
+          role_label: string
+          share_pct: number
+          specialist_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          allocated_amount?: number
+          completed_at?: string | null
+          created_at?: string
+          group_booking_id?: string
+          id?: string
+          is_lead?: boolean
+          payout_amount?: number
+          platform_fee?: number
+          role_label?: string
+          share_pct?: number
+          specialist_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_booking_members_group_booking_id_fkey"
+            columns: ["group_booking_id"]
+            isOneToOne: false
+            referencedRelation: "group_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_booking_members_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_booking_members_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_bookings: {
+        Row: {
+          addons: string[]
+          allocation_locked: boolean
+          client_id: string
+          created_at: string
+          group_id: string
+          hours: number
+          id: string
+          notes: string
+          paid_at: string | null
+          paystack_reference: string | null
+          platform_fee: number
+          platform_fee_pct: number
+          reference: string
+          scheduled_for: string | null
+          service_id: string | null
+          service_name: string
+          status: Database["public"]["Enums"]["booking_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          addons?: string[]
+          allocation_locked?: boolean
+          client_id: string
+          created_at?: string
+          group_id: string
+          hours: number
+          id?: string
+          notes?: string
+          paid_at?: string | null
+          paystack_reference?: string | null
+          platform_fee: number
+          platform_fee_pct: number
+          reference?: string
+          scheduled_for?: string | null
+          service_id?: string | null
+          service_name: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          subtotal: number
+          total: number
+          updated_at?: string
+        }
+        Update: {
+          addons?: string[]
+          allocation_locked?: boolean
+          client_id?: string
+          created_at?: string
+          group_id?: string
+          hours?: number
+          id?: string
+          notes?: string
+          paid_at?: string | null
+          paystack_reference?: string | null
+          platform_fee?: number
+          platform_fee_pct?: number
+          reference?: string
+          scheduled_for?: string | null
+          service_id?: string | null
+          service_name?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_bookings_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]
@@ -1454,6 +1672,195 @@ export type Database = {
         }
         Relationships: []
       }
+      specialist_group_members: {
+        Row: {
+          active: boolean
+          added_by: string | null
+          created_at: string
+          group_id: string
+          id: string
+          is_lead: boolean
+          role_label: string
+          share_pct: number
+          specialist_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          added_by?: string | null
+          created_at?: string
+          group_id: string
+          id?: string
+          is_lead?: boolean
+          role_label?: string
+          share_pct: number
+          specialist_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          added_by?: string | null
+          created_at?: string
+          group_id?: string
+          id?: string
+          is_lead?: boolean
+          role_label?: string
+          share_pct?: number
+          specialist_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_group_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_group_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_group_members_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_group_members_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_group_services: {
+        Row: {
+          active: boolean
+          created_at: string
+          group_id: string
+          id: string
+          minimum_hours: number
+          rate: number
+          service_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          group_id: string
+          id?: string
+          minimum_hours?: number
+          rate: number
+          service_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          group_id?: string
+          id?: string
+          minimum_hours?: number
+          rate?: number
+          service_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_group_services_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_group_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_groups: {
+        Row: {
+          active: boolean
+          available: boolean
+          base_rate: number
+          capacity: number
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          name: string
+          pricing_model: string
+          room: Database["public"]["Enums"]["tier"]
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          available?: boolean
+          base_rate?: number
+          capacity?: number
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name: string
+          pricing_model?: string
+          room: Database["public"]["Enums"]["tier"]
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          available?: boolean
+          base_rate?: number
+          capacity?: number
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name?: string
+          pricing_model?: string
+          room?: Database["public"]["Enums"]["tier"]
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specialist_services: {
         Row: {
           created_at: string
@@ -1497,6 +1904,58 @@ export type Database = {
           },
         ]
       }
+      thread_participants: {
+        Row: {
+          cleared_at: string | null
+          hidden_at: string | null
+          joined_at: string
+          last_read_at: string
+          participant_role: string
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          cleared_at?: string | null
+          hidden_at?: string | null
+          joined_at?: string
+          last_read_at?: string
+          participant_role?: string
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          cleared_at?: string | null
+          hidden_at?: string | null
+          joined_at?: string
+          last_read_at?: string
+          participant_role?: string
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_participants_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       threads: {
         Row: {
           client_cleared_at: string | null
@@ -1505,7 +1964,9 @@ export type Database = {
           client_last_read_at: string
           contact_exempt: boolean
           created_at: string
+          group_booking_id: string | null
           id: string
+          is_group: boolean
           last_message: string
           last_message_at: string
           room: Database["public"]["Enums"]["tier"] | null
@@ -1522,7 +1983,9 @@ export type Database = {
           client_last_read_at?: string
           contact_exempt?: boolean
           created_at?: string
+          group_booking_id?: string | null
           id?: string
+          is_group?: boolean
           last_message?: string
           last_message_at?: string
           room?: Database["public"]["Enums"]["tier"] | null
@@ -1539,7 +2002,9 @@ export type Database = {
           client_last_read_at?: string
           contact_exempt?: boolean
           created_at?: string
+          group_booking_id?: string | null
           id?: string
+          is_group?: boolean
           last_message?: string
           last_message_at?: string
           room?: Database["public"]["Enums"]["tier"] | null
@@ -1562,6 +2027,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_group_booking_id_fkey"
+            columns: ["group_booking_id"]
+            isOneToOne: false
+            referencedRelation: "group_bookings"
             referencedColumns: ["id"]
           },
           {
@@ -1683,6 +2155,23 @@ export type Database = {
       }
     }
     Functions: {
+      cancel_unpaid_group_booking: {
+        Args: { _group_booking_id: string; _requesting_user: string }
+        Returns: boolean
+      }
+      create_group_booking_snapshot: {
+        Args: {
+          _addons?: string[]
+          _group_id: string
+          _hours: number
+          _notes?: string
+          _paystack_reference?: string
+          _requesting_user: string
+          _scheduled_for?: string
+          _service_id: string
+        }
+        Returns: Json
+      }
       settings_section: { Args: { _section: string }; Returns: Json }
     }
     Enums: {
