@@ -4,7 +4,13 @@
 //     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
+import { builtinModules } from "node:module";
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+
+/** `node:`-prefixed builtins the Cloudflare runtime provides with node compat on. */
+const NODE_BUILTINS: string[] = builtinModules
+  .filter((id) => !id.startsWith("_") || id.startsWith("_http") || id.startsWith("_stream"))
+  .map((id) => (id.startsWith("node:") ? id : `node:${id}`));
 
 export default defineConfig({
   tanstackStart: {
