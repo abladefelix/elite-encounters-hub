@@ -20,6 +20,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
+import { useBranding } from "@/lib/branding";
+import { isNativeApp } from "@/lib/native";
 import {
   useDocumentTemplates,
   type DocumentTemplate,
@@ -291,6 +293,7 @@ export function DocumentCard({
 }) {
   const lines = useMemo(() => documentLines(row), [row]);
   const { active } = useDocumentTemplates();
+  const { branding } = useBranding();
   const template = templateProp ?? active;
   const printId = `doc-${row.id}-${template.id}`;
   const heading = row.kind === "invoice" ? template.invoiceHeading : template.receiptHeading;
@@ -303,6 +306,7 @@ export function DocumentCard({
         lines,
         heading,
         stamp: (value) => (value ? formatStamp(value) : "—"),
+        logoUrl: (branding.logoUrl ?? "").trim() || undefined,
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not build the PDF.");
@@ -311,6 +315,12 @@ export function DocumentCard({
 
   /** Print via a hidden frame; if the browser refuses, hand back a PDF file. */
   function print() {
+    // The native shell has no print pipeline — go straight to the PDF/share sheet.
+    if (isNativeApp()) {
+      void savePdf();
+      return;
+    }
+
     const node = document.getElementById(printId);
     if (!node) {
       void savePdf();

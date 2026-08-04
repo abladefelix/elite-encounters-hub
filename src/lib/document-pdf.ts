@@ -4,10 +4,16 @@
  * Browser print dialogs are unreliable (blocked popups, no print support in
  * mobile app webviews), so "Save as PDF" builds an actual file with jsPDF and
  * downloads it. Print falls back to this too when the print dialog is refused.
+ *
+ * Two device-specific details matter here:
+ *  - jsPDF's built-in fonts have no ₵ glyph, so currency is written as
+ *    "GHS 900" instead of Intl's "GH₵900" (which rendered as "GH µ 9 0 0").
+ *  - Inside the native shell a normal download is a no-op, so we write the file
+ *    to the app cache and hand it to the native share sheet instead.
  */
 import type { DocumentTemplate } from "@/lib/document-templates";
 import type { DocumentLine, DocumentRow } from "@/lib/support";
-import { money } from "@/lib/types";
+import { isNativeApp } from "@/lib/native";
 
 function rgb(hex: string): [number, number, number] {
   const clean = hex.replace("#", "").trim();
@@ -23,12 +29,39 @@ function rgb(hex: string): [number, number, number] {
   return [(int >> 16) & 255, (int >> 8) & 255, int & 255];
 }
 
+/** PDF-safe currency: the embedded fonts have no cedi sign. */
+function pdfMoney(amount: number, currency = "GHS") {
+  return `${currency} ${Math.round(amount).toLocaleString("en-GH")}`;
+}
+
+/** Fetches a logo and returns a data URL jsPDF can embed, or null. */
+async function loadLogo(url: string): Promise<{ data: string; format: string } | null> {
+  try {
+    const response = await fetch(url, { mode: "cors" });
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    if (blob.type.includes("svg")) return null; // jsPDF can't embed SVG
+    const format = blob.type.includes("jpeg") || blob.type.includes("jpg") ? "JPEG" : "PNG";
+    const data = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("logo read failed"));
+      reader.readAsDataURL(blob);
+    });
+    return { data, format };
+  } catch {
+    return null;
+  }
+}
+
 export interface DocumentPdfInput {
   row: DocumentRow;
   template: DocumentTemplate;
   lines: DocumentLine[];
   heading: string;
   stamp: (value: string | null) => string;
+  /** Admin-uploaded logo; falls back to the drawn Ashnight mark. */
+  logoUrl?: string | undefined;
 }
 
 export async function downloadDocumentPdf({
@@ -37,6 +70,7 @@ export async function downloadDocumentPdf({
   lines,
   heading,
   stamp,
+  logoUrl,
 }: DocumentPdfInput) {
   const [{ default: JsPDF }, { default: autoTable }] = await Promise.all([
     import("jspdf"),
@@ -48,19 +82,38 @@ export async function downloadDocumentPdf({
   const left = 48;
   const right = doc.internal.pageSize.getWidth() - 48;
   let y = 60;
+  let textLeft = left;
+
+  // ---------------------------------------------------------------- logo
+  if (template.showLogo) {
+    const logo = logoUrl ? await loadLogo(logoUrl) : null;
+    if (logo) {
+      doc.addImage(logo.data, logo.format, left, y - 18, 40, 40);
+      textLeft = left + 52;
+    } else {
+      // Vector fallback: the two interlocking brass discs.
+      doc.setFillColor(...accent);
+      doc.circle(left + 14, y + 6, 13, "F");
+      doc.circle(left + 30, y - 6, 6.5, "F");
+      doc.setDrawColor(...accent);
+      doc.setLineWidth(2);
+      doc.circle(left + 30, y - 6, 10, "S");
+      textLeft = left + 52;
+    }
+  }
 
   doc.setFontSize(16);
   doc.setTextColor(...accent);
-  doc.text(template.businessName, left, y);
+  doc.text(template.businessName, textLeft, y);
 
   doc.setFontSize(9);
   doc.setTextColor(110);
   if (template.tagline) {
     y += 14;
-    doc.text(template.tagline, left, y);
+    doc.text(template.tagline, textLeft, y);
   }
   y += 14;
-  doc.text(`${heading} · ${row.number}`, left, y);
+  doc.text(`${heading} · ${row.number}`, textLeft, y);
 
   // Right-hand meta block.
   let metaY = 60;
@@ -89,8 +142,12 @@ export async function downloadDocumentPdf({
     startY: y + 12,
     head: [["Item", "Qty", "Amount"]],
     body: [
-      ...lines.map((line) => [line.label, String(line.quantity), money(line.amount)]),
-      [`Total (${row.currency})`, "", money(row.total)],
+      ...lines.map((line) => [
+        line.label,
+        String(line.quantity),
+        pdfMoney(line.amount, row.currency),
+      ]),
+      [`Total (${row.currency})`, "", pdfMoney(row.total, row.currency)],
     ],
     styles: { fontSize: 9, cellPadding: 6 },
     headStyles: { fillColor: accent, textColor: 255 },
@@ -116,5 +173,33 @@ export async function downloadDocumentPdf({
     footY += wrapped.length * 11 + 8;
   }
 
-  doc.save(`${row.number || "ashnight-document"}.pdf`);
+  const fileName = `${row.number || "ashnight-document"}.pdf`;
+
+  if (isNativeApp()) {
+    await shareNativePdf(doc.output("datauristring"), fileName);
+    return;
+  }
+
+  doc.save(fileName);
+}
+
+/** Writes the PDF into the app cache and opens the native share sheet. */
+async function shareNativePdf(dataUri: string, fileName: string) {
+  const base64 = dataUri.slice(dataUri.indexOf(",") + 1);
+  const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+    import("@capacitor/filesystem"),
+    import("@capacitor/share"),
+  ]);
+
+  const written = await Filesystem.writeFile({
+    path: fileName,
+    data: base64,
+    directory: Directory.Cache,
+    recursive: true,
+  });
+
+  await Share.share({
+    title: fileName,
+    files: [written.uri],
+  });
 }
