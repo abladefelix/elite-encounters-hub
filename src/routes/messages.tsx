@@ -1009,12 +1009,12 @@ function MessagesInbox({ userId, profile }: { userId: string; profile: ProfileRo
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen">
+      <div className="flex min-h-screen flex-col">
         <SiteHeader />
 
         <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-0 py-0 sm:px-5 sm:py-8">
           <Card className="flex flex-1 flex-col overflow-hidden border-border/70 bg-surface p-0">
-            <div className="grid flex-1 md:grid-cols-[300px_1fr]">
+            <div className="grid flex-1 overflow-hidden md:grid-cols-[300px_1fr]">
               {/* thread list */}
               <aside
                 className={cn(
