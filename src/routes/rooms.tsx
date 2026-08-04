@@ -64,10 +64,11 @@ function useMyMembership(userId: string | undefined) {
     queryKey: ["my-membership", userId],
     enabled: Boolean(userId),
     queryFn: async () => {
+      if (!userId) return null;
       const { data, error } = await supabase
         .from("memberships")
         .select("*")
-        .eq("user_id", userId!)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
