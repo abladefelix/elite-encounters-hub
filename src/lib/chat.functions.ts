@@ -39,7 +39,12 @@ export const startSpecialistChat = createServerFn({ method: "POST" })
     if (existingError) throw new Error(existingError.message);
     if (existing) return existing;
 
-    const { data: thread, error } = await context.supabase
+    // The caller and specialist visibility have already been verified with the
+    // authenticated, RLS-scoped client above. Use a fresh privileged client
+    // only for the final write so the server runtime cannot lose auth.uid()
+    // between the middleware check and PostgREST insert.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: thread, error } = await supabaseAdmin
       .from("threads")
       .insert({
         client_id: context.userId,
