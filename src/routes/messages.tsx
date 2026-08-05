@@ -376,9 +376,10 @@ function MessagesInbox({
     return messages.filter(
       (message) =>
         !hiddenMessageIds.includes(message.id) &&
+        (iAmClient || message.body !== "The specialist has been notified and can start the job.") &&
         (cutoff === null || new Date(message.created_at).getTime() > cutoff),
     );
-  }, [messages, clearedAt, hiddenMessageIds]);
+  }, [messages, clearedAt, hiddenMessageIds, iAmClient]);
 
   /** Hides a message on this device only and remembers it across reloads. */
   function hideMessageLocally(id: string) {
@@ -519,6 +520,22 @@ function MessagesInbox({
   useEffect(() => {
     setReplyTo(null);
   }, [activeThread?.id]);
+
+  // Returning from a cancelled/closed Paystack checkout can restore this page
+  // from the browser cache. Clear transient loading controls so the request is
+  // actionable again instead of showing a permanently spinning button.
+  useEffect(() => {
+    const resetCheckoutState = () => {
+      setPayingBookingId("");
+      setGroupAction("");
+    };
+    window.addEventListener("pageshow", resetCheckoutState);
+    window.addEventListener("focus", resetCheckoutState);
+    return () => {
+      window.removeEventListener("pageshow", resetCheckoutState);
+      window.removeEventListener("focus", resetCheckoutState);
+    };
+  }, []);
 
   async function post(
     input: Partial<Omit<MessageRowType, "id" | "created_at" | "thread_id">> & { body: string },
@@ -1521,7 +1538,9 @@ function MessagesInbox({
                                 escrow={
                                   message.escrow_id
                                     ? escrowEntries.find((entry) => entry.id === message.escrow_id)
-                                    : undefined
+                                    : message.booking_id
+                                      ? escrowEntries.find((entry) => entry.booking_id === message.booking_id)
+                                      : undefined
                                 }
                                 canResolve={iAmClient}
                                 booking={
@@ -2114,7 +2133,9 @@ function MessageBubble({
   }
 
   if (message.kind === "booking") {
-    const unpaid = !escrow && (!booking || booking.status === "requested");
+    const cancelled = booking?.status === "cancelled";
+    const paid = Boolean(escrow) || booking?.status === "paid" || booking?.status === "completed";
+    const unpaid = !paid && !cancelled && (!booking || booking.status === "requested");
     const due = booking ? Number(booking.hours) * booking.rate : 0;
     const dueWithFee = booking
       ? due + Math.round(due * (Number(booking.platform_fee_pct ?? 0) / 100))
@@ -2123,7 +2144,11 @@ function MessageBubble({
       <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
         <div className="max-w-sm rounded-xl border border-primary/30 bg-primary/10 p-4">
           <p className="eyebrow text-primary">
-            {escrow ? "Service requested · funds in escrow" : "Payment request · awaiting payment"}
+            {paid
+              ? "Service confirmed · funds in escrow"
+              : cancelled
+                ? "Payment request · cancelled"
+                : "Payment request · awaiting payment"}
           </p>
           <p className="mt-2 text-sm leading-relaxed">{message.body}</p>
 
@@ -2147,6 +2172,14 @@ function MessageBubble({
                 </div>
               ) : null}
             </>
+          ) : cancelled ? (
+            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <X className="size-3.5" /> This payment request was cancelled. No payment was taken.
+            </p>
+          ) : paid ? (
+            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <CheckCheck className="size-3.5" /> Payment confirmed
+            </p>
           ) : unpaid && canPay && message.booking_id ? (
             <div className="mt-3">
               <Button
