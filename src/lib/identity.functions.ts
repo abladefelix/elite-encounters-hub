@@ -128,6 +128,7 @@ export const sendNotification = createServerFn({ method: "POST" })
         body: z.string().trim().max(2000).default(""),
         link: z.string().trim().max(300).default(""),
         audience: z.enum(["everyone", "clients", "specialists", "room", "user"]),
+        channels: z.array(z.enum(["inApp", "email", "sms"])).min(1).default(["inApp"]),
         room: z.enum(["basic", "premium", "ultimate"]).optional(),
         userId: z.string().uuid().optional(),
       })
@@ -153,23 +154,32 @@ export const sendNotification = createServerFn({ method: "POST" })
       ids = (rows ?? []).map((row) => row.user_id);
     }
 
-    const sent = await notify([...new Set(ids)], {
+    const uniqueIds = [...new Set(ids)];
+    const sent = data.channels.includes("inApp") ? await notify(uniqueIds, {
       title: data.title,
       body: data.body,
       link: data.link,
       kind: "announcement",
       sentBy: context.userId,
-    });
+    }) : 0;
 
     await logActivity({
       area: "notifications",
       event: "broadcast_sent",
       actorId: context.userId,
       target: data.audience,
-      details: { recipients: sent, title: data.title },
+      details: { recipients: uniqueIds.length, inboxes: sent, channels: data.channels, title: data.title },
     });
 
-    return { sent };
+    return {
+      sent,
+      recipients: uniqueIds.length,
+      channels: {
+        inApp: data.channels.includes("inApp") ? "sent" : "skipped",
+        email: data.channels.includes("email") ? "not_configured" : "skipped",
+        sms: data.channels.includes("sms") ? "not_configured" : "skipped",
+      },
+    };
   });
 
 /** Admin: free up usernames, emails and card numbers from abandoned sign-ups. */
