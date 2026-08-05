@@ -14,5 +14,5 @@ export const listBookableGroups = createServerFn({ method: "GET" })
       .eq("specialist_group_services.active", true)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).filter((group) => group.specialist_group_members.length > 0 && group.specialist_group_services.length > 0);
+    return data ?? [];
   });
