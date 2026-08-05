@@ -11,6 +11,7 @@
 import type { Database } from "@/integrations/supabase/types";
 
 type Tier = Database["public"]["Enums"]["tier"];
+type VettingStatus = Database["public"]["Enums"]["vetting_status"];
 
 export interface DemoManifest {
   seededAt: string;
@@ -726,6 +727,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
 
   const applicantIds: string[] = [];
   for (const person of APPLICANTS) {
+    const applicantStatus = person.status as VettingStatus;
     const email = `${person.username}@${DEMO_DOMAIN}`;
     const id = await ensureUser(email, {
       display_name: person.full_name,
@@ -746,23 +748,23 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
         bio: person.bio,
         avatar_url: person.avatar,
         phone: person.phone,
-        room: person.applied_role === "client" && person.status === "approved"
+        room: person.applied_role === "client" && applicantStatus === "approved"
           ? person.suggested_room
           : null,
-        vetting: person.status === "rejected" ? "rejected" : person.status,
-        verified: person.status === "approved",
+        vetting: applicantStatus,
+        verified: applicantStatus === "approved",
         available: false,
         suspended: false,
         account_status:
-          person.status === "approved"
+          applicantStatus === "approved"
             ? "active"
-            : person.status === "rejected"
+            : applicantStatus === "rejected"
               ? "deactivated"
               : "pending",
         status_reason:
-          person.status === "approved"
+          applicantStatus === "approved"
             ? "Vetting approved"
-            : person.status === "rejected"
+            : applicantStatus === "rejected"
               ? "Application declined at vetting"
               : "Awaiting vetting",
         hourly_rate: person.applied_role === "specialist" ? 90 : 0,
@@ -791,7 +793,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       .from("user_roles")
       .upsert({ user_id: id, role: person.applied_role }, { onConflict: "user_id,role" });
 
-    if (person.applied_role === "client" && person.status === "approved") {
+    if (person.applied_role === "client" && applicantStatus === "approved") {
       must(await client.from("memberships").insert({
         user_id: id,
         room: person.suggested_room,
