@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -22,8 +23,8 @@ import { PortfolioGallery } from "@/components/portfolio-gallery";
 import { TierBadge } from "@/components/tier-badge";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { startSpecialistChat } from "@/lib/chat.functions";
 import {
-  openThread,
   useRatings,
   useServices,
   useSpecialistServices,
@@ -96,6 +97,7 @@ function SpecialistProfile() {
   const room = specialist.room ? profileOf(specialist.room) : null;
   const { user } = useAuth();
   const navigate = useNavigate();
+  const startChat = useServerFn(startSpecialistChat);
   const [starting, setStarting] = useState(false);
 
   const { data: serviceLinks } = useSpecialistServices(specialist.id);
@@ -123,7 +125,7 @@ function SpecialistProfile() {
     }
     setStarting(true);
     try {
-      const thread = await openThread(user.id, specialist.id, specialist.room);
+      const thread = await startChat({ data: { specialistId: specialist.id } });
       void navigate({ to: "/messages", search: { thread: thread.id } });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't open that chat.");
