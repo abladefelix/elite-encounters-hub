@@ -31,3 +31,7 @@ export const specialistGroupStatusInput = z.object({
   id: z.string().uuid(),
   status: z.enum(["draft", "active", "paused"]),
 });
+
+export const specialistGroupDeleteInput = z.object({
+  id: z.string().uuid(),
+});

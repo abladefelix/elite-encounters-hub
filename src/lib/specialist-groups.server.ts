@@ -190,3 +190,47 @@ export async function setGroupStatus(id: string, status: "draft" | "active" | "p
   });
   return { ok: true };
 }
+
+export async function deleteGroup(id: string, actorId: string) {
+  const admin = await client();
+  const { data: group, error: groupError } = await admin
+    .from("specialist_groups")
+    .select("id, name")
+    .eq("id", id)
+    .maybeSingle();
+  if (groupError) throw new Error(groupError.message);
+  if (!group) throw new Error("This Ash group no longer exists.");
+
+  const { count, error: bookingError } = await admin
+    .from("group_bookings")
+    .select("id", { count: "exact", head: true })
+    .eq("group_id", id);
+  if (bookingError) throw new Error(bookingError.message);
+  if ((count ?? 0) > 0) {
+    throw new Error("This Ash group has booking history and cannot be deleted. Set it to Draft to preserve financial and escrow records.");
+  }
+
+  const { error: disableError } = await admin
+    .from("specialist_groups")
+    .update({ active: false, available: false })
+    .eq("id", id);
+  if (disableError) throw new Error(disableError.message);
+
+  const [membersDelete, servicesDelete] = await Promise.all([
+    admin.from("specialist_group_members").delete().eq("group_id", id),
+    admin.from("specialist_group_services").delete().eq("group_id", id),
+  ]);
+  if (membersDelete.error) throw new Error(membersDelete.error.message);
+  if (servicesDelete.error) throw new Error(servicesDelete.error.message);
+
+  const { error: deleteError } = await admin.from("specialist_groups").delete().eq("id", id);
+  if (deleteError) throw new Error(deleteError.message);
+  await admin.from("admin_audit_log").insert({
+    actor_id: actorId,
+    area: "groups",
+    action: "group.deleted",
+    target: id,
+    note: `${group.name} permanently deleted.`,
+  });
+  return { ok: true };
+}
