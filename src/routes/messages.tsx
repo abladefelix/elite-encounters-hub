@@ -735,15 +735,11 @@ function MessagesInbox({
         },
       });
 
-      await post({
-        kind: "booking",
-        booking_id: result.bookingId,
-        body: `Payment request · ${quote.serviceName} · ${quote.hours}h at ${money(
-          quote.rate,
-        )}/h${quote.addons.length ? ` · Add-ons: ${quote.addons.join(", ")}` : ""} · ${money(
-          result.total,
-        )} to pay${quote.notes ? ` — ${quote.notes}` : ""}`,
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["messages", activeThread.id] }),
+        queryClient.invalidateQueries({ queryKey: ["bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["threads"] }),
+      ]);
 
       setQuoteOpen(false);
       toast.success("Payment request sent", {

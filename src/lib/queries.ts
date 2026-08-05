@@ -587,13 +587,30 @@ export async function markThreadRead(threadId: string, side: "client" | "special
 /* ------------------------------------------------------------------ bookings */
 
 export function useBookings() {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const instanceId = useId();
+
+  const query = useQuery({
     queryKey: ["bookings"],
     queryFn: async () =>
       unwrap<BookingRow[]>(
         await supabase.from("bookings").select("*").order("created_at", { ascending: false }),
       ),
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`bookings-${instanceId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      })
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [instanceId, queryClient]);
+
+  return query;
 }
 
 export function useCreateBooking() {
