@@ -11,6 +11,7 @@
 import type { Database } from "@/integrations/supabase/types";
 
 type Tier = Database["public"]["Enums"]["tier"];
+type VettingStatus = Database["public"]["Enums"]["vetting_status"];
 
 export interface DemoManifest {
   seededAt: string;
@@ -711,12 +712,12 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
       headline: "",
       bio: "",
       years_experience: 0,
-      id_verified: false,
-      background_check: "flagged" as const,
-      reference_checks: 0,
-      suggested_room: "basic" as Tier,
-      status: "rejected" as const,
-      admin_note: "Ghana Card upload unreadable and check flagged.",
+      id_verified: true,
+      background_check: "clear" as const,
+      reference_checks: 1,
+      suggested_room: "ultimate" as Tier,
+      status: "approved" as const,
+      admin_note: "Approved Ultimate client with an active membership.",
       card: "GHA-700800808-8",
       avatar: AVATARS[7]!,
       portfolio: [] as string[],
@@ -726,6 +727,7 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
 
   const applicantIds: string[] = [];
   for (const person of APPLICANTS) {
+    const applicantStatus = person.status as VettingStatus;
     const email = `${person.username}@${DEMO_DOMAIN}`;
     const id = await ensureUser(email, {
       display_name: person.full_name,
@@ -746,14 +748,25 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
         bio: person.bio,
         avatar_url: person.avatar,
         phone: person.phone,
-        room: null,
-        vetting: person.status === "rejected" ? "rejected" : person.status,
-        verified: false,
+        room: person.applied_role === "client" && applicantStatus === "approved"
+          ? person.suggested_room
+          : null,
+        vetting: applicantStatus,
+        verified: applicantStatus === "approved",
         available: false,
         suspended: false,
-        account_status: person.status === "rejected" ? "deactivated" : "pending",
+        account_status:
+          applicantStatus === "approved"
+            ? "active"
+            : applicantStatus === "rejected"
+              ? "deactivated"
+              : "pending",
         status_reason:
-          person.status === "rejected" ? "Application declined at vetting" : "Awaiting vetting",
+          applicantStatus === "approved"
+            ? "Vetting approved"
+            : applicantStatus === "rejected"
+              ? "Application declined at vetting"
+              : "Awaiting vetting",
         hourly_rate: person.applied_role === "specialist" ? 90 : 0,
         years_experience: person.years_experience,
         response_minutes: 12,
@@ -779,6 +792,17 @@ export async function seedDemoData(actorId: string, actorLabel: string) {
     await client
       .from("user_roles")
       .upsert({ user_id: id, role: person.applied_role }, { onConflict: "user_id,role" });
+
+    if (person.applied_role === "client" && applicantStatus === "approved") {
+      must(await client.from("memberships").insert({
+        user_id: id,
+        room: person.suggested_room,
+        status: "active",
+        amount: person.suggested_room === "ultimate" ? 1890 : person.suggested_room === "premium" ? 790 : 290,
+        paystack_reference: `demo-mem-${person.username}`,
+        current_period_end: daysAhead(18),
+      }), "approved applicant memberships");
+    }
   }
 
   const applications = APPLICANTS.map((person, index) => ({
