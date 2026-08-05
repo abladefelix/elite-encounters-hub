@@ -470,7 +470,32 @@ export const createSpecialistQuote = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    return { bookingId: booking.id, subtotal, fee, total: subtotal + fee, feePct };
+    const total = subtotal + fee;
+    const quoteBody = `Payment request · ${data.serviceName} · ${data.hours}h at GHS ${data.rate}/h${addons.length ? ` · Add-ons: ${addons.join(", ")}` : ""} · GHS ${total} to pay${data.notes ? ` — ${data.notes}` : ""}`;
+    const { error: messageError } = await admin.from("messages").insert({
+      thread_id: thread.id,
+      author_id: context.userId,
+      kind: "booking",
+      booking_id: booking.id,
+      body: quoteBody,
+    });
+    if (messageError) {
+      await admin.from("bookings").delete().eq("id", booking.id);
+      throw new Error(`Payment request could not be delivered: ${messageError.message}`);
+    }
+
+    const { error: notificationError } = await admin.from("notifications").insert({
+      user_id: thread.client_id,
+      title: "Payment request received",
+      body: `${data.serviceName} · GHS ${total}. Open the conversation to review and pay securely into escrow.`,
+      kind: "booking",
+      link: `/messages?thread=${thread.id}`,
+    });
+    if (notificationError) {
+      throw new Error(`Payment request was sent, but the notification failed: ${notificationError.message}`);
+    }
+
+    return { bookingId: booking.id, subtotal, fee, total, feePct };
   });
 
 /**
