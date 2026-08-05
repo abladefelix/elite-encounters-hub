@@ -14,23 +14,8 @@ export const listBookableGroups = createServerFn({ method: "GET" })
       .eq("specialist_group_services.active", true)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    const groups = data ?? [];
-    const specialistIds = [...new Set(groups.flatMap((group) => group.specialist_group_members.map((member) => member.specialist_id)))];
-    if (specialistIds.length === 0) return [];
-    const { data: roleRows, error: roleError } = await context.supabase
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "specialist")
-      .in("user_id", specialistIds);
-    if (roleError) throw new Error(roleError.message);
-    const specialistRoleIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    return groups.flatMap((group) => {
-      const members = group.specialist_group_members.filter((member) =>
-        specialistRoleIds.has(member.specialist_id)
-        && member.profiles?.vetting === "approved"
-        && member.profiles.account_status === "active"
-        && !member.profiles.suspended,
-      );
+    return (data ?? []).flatMap((group) => {
+      const members = group.specialist_group_members;
       const services = group.specialist_group_services.filter((service) => service.services?.active);
       const shareTotal = members.reduce((total, member) => total + Number(member.share_pct), 0);
       if (members.length === 0 || members.filter((member) => member.is_lead).length !== 1 || Math.abs(shareTotal - 100) > 0.001 || services.length === 0) return [];
