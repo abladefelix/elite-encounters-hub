@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { requireActiveSession } from "@/lib/active-session-middleware";
-import { specialistGroupInput, specialistGroupStatusInput } from "@/lib/specialist-groups.schemas";
+import { specialistGroupDeleteInput, specialistGroupInput, specialistGroupStatusInput } from "@/lib/specialist-groups.schemas";
 
 export const listAdminGroups = createServerFn({ method: "GET" })
   .middleware([requireActiveSession])
@@ -36,4 +36,16 @@ export const changeSpecialistGroupStatus = createServerFn({ method: "POST" })
     ]);
     await assertAdminArea(context.userId, "groups");
     return setGroupStatus(data.id, data.status, context.userId);
+  });
+
+export const deleteSpecialistGroup = createServerFn({ method: "POST" })
+  .middleware([requireActiveSession])
+  .validator((input) => specialistGroupDeleteInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const [{ assertAdminArea }, { deleteGroup }] = await Promise.all([
+      import("./identity.server"),
+      import("./specialist-groups.server"),
+    ]);
+    await assertAdminArea(context.userId, "groups");
+    return deleteGroup(data.id, context.userId);
   });
