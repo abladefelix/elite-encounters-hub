@@ -525,25 +525,6 @@ export function useSendMessage() {
   });
 }
 
-/** Finds the existing conversation between two members, or opens a new one. */
-export async function openThread(clientId: string, specialistId: string, room: Tier | null) {
-  const existing = await supabase
-    .from("threads")
-    .select("*")
-    .eq("client_id", clientId)
-    .eq("specialist_id", specialistId)
-    .maybeSingle();
-  if (existing.data) return existing.data;
-
-  const { data, error } = await supabase
-    .from("threads")
-    .insert({ client_id: clientId, specialist_id: specialistId, room })
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  return data;
-}
-
 /**
  * Removes a conversation from the caller's own list. The thread and its history
  * stay intact for the other member, and it returns to the list if they send a
