@@ -33,7 +33,7 @@ import {
   X,
 } from "lucide-react";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import {
@@ -103,8 +103,10 @@ import { paystackChannel } from "@/lib/paystack";
 import {
   createSpecialistQuote,
   startBookingCheckout,
+  startGroupBookingCheckout,
   startGiftCheckout,
 } from "@/lib/payments.functions";
+import { getGroupBookingForThread, respondToGroupBooking } from "@/lib/group-bookings.functions";
 import { useAuth } from "@/hooks/use-auth";
 import {
   clearThread,
@@ -244,6 +246,7 @@ function MessagesInbox({
   const [requestOpen, setRequestOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [payingBookingId, setPayingBookingId] = useState("");
+  const [groupAction, setGroupAction] = useState<"confirm" | "decline" | "pay" | "">("");
   const [giftOpen, setGiftOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [ratingOpen, setRatingOpen] = useState(false);
@@ -311,6 +314,9 @@ function MessagesInbox({
     return map;
   }, [bookingsQuery.data]);
   const bookingCheckout = useServerFn(startBookingCheckout);
+  const groupCheckout = useServerFn(startGroupBookingCheckout);
+  const loadGroupBooking = useServerFn(getGroupBookingForThread);
+  const respondGroupBooking = useServerFn(respondToGroupBooking);
   const sendQuote = useServerFn(createSpecialistQuote);
   const giftCheckout = useServerFn(startGiftCheckout);
   const logHit = useLogModerationHit();
@@ -446,6 +452,41 @@ function MessagesInbox({
   const filesAllowed = flags.attachmentsEnabled && can(room, "fileSharing");
   const locationAllowed = flags.chatLocationSharing;
   const bookingsOpen = flags.bookingsEnabled && platform.bookingsEnabled;
+  const groupBookingQuery = useQuery({
+    queryKey: ["group-booking-thread", activeThread?.id],
+    enabled: Boolean(activeThread?.id && activeThread.is_group),
+    queryFn: () => loadGroupBooking({ data: { threadId: activeThread?.id ?? "" } }),
+  });
+  const groupBooking = groupBookingQuery.data;
+  const myGroupLeg = groupBooking?.group_booking_members.find((member) => member.specialist_id === userId);
+
+  async function answerGroupRequest(available: boolean) {
+    if (!groupBooking) return;
+    setGroupAction(available ? "confirm" : "decline");
+    try {
+      await respondGroupBooking({ data: { groupBookingId: groupBooking.id, available } });
+      await groupBookingQuery.refetch();
+      await queryClient.invalidateQueries({ queryKey: ["messages", activeThread?.id] });
+      toast.success(available ? "Availability confirmed" : "The client has been told you are unavailable");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Your response could not be saved");
+    } finally {
+      setGroupAction("");
+    }
+  }
+
+  async function payGroupBooking() {
+    if (!groupBooking) return;
+    setGroupAction("pay");
+    try {
+      const result = await groupCheckout({ data: { groupBookingId: groupBooking.id, callbackUrl: `${window.location.origin}/payment/return` } });
+      toast.success("Taking you to Paystack…", { description: `${money(result.amount)} will be divided into protected escrow allocations.` });
+      window.location.href = result.authorizationUrl;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Group payment could not be started");
+      setGroupAction("");
+    }
+  }
 
   useEffect(() => {
     if (!activeThread) return;
@@ -1388,6 +1429,41 @@ function MessagesInbox({
                       </p>
                     ) : null}
 
+                    {groupBooking ? (
+                      <div className="border-b border-border/70 bg-background/60 px-4 py-3">
+                        <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant={groupBooking.status === "accepted" ? "default" : groupBooking.status === "cancelled" ? "destructive" : "secondary"}>
+                                Ash group · {groupBooking.status}
+                              </Badge>
+                              <span className="text-sm font-semibold">{groupBooking.service_name}</span>
+                              <span className="text-xs text-muted-foreground">{groupBooking.hours}h · {money(groupBooking.total)}</span>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {groupBooking.group_booking_members.map((member) => (
+                                <span key={member.id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <span className={cn("size-2 rounded-full", member.status === "confirmed" ? "bg-primary" : member.status === "declined" ? "bg-destructive" : "bg-muted-foreground/40")} />
+                                  {member.profiles?.display_name ?? member.role_label} · {member.status}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          {!iAmClient && myGroupLeg?.status === "pending" && groupBooking.status === "requested" ? (
+                            <div className="flex shrink-0 gap-2">
+                              <Button size="sm" variant="outline" disabled={Boolean(groupAction)} onClick={() => void answerGroupRequest(false)}>Decline</Button>
+                              <Button size="sm" variant="brass" disabled={Boolean(groupAction)} onClick={() => void answerGroupRequest(true)}>{groupAction === "confirm" ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCheck className="size-3.5" />} Confirm</Button>
+                            </div>
+                          ) : null}
+                          {iAmClient && groupBooking.status === "accepted" && !groupBooking.paid_at ? (
+                            <Button size="sm" variant="brass" disabled={!bookingsOpen || Boolean(groupAction)} onClick={() => void payGroupBooking()}>
+                              {groupAction === "pay" ? <Loader2 className="size-3.5 animate-spin" /> : <Banknote className="size-3.5" />} Pay {money(groupBooking.total)}
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
+
 
                     <ScrollArea className="h-0 min-h-0 flex-1">
                       <div className="space-y-4 p-4 sm:p-6">
@@ -1486,7 +1562,7 @@ function MessagesInbox({
 
 
                     <div className="z-10 max-h-[55%] shrink-0 overflow-y-auto overscroll-contain border-t border-border/70 bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:max-h-none sm:overflow-visible sm:p-4">
-                      {iAmClient ? (
+                      {activeThread.is_group ? null : iAmClient ? (
                         <Button variant="brass" className="w-full" onClick={openRequest}>
                           {bookingsOpen ? (
                             <>
