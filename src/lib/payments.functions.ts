@@ -125,29 +125,19 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
     return { authorizationUrl: init.authorization_url, reference: ref, amount: total };
   });
 
-/** Client books and pays for an admin-curated specialist group in one checkout. */
+/** Client pays only after every specialist in the proposed group has confirmed. */
 export const startGroupBookingCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => checkoutBase.extend({
-    groupId: z.string().uuid(),
-    serviceId: z.string().uuid(),
-    hours: z.number().positive().max(48),
-    scheduledFor: z.string().datetime().nullable().optional(),
-    notes: z.string().trim().max(1200).optional(),
-    addons: z.array(z.string().trim().min(1).max(120)).max(20).optional(),
+    groupBookingId: z.string().uuid(),
   }).parse(input))
   .handler(async ({ data, context }) => {
     const { adminClient, initializeTransaction, reference, serverSettings } = await import("./payments.server");
     const admin = await adminClient();
     const ref = reference("GRP");
-    const { data: snapshot, error } = await admin.rpc("create_group_booking_snapshot", {
-      _group_id: data.groupId,
-      _service_id: data.serviceId,
-      _hours: data.hours,
+    const { data: snapshot, error } = await admin.rpc("prepare_group_booking_payment", {
+      _group_booking_id: data.groupBookingId,
       _requesting_user: context.userId,
-      ...(data.scheduledFor ? { _scheduled_for: data.scheduledFor } : {}),
-      _notes: data.notes ?? "",
-      _addons: data.addons ?? [],
       _paystack_reference: ref,
     });
     if (error) throw new Error(error.message);
@@ -163,10 +153,8 @@ export const startGroupBookingCheckout = createServerFn({ method: "POST" })
       });
       return { authorizationUrl: init.authorization_url, reference: ref, amount: booking.total, groupBookingId: booking.group_booking_id, threadId: booking.thread_id };
     } catch (paymentError) {
-      await admin.rpc("cancel_unpaid_group_booking", {
-        _group_booking_id: booking.group_booking_id,
-        _requesting_user: context.userId,
-      });
+      await admin.from("escrow_entries").delete().eq("group_booking_id", booking.group_booking_id).eq("state", "pending").is("paid_at", null);
+      await admin.from("group_bookings").update({ paystack_reference: null }).eq("id", booking.group_booking_id).eq("client_id", context.userId).eq("status", "accepted");
       throw paymentError;
     }
   });

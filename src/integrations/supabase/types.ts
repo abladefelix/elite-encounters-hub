@@ -2223,6 +2223,22 @@ export type Database = {
         }
         Returns: Json
       }
+      prepare_group_booking_payment: {
+        Args: {
+          _group_booking_id: string
+          _paystack_reference: string
+          _requesting_user: string
+        }
+        Returns: Json
+      }
+      respond_group_booking_availability: {
+        Args: {
+          _available: boolean
+          _group_booking_id: string
+          _requesting_user: string
+        }
+        Returns: Json
+      }
       settings_section: { Args: { _section: string }; Returns: Json }
     }
     Enums: {
