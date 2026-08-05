@@ -34,7 +34,7 @@ export const startSpecialistChat = createServerFn({ method: "POST" })
       .from("threads")
       .select("id")
       .eq("client_id", context.userId)
-      .eq("specialist_id", specialist.id)
+      .eq("specialist_id", data.specialistId)
       .maybeSingle();
     if (existingError) throw new Error(existingError.message);
     if (existing) return existing;
@@ -43,7 +43,7 @@ export const startSpecialistChat = createServerFn({ method: "POST" })
       .from("threads")
       .insert({
         client_id: context.userId,
-        specialist_id: specialist.id,
+        specialist_id: data.specialistId,
         room: specialist.room,
       })
       .select("id")
