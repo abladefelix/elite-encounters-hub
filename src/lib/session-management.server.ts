@@ -152,7 +152,23 @@ export async function revokeSession(sessionId: string, actorId: string) {
   const client = await admin();
   const { data } = await client.from("active_sessions").select("user_id").eq("id", sessionId).maybeSingle();
   if (!data) throw new Error("That session no longer exists.");
-  return revokeAllSessions(data.user_id, "Ended by an administrator", actorId);
+  await client.from("active_sessions").update({ revoked_at: new Date().toISOString(), revoked_reason: "Ended by an administrator" }).eq("id", sessionId).is("revoked_at", null);
+  await logActivity({ area: "auth", event: "session_revoked", severity: "warn", actorId, target: data.user_id, details: { sessionId } });
+  return { ok: true };
+}
+
+export async function revokeSessions(sessionIds: string[], actorId: string) {
+  const client = await admin();
+  const uniqueIds = [...new Set(sessionIds)];
+  const { data, error } = await client.from("active_sessions").select("id, user_id").in("id", uniqueIds).is("revoked_at", null);
+  if (error) throw new Error(error.message);
+  const rows = data ?? [];
+  if (!rows.length) return { ok: true, count: 0 };
+  const ids = rows.map((row) => row.id);
+  const { error: updateError } = await client.from("active_sessions").update({ revoked_at: new Date().toISOString(), revoked_reason: "Ended by an administrator" }).in("id", ids);
+  if (updateError) throw new Error(updateError.message);
+  await logActivity({ area: "auth", event: "sessions_bulk_revoked", severity: "warn", actorId, target: `${rows.length} sessions`, details: { sessionIds: ids, userIds: [...new Set(rows.map((row) => row.user_id))] } });
+  return { ok: true, count: rows.length };
 }
 
 export async function listSessionsForAdmin() {

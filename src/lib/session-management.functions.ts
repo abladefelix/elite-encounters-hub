@@ -56,6 +56,16 @@ export const forceEndSession = createServerFn({ method: "POST" })
     return revokeSession(data.sessionId, context.userId);
   });
 
+export const forceEndSessions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input) => z.object({ sessionIds: z.array(z.string().uuid()).min(1).max(500) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { assertAdminArea } = await import("./identity.server");
+    const { revokeSessions } = await import("./session-management.server");
+    await assertAdminArea(context.userId, "sessions");
+    return revokeSessions(data.sessionIds, context.userId);
+  });
+
 export const forceEndUserSessions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => z.object({ userId: z.string().uuid() }).parse(input))
