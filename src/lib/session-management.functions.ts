@@ -10,7 +10,7 @@ export const validateCurrentSession = createServerFn({ method: "POST" })
     const header = getRequestHeader("authorization") ?? "";
     const { validateSession } = await import("./session-management.server");
     const authSessionId = typeof context.claims["session_id"] === "string" ? context.claims["session_id"] : undefined;
-    return validateSession(context.userId, header.replace(/^Bearer\s+/i, ""), authSessionId);
+    return validateSession(context.userId, header.replace(/^Bearer\s+/i, ""), authSessionId, getRequestHeader("x-ashnight-device-id"));
   });
 
 export const registerCurrentSession = createServerFn({ method: "POST" })
@@ -23,7 +23,7 @@ export const registerCurrentSession = createServerFn({ method: "POST" })
       userId: context.userId,
       accessToken: header.replace(/^Bearer\s+/i, ""),
       ...(typeof context.claims["session_id"] === "string" ? { authSessionId: context.claims["session_id"] } : {}),
-      deviceId: data.deviceId,
+      deviceId: getRequestHeader("x-ashnight-device-id") ?? data.deviceId,
       deviceName: data.deviceName,
       userAgent: getRequestHeader("user-agent") ?? "",
       ip: getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for") ?? "",
