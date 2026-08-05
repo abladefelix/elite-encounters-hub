@@ -3,6 +3,7 @@ import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSession } from "@/lib/active-session-middleware";
 
 export const validateCurrentSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -38,7 +39,7 @@ export const endMySessionsAfterPasswordChange = createServerFn({ method: "POST" 
   });
 
 export const listAdminSessions = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .handler(async ({ context }) => {
     const { assertAdminArea } = await import("./identity.server");
     const { listSessionsForAdmin } = await import("./session-management.server");
@@ -47,7 +48,7 @@ export const listAdminSessions = createServerFn({ method: "GET" })
   });
 
 export const forceEndSession = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .validator((input) => z.object({ sessionId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { assertAdminArea } = await import("./identity.server");
@@ -57,7 +58,7 @@ export const forceEndSession = createServerFn({ method: "POST" })
   });
 
 export const forceEndSessions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .validator((input) => z.object({ sessionIds: z.array(z.string().uuid()).min(1).max(500) }).parse(input))
   .handler(async ({ data, context }) => {
     const { assertAdminArea } = await import("./identity.server");
@@ -67,7 +68,7 @@ export const forceEndSessions = createServerFn({ method: "POST" })
   });
 
 export const forceEndUserSessions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSession])
   .validator((input) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { assertAdminArea } = await import("./identity.server");
