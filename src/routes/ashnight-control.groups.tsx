@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Pencil, Plus, Search, ShieldCheck, Users } from "lucide-react";
+import { Loader2, Pencil, Plus, Search, ShieldCheck, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { TierBadge } from "@/components/tier-badge";
 import { useAdminAccess } from "@/lib/admin-permissions";
-import { changeSpecialistGroupStatus, listAdminGroups, saveSpecialistGroup } from "@/lib/specialist-groups.functions";
+import { changeSpecialistGroupStatus, deleteSpecialistGroup, listAdminGroups, saveSpecialistGroup } from "@/lib/specialist-groups.functions";
 import { useAllProfiles, useServices, type Tier } from "@/lib/queries";
 import { money } from "@/lib/types";
 
@@ -62,11 +62,14 @@ function AdminGroups() {
   const listGroups = useServerFn(listAdminGroups);
   const saveGroup = useServerFn(saveSpecialistGroup);
   const changeStatus = useServerFn(changeSpecialistGroupStatus);
+  const removeGroup = useServerFn(deleteSpecialistGroup);
   const groups = useQuery({ queryKey: ["admin", "specialist-groups"], queryFn: () => listGroups() });
   const profiles = useAllProfiles();
   const services = useServices(true);
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminGroup | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const specialists = useMemo(() => (profiles.data ?? []).filter((profile) => profile.roles?.includes("specialist") && profile.vetting === "approved" && profile.account_status === "active" && !profile.suspended), [profiles.data]);
   const rows = useMemo(() => (groups.data ?? []).filter((group) => {
     const lead = group.specialist_group_members.find((member) => member.is_lead)?.profiles?.display_name ?? "";
@@ -74,17 +77,25 @@ function AdminGroups() {
   }), [groups.data, query]);
   const save = useMutation({ mutationFn: (value: Draft) => saveGroup({ data: value }), onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ["admin", "specialist-groups"] }); setDraft(null); toast.success("Ash group saved."); }, onError: (error) => toast.error(error instanceof Error ? error.message : "The Ash group could not be saved.") });
   const status = useMutation({ mutationFn: (input: { id: string; status: "draft" | "active" | "paused" }) => changeStatus({ data: input }), onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin", "specialist-groups"] }), onError: (error) => toast.error(error instanceof Error ? error.message : "Status could not be changed.") });
+  const remove = useMutation({ mutationFn: (id: string) => removeGroup({ data: { id } }), onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ["admin", "specialist-groups"] }); setDeleteTarget(null); setDeleteConfirmation(""); toast.success("Ash group deleted."); }, onError: (error) => toast.error(error instanceof Error ? error.message : "The Ash group could not be deleted.") });
   const editGroup = (group: AdminGroup) => setDraft({ id: group.id, name: group.name, slug: group.slug, description: group.description, room: group.room, pricingModel: group.pricing_model === "flat" ? "flat" : "hourly", baseRate: group.base_rate, capacity: group.capacity, available: group.available, active: group.active, members: group.specialist_group_members.map((member) => ({ specialistId: member.specialist_id, roleLabel: member.role_label, isLead: member.is_lead, sharePct: member.share_pct })), services: group.specialist_group_services.map((service) => ({ serviceId: service.service_id, rate: service.rate, minimumHours: service.minimum_hours })) });
 
   return <div className="space-y-6">
     <header className="flex flex-wrap items-end justify-between gap-4"><div><p className="eyebrow text-primary">Operations</p><h1 className="mt-2 font-display text-2xl font-semibold sm:text-3xl">Ash groups</h1><p className="mt-1 max-w-2xl text-sm text-muted-foreground">Build vetted crews, set client access, and freeze each member&apos;s escrow allocation when booked.</p></div><Button disabled={!canWrite} onClick={() => setDraft(emptyDraft())}><Plus className="size-4" /> Create Ash group</Button></header>
     <div className="relative max-w-sm"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search group or lead" className="pl-9" /></div>
     <Card className="overflow-hidden"><div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Group</TableHead><TableHead>Lead</TableHead><TableHead>Roster</TableHead><TableHead>Room</TableHead><TableHead>From</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader><TableBody>
-      {rows.map((group) => { const lead = group.specialist_group_members.find((member) => member.is_lead)?.profiles?.display_name ?? "Not assigned"; const currentStatus = !group.active ? "draft" : group.available ? "active" : "paused"; return <TableRow key={group.id}><TableCell><p className="font-medium">{group.name}</p><p className="text-xs text-muted-foreground">{group.specialist_group_services.length} services</p></TableCell><TableCell>{lead}</TableCell><TableCell><span className="inline-flex items-center gap-1.5"><Users className="size-4 text-muted-foreground" />{group.specialist_group_members.length}</span></TableCell><TableCell><TierBadge tier={group.room} /></TableCell><TableCell>{money(group.base_rate)}{group.pricing_model === "hourly" ? "/h" : ""}</TableCell><TableCell><Badge variant={currentStatus === "active" ? "success" : "secondary"}>{currentStatus === "active" ? "Active" : currentStatus === "paused" ? "Paused" : "Draft"}</Badge></TableCell><TableCell className="text-right"><div className="inline-flex items-center gap-1"><Button variant="ghost" size="icon" aria-label={`Edit ${group.name}`} disabled={!canWrite} onClick={() => editGroup(group)}><Pencil className="size-4" /></Button><Select value={currentStatus} disabled={!canWrite || status.isPending} onValueChange={(value) => status.mutate({ id: group.id, status: value as "draft" | "active" | "paused" })}><SelectTrigger className="h-9 w-28" aria-label={`Change ${group.name} status`}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="paused">Paused</SelectItem><SelectItem value="draft">Draft</SelectItem></SelectContent></Select></div></TableCell></TableRow>; })}
+      {rows.map((group) => { const lead = group.specialist_group_members.find((member) => member.is_lead)?.profiles?.display_name ?? "Not assigned"; const currentStatus = !group.active ? "draft" : group.available ? "active" : "paused"; return <TableRow key={group.id}><TableCell><p className="font-medium">{group.name}</p><p className="text-xs text-muted-foreground">{group.specialist_group_services.length} services</p></TableCell><TableCell>{lead}</TableCell><TableCell><span className="inline-flex items-center gap-1.5"><Users className="size-4 text-muted-foreground" />{group.specialist_group_members.length}</span></TableCell><TableCell><TierBadge tier={group.room} /></TableCell><TableCell>{money(group.base_rate)}{group.pricing_model === "hourly" ? "/h" : ""}</TableCell><TableCell><Badge variant={currentStatus === "active" ? "success" : "secondary"}>{currentStatus === "active" ? "Active" : currentStatus === "paused" ? "Paused" : "Draft"}</Badge></TableCell><TableCell className="text-right"><div className="inline-flex items-center gap-1"><Button variant="ghost" size="icon" aria-label={`Edit ${group.name}`} disabled={!canWrite} onClick={() => editGroup(group)}><Pencil className="size-4" /></Button><Button variant="ghost" size="icon" aria-label={`Delete ${group.name}`} disabled={!canWrite} onClick={() => { setDeleteTarget(group); setDeleteConfirmation(""); }}><Trash2 className="size-4 text-destructive" /></Button><Select value={currentStatus} disabled={!canWrite || status.isPending} onValueChange={(value) => status.mutate({ id: group.id, status: value as "draft" | "active" | "paused" })}><SelectTrigger className="h-9 w-28" aria-label={`Change ${group.name} status`}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="paused">Paused</SelectItem><SelectItem value="draft">Draft</SelectItem></SelectContent></Select></div></TableCell></TableRow>; })}
       {!groups.isLoading && rows.length === 0 && <TableRow><TableCell colSpan={7} className="h-32 text-center text-muted-foreground">No Ash groups match this view.</TableCell></TableRow>}
     </TableBody></Table></div></Card>
     <div className="grid gap-6 lg:grid-cols-2"><Card><CardHeader><CardTitle className="text-lg">Booking control</CardTitle><CardDescription>Room access is assigned by admin, never inherited from the lead.</CardDescription></CardHeader><CardContent className="flex gap-3 text-sm text-muted-foreground"><ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" /><p>Clients see active, available groups permitted by their paid room. A single checkout creates a shared booking and conversation.</p></CardContent></Card><Card><CardHeader><CardTitle className="text-lg">Escrow allocation</CardTitle><CardDescription>Every member&apos;s percentage is explicit and must total 100%.</CardDescription></CardHeader><CardContent className="flex gap-3 text-sm text-muted-foreground"><Users className="mt-0.5 size-5 shrink-0 text-primary" /><p>Payment produces one traceable escrow leg per specialist. Releases, disputes, refunds and ledger entries remain independently auditable.</p></CardContent></Card></div>
     <GroupEditor draft={draft} setDraft={setDraft} specialists={specialists} services={services.data ?? []} saving={save.isPending} onSave={() => draft && save.mutate(draft)} />
+    <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => { if (!open && !remove.isPending) { setDeleteTarget(null); setDeleteConfirmation(""); } }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>Delete Ash group?</DialogTitle><DialogDescription>This permanently removes the group, roster and service setup. Groups with booking history cannot be deleted and should be moved to Draft instead.</DialogDescription></DialogHeader>
+        <div className="space-y-2"><Label htmlFor="delete-group-confirmation">Type <span className="font-semibold text-foreground">{deleteTarget?.name}</span> to confirm</Label><Input id="delete-group-confirmation" value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} autoComplete="off" /></div>
+        <DialogFooter><Button variant="outline" disabled={remove.isPending} onClick={() => { setDeleteTarget(null); setDeleteConfirmation(""); }}>Cancel</Button><Button variant="destructive" disabled={remove.isPending || deleteConfirmation !== deleteTarget?.name} onClick={() => deleteTarget && remove.mutate(deleteTarget.id)}>{remove.isPending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />} Delete group</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>;
 }
 
