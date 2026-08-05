@@ -32,6 +32,20 @@ export function tokenSessionId(accessToken: string) {
   }
 }
 
+export function resolveSessionId(input: {
+  userId: string;
+  accessToken?: string;
+  verifiedSessionId?: string;
+  deviceId?: string;
+}) {
+  if (input.verifiedSessionId) return input.verifiedSessionId;
+  const tokenId = tokenSessionId(input.accessToken ?? "");
+  if (tokenId) return tokenId;
+  const deviceId = input.deviceId?.trim();
+  if (!deviceId || deviceId.length < 8 || deviceId.length > 200) return null;
+  return `device:${input.userId}:${deviceId}`;
+}
+
 export async function sessionPolicy(): Promise<SessionPolicy> {
   const client = await admin();
   const { data } = await client.from("platform_settings").select("data").eq("id", true).maybeSingle();
@@ -54,7 +68,12 @@ export async function registerSession(input: {
   ip: string;
 }) {
   const client = await admin();
-  const authSessionId = input.authSessionId ?? tokenSessionId(input.accessToken ?? "");
+  const authSessionId = resolveSessionId({
+    userId: input.userId,
+    ...(input.accessToken ? { accessToken: input.accessToken } : {}),
+    ...(input.authSessionId ? { verifiedSessionId: input.authSessionId } : {}),
+    deviceId: input.deviceId,
+  });
   if (!authSessionId) throw new Error("The authentication session could not be registered.");
   const { data: existing } = await client
     .from("active_sessions")
@@ -117,9 +136,14 @@ export async function registerSession(input: {
   return { policy, authSessionId };
 }
 
-export async function validateSession(userId: string, accessToken?: string, verifiedSessionId?: string) {
+export async function validateSession(userId: string, accessToken?: string, verifiedSessionId?: string, deviceId?: string) {
   const client = await admin();
-  const authSessionId = verifiedSessionId ?? tokenSessionId(accessToken ?? "");
+  const authSessionId = resolveSessionId({
+    userId,
+    ...(accessToken ? { accessToken } : {}),
+    ...(verifiedSessionId ? { verifiedSessionId } : {}),
+    ...(deviceId ? { deviceId } : {}),
+  });
   if (!authSessionId) return { valid: false, reason: "Session identity is missing." };
   const { data } = await client
     .from("active_sessions")
