@@ -277,6 +277,8 @@ export type Database = {
       }
       bookings: {
         Row: {
+          ack_requested_at: string | null
+          acknowledged_at: string | null
           addons: string[]
           client_id: string
           created_at: string
@@ -297,6 +299,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ack_requested_at?: string | null
+          acknowledged_at?: string | null
           addons?: string[]
           client_id: string
           created_at?: string
@@ -317,6 +321,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ack_requested_at?: string | null
+          acknowledged_at?: string | null
           addons?: string[]
           client_id?: string
           created_at?: string
