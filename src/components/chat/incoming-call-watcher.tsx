@@ -103,6 +103,14 @@ export function IncomingCallWatcher() {
     };
   }, [invite, active, prefs.ringtone]);
 
+  // A ring that is never answered stops itself after 45 seconds, so an
+  // abandoned call cannot sit there ringing or waiting forever.
+  useEffect(() => {
+    if (!invite || active) return;
+    const timer = window.setTimeout(() => setInvite(null), 45_000);
+    return () => window.clearTimeout(timer);
+  }, [invite, active]);
+
   const decline = useCallback(() => {
     if (!invite) return;
     void sendRing(invite.fromId, {
