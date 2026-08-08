@@ -19,7 +19,7 @@ export type RingPayload =
       fromId: string;
       fromName: string;
     }
-  | { kind: "decline"; fromId: string; fromName: string }
+  | { kind: "decline"; fromId: string; fromName: string; reason?: "unavailable" | "declined" }
   | { kind: "cancel"; fromId: string; fromName: string };
 
 export function ringChannelName(userId: string) {
