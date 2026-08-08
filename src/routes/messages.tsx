@@ -2184,7 +2184,13 @@ function MessageBubble({
   if (message.kind === "booking") {
     const cancelled = booking?.status === "cancelled";
     const paid = Boolean(escrow) || booking?.status === "paid" || booking?.status === "completed";
-    const unpaid = !paid && !cancelled && (!booking || booking.status === "requested");
+    const unpaid =
+      !paid &&
+      !cancelled &&
+      (!booking || booking.status === "requested" || booking.status === "accepted");
+    const ackRequested = Boolean(booking?.ack_requested_at);
+    const acknowledged = Boolean(booking?.acknowledged_at);
+    const addons = booking?.addons ?? [];
     const due = booking ? Number(booking.hours) * booking.rate : 0;
     const dueWithFee = booking
       ? due + Math.round(due * (Number(booking.platform_fee_pct ?? 0) / 100))
@@ -2197,9 +2203,28 @@ function MessageBubble({
               ? "Service confirmed · funds in escrow"
               : cancelled
                 ? "Payment request · cancelled"
-                : "Payment request · awaiting payment"}
+                : acknowledged
+                  ? "Payment request · acknowledged"
+                  : ackRequested
+                    ? "Payment request · awaiting acknowledgement"
+                    : "Payment request · not sent yet"}
           </p>
           <p className="mt-2 text-sm leading-relaxed">{message.body}</p>
+
+          {booking ? (
+            <div className="mt-3 space-y-1 rounded-lg border border-border/60 bg-card/70 p-3 text-[11px]">
+              <p className="text-xs font-medium text-foreground">{booking.service_name}</p>
+              <p className="text-muted-foreground">
+                {booking.hours}h at {money(booking.rate)}/h
+              </p>
+              {addons.length ? (
+                <p className="text-muted-foreground">Add-ons: {addons.join(", ")}</p>
+              ) : null}
+              {dueWithFee ? (
+                <p className="text-foreground">Total with service fee: {money(dueWithFee)}</p>
+              ) : null}
+            </div>
+          ) : null}
 
           {escrow ? (
             <>
@@ -2229,7 +2254,32 @@ function MessageBubble({
             <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <CheckCheck className="size-3.5" /> Payment confirmed
             </p>
-          ) : unpaid && canPay && message.booking_id ? (
+          ) : unpaid && isClient && message.booking_id && !ackRequested ? (
+            <div className="mt-3">
+              <Button
+                size="sm"
+                variant="brass"
+                disabled={ackBusy}
+                onClick={() => onAskAcknowledgement(message.booking_id!)}
+              >
+                {ackBusy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <CheckCheck className="size-3.5" />
+                )}
+                Send to {peerFirstName} to acknowledge
+              </Button>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Nothing is charged yet — payment opens once your specialist acknowledges these
+                services.
+              </p>
+            </div>
+          ) : unpaid && isClient && !acknowledged ? (
+            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Loader2 className="size-3.5" /> Waiting for {peerFirstName} to acknowledge these
+              services.
+            </p>
+          ) : unpaid && isClient && canPay && message.booking_id ? (
             <div className="mt-3">
               <Button
                 size="sm"
@@ -2248,6 +2298,30 @@ function MessageBubble({
                 Ashnight holds the money until you confirm the visit.
               </p>
             </div>
+          ) : unpaid && !isClient && ackRequested && !acknowledged && message.booking_id ? (
+            <div className="mt-3">
+              <Button
+                size="sm"
+                variant="brass"
+                disabled={ackBusy}
+                onClick={() => onAcknowledge(message.booking_id!)}
+              >
+                {ackBusy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <CheckCheck className="size-3.5" />
+                )}
+                Acknowledge these services
+              </Button>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Check the services above. Once you acknowledge, the member can pay into escrow.
+              </p>
+            </div>
+          ) : unpaid && !isClient && acknowledged ? (
+            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <CheckCheck className="size-3.5" /> Acknowledged — waiting for {peerFirstName} to pay
+              into escrow.
+            </p>
           ) : (
             <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <CheckCheck className="size-3.5" /> Awaiting {unpaid ? "payment" : "confirmation"} from{" "}
@@ -2258,6 +2332,7 @@ function MessageBubble({
       </div>
     );
   }
+
 
   return (
     <div className={cn("group flex items-end gap-1", mine ? "justify-end" : "justify-start")}>
