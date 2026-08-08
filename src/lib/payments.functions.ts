@@ -43,6 +43,14 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
     if (booking.status === "paid" || booking.status === "completed") {
       throw new Error("This booking is already paid.");
     }
+    if (booking.status === "cancelled") throw new Error("This payment request was cancelled.");
+    if (!booking.acknowledged_at) {
+      throw new Error(
+        booking.ack_requested_at
+          ? "Your specialist hasn't acknowledged this request yet — you can pay as soon as they do."
+          : "Send this request to your specialist for acknowledgement before paying.",
+      );
+    }
 
     const settings = await serverSettings();
     const feePct = booking.platform_fee_pct ?? settings.platform.platformFeePct ?? 12;
