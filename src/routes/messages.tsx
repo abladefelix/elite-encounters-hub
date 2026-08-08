@@ -1612,7 +1612,7 @@ function MessagesInbox({
 
 
                     <ScrollArea className="h-0 min-h-0 flex-1">
-                      <div className="space-y-4 p-4 sm:p-6">
+                      <div ref={messageListRef} className="space-y-4 p-4 sm:p-6">
                         {clearedAt ? (
                           <p className="mx-auto flex max-w-md items-center justify-center gap-2 rounded-full border border-dashed border-border bg-background/60 px-4 py-1.5 text-center text-[11px] text-muted-foreground">
                             <Eraser className="size-3 shrink-0" />
