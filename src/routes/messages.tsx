@@ -2206,14 +2206,24 @@ function MessageBubble({
 
 }) {
   if (message.kind === "system") {
+    // The acknowledgement note is written for the member ("you can now pay").
+    // The specialist only needs the confirmation that she acknowledged it.
+    const ackMatch = /^The specialist acknowledged (.*?)\.\s*The member can now pay securely into escrow\.$/i.exec(
+      message.body ?? "",
+    );
+    const body =
+      ackMatch && !isClient
+        ? `You acknowledged ${ackMatch[1]}. Waiting for the member to pay into escrow.`
+        : message.body;
     return (
       <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-3">
         <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-accent/60 text-accent">
           <ShieldCheck className="size-3" />
         </span>
-        <p className="text-[12px] leading-snug text-muted-foreground">{message.body}</p>
+        <p className="text-[12px] leading-snug text-muted-foreground">{body}</p>
       </div>
     );
+
   }
 
 
