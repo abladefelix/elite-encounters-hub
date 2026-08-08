@@ -162,7 +162,9 @@ export function AuthPage({
    */
   async function signIn(event: React.FormEvent) {
     event.preventDefault();
-    const who = identifier.trim();
+    // Android keyboards commonly capitalise and add stray/invisible spaces.
+    const who = identifier.replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, "").trim();
+
     if (who.length < 3) {
       toast.error("Enter your username or email address.");
       return;
