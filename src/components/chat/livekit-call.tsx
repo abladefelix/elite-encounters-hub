@@ -58,12 +58,15 @@ export function LiveKitCall({
   peerName,
   mode,
   onEnd,
+  onPeerJoined,
 }: {
   url: string;
   token: string;
   peerName: string;
   mode: CallMode;
   onEnd: () => void;
+  /** Fires the first time someone else actually joins the call. */
+  onPeerJoined?: (() => void) | undefined;
 }) {
   const { t } = useCopy();
   const [seconds, setSeconds] = useState(0);
