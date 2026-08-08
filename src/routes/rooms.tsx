@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -186,6 +186,16 @@ function RoomsPage() {
     if (room && room in specialistCounts) {
       specialistCounts[room] = (specialistCounts[room] ?? 0) + 1;
     }
+  }
+
+  if (authLoading) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
+  // Rooms are a client membership surface. Specialists are placed by admins
+  // and should never see room selection, even through a saved/deep link.
+  if (user && isSpecialist && !isAdmin) {
+    return <Navigate to="/messages" replace />;
   }
 
   const activeMembership =

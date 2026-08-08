@@ -136,8 +136,16 @@ export function AuthPage({
   // conversations (rooms are set for them by the team), clients to their rooms.
   useEffect(() => {
     if (loading || !session || profile?.id !== session.user.id) return;
-    const destination =
-      next && next !== "/" ? next : isAdmin ? "/ashnight-control" : isSpecialist ? "/messages" : "/rooms";
+    // Role restrictions take precedence over a saved redirect. In particular,
+    // an old `next=/rooms` value must never send a specialist into client
+    // membership selection after sign-in.
+    const destination = isAdmin
+      ? "/ashnight-control"
+      : isSpecialist
+        ? "/messages"
+        : next && next !== "/"
+          ? next
+          : "/rooms";
     void navigate({ to: destination, replace: true });
   }, [loading, session, profile?.id, navigate, next, isAdmin, isSpecialist]);
 
