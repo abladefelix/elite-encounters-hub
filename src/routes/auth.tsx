@@ -98,7 +98,7 @@ export function AuthPage({
   intendedRole?: "client" | "specialist";
 }) {
   const navigate = useNavigate();
-  const { session, loading, isAdmin } = useAuth();
+  const { session, loading, isAdmin, isSpecialist } = useAuth();
 
   const { flags } = useFeatureFlags();
   const { branding } = useBranding();
@@ -132,12 +132,15 @@ export function AuthPage({
   }, [intendedRole]);
 
   // "/" is the sign-in surface itself, so a signed-in member must be sent
-  // somewhere real: admins into the control room, everyone else to their rooms.
+  // somewhere real: admins into the control room, specialists into their
+  // conversations (rooms are set for them by the team), clients to their rooms.
   useEffect(() => {
     if (loading || !session) return;
-    const destination = next && next !== "/" ? next : isAdmin ? "/ashnight-control" : "/rooms";
+    const destination =
+      next && next !== "/" ? next : isAdmin ? "/ashnight-control" : isSpecialist ? "/messages" : "/rooms";
     void navigate({ to: destination, replace: true });
-  }, [loading, session, navigate, next, isAdmin]);
+  }, [loading, session, navigate, next, isAdmin, isSpecialist]);
+
 
   /** Google is opt-in: admins turn it on in Control room → Features. */
   const googleEnabled = flags.googleSignIn;
