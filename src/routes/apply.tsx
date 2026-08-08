@@ -288,29 +288,40 @@ function ApplyPage() {
                 <Field label="City" name="city" error={errors.city} />
               </div>
 
-              <div>
-                <Label htmlFor="room" className="text-sm">
-                  {role === "client" ? "Room you'd like to join" : "Room you're aiming for"}
-                </Label>
-                <Select value={room} onValueChange={(value) => setRoom(value as typeof room)}>
-                  <SelectTrigger id="room" className="mt-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROOM_TIERS.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Final placement is decided manually after vetting.
-                  {role === "client"
-                    ? " Membership is billed monthly once you're placed."
-                    : " Specialists never pay to join — you're paid per booking, minus the platform fee."}
-                </p>
-              </div>
+              {role === "client" ? (
+                <div>
+                  <Label htmlFor="room" className="text-sm">
+                    Room you'd like to join
+                  </Label>
+                  <Select value={room} onValueChange={(value) => setRoom(value as typeof room)}>
+                    <SelectTrigger id="room" className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROOM_TIERS.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Final placement is decided manually after vetting. Membership is billed monthly
+                    once you're placed.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-border/70 bg-background/60 p-4">
+                  <p className="font-display text-sm font-semibold">Room placement</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Specialists don't choose a room. After vetting, Ashnight operations places you in
+                    a room, and any upgrade or downgrade later is handled by our team based on your
+                    rating and completed jobs. You never pay to join — you're paid per booking, minus
+                    the platform fee.
+                  </p>
+                </div>
+              )}
+
 
               {role === "specialist" ? (
                 <div>
