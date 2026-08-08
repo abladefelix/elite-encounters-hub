@@ -436,6 +436,10 @@ function MessagesInbox({
     [myPeerRatings],
   );
 
+  // Who is being rung right now, and whether anyone actually joined.
+  const callInviteesRef = useRef<string[]>([]);
+  const callJoinedRef = useRef(false);
+
   const escrowEntries = activeThread ? threadEntries(activeThread.id) : [];
 
   // Only a client who actually paid for and received a visit may rate.
@@ -727,18 +731,51 @@ function MessagesInbox({
       return;
     }
     if (!activeThread || !peerId) return;
-    setCall(mode);
-    // Ring the other member wherever they are in Ashnight, so they can answer
-    // without having this thread already open.
-    void sendRing(peerId, {
-      kind: "invite",
-      threadId: activeThread.id,
-      mode,
-      fromId: userId,
-      fromName: profile?.display_name ?? "An Ashnight member",
-    });
-    systemNote(`${modeWord} ${callWord} started — Ashnight never records ${callWord}s.`);
 
+    // In an Ash group conversation the whole crew is rung, not just the lead.
+    const invitees = activeThread.is_group
+      ? [
+          activeThread.client_id,
+          ...(groupBooking?.group_booking_members ?? []).map((member) => member.specialist_id),
+        ].filter((id, index, all) => id && id !== userId && all.indexOf(id) === index)
+      : [peerId];
+
+    callInviteesRef.current = invitees;
+    callJoinedRef.current = false;
+    setCall(mode);
+    // Ring everyone wherever they are in Ashnight, so they can answer without
+    // having this thread already open.
+    invitees.forEach((id) => {
+      void sendRing(id, {
+        kind: "invite",
+        threadId: activeThread.id,
+        mode,
+        fromId: userId,
+        fromName: profile?.display_name ?? "An Ashnight member",
+      });
+    });
+  }
+
+  /** Records the call in chat only once somebody actually joined it. */
+  function noteCallJoined(mode: CallMode) {
+    if (callJoinedRef.current) return;
+    callJoinedRef.current = true;
+    const modeWord = mode === "video" ? t("chat.video") : t("chat.voice");
+    const callWord = t("chat.call");
+    systemNote(`${modeWord} ${callWord} started — Ashnight never records ${callWord}s.`);
+  }
+
+  /** Clears the ring on every invited device when the caller hangs up. */
+  function stopRinging() {
+    const invitees = callInviteesRef.current;
+    callInviteesRef.current = [];
+    invitees.forEach((id) => {
+      void sendRing(id, {
+        kind: "cancel",
+        fromId: userId,
+        fromName: profile?.display_name ?? "An Ashnight member",
+      });
+    });
   }
 
   /** Specialist prices the visit; the client pays from the thread. */
@@ -1915,9 +1952,13 @@ function MessagesInbox({
                 isCaller
                 peerName={peerName}
                 mode={call}
+                onPeerJoined={() => noteCallJoined(call)}
                 onEnd={() => {
+                  const joined = callJoinedRef.current;
+                  stopRinging();
                   setCall(null);
-                  systemNote(t("chat.callEnded"));
+                  // An unanswered call leaves nothing behind in the thread.
+                  if (joined) systemNote(t("chat.callEnded"));
                 }}
               />
             ) : null}
