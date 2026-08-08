@@ -1581,7 +1581,13 @@ function MessagesInbox({
                                     ? bookingsById.get(message.booking_id)
                                     : undefined
                                 }
-                                canPay={iAmClient && bookingsOpen}
+                                 canPay={iAmClient && bookingsOpen}
+                                 isClient={iAmClient}
+                                 ackBusy={
+                                   !!message.booking_id && ackBookingId === message.booking_id
+                                 }
+                                 onAskAcknowledgement={(id) => void sendForAcknowledgement(id)}
+                                 onAcknowledge={(id) => void acknowledgeBooking(id)}
                                 paying={
                                   !!message.booking_id && payingBookingId === message.booking_id
                                 }
