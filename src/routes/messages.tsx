@@ -249,6 +249,7 @@ function MessagesInbox({
   const [requestOpen, setRequestOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [payingBookingId, setPayingBookingId] = useState("");
+  const [ackBookingId, setAckBookingId] = useState("");
   const [groupAction, setGroupAction] = useState<"confirm" | "decline" | "pay" | "">("");
   const [giftOpen, setGiftOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
