@@ -9,7 +9,6 @@ import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import {
   Banknote,
-  CalendarClock,
   CheckCircle,
   ChevronRight,
   MessageCircle,
@@ -75,7 +74,6 @@ function ThreadPreview({
   );
   const avatarUrl = avatarPath ? media?.[avatarPath] : undefined;
   const name = other?.display_name ?? (isClient ? "Ashnight specialist" : "Member");
-  const myId = isClient ? thread.client_id : thread.specialist_id;
   const lastRead = isClient ? thread.client_last_read_at : thread.specialist_last_read_at;
   const unread = new Date(thread.last_message_at) > new Date(lastRead);
 
