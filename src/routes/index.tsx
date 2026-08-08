@@ -53,9 +53,10 @@ export const Route = createFileRoute("/")({
 });
 
 function AuthHome() {
-  const { session, loading, isAdmin } = useAuth();
+  const { session, loading, isAdmin, isSpecialist } = useAuth();
   // "/" is the sign-in page, full stop. Anyone already signed in is moved on:
-  // admins into the control room, members into their rooms.
+  // admins into the control room, specialists into their conversations,
+  // clients into their rooms.
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -64,8 +65,9 @@ function AuthHome() {
     );
   }
   if (session) {
-    return <Navigate to={isAdmin ? "/ashnight-control" : "/rooms"} replace />;
+    return <Navigate to={isAdmin ? "/ashnight-control" : isSpecialist ? "/messages" : "/rooms"} replace />;
   }
+
   return <AuthPage />;
 }
 
