@@ -195,7 +195,7 @@ function RoomsPage() {
   // Rooms are a client membership surface. Specialists are placed by admins
   // and should never see room selection, even through a saved/deep link.
   if (user && isSpecialist && !isAdmin) {
-    return <Navigate to="/messages" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const activeMembership =

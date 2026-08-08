@@ -240,7 +240,7 @@ function MessagesInbox({
 }: {
   userId: string;
   profile: ProfileRow | null;
-  initialThreadId?: string;
+  initialThreadId?: string | undefined;
 }) {
   const [activeThreadId, setActiveThreadId] = useState(initialThreadId ?? "");
   const [draft, setDraft] = useState("");

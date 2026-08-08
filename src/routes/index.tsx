@@ -23,6 +23,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SpecialistCard } from "@/components/specialist-card";
 import { TierBadge } from "@/components/tier-badge";
+import { MemberHome } from "@/components/member-home";
 import { supabase } from "@/integrations/supabase/client";
 import { useSpecialists, type ProfileRow } from "@/lib/queries";
 import { useRoomSettings } from "@/lib/room-settings";
@@ -53,10 +54,9 @@ export const Route = createFileRoute("/")({
 });
 
 function AuthHome() {
-  const { session, profile, loading, isAdmin, isSpecialist } = useAuth();
-  // "/" is the sign-in page, full stop. Anyone already signed in is moved on:
-  // admins into the control room, specialists into their conversations,
-  // clients into their rooms.
+  const { session, profile, loading, isAdmin } = useAuth();
+  // "/" is the sign-in surface for visitors. Signed-in members get the home
+  // dashboard instead; only admins are forwarded straight to the control room.
   if (loading || (session && profile?.id !== session.user.id)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -64,8 +64,11 @@ function AuthHome() {
       </div>
     );
   }
+  if (session && isAdmin) {
+    return <Navigate to="/ashnight-control" replace />;
+  }
   if (session) {
-    return <Navigate to={isAdmin ? "/ashnight-control" : isSpecialist ? "/messages" : "/rooms"} replace />;
+    return <MemberHome />;
   }
 
   return <AuthPage />;
