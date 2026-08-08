@@ -90,7 +90,7 @@ export function SpecialistGroupCard({ group }: { group: SpecialistGroup }) {
 
       <div className="flex gap-2">
         <Button asChild size="sm" variant="brass" className="flex-1">
-          <Link to="/specialists/index">
+          <Link to="/specialists">
             View team
           </Link>
         </Button>
