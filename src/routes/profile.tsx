@@ -310,7 +310,8 @@ function ProfilePage() {
         {/* identity card */}
         <Card className="mt-6 border-border/70 bg-panel p-5 sm:p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <div className="relative mx-auto sm:mx-0">
+            <div className="mx-auto flex flex-col items-center gap-2 sm:mx-0">
+              <div className="relative">
               <Avatar className="size-24 border border-border">
                 {avatarUrl ? <AvatarImage src={avatarUrl} alt={fields.display_name} /> : null}
                 <AvatarFallback className="bg-surface-strong font-display text-xl">
@@ -333,11 +334,12 @@ function ProfilePage() {
                 className="hidden"
                 onChange={onAvatarPicked}
               />
+              </div>
 
               {isSpecialist ? (
                 <div
                   className={cn(
-                    "absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium shadow-sm",
+                    "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium shadow-sm",
                     fields.available
                       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                       : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -353,6 +355,7 @@ function ProfilePage() {
                 </div>
               ) : null}
             </div>
+
 
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">

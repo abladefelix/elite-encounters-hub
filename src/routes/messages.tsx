@@ -511,20 +511,36 @@ function MessagesInbox({
     if (!activeThread?.id) return;
     const first = jumpedThreadRef.current !== activeThread.id;
     if (first) jumpedThreadRef.current = activeThread.id;
-    const node = bottomRef.current;
-    if (!node) return;
-    const behavior: ScrollBehavior = first ? "auto" : "smooth";
-    node.scrollIntoView({ behavior, block: "end" });
-    if (first) {
-      // The virtualised scroll area can still be laying out on first paint.
-      const timer = window.setTimeout(
-        () => bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" }),
-        120,
-      );
-      return () => window.clearTimeout(timer);
+
+    const jump = (behavior: ScrollBehavior) => {
+      const node = bottomRef.current;
+      if (!node) return;
+      // Radix renders its own scrollable viewport; nudging it directly is more
+      // reliable than scrollIntoView while media above is still laying out.
+      const viewport = node.closest<HTMLElement>("[data-radix-scroll-area-viewport]");
+      if (viewport && behavior === "auto") {
+        viewport.scrollTop = viewport.scrollHeight;
+        return;
+      }
+      node.scrollIntoView({ behavior, block: "end" });
+    };
+
+    if (!first) {
+      jump("smooth");
+      return;
     }
-    return;
+
+    jump("auto");
+    const frame = requestAnimationFrame(() => jump("auto"));
+    const timers = [80, 250, 600].map((delay) =>
+      window.setTimeout(() => jump("auto"), delay),
+    );
+    return () => {
+      cancelAnimationFrame(frame);
+      timers.forEach((timer) => window.clearTimeout(timer));
+    };
   }, [activeThread?.id, visibleMessages.length]);
+
 
   // Switching conversations drops any half-composed reply.
   useEffect(() => {
@@ -2190,14 +2206,24 @@ function MessageBubble({
 
 }) {
   if (message.kind === "system") {
+    // The acknowledgement note is written for the member ("you can now pay").
+    // The specialist only needs the confirmation that she acknowledged it.
+    const ackMatch = /^The specialist acknowledged (.*?)\.\s*The member can now pay securely into escrow\.$/i.exec(
+      message.body ?? "",
+    );
+    const body =
+      ackMatch && !isClient
+        ? `You acknowledged ${ackMatch[1]}. Waiting for the member to pay into escrow.`
+        : message.body;
     return (
       <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-3">
         <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-accent/60 text-accent">
           <ShieldCheck className="size-3" />
         </span>
-        <p className="text-[12px] leading-snug text-muted-foreground">{message.body}</p>
+        <p className="text-[12px] leading-snug text-muted-foreground">{body}</p>
       </div>
     );
+
   }
 
 
