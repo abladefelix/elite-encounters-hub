@@ -98,7 +98,7 @@ export function AuthPage({
   intendedRole?: "client" | "specialist";
 }) {
   const navigate = useNavigate();
-  const { session, loading, isAdmin, isSpecialist } = useAuth();
+  const { session, profile, loading, isAdmin, isSpecialist } = useAuth();
 
   const { flags } = useFeatureFlags();
   const { branding } = useBranding();
@@ -135,11 +135,11 @@ export function AuthPage({
   // somewhere real: admins into the control room, specialists into their
   // conversations (rooms are set for them by the team), clients to their rooms.
   useEffect(() => {
-    if (loading || !session) return;
+    if (loading || !session || profile?.id !== session.user.id) return;
     const destination =
       next && next !== "/" ? next : isAdmin ? "/ashnight-control" : isSpecialist ? "/messages" : "/rooms";
     void navigate({ to: destination, replace: true });
-  }, [loading, session, navigate, next, isAdmin, isSpecialist]);
+  }, [loading, session, profile?.id, navigate, next, isAdmin, isSpecialist]);
 
 
   /** Google is opt-in: admins turn it on in Control room → Features. */

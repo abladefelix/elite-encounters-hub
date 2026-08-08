@@ -53,11 +53,11 @@ export const Route = createFileRoute("/")({
 });
 
 function AuthHome() {
-  const { session, loading, isAdmin, isSpecialist } = useAuth();
+  const { session, profile, loading, isAdmin, isSpecialist } = useAuth();
   // "/" is the sign-in page, full stop. Anyone already signed in is moved on:
   // admins into the control room, specialists into their conversations,
   // clients into their rooms.
-  if (loading) {
+  if (loading || (session && profile?.id !== session.user.id)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />

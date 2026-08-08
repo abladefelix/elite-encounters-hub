@@ -35,12 +35,16 @@ export const getMyFullProfile = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      const { data, error } = await supabaseAdmin
-        .from("profiles")
-        .select("*")
-        .eq("id", context.userId)
-        .maybeSingle();
-      if (!error) return data ?? null;
+      const [profileResult, rolesResult] = await Promise.all([
+        supabaseAdmin.from("profiles").select("*").eq("id", context.userId).maybeSingle(),
+        supabaseAdmin.from("user_roles").select("role").eq("user_id", context.userId),
+      ]);
+      const error = profileResult.error ?? rolesResult.error;
+      if (!error) {
+        return profileResult.data
+          ? { ...profileResult.data, roles: (rolesResult.data ?? []).map((row) => row.role) }
+          : null;
+      }
       if (!isClockDrift(error.message)) throw new Error(error.message);
       await sleep(400 * (attempt + 1));
     }
