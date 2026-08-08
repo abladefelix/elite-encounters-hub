@@ -449,21 +449,6 @@ function ProfilePage() {
             />
           </div>
 
-          {isSpecialist ? (
-            <div className="mt-4 flex items-center justify-between gap-4 rounded-lg border border-border/70 bg-background px-4 py-3.5">
-              <div>
-                <p className="text-sm font-medium">Available for new bookings</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Turn off if you're fully booked or on leave.
-                </p>
-              </div>
-              <Switch
-                checked={fields.available}
-                onCheckedChange={(flag) => patch("available", flag)}
-                aria-label="Available for new bookings"
-              />
-            </div>
-          ) : null}
         </Card>
 
         {/* services rendered — from the admin catalogue */}
