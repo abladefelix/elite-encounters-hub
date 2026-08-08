@@ -793,6 +793,43 @@ function MessagesInbox({
     }
   }
 
+  /** Client sends the request to the specialist for acknowledgement (no charge yet). */
+  async function sendForAcknowledgement(bookingId: string) {
+    try {
+      setAckBookingId(bookingId);
+      await askAcknowledgement({ data: { bookingId } });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["messages"] }),
+      ]);
+      toast.success("Sent to your specialist", {
+        description: "You can pay as soon as they acknowledge the selected services.",
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "That request could not be sent");
+    } finally {
+      setAckBookingId("");
+    }
+  }
+
+  /** Specialist acknowledges the selected services, unlocking payment for the client. */
+  async function acknowledgeBooking(bookingId: string) {
+    try {
+      setAckBookingId(bookingId);
+      await acknowledgeRequest({ data: { bookingId } });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["messages"] }),
+      ]);
+      toast.success("Acknowledged", {
+        description: "The member has been asked to pay into escrow.",
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "That request could not be acknowledged");
+    } finally {
+      setAckBookingId("");
+    }
+  }
 
   async function handleBooking(request: ServiceRequestDraft) {
     if (!activeThread || !peerId) return;
@@ -819,25 +856,15 @@ function MessagesInbox({
           request.scheduledFor ? ` · ${request.scheduledFor}` : ""
         }${request.addons.length ? ` · Add-ons: ${request.addons.join(", ")}` : ""} · ${money(
           request.total,
-        )} — opening Paystack (${paystackChannel(request.channel).label})`,
+        )} — awaiting specialist acknowledgement (${paystackChannel(request.channel).label} at payment)`,
       });
 
-      const checkout = await bookingCheckout({
-        data: {
-          bookingId: booking.id,
-          callbackUrl: `${window.location.origin}/payment/return`,
-          channel: request.channel,
-        },
-      });
-
-      toast.success("Taking you to Paystack…", {
-        description: `${money(checkout.amount)} will be held in Ashnight escrow.`,
-      });
-      window.location.href = checkout.authorizationUrl;
+      await sendForAcknowledgement(booking.id);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Booking could not be created");
     }
   }
+
 
   async function handleGift(gift: GiftDraft) {
     if (!activeThread || !peerId) return;
