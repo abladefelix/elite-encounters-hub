@@ -507,22 +507,28 @@ function MessagesInbox({
   // Opening a thread lands on the newest message straight away (no visible
   // scroll from the top); later arrivals glide into view like a native app.
   const jumpedThreadRef = useRef<string | null>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!activeThread?.id) return;
     const first = jumpedThreadRef.current !== activeThread.id;
     if (first) jumpedThreadRef.current = activeThread.id;
 
+    const viewportOf = () =>
+      messageListRef.current?.closest<HTMLElement>("[data-radix-scroll-area-viewport]") ??
+      bottomRef.current?.closest<HTMLElement>("[data-radix-scroll-area-viewport]") ??
+      null;
+
     const jump = (behavior: ScrollBehavior) => {
-      const node = bottomRef.current;
-      if (!node) return;
-      // Radix renders its own scrollable viewport; nudging it directly is more
-      // reliable than scrollIntoView while media above is still laying out.
-      const viewport = node.closest<HTMLElement>("[data-radix-scroll-area-viewport]");
-      if (viewport && behavior === "auto") {
-        viewport.scrollTop = viewport.scrollHeight;
+      const viewport = viewportOf();
+      if (viewport) {
+        if (behavior === "smooth") {
+          viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
+        } else {
+          viewport.scrollTop = viewport.scrollHeight;
+        }
         return;
       }
-      node.scrollIntoView({ behavior, block: "end" });
+      bottomRef.current?.scrollIntoView({ behavior, block: "end" });
     };
 
     if (!first) {
@@ -535,11 +541,26 @@ function MessagesInbox({
     const timers = [80, 250, 600].map((delay) =>
       window.setTimeout(() => jump("auto"), delay),
     );
+
+    // Images, videos and payment cards keep growing after the first paint, which
+    // pushes the newest message back out of view. Stay pinned while the thread
+    // settles instead of scrolling once and hoping the height is final.
+    let observer: ResizeObserver | undefined;
+    const node = messageListRef.current;
+    if (node && typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => jump("auto"));
+      observer.observe(node);
+    }
+    const stop = window.setTimeout(() => observer?.disconnect(), 2500);
+
     return () => {
       cancelAnimationFrame(frame);
       timers.forEach((timer) => window.clearTimeout(timer));
+      window.clearTimeout(stop);
+      observer?.disconnect();
     };
   }, [activeThread?.id, visibleMessages.length]);
+
 
 
   // Switching conversations drops any half-composed reply.
@@ -1591,7 +1612,7 @@ function MessagesInbox({
 
 
                     <ScrollArea className="h-0 min-h-0 flex-1">
-                      <div className="space-y-4 p-4 sm:p-6">
+                      <div ref={messageListRef} className="space-y-4 p-4 sm:p-6">
                         {clearedAt ? (
                           <p className="mx-auto flex max-w-md items-center justify-center gap-2 rounded-full border border-dashed border-border bg-background/60 px-4 py-1.5 text-center text-[11px] text-muted-foreground">
                             <Eraser className="size-3 shrink-0" />
@@ -2211,10 +2232,18 @@ function MessageBubble({
     const ackMatch = /^The specialist acknowledged (.*?)\.\s*The member can now pay securely into escrow\.$/i.exec(
       message.body ?? "",
     );
+    // The "awaiting acknowledgement" note is only for the specialist to act on.
+    const askMatch = /^The member sent this request for acknowledgement — (.*?)\.\s*Payment opens once the specialist acknowledges\.$/i.exec(
+      message.body ?? "",
+    );
+    if (askMatch && isClient) return null;
     const body =
-      ackMatch && !isClient
-        ? `You acknowledged ${ackMatch[1]}. Waiting for the member to pay into escrow.`
-        : message.body;
+      askMatch && !isClient
+        ? `The member sent this request for acknowledgement — ${askMatch[1]}. Payment opens once you acknowledge.`
+        : ackMatch && !isClient
+          ? `You acknowledged ${ackMatch[1]}. Waiting for the member to pay into escrow.`
+          : message.body;
+
     return (
       <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-3">
         <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-accent/60 text-accent">
