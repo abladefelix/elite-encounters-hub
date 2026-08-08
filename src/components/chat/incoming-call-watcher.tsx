@@ -40,12 +40,14 @@ export function IncomingCallWatcher() {
       .channel(ringChannelName(userId), { config: { broadcast: { self: false } } })
       .on("broadcast", { event: "ring" }, ({ payload }: { payload: RingPayload }) => {
         if (payload.kind === "invite") {
-          if (!prefs.acceptCalls) {
-            // Calls turned off: decline quietly instead of ringing.
+          // Calls off, or "available for new bookings" switched off: stay
+          // silent and tell the caller why instead of ringing this phone.
+          if (!prefs.acceptCalls || profile?.available === false) {
             void sendRing(payload.fromId, {
               kind: "decline",
               fromId: userId,
-              fromName: "The other member",
+              fromName: profile?.display_name ?? "The other member",
+              reason: profile?.available === false ? "unavailable" : "declined",
             });
             return;
           }
@@ -59,7 +61,11 @@ export function IncomingCallWatcher() {
             fromName: payload.fromName,
           });
         } else if (payload.kind === "decline") {
-          toast(`${payload.fromName} declined the call`);
+          toast(
+            payload.reason === "unavailable"
+              ? `${payload.fromName} is unavailable right now — their phone did not ring`
+              : `${payload.fromName} declined the call`,
+          );
         } else if (payload.kind === "cancel") {
           setInvite((current) => (current?.fromId === payload.fromId ? null : current));
         }
@@ -69,7 +75,7 @@ export function IncomingCallWatcher() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [userId, prefs.acceptCalls, prefs.vibrate]);
+  }, [userId, prefs.acceptCalls, prefs.vibrate, profile?.available, profile?.display_name]);
 
   // Ringtone: a short repeating chime while the invite dialog is open.
   useEffect(() => {
