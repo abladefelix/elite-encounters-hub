@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { isBlocked, type AccountStatus } from "@/lib/account-status";
 import type { Database } from "@/integrations/supabase/types";
-import { getMyFullProfile } from "@/lib/profile-reads.functions";
+import { getMyFullProfile, type FullProfile } from "@/lib/profile-reads.functions";
 import { registerCurrentSession, validateCurrentSession } from "@/lib/session-management.functions";
 
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
@@ -52,13 +52,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Mobile networks drop the first request often enough that a single failure
     // used to look like "you're signed out". Retry briefly before giving up,
     // and never wipe a profile we already have.
-    const fetchProfile = async () => {
+    const fetchProfile = async (): Promise<FullProfile | null> => {
       for (let attempt = 0; attempt < 3; attempt += 1) {
         try {
           // Contact and ID columns are not readable from the browser at all; the
           // server function returns your own record only.
           const row = await getMyFullProfile();
-          if (row) return row as ProfileRow;
+          if (row) return row;
         } catch {
           /* retry below */
         }
@@ -67,12 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     };
 
-    const [profileResult, rolesResult] = await Promise.all([
-      fetchProfile(),
-      supabase.from("user_roles").select("role").eq("user_id", userId),
-    ]);
+    const profileResult = await fetchProfile();
     setProfile((previous) => profileResult ?? previous);
-    if (rolesResult.data) setRoles(rolesResult.data.map((row) => row.role));
+    if (profileResult?.roles) setRoles(profileResult.roles);
   }, []);
 
   useEffect(() => {
@@ -81,6 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Register the listener before the initial read so no event is missed.
     const { data: subscription } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!active) return;
+      if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
+        setLoading(true);
+      }
       setSession(nextSession);
 
       if (event === "SIGNED_OUT") {
