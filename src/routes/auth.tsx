@@ -133,7 +133,8 @@ export function AuthPage({
 
   // "/" is the sign-in surface itself, so a signed-in member must be sent
   // somewhere real: admins into the control room, specialists into their
-  // conversations (rooms are set for them by the team), clients to their rooms.
+  // conversations (rooms are set for them by the team), clients to the home
+  // dashboard where they can browse specialists and see their room.
   useEffect(() => {
     if (loading || !session || profile?.id !== session.user.id) return;
     // Role restrictions take precedence over a saved redirect. In particular,
@@ -145,7 +146,7 @@ export function AuthPage({
         ? "/messages"
         : next && next !== "/"
           ? next
-          : "/rooms";
+          : "/";
     void navigate({ to: destination, replace: true });
   }, [loading, session, profile?.id, navigate, next, isAdmin, isSpecialist]);
 
@@ -217,7 +218,7 @@ export function AuthPage({
           ? "/messages"
           : next && next !== "/"
             ? next
-            : "/rooms";
+            : "/";
       await navigate({ to: destination, replace: true });
     } catch (error) {
       // A solved challenge is single-use, so a failed attempt always needs a
