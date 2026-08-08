@@ -539,10 +539,15 @@ export function AuthPage({
                     type="text"
                     required
                     autoComplete="username"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    inputMode="email"
                     placeholder="ashfan_kojo or you@example.com"
                     value={identifier}
                     onChange={(event) => setIdentifier(event.target.value)}
                   />
+
                   <p className="text-xs text-muted-foreground">
                     Either works — your username is unique across Ashnight.
                   </p>
