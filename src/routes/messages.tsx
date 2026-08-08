@@ -2211,10 +2211,18 @@ function MessageBubble({
     const ackMatch = /^The specialist acknowledged (.*?)\.\s*The member can now pay securely into escrow\.$/i.exec(
       message.body ?? "",
     );
+    // The "awaiting acknowledgement" note is only for the specialist to act on.
+    const askMatch = /^The member sent this request for acknowledgement — (.*?)\.\s*Payment opens once the specialist acknowledges\.$/i.exec(
+      message.body ?? "",
+    );
+    if (askMatch && isClient) return null;
     const body =
-      ackMatch && !isClient
-        ? `You acknowledged ${ackMatch[1]}. Waiting for the member to pay into escrow.`
-        : message.body;
+      askMatch && !isClient
+        ? `The member sent this request for acknowledgement — ${askMatch[1]}. Payment opens once you acknowledge.`
+        : ackMatch && !isClient
+          ? `You acknowledged ${ackMatch[1]}. Waiting for the member to pay into escrow.`
+          : message.body;
+
     return (
       <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-3">
         <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-accent/60 text-accent">
