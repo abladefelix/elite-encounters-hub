@@ -101,7 +101,9 @@ import { canReview } from "@/lib/ratings";
 import { REPORT_REASON_LABEL } from "@/lib/reports";
 import { paystackChannel } from "@/lib/paystack";
 import {
+  acknowledgeBookingRequest,
   createSpecialistQuote,
+  requestBookingAcknowledgement,
   startBookingCheckout,
   startGroupBookingCheckout,
   startGiftCheckout,
@@ -152,9 +154,10 @@ const HIDDEN_MESSAGES_KEY = "ashnight-hidden-messages-v1";
 
 
 export const Route = createFileRoute("/messages")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    thread: typeof search["thread"] === "string" ? search["thread"] : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { thread?: string } => {
+    const thread = typeof search["thread"] === "string" ? search["thread"] : undefined;
+    return thread ? { thread } : {};
+  },
   head: () => ({
     meta: [
       { title: "Messages — Chat, Call & Book | Ashnight" },
@@ -246,6 +249,7 @@ function MessagesInbox({
   const [requestOpen, setRequestOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [payingBookingId, setPayingBookingId] = useState("");
+  const [ackBookingId, setAckBookingId] = useState("");
   const [groupAction, setGroupAction] = useState<"confirm" | "decline" | "pay" | "">("");
   const [giftOpen, setGiftOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -314,6 +318,8 @@ function MessagesInbox({
     return map;
   }, [bookingsQuery.data]);
   const bookingCheckout = useServerFn(startBookingCheckout);
+  const askAcknowledgement = useServerFn(requestBookingAcknowledgement);
+  const acknowledgeRequest = useServerFn(acknowledgeBookingRequest);
   const groupCheckout = useServerFn(startGroupBookingCheckout);
   const loadGroupBooking = useServerFn(getGroupBookingForThread);
   const respondGroupBooking = useServerFn(respondToGroupBooking);
@@ -787,6 +793,43 @@ function MessagesInbox({
     }
   }
 
+  /** Client sends the request to the specialist for acknowledgement (no charge yet). */
+  async function sendForAcknowledgement(bookingId: string) {
+    try {
+      setAckBookingId(bookingId);
+      await askAcknowledgement({ data: { bookingId } });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["messages"] }),
+      ]);
+      toast.success("Sent to your specialist", {
+        description: "You can pay as soon as they acknowledge the selected services.",
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "That request could not be sent");
+    } finally {
+      setAckBookingId("");
+    }
+  }
+
+  /** Specialist acknowledges the selected services, unlocking payment for the client. */
+  async function acknowledgeBooking(bookingId: string) {
+    try {
+      setAckBookingId(bookingId);
+      await acknowledgeRequest({ data: { bookingId } });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["messages"] }),
+      ]);
+      toast.success("Acknowledged", {
+        description: "The member has been asked to pay into escrow.",
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "That request could not be acknowledged");
+    } finally {
+      setAckBookingId("");
+    }
+  }
 
   async function handleBooking(request: ServiceRequestDraft) {
     if (!activeThread || !peerId) return;
@@ -813,25 +856,15 @@ function MessagesInbox({
           request.scheduledFor ? ` · ${request.scheduledFor}` : ""
         }${request.addons.length ? ` · Add-ons: ${request.addons.join(", ")}` : ""} · ${money(
           request.total,
-        )} — opening Paystack (${paystackChannel(request.channel).label})`,
+        )} — awaiting specialist acknowledgement (${paystackChannel(request.channel).label} at payment)`,
       });
 
-      const checkout = await bookingCheckout({
-        data: {
-          bookingId: booking.id,
-          callbackUrl: `${window.location.origin}/payment/return`,
-          channel: request.channel,
-        },
-      });
-
-      toast.success("Taking you to Paystack…", {
-        description: `${money(checkout.amount)} will be held in Ashnight escrow.`,
-      });
-      window.location.href = checkout.authorizationUrl;
+      await sendForAcknowledgement(booking.id);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Booking could not be created");
     }
   }
+
 
   async function handleGift(gift: GiftDraft) {
     if (!activeThread || !peerId) return;
@@ -1548,7 +1581,13 @@ function MessagesInbox({
                                     ? bookingsById.get(message.booking_id)
                                     : undefined
                                 }
-                                canPay={iAmClient && bookingsOpen}
+                                 canPay={iAmClient && bookingsOpen}
+                                 isClient={iAmClient}
+                                 ackBusy={
+                                   !!message.booking_id && ackBookingId === message.booking_id
+                                 }
+                                 onAskAcknowledgement={(id) => void sendForAcknowledgement(id)}
+                                 onAcknowledge={(id) => void acknowledgeBooking(id)}
                                 paying={
                                   !!message.booking_id && payingBookingId === message.booking_id
                                 }
@@ -2041,6 +2080,10 @@ function MessageBubble({
   canResolve,
   booking,
   canPay,
+  isClient,
+  ackBusy,
+  onAskAcknowledgement,
+  onAcknowledge,
   paying,
   onPay,
   onConfirm,
@@ -2063,6 +2106,10 @@ function MessageBubble({
   canResolve: boolean;
   booking?: BookingRow | undefined;
   canPay: boolean;
+  isClient: boolean;
+  ackBusy: boolean;
+  onAskAcknowledgement: (id: string) => void;
+  onAcknowledge: (id: string) => void;
   paying: boolean;
   onPay: (id: string) => void;
   onConfirm: (id: string) => void;
@@ -2071,6 +2118,8 @@ function MessageBubble({
   onDelete: () => void;
   onReply: (message: MessageRowType) => void;
   onReport: () => void;
+
+
 
 }) {
   if (message.kind === "system") {
@@ -2135,7 +2184,13 @@ function MessageBubble({
   if (message.kind === "booking") {
     const cancelled = booking?.status === "cancelled";
     const paid = Boolean(escrow) || booking?.status === "paid" || booking?.status === "completed";
-    const unpaid = !paid && !cancelled && (!booking || booking.status === "requested");
+    const unpaid =
+      !paid &&
+      !cancelled &&
+      (!booking || booking.status === "requested" || booking.status === "accepted");
+    const ackRequested = Boolean(booking?.ack_requested_at);
+    const acknowledged = Boolean(booking?.acknowledged_at);
+    const addons = booking?.addons ?? [];
     const due = booking ? Number(booking.hours) * booking.rate : 0;
     const dueWithFee = booking
       ? due + Math.round(due * (Number(booking.platform_fee_pct ?? 0) / 100))
@@ -2148,9 +2203,28 @@ function MessageBubble({
               ? "Service confirmed · funds in escrow"
               : cancelled
                 ? "Payment request · cancelled"
-                : "Payment request · awaiting payment"}
+                : acknowledged
+                  ? "Payment request · acknowledged"
+                  : ackRequested
+                    ? "Payment request · awaiting acknowledgement"
+                    : "Payment request · not sent yet"}
           </p>
           <p className="mt-2 text-sm leading-relaxed">{message.body}</p>
+
+          {booking ? (
+            <div className="mt-3 space-y-1 rounded-lg border border-border/60 bg-card/70 p-3 text-[11px]">
+              <p className="text-xs font-medium text-foreground">{booking.service_name}</p>
+              <p className="text-muted-foreground">
+                {booking.hours}h at {money(booking.rate)}/h
+              </p>
+              {addons.length ? (
+                <p className="text-muted-foreground">Add-ons: {addons.join(", ")}</p>
+              ) : null}
+              {dueWithFee ? (
+                <p className="text-foreground">Total with service fee: {money(dueWithFee)}</p>
+              ) : null}
+            </div>
+          ) : null}
 
           {escrow ? (
             <>
@@ -2180,7 +2254,32 @@ function MessageBubble({
             <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <CheckCheck className="size-3.5" /> Payment confirmed
             </p>
-          ) : unpaid && canPay && message.booking_id ? (
+          ) : unpaid && isClient && message.booking_id && !ackRequested ? (
+            <div className="mt-3">
+              <Button
+                size="sm"
+                variant="brass"
+                disabled={ackBusy}
+                onClick={() => onAskAcknowledgement(message.booking_id!)}
+              >
+                {ackBusy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <CheckCheck className="size-3.5" />
+                )}
+                Send to {peerFirstName} to acknowledge
+              </Button>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Nothing is charged yet — payment opens once your specialist acknowledges these
+                services.
+              </p>
+            </div>
+          ) : unpaid && isClient && !acknowledged ? (
+            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Loader2 className="size-3.5" /> Waiting for {peerFirstName} to acknowledge these
+              services.
+            </p>
+          ) : unpaid && isClient && canPay && message.booking_id ? (
             <div className="mt-3">
               <Button
                 size="sm"
@@ -2199,6 +2298,30 @@ function MessageBubble({
                 Ashnight holds the money until you confirm the visit.
               </p>
             </div>
+          ) : unpaid && !isClient && ackRequested && !acknowledged && message.booking_id ? (
+            <div className="mt-3">
+              <Button
+                size="sm"
+                variant="brass"
+                disabled={ackBusy}
+                onClick={() => onAcknowledge(message.booking_id!)}
+              >
+                {ackBusy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <CheckCheck className="size-3.5" />
+                )}
+                Acknowledge these services
+              </Button>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Check the services above. Once you acknowledge, the member can pay into escrow.
+              </p>
+            </div>
+          ) : unpaid && !isClient && acknowledged ? (
+            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <CheckCheck className="size-3.5" /> Acknowledged — waiting for {peerFirstName} to pay
+              into escrow.
+            </p>
           ) : (
             <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <CheckCheck className="size-3.5" /> Awaiting {unpaid ? "payment" : "confirmation"} from{" "}
@@ -2209,6 +2332,7 @@ function MessageBubble({
       </div>
     );
   }
+
 
   return (
     <div className={cn("group flex items-end gap-1", mine ? "justify-end" : "justify-start")}>
