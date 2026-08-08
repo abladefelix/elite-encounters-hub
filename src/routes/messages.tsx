@@ -152,9 +152,10 @@ const HIDDEN_MESSAGES_KEY = "ashnight-hidden-messages-v1";
 
 
 export const Route = createFileRoute("/messages")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    thread: typeof search["thread"] === "string" ? search["thread"] : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { thread?: string } => {
+    const thread = typeof search["thread"] === "string" ? search["thread"] : undefined;
+    return thread ? { thread } : {};
+  },
   head: () => ({
     meta: [
       { title: "Messages — Chat, Call & Book | Ashnight" },
