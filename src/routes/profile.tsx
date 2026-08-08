@@ -333,6 +333,25 @@ function ProfilePage() {
                 className="hidden"
                 onChange={onAvatarPicked}
               />
+
+              {isSpecialist ? (
+                <div
+                  className={cn(
+                    "absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium shadow-sm",
+                    fields.available
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "size-2 rounded-full",
+                      fields.available ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                    )}
+                  />
+                  {fields.available ? "Available" : "Unavailable"}
+                </div>
+              ) : null}
             </div>
 
             <div className="min-w-0 flex-1 text-center sm:text-left">
@@ -358,6 +377,20 @@ function ProfilePage() {
                   </Badge>
                 ) : null}
               </div>
+
+              {isSpecialist ? (
+                <div className="mt-4 flex items-center justify-center gap-3 rounded-lg border border-border/70 bg-background px-3 py-2 sm:justify-start">
+                  <Switch
+                    id="available-toggle"
+                    checked={fields.available}
+                    onCheckedChange={(flag) => patch("available", flag)}
+                    aria-label="Available for new bookings"
+                  />
+                  <Label htmlFor="available-toggle" className="cursor-pointer text-xs font-medium">
+                    Available for new bookings
+                  </Label>
+                </div>
+              ) : null}
             </div>
           </div>
         </Card>
