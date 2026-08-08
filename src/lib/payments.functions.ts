@@ -573,3 +573,127 @@ export const requestEscrowPayout = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+/**
+ * Client sends an existing payment request to the specialist for acknowledgement.
+ *
+ * Nothing is charged here. The specialist sees the exact services, add-ons,
+ * hours and total, and must acknowledge before the client can pay.
+ */
+export const requestBookingAcknowledgement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input) => z.object({ bookingId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { adminClient, addonsAmount, serverSettings } = await import("./payments.server");
+    const admin = await adminClient();
+
+    const { data: booking, error } = await admin
+      .from("bookings")
+      .select("*")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!booking) throw new Error("That payment request no longer exists.");
+    if (booking.client_id !== context.userId) {
+      throw new Error("Only the member who requested this service can send it for acknowledgement.");
+    }
+    if (booking.status === "cancelled") throw new Error("This payment request was cancelled.");
+    if (booking.status === "paid" || booking.status === "completed") {
+      throw new Error("This request is already paid.");
+    }
+    if (booking.acknowledged_at) throw new Error("Your specialist already acknowledged this request.");
+
+    const settings = await serverSettings();
+    const addons = booking.addons ?? [];
+    const subtotal = Number(booking.hours) * booking.rate + addonsAmount(settings, addons);
+    const feePct = booking.platform_fee_pct ?? settings.platform.platformFeePct ?? 12;
+    const total = subtotal + Math.round(subtotal * (feePct / 100));
+
+    if (!booking.ack_requested_at) {
+      const { error: updateError } = await admin
+        .from("bookings")
+        .update({ ack_requested_at: new Date().toISOString() })
+        .eq("id", booking.id);
+      if (updateError) throw new Error(updateError.message);
+    }
+
+    const summary = `${booking.service_name} · ${booking.hours}h${
+      addons.length ? ` · Add-ons: ${addons.join(", ")}` : ""
+    } · GHS ${total.toLocaleString()}`;
+
+    if (booking.thread_id) {
+      await admin.from("messages").insert({
+        thread_id: booking.thread_id,
+        author_id: null,
+        kind: "system",
+        booking_id: booking.id,
+        body: `The member sent this request for acknowledgement — ${summary}. Payment opens once the specialist acknowledges.`,
+      });
+    }
+
+    await admin.from("notifications").insert({
+      user_id: booking.specialist_id,
+      kind: "booking",
+      title: "Service request awaiting your acknowledgement",
+      body: `${summary}. Review the selected services and acknowledge so the member can pay into escrow.`,
+      link: booking.thread_id ? `/messages?thread=${booking.thread_id}` : "/messages",
+    });
+
+    return { ok: true, total };
+  });
+
+/** Specialist acknowledges the requested services, unlocking payment for the client. */
+export const acknowledgeBookingRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input) => z.object({ bookingId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { adminClient } = await import("./payments.server");
+    const admin = await adminClient();
+
+    const { data: booking, error } = await admin
+      .from("bookings")
+      .select("*")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!booking) throw new Error("That payment request no longer exists.");
+    if (booking.specialist_id !== context.userId) {
+      throw new Error("Only the assigned specialist can acknowledge this request.");
+    }
+    if (booking.status === "cancelled") throw new Error("This payment request was cancelled.");
+    if (!booking.ack_requested_at) {
+      throw new Error("The member hasn't sent this request for acknowledgement yet.");
+    }
+    if (booking.acknowledged_at) return { ok: true, alreadyAcknowledged: true };
+
+    const { error: updateError } = await admin
+      .from("bookings")
+      .update({ acknowledged_at: new Date().toISOString(), status: "accepted" })
+      .eq("id", booking.id);
+    if (updateError) throw new Error(updateError.message);
+
+    const addons = booking.addons ?? [];
+    const summary = `${booking.service_name} · ${booking.hours}h${
+      addons.length ? ` · Add-ons: ${addons.join(", ")}` : ""
+    }`;
+
+    if (booking.thread_id) {
+      await admin.from("messages").insert({
+        thread_id: booking.thread_id,
+        author_id: null,
+        kind: "system",
+        booking_id: booking.id,
+        body: `The specialist acknowledged ${summary}. The member can now pay securely into escrow.`,
+      });
+    }
+
+    await admin.from("notifications").insert({
+      user_id: booking.client_id,
+      kind: "booking",
+      title: "Your specialist acknowledged the request",
+      body: `${summary} is confirmed by your specialist. Open the conversation to pay into Ashnight escrow.`,
+      link: booking.thread_id ? `/messages?thread=${booking.thread_id}` : "/messages",
+    });
+
+    return { ok: true, alreadyAcknowledged: false };
+  });
