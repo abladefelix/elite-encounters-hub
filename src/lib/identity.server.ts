@@ -277,6 +277,7 @@ export async function releaseAbandonedSignups(hours: number) {
 export interface SignInResult {
   accessToken: string;
   refreshToken: string;
+  roles: Database["public"]["Enums"]["app_role"][];
 }
 
 /**
@@ -411,9 +412,19 @@ export async function signInWithIdentifier(
     userAgent: meta.userAgent ?? "",
   });
 
+  // Return the verified roles with the session so the client can choose the
+  // correct first screen immediately, without waiting for a second profile
+  // request on slower mobile connections.
+  const { data: roleRows, error: roleError } = await client
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", data.session.user.id);
+  if (roleError) throw new Error("We couldn't load your account access. Try signing in again.");
+
   return {
     accessToken: data.session.access_token,
     refreshToken: data.session.refresh_token,
+    roles: (roleRows ?? []).map((row) => row.role),
   };
 }
 
