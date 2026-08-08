@@ -318,6 +318,8 @@ function MessagesInbox({
     return map;
   }, [bookingsQuery.data]);
   const bookingCheckout = useServerFn(startBookingCheckout);
+  const askAcknowledgement = useServerFn(requestBookingAcknowledgement);
+  const acknowledgeRequest = useServerFn(acknowledgeBookingRequest);
   const groupCheckout = useServerFn(startGroupBookingCheckout);
   const loadGroupBooking = useServerFn(getGroupBookingForThread);
   const respondGroupBooking = useServerFn(respondToGroupBooking);
