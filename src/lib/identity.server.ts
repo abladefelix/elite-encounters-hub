@@ -291,15 +291,25 @@ export async function signInWithIdentifier(
   meta: { ip?: string | undefined; userAgent?: string | undefined; deviceId: string; deviceName: string },
 ): Promise<SignInResult> {
   const client = await admin();
-  const raw = identifier.trim();
+  // Mobile keyboards (Android especially) like to add trailing spaces, invisible
+  // characters and smart punctuation. Strip all of that before deciding whether
+  // this is an email or a username, otherwise a valid username never matches.
+  const raw = identifier
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "")
+    .replace(/\s+/g, "")
+    .trim();
   let email = raw.toLowerCase();
 
   if (!raw.includes("@")) {
+    // `_` and `%` are ILIKE wildcards and usernames legitimately contain `_`,
+    // so escape them and match exactly, case-insensitively.
+    const pattern = normalizeUsername(raw).replace(/([\\%_])/g, "\\$1");
     const { data, error } = await client
       .from("profiles")
       .select("id")
-      .ilike("username", normalizeUsername(raw))
+      .ilike("username", pattern)
       .maybeSingle();
+
     if (error) throw new Error("We couldn't check that username. Try again.");
     if (!data) throw new Error("No Ashnight account uses that username.");
     const { data: userData, error: userError } = await client.auth.admin.getUserById(data.id);

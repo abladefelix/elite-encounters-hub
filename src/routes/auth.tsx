@@ -162,7 +162,9 @@ export function AuthPage({
    */
   async function signIn(event: React.FormEvent) {
     event.preventDefault();
-    const who = identifier.trim();
+    // Android keyboards commonly capitalise and add stray/invisible spaces.
+    const who = identifier.replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, "").trim();
+
     if (who.length < 3) {
       toast.error("Enter your username or email address.");
       return;
@@ -539,10 +541,15 @@ export function AuthPage({
                     type="text"
                     required
                     autoComplete="username"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    inputMode="email"
                     placeholder="ashfan_kojo or you@example.com"
                     value={identifier}
                     onChange={(event) => setIdentifier(event.target.value)}
                   />
+
                   <p className="text-xs text-muted-foreground">
                     Either works — your username is unique across Ashnight.
                   </p>
