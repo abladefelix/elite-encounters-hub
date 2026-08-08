@@ -310,7 +310,8 @@ function ProfilePage() {
         {/* identity card */}
         <Card className="mt-6 border-border/70 bg-panel p-5 sm:p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <div className="relative mx-auto sm:mx-0">
+            <div className="mx-auto flex flex-col items-center gap-2 sm:mx-0">
+              <div className="relative">
               <Avatar className="size-24 border border-border">
                 {avatarUrl ? <AvatarImage src={avatarUrl} alt={fields.display_name} /> : null}
                 <AvatarFallback className="bg-surface-strong font-display text-xl">
