@@ -83,6 +83,12 @@ export function LiveKitCall({
 
 
 
+  // Let the chat know a real participant joined, so an unanswered call never
+  // leaves a "call started" note behind in the conversation.
+  useEffect(() => {
+    if (peerJoined) onPeerJoined?.();
+  }, [peerJoined, onPeerJoined]);
+
   const hangUp = useCallback(() => {
     void roomRef.current?.disconnect();
     roomRef.current = null;
