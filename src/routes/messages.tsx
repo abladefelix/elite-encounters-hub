@@ -740,12 +740,38 @@ function MessagesInbox({
         ].filter((id, index, all) => id && id !== userId && all.indexOf(id) === index)
       : [peerId];
 
-    callInviteesRef.current = invitees;
+    // Someone who has switched off "available for new bookings" is not rung at
+    // all — the caller is told instead of listening to a ring nobody hears.
+    const unavailable = invitees.filter((id) => peopleById.get(id)?.available === false);
+    const reachable = invitees.filter((id) => peopleById.get(id)?.available !== false);
+
+    if (!reachable.length) {
+      const who =
+        unavailable
+          .map((id) => peopleById.get(id)?.display_name)
+          .filter(Boolean)
+          .join(", ") || firstName;
+      toast.error(`${who} is unavailable right now`, {
+        description: `Their phone will not ring. Send a message and they will pick up the ${callWord} when they are back.`,
+      });
+      return;
+    }
+
+    if (unavailable.length) {
+      const who = unavailable
+        .map((id) => peopleById.get(id)?.display_name ?? "A crew member")
+        .join(", ");
+      toast.warning(`${who} is unavailable and was not rung`, {
+        description: "The rest of the crew is being called now.",
+      });
+    }
+
+    callInviteesRef.current = reachable;
     callJoinedRef.current = false;
     setCall(mode);
     // Ring everyone wherever they are in Ashnight, so they can answer without
     // having this thread already open.
-    invitees.forEach((id) => {
+    reachable.forEach((id) => {
       void sendRing(id, {
         kind: "invite",
         threadId: activeThread.id,
