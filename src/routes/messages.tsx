@@ -2080,6 +2080,10 @@ function MessageBubble({
   canResolve,
   booking,
   canPay,
+  isClient,
+  ackBusy,
+  onAskAcknowledgement,
+  onAcknowledge,
   paying,
   onPay,
   onConfirm,
@@ -2102,6 +2106,10 @@ function MessageBubble({
   canResolve: boolean;
   booking?: BookingRow | undefined;
   canPay: boolean;
+  isClient: boolean;
+  ackBusy: boolean;
+  onAskAcknowledgement: (id: string) => void;
+  onAcknowledge: (id: string) => void;
   paying: boolean;
   onPay: (id: string) => void;
   onConfirm: (id: string) => void;
@@ -2110,6 +2118,8 @@ function MessageBubble({
   onDelete: () => void;
   onReply: (message: MessageRowType) => void;
   onReport: () => void;
+
+
 
 }) {
   if (message.kind === "system") {
