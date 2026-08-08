@@ -212,9 +212,11 @@ function ApplyPage() {
         email: user.email ?? "",
         phone,
         city,
-        suggested_room: room,
+        // Specialists don't pick a room — admins place them after vetting.
+        suggested_room: role === "specialist" ? "basic" : room,
         pitch: about,
       },
+
       {
         onSuccess: () => {
           toast.success("Application received — we'll be in touch within two business days");
