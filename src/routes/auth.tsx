@@ -209,6 +209,16 @@ export function AuthPage({
       });
       if (error) throw new Error(error.message);
       toast.success("Welcome back.");
+      // The sign-in response contains server-verified roles, so specialists do
+      // not briefly follow a client redirect while their profile is loading.
+      const destination = result.roles.includes("admin")
+        ? "/ashnight-control"
+        : result.roles.includes("specialist")
+          ? "/messages"
+          : next && next !== "/"
+            ? next
+            : "/rooms";
+      await navigate({ to: destination, replace: true });
     } catch (error) {
       // A solved challenge is single-use, so a failed attempt always needs a
       // fresh one before the member can try again.
