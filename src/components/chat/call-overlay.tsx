@@ -62,6 +62,8 @@ export interface CallProps {
   peerName: string;
   mode: CallMode;
   onEnd: () => void;
+  /** Fires once the other side actually joins. */
+  onPeerJoined?: (() => void) | undefined;
 }
 
 /**
@@ -113,6 +115,7 @@ export function CallOverlay(props: CallProps) {
           peerName={props.peerName}
           mode={props.mode}
           onEnd={props.onEnd}
+          onPeerJoined={props.onPeerJoined}
         />
       </Suspense>
     );
@@ -128,6 +131,7 @@ function PeerCall({
   peerName,
   mode,
   onEnd,
+  onPeerJoined,
 }: CallProps) {
 
   const { t } = useCopy();
@@ -231,6 +235,7 @@ function PeerCall({
         if (pc.connectionState === "connected") {
           setConnected(true);
           setStatus("Connected");
+          onPeerJoined?.();
         } else if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
           setStatus("Connection lost");
         }
