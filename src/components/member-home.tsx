@@ -97,7 +97,7 @@ function ThreadPreview({
           ) : null}
         </div>
         <p className="mt-0.5 truncate text-xs text-muted-foreground">
-          {thread.last_message_preview || "No messages yet"}
+          {thread.last_message || "No messages yet"}
         </p>
       </div>
       <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
