@@ -359,21 +359,6 @@ function WhatsAppDeliveryCard() {
           />
         </div>
 
-          <div>
-            <p className="text-sm font-medium">Send documents over WhatsApp</p>
-            <p className="text-xs text-muted-foreground">
-              Uses the WhatsApp Cloud API credentials in Settings → Integration vault
-              (whatsapp_phone_number_id and whatsapp_access_token).
-            </p>
-          </div>
-          <Switch
-            checked={value.whatsappEnabled}
-            disabled={loading || busy}
-            aria-label="Enable WhatsApp delivery"
-            onCheckedChange={(checked) => void update({ whatsappEnabled: checked })}
-          />
-        </div>
-
         <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
           <div>
             <p className="text-sm font-medium">Fall back to email</p>
