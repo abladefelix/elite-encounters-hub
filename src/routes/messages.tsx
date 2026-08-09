@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { CediExchangeIcon } from "@/components/icons/cedi-exchange-icon";
 import {
   ArrowLeft,
   CheckCheck,
-  Wallet,
   Copy,
   Download,
   Eraser,
