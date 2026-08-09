@@ -13,14 +13,17 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { isEmailShaped, isGhanaCardShaped, GHANA_CARD_HINT } from "@/lib/account-status";
-import { checkAvailability, signInWithIdentifier } from "@/lib/identity.functions";
+import {
+  checkAvailability,
+  registerMemberAccount,
+  signInWithIdentifier,
+} from "@/lib/identity.functions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SignupFieldsForm, type SignupValues } from "@/components/signup-fields-form";
 import { PortfolioPicker } from "@/components/portfolio-picker";
 import { BrandMark } from "@/components/brand-mark";
 import { BUILTIN_FIELDS, appliesTo, useSignupConfig } from "@/lib/signup-fields";
 import { useBranding } from "@/lib/branding";
-import { sendWelcomeMessage } from "@/lib/welcome.functions";
 import { CaptchaField } from "@/components/captcha-field";
 import { useCaptcha } from "@/lib/captcha";
 import { verifyAuthCaptcha } from "@/lib/captcha.functions";
