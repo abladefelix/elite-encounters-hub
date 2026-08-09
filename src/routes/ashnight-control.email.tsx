@@ -369,7 +369,7 @@ function WhatsAppDeliveryCard() {
           </div>
           <Switch
             checked={value.whatsappFallbackToEmail}
-            disabled={loading || busy}
+            disabled={loading || busy || !value.enabled}
             aria-label="Fall back to email"
             onCheckedChange={(checked) => void update({ whatsappFallbackToEmail: checked })}
           />
