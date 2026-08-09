@@ -83,6 +83,8 @@ export const DEFAULT_ESCROW_SETTINGS: EscrowSettings = {
   requireClientConfirm: true,
   autoConfirmHours: 24,
   autoConfirmAction: "release",
+  releaseOnConfirm: true,
+
   disputeWindowHours: 48,
   disputeSlaHours: 24,
   autoReleaseEnabled: true,
