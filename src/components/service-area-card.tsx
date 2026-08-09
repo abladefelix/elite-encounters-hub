@@ -48,7 +48,7 @@ export function ServiceAreaCard({
           latitude: coords.lat,
           longitude: coords.lng,
           location_updated_at: new Date().toISOString(),
-          ...(label ? { location_label: label } : {}),
+          ...(label ? { city: label } : {}),
         },
       });
       setPlace(label);
