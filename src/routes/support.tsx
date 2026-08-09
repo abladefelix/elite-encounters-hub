@@ -86,6 +86,11 @@ function SupportPage() {
 
   const unread = (notifications.data ?? []).filter((row) => !row.read_at).length;
 
+  // Long histories are paged client-side so the tabs stay short on mobile.
+  const inboxPaged = usePaged(notifications.data ?? [], 10);
+  const complaintsPaged = usePaged(complaints.data ?? [], 10);
+  const documentsPaged = usePaged(documents.data ?? [], 10);
+
   async function submitComplaint() {
     if (!user) return;
     if (subject.trim().length < 4 || body.trim().length < 12) {
