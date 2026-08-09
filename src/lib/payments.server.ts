@@ -357,7 +357,7 @@ export async function finalizeReference(
           author_id: null,
           kind: "system",
           escrow_id: entry.id,
-          body: "The specialist has been notified and can start the job.",
+          body: "Payment confirmed and held in escrow — the specialist can now start the job.",
         });
       }
     }

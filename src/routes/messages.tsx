@@ -379,12 +379,21 @@ function MessagesInbox({
   }, [activeThread, iAmClient]);
   const visibleMessages = useMemo(() => {
     const cutoff = clearedAt ? new Date(clearedAt).getTime() : null;
-    return messages.filter(
-      (message) =>
-        !hiddenMessageIds.includes(message.id) &&
-        (iAmClient || message.body !== "The specialist has been notified and can start the job.") &&
-        (cutoff === null || new Date(message.created_at).getTime() > cutoff),
-    );
+    return messages.filter((message) => {
+      if (hiddenMessageIds.includes(message.id)) return false;
+      if (cutoff !== null && new Date(message.created_at).getTime() <= cutoff) return false;
+      const body = message.body ?? "";
+      // "Payment confirmed" notes are addressed to the member.
+      if (
+        !iAmClient &&
+        (body === "The specialist has been notified and can start the job." ||
+          body.startsWith("Payment confirmed and held in escrow"))
+      )
+        return false;
+      // The "awaiting acknowledgement" note is only actionable for the specialist.
+      if (iAmClient && /request for acknowledgement/i.test(body)) return false;
+      return true;
+    });
   }, [messages, clearedAt, hiddenMessageIds, iAmClient]);
 
   /** Hides a message on this device only and remembers it across reloads. */
