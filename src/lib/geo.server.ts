@@ -43,7 +43,7 @@ async function viaGoogle(lat: number, lng: number, key: string): Promise<string>
   const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
   url.searchParams.set("latlng", `${lat},${lng}`);
   url.searchParams.set("key", key);
-  url.searchParams.set("result_type", "neighborhood|sublocality|locality|administrative_area_level_2|administrative_area_level_1");
+  // No result_type filter: the most precise match first gives street-level detail.
 
   const response = await fetch(url.toString());
   if (!response.ok) return "";
@@ -53,14 +53,17 @@ async function viaGoogle(lat: number, lng: number, key: string): Promise<string>
   };
   if (body.status !== "OK" || !body.results?.length) return "";
 
-  const components = body.results[0]?.address_components ?? [];
+  const components = body.results.flatMap((result) => result.address_components ?? []);
   const pick = (type: string) =>
     components.find((component) => component.types.includes(type))?.long_name;
 
   return tidy([
+    pick("point_of_interest") ??
+      pick("premise") ??
+      pick("route") ??
+      pick("sublocality_level_2"),
     pick("neighborhood") ?? pick("sublocality_level_1") ?? pick("sublocality"),
     pick("locality") ?? pick("postal_town") ?? pick("administrative_area_level_2"),
-    pick("administrative_area_level_1") ?? pick("country"),
   ]);
 }
 
@@ -69,7 +72,8 @@ async function viaNominatim(lat: number, lng: number): Promise<string> {
   url.searchParams.set("format", "jsonv2");
   url.searchParams.set("lat", String(lat));
   url.searchParams.set("lon", String(lng));
-  url.searchParams.set("zoom", "14");
+  url.searchParams.set("zoom", "18");
+  url.searchParams.set("addressdetails", "1");
 
   const response = await fetch(url.toString(), {
     headers: { "User-Agent": "Ashnight/1.0 (location naming)", Accept: "application/json" },
@@ -81,9 +85,13 @@ async function viaNominatim(lat: number, lng: number): Promise<string> {
   };
   const address = body.address ?? {};
   const label = tidy([
-    address["neighbourhood"] ?? address["suburb"] ?? address["village"],
-    address["city"] ?? address["town"] ?? address["county"],
-    address["state"] ?? address["country"],
+    address["road"] ?? address["residential"] ?? address["amenity"] ?? address["building"],
+    address["neighbourhood"] ??
+      address["quarter"] ??
+      address["hamlet"] ??
+      address["suburb"] ??
+      address["village"],
+    address["city"] ?? address["town"] ?? address["municipality"] ?? address["county"],
   ]);
   return label || (body.display_name ?? "").split(",").slice(0, 3).join(",").trim();
 }
