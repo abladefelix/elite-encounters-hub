@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronLeft, ChevronRight, Lock, Search, SlidersHorizontal, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crosshair, Lock, MapPin, Search, SlidersHorizontal, Users, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useServices, useSpecialists, type ProfileRow } from "@/lib/queries";
 import { ALL_TIERS, accessibleTiers, tierLabel, type Specialist, type Tier } from "@/lib/types";
+import {
+  NEAR_ME_RADII,
+  coordsOf,
+  distanceKm,
+  formatDistance,
+  requestBrowserLocation,
+  type Coords,
+} from "@/lib/geo";
 import { listBookableGroups } from "@/lib/group-bookings.functions";
 
 export const Route = createFileRoute("/specialists/")({
