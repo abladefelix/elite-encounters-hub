@@ -28,6 +28,7 @@ import { CaptchaField } from "@/components/captcha-field";
 import { useCaptcha } from "@/lib/captcha";
 import { verifyAuthCaptcha } from "@/lib/captcha.functions";
 import { requestBrowserLocation, type Coords } from "@/lib/geo";
+import { lookupPlaceName } from "@/lib/geo.functions";
 
 /** Only same-origin relative paths are ever used as a post-login destination. */
 function safeNext(value: unknown) {
