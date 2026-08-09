@@ -84,7 +84,7 @@ async function viaNominatim(lat: number, lng: number): Promise<string> {
   };
   const address = body.address ?? {};
   const label = tidy([
-    address["road"] ?? address["residential"] ?? address["amenity"] ?? address["building"],
+    address["road"] ?? address["residential"],
     address["neighbourhood"] ??
       address["quarter"] ??
       address["hamlet"] ??
