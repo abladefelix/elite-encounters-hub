@@ -1,22 +1,26 @@
 /**
  * Loudspeaker / earpiece routing for voice calls.
  *
- * The speaker button used to be decorative. Real routing depends on what the
- * platform actually exposes, so we try each real mechanism in order:
+ * Calls start at normal handset level (like a regular phone call) and only get
+ * loud when the member taps the speaker button. Because Android's web view gives
+ * us no real routing API, the toggle works in layers — every layer that exists
+ * is applied, and the volume layer always exists, so the button is never dead:
  *
- * 1. `HTMLMediaElement.setSinkId` — Chrome/Edge desktop + Android web view. We
- *    pick an output device whose label looks like a speaker (or the default) and
- *    switch the remote audio element to it.
- * 2. `navigator.audioSession.type` — iOS 16.4+ WebKit. `"play-and-record"`
- *    routes call audio to the earpiece; `"playback"` routes it to the
- *    loudspeaker.
- *
- * When neither exists the OS owns the routing and we report that back so the UI
- * can disable the button instead of pretending it works.
+ * 1. Output level on the remote audio element — earpiece level vs full level.
+ *    Always available, so the button always does something audible.
+ * 2. `HTMLMediaElement.setSinkId` — Chrome/Edge desktop + some Android web
+ *    views. Picks an output device that looks like a speaker.
+ * 3. `navigator.audioSession.type` — iOS 16.4+ WebKit. `"play-and-record"`
+ *    routes to the earpiece, `"playback"` to the loudspeaker.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type AudioSessionLike = { type: string };
+
+/** Handset (earpiece-style) level — a normal call, not a loud one. */
+const EARPIECE_VOLUME = 0.45;
+/** Loudspeaker level. */
+const SPEAKER_VOLUME = 1;
 
 function audioSession(): AudioSessionLike | undefined {
   if (typeof navigator === "undefined") return undefined;
@@ -47,35 +51,22 @@ async function findSpeakerId(): Promise<string | null> {
 export interface SpeakerControl {
   /** True when call audio is on the loudspeaker. */
   speakerOn: boolean;
-  /** False when the platform gives us no way to move the audio. */
+  /** Kept for callers that used to disable the button; always true now. */
   supported: boolean;
   toggleSpeaker: () => void;
 }
 
 /**
  * @param audioRef the element playing the remote party's audio
- * @param activeenable routing only while a call is up
+ * @param active enable routing only while a call is up
  */
 export function useSpeaker(
   audioRef: React.RefObject<HTMLMediaElement | null>,
   active: boolean,
 ): SpeakerControl {
-  const [speakerOn, setSpeakerOn] = useState(true);
-  const [supported, setSupported] = useState(false);
+  // Start on the earpiece so a call sounds like a normal phone call.
+  const [speakerOn, setSpeakerOn] = useState(false);
   const previousSessionType = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!active) return;
-    let cancelled = false;
-    void (async () => {
-      const hasSession = Boolean(audioSession());
-      const hasSink = canSetSinkId(audioRef.current) && Boolean(await findSpeakerId());
-      if (!cancelled) setSupported(hasSession || hasSink);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [active, audioRef]);
 
   // Remember and restore the page's audio session so ending a call doesn't
   // leave every other sound stuck in call routing.
@@ -97,6 +88,9 @@ export function useSpeaker(
   const apply = useCallback(
     async (next: boolean) => {
       const el = audioRef.current;
+      // Level first — this is the layer that always works.
+      if (el) el.volume = next ? SPEAKER_VOLUME : EARPIECE_VOLUME;
+
       if (canSetSinkId(el)) {
         const id = next ? await findSpeakerId() : "";
         try {
@@ -114,13 +108,11 @@ export function useSpeaker(
           /* noop */
         }
       }
-      // Volume is not routing, but a lower earpiece level matches expectations.
-      if (el) el.volume = next ? 1 : 0.8;
     },
     [audioRef],
   );
 
-  // Push the current choice whenever the call becomes active.
+  // Push the current choice whenever the call becomes active or the toggle flips.
   useEffect(() => {
     if (!active) return;
     void apply(speakerOn);
@@ -130,5 +122,5 @@ export function useSpeaker(
     setSpeakerOn((current) => !current);
   }, []);
 
-  return { speakerOn, supported, toggleSpeaker };
+  return { speakerOn, supported: true, toggleSpeaker };
 }
