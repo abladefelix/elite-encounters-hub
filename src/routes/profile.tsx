@@ -151,6 +151,7 @@ function ProfilePage() {
     if (!profile) return;
     setFields(toFields(profile));
     setCalls(readCallPreferences(profile.extra));
+    setDelivery(readDocumentDelivery(profile.extra));
     const stored = profile.avatar_url;
     if (!stored) {
       setAvatarUrl(null);
