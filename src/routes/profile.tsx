@@ -23,7 +23,15 @@ import {
   readCallPreferences,
   type CallPreferences,
 } from "@/lib/call-preferences";
-import { saveMyCallPreferences } from "@/lib/identity.functions";
+import { saveMyCallPreferences, saveMyDocumentDelivery } from "@/lib/identity.functions";
+import {
+  DEFAULT_DOCUMENT_DELIVERY,
+  describeDelivery,
+  readDocumentDelivery,
+  useDeliverySettings,
+  type DocumentDeliveryPreferences,
+} from "@/lib/document-delivery";
+import { ReceiptText } from "lucide-react";
 import { PortfolioManager } from "@/components/portfolio-manager";
 
 
