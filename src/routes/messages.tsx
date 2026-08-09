@@ -120,6 +120,7 @@ import {
   useRatings,
   useReportMutations,
   useSendMessage,
+  useStoredMedia,
   useSubmitRating,
   useThreads,
   type BookingRow,
