@@ -49,18 +49,20 @@ export function MemberDashboardStrip() {
   const firstName = (profile?.display_name ?? "there").split(" ")[0];
 
   return (
-    <Card className="mt-8 border-border/70 bg-panel p-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+    <Card className="mt-6 border-border/70 bg-panel p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
           <p className="eyebrow text-primary">
-            <Sparkles className="mr-1.5 inline size-3.5" /> Your Ashnight today
+            <Sparkles className="mr-1.5 inline size-3" /> Your Ashnight today
           </p>
-          <h2 className="mt-1 font-display text-xl font-semibold">Welcome back, {firstName}</h2>
+          <h2 className="mt-0.5 truncate font-display text-base font-semibold sm:text-lg">
+            Welcome back, {firstName}
+          </h2>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           <Button asChild size="sm" variant="brass">
             <Link to="/messages">
-              <MessageCircle className="size-4" /> Open chats
+              <MessageCircle className="size-4" /> Chats
             </Link>
           </Button>
           {isSpecialist ? (
@@ -72,37 +74,33 @@ export function MemberDashboardStrip() {
           ) : (
             <Button asChild size="sm" variant="soft">
               <Link to="/specialists">
-                <Sparkles className="size-4" /> Find a specialist
+                <Sparkles className="size-4" /> Find
               </Link>
             </Button>
           )}
           <Button asChild size="sm" variant="outline">
-            <Link to="/support" search={{ tab: "complaints" }}>Inbox &amp; documents</Link>
+            <Link to="/support" search={{ tab: "complaints" }}>Inbox</Link>
           </Button>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         <Stat
           icon={MessageCircle}
-          label="Unread conversations"
-          value={unread ? `${unread} waiting` : "All caught up"}
-          hint={`${threads.length} thread${threads.length === 1 ? "" : "s"} in total`}
+          label="Unread"
+          value={unread ? `${unread}` : "0"}
+          hint={`${threads.length} thread${threads.length === 1 ? "" : "s"}`}
         />
         <Stat
           icon={isSpecialist ? Timer : Wallet}
-          label={isSpecialist ? "Waiting in escrow" : "Held in escrow"}
+          label="In escrow"
           value={money(holding)}
-          hint={
-            isSpecialist
-              ? "Releases automatically after the hold window"
-              : "Released when you confirm the visit"
-          }
+          hint={isSpecialist ? "Auto-releases" : "On confirm"}
         />
         <Stat
           icon={CalendarClock}
-          label="Next booked visit"
-          value={nextVisit ? nextVisit.service_name : "Nothing scheduled"}
+          label="Next visit"
+          value={nextVisit ? nextVisit.service_name : "None"}
           hint={nextVisit?.scheduled_for ? formatStamp(nextVisit.scheduled_for) : "Book in chat"}
         />
       </div>
@@ -122,12 +120,13 @@ function Stat({
   hint: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-background/40 p-4">
-      <p className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Icon className="size-3.5" /> {label}
+    <div className="rounded-lg border border-border bg-background/40 p-2.5">
+      <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
+        <Icon className="size-3 shrink-0" /> <span className="truncate">{label}</span>
       </p>
-      <p className="mt-1.5 truncate font-display text-lg font-semibold">{value}</p>
-      <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>
+      <p className="mt-1 truncate font-display text-sm font-semibold sm:text-base">{value}</p>
+      <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{hint}</p>
     </div>
   );
 }
+
