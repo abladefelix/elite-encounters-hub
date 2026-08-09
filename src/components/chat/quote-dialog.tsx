@@ -81,12 +81,27 @@ export function QuoteDialog({
   useEffect(() => {
     if (!open) return;
     setError("");
-    setRate(String(defaultRate || 0));
     if (!serviceId && activeServices[0]) setServiceId(activeServices[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, defaultRate, activeServices]);
+  }, [open, activeServices]);
 
   const service = activeServices.find((item) => item.id === serviceId);
+
+  /**
+   * The rate is the Doll's hourly rate; when it isn't set we fall back to the
+   * service catalogue rate so the client can still see a live total.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const resolved = defaultRate || service?.suggestedRate || 0;
+    if (isClient) {
+      setRate(String(resolved));
+      return;
+    }
+    setRate((current) => (Number(current) >= 1 ? current : String(resolved)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, defaultRate, isClient, service?.id]);
+
   const chosenAddons = useMemo(
     () => activeAddons.filter((addon) => addonIds.includes(addon.id)),
     [activeAddons, addonIds],
@@ -256,6 +271,18 @@ export function QuoteDialog({
           <Separator />
 
           <dl className="space-y-1 text-sm">
+            <div className="flex items-center justify-between">
+              <dt className="text-muted-foreground">
+                {Number.isFinite(hoursNum) ? hoursNum : 0}h × {money(Number.isFinite(rateNum) ? rateNum : 0)}/h
+              </dt>
+              <dd>{money(Math.max(0, subtotal - addonsAmount))}</dd>
+            </div>
+            {addonsAmount ? (
+              <div className="flex items-center justify-between">
+                <dt className="text-muted-foreground">Add-ons</dt>
+                <dd>{money(addonsAmount)}</dd>
+              </div>
+            ) : null}
             <div className="flex items-center justify-between">
               <dt className="text-muted-foreground">Subtotal</dt>
               <dd>{money(subtotal)}</dd>

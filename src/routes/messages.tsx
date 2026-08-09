@@ -1956,7 +1956,7 @@ function MessagesInbox({
             <QuoteDialog
               mode={iAmClient ? "client" : "specialist"}
               peerName={firstName}
-              defaultRate={profile?.hourly_rate ?? 0}
+              defaultRate={(iAmClient ? peer?.hourly_rate : profile?.hourly_rate) ?? 0}
               open={quoteOpen}
               onOpenChange={setQuoteOpen}
               onConfirm={(quote) => void handleQuote(quote)}
