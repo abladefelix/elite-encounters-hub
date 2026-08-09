@@ -138,12 +138,27 @@ export const EXPECTED_KEYS: { key: string; label: string; description: string; s
       secret: false,
     },
     {
+      key: "whatsapp_phone_number_id",
+      label: "WhatsApp phone number ID",
+      description:
+        "WhatsApp Cloud API phone number ID that sends invoices and receipts to members who chose WhatsApp.",
+      secret: false,
+    },
+    {
+      key: "whatsapp_access_token",
+      label: "WhatsApp access token",
+      description:
+        "Permanent WhatsApp Cloud API token used to send member paperwork. Never leaves the server.",
+      secret: true,
+    },
+    {
       key: "turnstile_secret_key",
       label: "Turnstile secret key",
       description: "Verifies each solved security check on the server. Never leaves the box.",
       secret: true,
     },
   ];
+
 
 /** Public values the member-facing app is allowed to read. */
 export interface PublicIntegrationConfig {
