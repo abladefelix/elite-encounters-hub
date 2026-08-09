@@ -592,31 +592,32 @@ function ProfilePage() {
                 />
               ) : null}
 
-            {delivery.whatsapp ? (
-              <div>
-                <Label htmlFor="whatsapp-number">WhatsApp number</Label>
-                <Input
-                  id="whatsapp-number"
-                  className="mt-2"
-                  inputMode="tel"
-                  placeholder={fields.phone || "024 123 4567"}
-                  value={delivery.whatsappNumber}
-                  onChange={(event) =>
-                    setDelivery((prev) => ({ ...prev, whatsappNumber: event.target.value }))
-                  }
-                />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Leave blank to use your account phone number
-                  {fields.phone ? ` (${fields.phone})` : ""}.
-                </p>
-              </div>
-            ) : null}
-          </div>
+              {delivery.whatsapp && deliverySettings.whatsappEnabled ? (
+                <div>
+                  <Label htmlFor="whatsapp-number">WhatsApp number</Label>
+                  <Input
+                    id="whatsapp-number"
+                    className="mt-2"
+                    inputMode="tel"
+                    placeholder={fields.phone || "024 123 4567"}
+                    value={delivery.whatsappNumber}
+                    onChange={(event) =>
+                      setDelivery((prev) => ({ ...prev, whatsappNumber: event.target.value }))
+                    }
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Leave blank to use your account phone number
+                    {fields.phone ? ` (${fields.phone})` : ""}.
+                  </p>
+                </div>
+              ) : null}
+            </div>
 
-          <p className="mt-4 text-xs text-muted-foreground">
-            Currently: {describeDelivery(delivery)}. Saved with the Save profile button above.
-          </p>
-        </Card>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Currently: {describeDelivery(delivery)}. Saved with the Save profile button above.
+            </p>
+          </Card>
+        ) : null}
 
         {/* call preferences */}
 
