@@ -34,6 +34,7 @@ export type SettingsSection =
   | "finance"
   | "emoji"
   | "calls"
+  | "chatHistory"
   | "notifications"
   | "delivery"
   | "appearance";

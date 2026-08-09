@@ -5,24 +5,25 @@ import { CediIcon } from "@/components/icons/cedi-icon";
 import {
   ArrowLeft,
   CheckCheck,
+  ChevronDown,
+  ChevronUp,
   Copy,
   Download,
   Eraser,
   ExternalLink,
   Flag,
-  Reply,
-
   Gift as GiftIcon,
   Image as ImageIcon,
-  Lock,
   Loader2,
+  Lock,
   MapPin,
   MoreVertical,
   Paperclip,
   Phone,
+  Reply,
   Search,
-  ShieldAlert,
   Send,
+  ShieldAlert,
   ShieldCheck,
   Smile,
   Star,
@@ -143,6 +144,7 @@ import {
 } from "@/lib/escrow";
 import { tierLabel, initials, money, type Tier } from "@/lib/types";
 import { packsForRoom, useEmojiPacks } from "@/lib/chat-emoji";
+import { splitFoldedMessages, useChatHistorySettings } from "@/lib/chat-history";
 import { cn } from "@/lib/utils";
 
 /** Local-only list of messages this device has hidden. */
@@ -407,6 +409,18 @@ function MessagesInbox({
       return true;
     });
   }, [messages, clearedAt, hiddenMessageIds, iAmClient]);
+
+  // Long threads fold: everything older than the admin window collapses behind
+  // one row until the member asks to see it. Re-folds when they switch threads.
+  const { settings: historySettings } = useChatHistorySettings();
+  const [historyExpanded, setHistoryExpanded] = useState(false);
+  useEffect(() => {
+    setHistoryExpanded(false);
+  }, [activeThread?.id]);
+  const { folded: foldedMessages, shown: listedMessages } = useMemo(
+    () => splitFoldedMessages(visibleMessages, historySettings, historyExpanded),
+    [visibleMessages, historySettings, historyExpanded],
+  );
 
   /** Hides a message on this device only and remembers it across reloads. */
   function hideMessageLocally(id: string) {
@@ -1688,8 +1702,29 @@ function MessagesInbox({
                             Older messages are hidden from your view only
                           </p>
                         ) : null}
-                        {visibleMessages.map((message, index) => {
-                          const previous = visibleMessages[index - 1];
+                        {foldedMessages.length ? (
+                          <button
+                            type="button"
+                            onClick={() => setHistoryExpanded(true)}
+                            className="mx-auto flex items-center gap-2 rounded-full border border-border bg-background/70 px-4 py-1.5 text-[11px] font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                          >
+                            <ChevronUp className="size-3 shrink-0" />
+                            Show {foldedMessages.length} earlier message
+                            {foldedMessages.length === 1 ? "" : "s"}
+                          </button>
+                        ) : null}
+                        {historyExpanded && historySettings.foldEnabled ? (
+                          <button
+                            type="button"
+                            onClick={() => setHistoryExpanded(false)}
+                            className="mx-auto flex items-center gap-2 rounded-full border border-dashed border-border px-4 py-1.5 text-[11px] text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                          >
+                            <ChevronDown className="size-3 shrink-0" />
+                            Fold older messages again
+                          </button>
+                        ) : null}
+                        {listedMessages.map((message, index) => {
+                          const previous = listedMessages[index - 1];
                           const showDay =
                             !previous || dayKey(previous.created_at) !== dayKey(message.created_at);
                           return (
@@ -1774,7 +1809,7 @@ function MessagesInbox({
                             </div>
                           );
                         })}
-                        {!visibleMessages.length && !messagesQuery.isLoading ? (
+                        {!listedMessages.length && !messagesQuery.isLoading ? (
                           <p className="py-10 text-center text-xs text-muted-foreground">
                             No messages here yet — say hello to {firstName}.
                           </p>

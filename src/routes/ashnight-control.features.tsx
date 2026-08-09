@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { CaptchaControlCard } from "@/components/admin/captcha-control-card";
 import { CallEngineCard } from "@/components/admin/call-engine-card";
 import { EmojiPackCard } from "@/components/admin/emoji-pack-card";
+import { ChatHistoryCard } from "@/components/admin/chat-history-card";
 import { useCallEngine } from "@/lib/call-engine";
 import { useRecordAudit } from "@/lib/audit-log";
 import {
@@ -108,6 +109,8 @@ function AdminFeatures() {
       />
 
       <EmojiPackCard />
+
+      <ChatHistoryCard />
 
 
       {FLAG_GROUPS.map((group) => {
