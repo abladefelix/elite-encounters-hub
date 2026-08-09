@@ -54,6 +54,12 @@ export interface EscrowSettings {
    * `clearing` starts the hold window, `release` deposits the payout straight away.
    */
   autoConfirmAction: "clearing" | "release";
+  /**
+   * When the member marks the visit complete, deposit the payout into the
+   * Doll's earnings immediately instead of starting the hold window.
+   */
+  releaseOnConfirm: boolean;
+
   /** Hours after release during which a client may still raise an issue. */
   disputeWindowHours: number;
   /** Hours the trust team has to resolve a dispute (target, shown to admins). */
