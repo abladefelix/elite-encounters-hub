@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   ArrowDownLeft,
-  ArrowUpRight,
   Banknote,
   FileText,
   Loader2,
