@@ -73,7 +73,7 @@ export function requestBrowserLocation(): Promise<Coords> {
               : "We couldn't read your location. Try again in a moment.",
           ),
         ),
-      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
+      { enableHighAccuracy: true, timeout: 20_000, maximumAge: 0 },
     );
   });
 }
