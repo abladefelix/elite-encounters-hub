@@ -552,6 +552,95 @@ export const createSpecialistQuote = createServerFn({ method: "POST" })
   });
 
 /**
+ * Member scopes a visit in a thread and asks the specialist to acknowledge it
+ * so they can pay into escrow. This mirrors the specialist quote flow but is
+ * initiated by the client.
+ */
+export const createClientBookingRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input) =>
+    z
+      .object({
+        threadId: z.string().uuid(),
+        serviceId: z.string().uuid().nullable().optional(),
+        serviceName: z.string().trim().min(2).max(120),
+        hours: z.number().min(0.5).max(24),
+        rate: z.number().int().min(1).max(100000),
+        addons: z.array(z.string().trim().max(120)).max(12).optional(),
+        scheduledForIso: z.string().datetime().nullable().optional(),
+        notes: z.string().trim().max(600).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { adminClient, addonsAmount, serverSettings } = await import("./payments.server");
+    const admin = await adminClient();
+
+    const { data: thread, error: threadError } = await admin
+      .from("threads")
+      .select("id, client_id, specialist_id")
+      .eq("id", data.threadId)
+      .maybeSingle();
+    if (threadError) throw new Error(threadError.message);
+    if (!thread) throw new Error("That conversation no longer exists.");
+    if (thread.client_id !== context.userId) {
+      throw new Error("Only the member on this thread can request to pay.");
+    }
+
+    const settings = await serverSettings();
+    const feePct = settings.platform.platformFeePct ?? 12;
+    const addons = data.addons ?? [];
+    const subtotal = data.hours * data.rate + addonsAmount(settings, addons);
+    const fee = Math.round(subtotal * (feePct / 100));
+
+    const now = new Date().toISOString();
+    const { data: booking, error } = await admin
+      .from("bookings")
+      .insert({
+        thread_id: thread.id,
+        client_id: thread.client_id,
+        specialist_id: thread.specialist_id,
+        service_id: data.serviceId ?? null,
+        service_name: data.serviceName,
+        hours: data.hours,
+        rate: data.rate,
+        addons,
+        platform_fee_pct: feePct,
+        scheduled_for: data.scheduledForIso ?? null,
+        notes: data.notes ?? "",
+        status: "requested",
+        ack_requested_at: now,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    const total = subtotal + fee;
+    const quoteBody = `Payment request · ${data.serviceName} · ${data.hours}h at GHS ${data.rate}/h${addons.length ? ` · Add-ons: ${addons.join(", ")}` : ""} · GHS ${total} to pay${data.notes ? ` — ${data.notes}` : ""}`;
+    const { error: messageError } = await admin.from("messages").insert({
+      thread_id: thread.id,
+      author_id: context.userId,
+      kind: "booking",
+      booking_id: booking.id,
+      body: quoteBody,
+    });
+    if (messageError) {
+      await admin.from("bookings").delete().eq("id", booking.id);
+      throw new Error(`Payment request could not be delivered: ${messageError.message}`);
+    }
+
+    await admin.from("notifications").insert({
+      user_id: thread.specialist_id,
+      title: "A member requested to pay",
+      body: `${data.serviceName} · ${data.hours}h · GHS ${total}. Review and acknowledge so the member can pay into escrow.`,
+      kind: "booking",
+      link: `/messages?thread=${thread.id}`,
+    });
+
+    return { bookingId: booking.id, subtotal, fee, total, feePct };
+  });
+
+/**
  * Specialist asks Ashnight to release a payout that is sitting in escrow.
  *
  * This does not move money — it flags the entry for the control room, so a

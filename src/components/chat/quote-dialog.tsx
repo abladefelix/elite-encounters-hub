@@ -41,18 +41,23 @@ export interface QuoteDraft {
 }
 
 /**
- * Specialist-side payment request. The specialist prices the visit and sends
- * it into the thread; the client taps "Pay now" to move the money into escrow.
+ * In-chat payment request flow.
+ *
+ * - specialist mode: the Doll prices the visit and sends a request to the client.
+ * - client mode: the member scopes the visit using the Doll's rate; the Doll must
+ *   acknowledge before the member can pay into escrow.
  */
 export function QuoteDialog({
-  clientName,
+  mode = "specialist",
+  peerName,
   defaultRate,
   open,
   onOpenChange,
   pending,
   onConfirm,
 }: {
-  clientName: string;
+  mode?: "specialist" | "client";
+  peerName: string;
   defaultRate: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -63,6 +68,7 @@ export function QuoteDialog({
   const { activeServices } = useServiceCatalog();
   const { activeAddons } = useAddons();
   const feePct = platform.platformFeePct;
+  const isClient = mode === "client";
 
   const [serviceId, setServiceId] = useState("");
   const [hours, setHours] = useState("3");
@@ -104,7 +110,7 @@ export function QuoteDialog({
       return;
     }
     if (!Number.isFinite(rateNum) || rateNum < 1) {
-      setError("Enter the hourly rate in GHS.");
+      setError(isClient ? "This Doll hasn't set an hourly rate yet." : "Enter the hourly rate in GHS.");
       return;
     }
     let scheduledForIso: string | null = null;
@@ -135,17 +141,20 @@ export function QuoteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display">Request payment</DialogTitle>
+          <DialogTitle className="font-display">
+            {isClient ? "Request to pay" : "Request payment"}
+          </DialogTitle>
           <DialogDescription>
-            Price the visit for {clientName}. They approve and pay — Ashnight escrow holds the money
-            until the job is confirmed.
+            {isClient
+              ? `Scope the visit for ${peerName}. They confirm first — then you pay into Ashnight escrow.`
+              : `Price the visit for ${peerName}. They approve and pay — Ashnight escrow holds the money until the job is confirmed.`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Service</Label>
-            <Select value={serviceId} onValueChange={setServiceId}>
+            <Select value={serviceId} onValueChange={setServiceId} disabled={isClient && activeServices.length === 0}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose a service" />
               </SelectTrigger>
@@ -185,6 +194,7 @@ export function QuoteDialog({
                 min={1}
                 step={1}
                 value={rate}
+                disabled={isClient}
                 onChange={(event) => setRate(event.target.value)}
               />
             </div>
@@ -228,14 +238,18 @@ export function QuoteDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="quote-notes">Notes for the client (optional)</Label>
+            <Label htmlFor="quote-notes">Notes {isClient ? "for the Doll" : "for the client"} (optional)</Label>
             <Textarea
               id="quote-notes"
               rows={3}
               maxLength={600}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="What's included, what you'll bring, access needs…"
+              placeholder={
+                isClient
+                  ? "Access needs, preferred items, anything the Doll should know…"
+                  : "What's included, what you'll bring, access needs…"
+              }
             />
           </div>
 
@@ -251,18 +265,20 @@ export function QuoteDialog({
               <dd>{money(fee)}</dd>
             </div>
             <div className="flex items-center justify-between font-semibold">
-              <dt>Client pays</dt>
+              <dt>{isClient ? "You pay" : "Client pays"}</dt>
               <dd>{money(total)}</dd>
             </div>
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <dt>You receive after release</dt>
-              <dd>{money(subtotal)}</dd>
-            </div>
+            {isClient ? null : (
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <dt>You receive after release</dt>
+                <dd>{money(subtotal)}</dd>
+              </div>
+            )}
           </dl>
 
           <p className="flex items-start gap-2 text-[11px] text-muted-foreground">
             <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-accent" />
-            Never ask for payment outside Ashnight — escrow is the only protection you and the client
+            Never ask for payment outside Ashnight — escrow is the only protection you and the other member
             have.
           </p>
 
@@ -274,7 +290,7 @@ export function QuoteDialog({
             Cancel
           </Button>
           <Button variant="brass" disabled={pending} onClick={submit}>
-            <Banknote className="size-4" /> Send request
+            <Banknote className="size-4" /> {isClient ? "Request to pay" : "Send request"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -97,6 +97,7 @@ import { REPORT_REASON_LABEL } from "@/lib/reports";
 import { paystackChannel } from "@/lib/paystack";
 import {
   acknowledgeBookingRequest,
+  createClientBookingRequest,
   createSpecialistQuote,
   requestBookingAcknowledgement,
   startBookingCheckout,
@@ -316,6 +317,7 @@ function MessagesInbox({
   const loadGroupBooking = useServerFn(getGroupBookingForThread);
   const respondGroupBooking = useServerFn(respondToGroupBooking);
   const sendQuote = useServerFn(createSpecialistQuote);
+  const sendClientBookingRequest = useServerFn(createClientBookingRequest);
   const giftCheckout = useServerFn(startGiftCheckout);
   const logHit = useLogModerationHit();
   const reports = useReportMutations();
@@ -865,22 +867,35 @@ function MessagesInbox({
     });
   }
 
-  /** Specialist prices the visit; the client pays from the thread. */
+  /** Specialist prices the visit or the member scopes a visit to pay for. */
   async function handleQuote(quote: QuoteDraft) {
     if (!activeThread) return;
     try {
-      const result = await sendQuote({
-        data: {
-          threadId: activeThread.id,
-          serviceId: quote.serviceId,
-          serviceName: quote.serviceName,
-          hours: quote.hours,
-          rate: quote.rate,
-          addons: quote.addons,
-          scheduledForIso: quote.scheduledForIso,
-          notes: quote.notes,
-        },
-      });
+      const result = iAmClient
+        ? await sendClientBookingRequest({
+            data: {
+              threadId: activeThread.id,
+              serviceId: quote.serviceId,
+              serviceName: quote.serviceName,
+              hours: quote.hours,
+              rate: quote.rate,
+              addons: quote.addons,
+              scheduledForIso: quote.scheduledForIso,
+              notes: quote.notes,
+            },
+          })
+        : await sendQuote({
+            data: {
+              threadId: activeThread.id,
+              serviceId: quote.serviceId,
+              serviceName: quote.serviceName,
+              hours: quote.hours,
+              rate: quote.rate,
+              addons: quote.addons,
+              scheduledForIso: quote.scheduledForIso,
+              notes: quote.notes,
+            },
+          });
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["messages", activeThread.id] }),
@@ -889,9 +904,15 @@ function MessagesInbox({
       ]);
 
       setQuoteOpen(false);
-      toast.success("Payment request sent", {
-        description: `${firstName} can pay ${money(result.total)} straight into escrow.`,
-      });
+      if (iAmClient) {
+        toast.success("Request to pay sent", {
+          description: `${firstName} will review it; you can pay ${money(result.total)} into escrow once they acknowledge.`,
+        });
+      } else {
+        toast.success("Payment request sent", {
+          description: `${firstName} can pay ${money(result.total)} straight into escrow.`,
+        });
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Payment request could not be sent");
     }
@@ -1801,60 +1822,57 @@ function MessagesInbox({
 
                         <div className="flex flex-wrap items-center gap-1">
                           {iAmClient ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="Send a cash gift"
-                                  onClick={openGift}
-                                >
-                                  {giftsAllowed ? (
-                                    <GiftIcon className="size-4" />
-                                  ) : (
-                                    <Lock className="size-4 opacity-60" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {giftsAllowed
-                                  ? `Send a cash gift (${roomGifts.length} available in your room)`
-                                  : "Cash gifts are unavailable here"}
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="Request payment"
-                                  onClick={() =>
-                                    bookingsOpen
-                                      ? setQuoteOpen(true)
-                                      : toast("Payment requests are switched off right now.")
-                                  }
-                                >
-                                  {bookingsOpen ? (
-                                    <CediIcon className="size-4" />
-                                  ) : (
-                                    <Lock className="size-4 opacity-60" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {bookingsOpen
-                                  ? `Request payment from ${firstName}`
-                                  : "Payment requests are unavailable right now"}
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-
-
-
-
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Send a cash gift"
+                                    onClick={openGift}
+                                  >
+                                    {giftsAllowed ? (
+                                      <GiftIcon className="size-4" />
+                                    ) : (
+                                      <Lock className="size-4 opacity-60" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {giftsAllowed
+                                    ? `Send a cash gift (${roomGifts.length} available in your room)`
+                                    : "Cash gifts are unavailable here"}
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Request to pay"
+                                    onClick={() =>
+                                      bookingsOpen
+                                        ? setQuoteOpen(true)
+                                        : toast("Payment requests are switched off right now.")
+                                    }
+                                  >
+                                    {bookingsOpen ? (
+                                      <CediIcon className="size-4" />
+                                    ) : (
+                                      <Lock className="size-4 opacity-60" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {bookingsOpen
+                                    ? `Request to pay ${firstName}`
+                                    : "Payment requests are unavailable right now"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </>
+                          ) : null}
                           <Button
                             type="button"
                             variant="ghost"
@@ -1919,7 +1937,8 @@ function MessagesInbox({
         {activeThread ? (
           <>
             <QuoteDialog
-              clientName={firstName}
+              mode={iAmClient ? "client" : "specialist"}
+              peerName={firstName}
               defaultRate={profile?.hourly_rate ?? 0}
               open={quoteOpen}
               onOpenChange={setQuoteOpen}
