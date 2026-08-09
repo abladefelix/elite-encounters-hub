@@ -47,8 +47,13 @@ export interface EscrowSettings {
   holdHours: number;
   /** Timer only starts once the client marks the visit complete. */
   requireClientConfirm: boolean;
-  /** If the client never confirms, start clearing anyway after this many hours. */
+  /** If the client never confirms, act anyway after this many hours. */
   autoConfirmHours: number;
+  /**
+   * What happens when the member never confirms:
+   * `clearing` starts the hold window, `release` deposits the payout straight away.
+   */
+  autoConfirmAction: "clearing" | "release";
   /** Hours after release during which a client may still raise an issue. */
   disputeWindowHours: number;
   /** Hours the trust team has to resolve a dispute (target, shown to admins). */
