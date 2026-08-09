@@ -128,6 +128,7 @@ export interface ServerSettings {
     holdHours?: number;
     requireClientConfirm?: boolean;
     autoConfirmHours?: number;
+    autoConfirmAction?: "clearing" | "release";
     autoReleaseEnabled?: boolean;
     tipsEnabled?: boolean;
     tipFeePct?: number;
@@ -553,7 +554,8 @@ export async function settleDueEscrow(): Promise<{
     };
   }
   const holdHours = settings.escrow.holdHours ?? 24;
-  const autoConfirmHours = settings.escrow.autoConfirmHours ?? 72;
+  const autoConfirmHours = settings.escrow.autoConfirmHours ?? 24;
+  const autoConfirmAction = settings.escrow.autoConfirmAction ?? "release";
   const now = Date.now();
 
   const { data: held } = await admin
@@ -564,16 +566,23 @@ export async function settleDueEscrow(): Promise<{
   for (const row of held ?? []) {
     const paid = row.paid_at ? new Date(row.paid_at).getTime() : now;
     if (now - paid < autoConfirmHours * 3600_000) continue;
-    await admin
-      .from("escrow_entries")
-      .update({
-        state: "clearing",
-        release_at: hoursFromNow(holdHours),
-        admin_note: "No confirmation from the member — clearing started automatically.",
-      })
-      .eq("id", row.id);
+    const patch =
+      autoConfirmAction === "release"
+        ? {
+            state: "released" as const,
+            release_at: null,
+            released_at: new Date().toISOString(),
+            admin_note: `No confirmation from the member after ${autoConfirmHours}h — visit marked complete and payout deposited automatically.`,
+          }
+        : {
+            state: "clearing" as const,
+            release_at: hoursFromNow(holdHours),
+            admin_note: `No confirmation from the member after ${autoConfirmHours}h — visit marked complete and clearing started automatically.`,
+          };
+    await admin.from("escrow_entries").update(patch).eq("id", row.id);
     autoConfirmed += 1;
   }
+
 
   const { data: due } = await admin
     .from("escrow_entries")

@@ -282,11 +282,32 @@ function AdminEscrow() {
             />
             <NumberField
               label="Auto-confirm after (hours)"
-              hint="If the member never confirms, clearing starts anyway."
+              hint="If the member never confirms, the visit is marked complete anyway."
               value={settings.autoConfirmHours}
               min={1}
               onChange={(value) => void setSetting("autoConfirmHours", value)}
             />
+            <div className="space-y-1.5">
+              <Label className="text-sm">Then set escrow to</Label>
+              <Select
+                value={settings.autoConfirmAction ?? "release"}
+                onValueChange={(value) =>
+                  void setSetting("autoConfirmAction", value as "clearing" | "release")
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="release">Released — deposit the payout right away</SelectItem>
+                  <SelectItem value="clearing">Clearing — start the hold window first</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                What happens to the funds once the auto-confirm deadline passes.
+              </p>
+            </div>
+
             <NumberField
               label="Dispute window (hours)"
               hint="How long a member may raise an issue."
