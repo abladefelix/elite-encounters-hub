@@ -297,6 +297,7 @@ function ProfilePage() {
       // Call prefs merge server-side so a stale `extra` snapshot can never wipe
       // freshly uploaded gallery photos or the intro clip.
       await saveMyCallPreferences({ data: calls });
+      await saveMyDocumentDelivery({ data: delivery });
 
       if (isSpecialist) {
         await setSpecialistServices.mutateAsync({ specialistId: user.id, serviceIds });
