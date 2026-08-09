@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   ArrowDownLeft,
-  ArrowUpRight,
   Banknote,
   FileText,
   Loader2,
@@ -127,7 +126,6 @@ function WalletBody({ userId, isSpecialist }: { userId: string; isSpecialist: bo
         { label: "On hold (issues)", value: totals.disputed, icon: ShieldCheck, hint: "Frozen while Ashnight reviews" },
       ]
     : [
-        { label: "Total paid", value: totals.spent, icon: ArrowUpRight, hint: "Bookings, gifts and membership" },
         { label: "Held in escrow", value: totals.holding, icon: Timer, hint: "Released once you confirm the visit" },
         { label: "Refunded to you", value: totals.refunded, icon: ArrowDownLeft, hint: "Returned after a resolved issue" },
       ];
