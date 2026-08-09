@@ -680,3 +680,151 @@ export async function saveDocumentDelivery(
     .eq("id", userId);
   if (saveError) throw new Error(saveError.message);
 }
+
+/* ------------------------------------------------------------ registration */
+
+export interface RegisterFileRequest {
+  avatar?: string | undefined;
+  photos?: string[] | undefined;
+  video?: string | undefined;
+}
+
+export interface RegisterUploadSlot {
+  bucket: "avatars" | "attachments";
+  path: string;
+  token: string;
+  kind: "avatar" | "photo" | "video";
+}
+
+/**
+ * Creates a member account **without ever handing the browser a session**.
+ *
+ * Every Ashnight account is vetted by hand, so a fresh sign-up must not be
+ * signed in — not even for a moment. The account is created here with the
+ * publishable client (so the confirmation email and the `handle_new_user`
+ * trigger behave exactly as before), its session is discarded server-side, and
+ * the browser only gets one-time signed upload slots for the files it picked.
+ */
+export async function registerMember(input: {
+  email: string;
+  password: string;
+  metadata: Record<string, unknown>;
+  files?: RegisterFileRequest | undefined;
+  emailRedirectTo?: string | undefined;
+}) {
+  const { createClient } = await import("@supabase/supabase-js");
+  const url = process.env["SUPABASE_URL"]!;
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+  const auth = createClient<Database>(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: (request, init) => {
+        const headers = new Headers(init?.headers);
+        if (key.startsWith("sb_") && headers.get("Authorization") === `Bearer ${key}`) {
+          headers.delete("Authorization");
+        }
+        headers.set("apikey", key);
+        return fetch(request, { ...init, headers });
+      },
+    },
+  });
+
+  const { data, error } = await auth.auth.signUp({
+    email: input.email.trim().toLowerCase(),
+    password: input.password,
+    options: {
+      data: input.metadata as never,
+      ...(input.emailRedirectTo ? { emailRedirectTo: input.emailRedirectTo } : {}),
+    },
+  });
+  if (error) throw new Error(error.message);
+  // Any session minted for the sign-up dies here; the browser never sees it.
+  await auth.auth.signOut();
+
+  const userId = data.user?.id;
+  const needsEmailConfirmation = !data.user?.email_confirmed_at;
+  if (!userId) return { userId: null, uploads: [] as RegisterUploadSlot[], needsEmailConfirmation };
+
+  const db = await admin();
+  const safe = (name: string) => name.replace(/[^\w.-]+/g, "_").slice(-60);
+  const stamp = Date.now();
+  const uploads: RegisterUploadSlot[] = [];
+
+  const slot = async (bucket: "avatars" | "attachments", path: string, kind: RegisterUploadSlot["kind"]) => {
+    const { data: signed } = await db.storage.from(bucket).createSignedUploadUrl(path);
+    if (signed?.token) uploads.push({ bucket, path, token: signed.token, kind });
+  };
+
+  const avatarPath = input.files?.avatar ? `${userId}/avatar-${stamp}` : null;
+  if (avatarPath) await slot("avatars", avatarPath, "avatar");
+
+  const photoPaths: string[] = [];
+  for (const [index, name] of (input.files?.photos ?? []).entries()) {
+    const path = `${userId}/portfolio/photo-${stamp}-${index}-${safe(name)}`;
+    photoPaths.push(path);
+    await slot("attachments", path, "photo");
+  }
+  let videoPath: string | null = null;
+  if (input.files?.video) {
+    videoPath = `${userId}/portfolio/video-${stamp}-${safe(input.files.video)}`;
+    await slot("attachments", videoPath, "video");
+  }
+
+  // Paths are recorded up front: the member has no session to write them back
+  // with once the uploads finish.
+  if (avatarPath || photoPaths.length || videoPath) {
+    const { data: current } = await db
+      .from("profiles")
+      .select("extra")
+      .eq("id", userId)
+      .maybeSingle();
+    const extra = { ...((current?.extra ?? {}) as Record<string, unknown>) };
+    if (photoPaths.length) extra["portfolio_photos"] = photoPaths;
+    if (videoPath) extra["portfolio_video"] = videoPath;
+    await db
+      .from("profiles")
+      .update({
+        ...(avatarPath ? { avatar_url: avatarPath } : {}),
+        extra: extra as never,
+      })
+      .eq("id", userId);
+  }
+
+  // Welcome note: written by an admin, delivered to the pending inbox so it is
+  // waiting the first time they are let in.
+  try {
+    const { DEFAULT_WELCOME_SETTINGS, renderWelcomeCopy } = await import("./welcome-message");
+    const { DEFAULT_BRANDING } = await import("./branding");
+    const [{ data: settingsRow }, { data: profile }] = await Promise.all([
+      db.from("platform_settings").select("data").eq("id", true).maybeSingle(),
+      db.from("profiles").select("display_name").eq("id", userId).maybeSingle(),
+    ]);
+    const blob = (settingsRow?.data ?? {}) as Record<string, unknown>;
+    const welcome = {
+      ...DEFAULT_WELCOME_SETTINGS,
+      ...((blob["welcome"] as Record<string, unknown> | undefined) ?? {}),
+    } as typeof DEFAULT_WELCOME_SETTINGS;
+    if (welcome.enabled) {
+      const branding = {
+        ...DEFAULT_BRANDING,
+        ...((blob["branding"] as Record<string, unknown> | undefined) ?? {}),
+      };
+      const isSpecialist = input.metadata["role"] === "specialist";
+      const copy = isSpecialist
+        ? { ...DEFAULT_WELCOME_SETTINGS.specialist, ...(welcome.specialist ?? {}) }
+        : { ...DEFAULT_WELCOME_SETTINGS.client, ...(welcome.client ?? {}) };
+      const values = { name: profile?.display_name ?? "there", brand: branding.name };
+      await db.from("notifications").insert({
+        user_id: userId,
+        title: renderWelcomeCopy(copy.title, values),
+        body: renderWelcomeCopy(copy.body, values),
+        kind: "welcome",
+        link: copy.link || "/",
+      });
+    }
+  } catch {
+    /* the account exists; a missing welcome note is not worth an error */
+  }
+
+  return { userId, uploads, needsEmailConfirmation };
+}
