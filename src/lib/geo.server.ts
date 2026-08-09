@@ -85,9 +85,13 @@ async function viaNominatim(lat: number, lng: number): Promise<string> {
   };
   const address = body.address ?? {};
   const label = tidy([
-    address["neighbourhood"] ?? address["suburb"] ?? address["village"],
-    address["city"] ?? address["town"] ?? address["county"],
-    address["state"] ?? address["country"],
+    address["road"] ?? address["residential"] ?? address["amenity"] ?? address["building"],
+    address["neighbourhood"] ??
+      address["quarter"] ??
+      address["hamlet"] ??
+      address["suburb"] ??
+      address["village"],
+    address["city"] ?? address["town"] ?? address["municipality"] ?? address["county"],
   ]);
   return label || (body.display_name ?? "").split(",").slice(0, 3).join(",").trim();
 }
