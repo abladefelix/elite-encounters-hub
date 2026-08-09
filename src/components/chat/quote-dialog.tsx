@@ -27,6 +27,16 @@ import { useRoomSettings } from "@/lib/room-settings";
 import { useServiceCatalog } from "@/lib/service-catalog";
 import { money } from "@/lib/types";
 
+/** Quick duration picks — "Full night" and "All day" are block bookings. */
+const DURATION_PRESETS: { label: string; hours: number }[] = [
+  { label: "2h", hours: 2 },
+  { label: "3h", hours: 3 },
+  { label: "6h", hours: 6 },
+  { label: "Full night · 12h", hours: 12 },
+  { label: "All day · 24h", hours: 24 },
+];
+
+
 export interface QuoteDraft {
   serviceId: string | null;
   serviceName: string;
@@ -188,6 +198,27 @@ export function QuoteDialog({
             ) : null}
           </div>
 
+          <div className="space-y-1.5">
+            <Label>Duration</Label>
+            <div className="flex flex-wrap gap-2">
+              {DURATION_PRESETS.map((preset) => {
+                const active = Number(hours) === preset.hours;
+                return (
+                  <Button
+                    key={preset.label}
+                    type="button"
+                    size="sm"
+                    variant={active ? "default" : "outline"}
+                    className="h-8 rounded-full px-3 text-xs"
+                    onClick={() => setHours(String(preset.hours))}
+                  >
+                    {preset.label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="quote-hours">Hours</Label>
@@ -201,6 +232,7 @@ export function QuoteDialog({
                 onChange={(event) => setHours(event.target.value)}
               />
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="quote-rate">Rate (GHS/hour)</Label>
               <Input
@@ -273,7 +305,10 @@ export function QuoteDialog({
           <dl className="space-y-1 text-sm">
             <div className="flex items-center justify-between">
               <dt className="text-muted-foreground">
-                {Number.isFinite(hoursNum) ? hoursNum : 0}h × {money(Number.isFinite(rateNum) ? rateNum : 0)}/h
+                {DURATION_PRESETS.find((p) => p.hours === hoursNum && p.hours >= 12)?.label.split(" · ")[0] ??
+                  `${Number.isFinite(hoursNum) ? hoursNum : 0}h`}{" "}
+                × {money(Number.isFinite(rateNum) ? rateNum : 0)}/h
+
               </dt>
               <dd>{money(Math.max(0, subtotal - addonsAmount))}</dd>
             </div>
