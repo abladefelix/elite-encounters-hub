@@ -729,6 +729,11 @@ export function AuthPage({
                     <MapPin className="size-4 text-primary" />
                     Location<span className="text-primary">*</span>
                   </div>
+                  {coords && placeName ? (
+                    <p className="text-xs font-medium text-foreground">
+                      You’re in {placeName}
+                    </p>
+                  ) : null}
                   <p className="text-xs text-muted-foreground">
                     {coords
                       ? `Pinned at ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)} — used for "near me" matching.`
