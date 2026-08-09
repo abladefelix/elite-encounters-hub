@@ -770,6 +770,28 @@ export async function registerMember(input: {
     await slot("attachments", videoPath, "video");
   }
 
+  // Location is captured on the sign-up form (device position or typed area);
+  // the applicant has no session, so it is stored here.
+  const lat = input.metadata["latitude"];
+  const lng = input.metadata["longitude"];
+  const label = typeof input.metadata["location_label"] === "string"
+    ? (input.metadata["location_label"] as string).trim()
+    : "";
+  if (typeof lat === "number" && typeof lng === "number") {
+    await db
+      .from("profiles")
+      .update({ latitude: lat, longitude: lng, location_updated_at: new Date().toISOString() })
+      .eq("id", userId);
+  }
+  if (label) {
+    const { data: row } = await db
+      .from("profiles")
+      .select("locality")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!row?.locality) await db.from("profiles").update({ locality: label }).eq("id", userId);
+  }
+
   // Paths are recorded up front: the member has no session to write them back
   // with once the uploads finish.
   if (avatarPath || photoPaths.length || videoPath) {
