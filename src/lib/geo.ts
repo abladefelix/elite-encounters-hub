@@ -89,7 +89,7 @@ export function requestBrowserLocation(): Promise<Coords> {
         return;
       }
 
-      if (error?.code === error.PERMISSION_DENIED) {
+      if (error?.code === GeolocationPositionError.PERMISSION_DENIED) {
         reject(new Error("Location permission was declined — allow it in your browser or device settings."));
         return;
       }
