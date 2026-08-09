@@ -317,6 +317,7 @@ function MessagesInbox({
   const loadGroupBooking = useServerFn(getGroupBookingForThread);
   const respondGroupBooking = useServerFn(respondToGroupBooking);
   const sendQuote = useServerFn(createSpecialistQuote);
+  const sendClientBookingRequest = useServerFn(createClientBookingRequest);
   const giftCheckout = useServerFn(startGiftCheckout);
   const logHit = useLogModerationHit();
   const reports = useReportMutations();
