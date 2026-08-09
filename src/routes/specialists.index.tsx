@@ -274,7 +274,46 @@ function SpecialistsPage() {
           Your room decides who you can book — you can still browse everyone.
         </p>
 
-        <div className="mt-8 grid gap-3 rounded-xl border border-border/70 bg-surface p-4 sm:grid-cols-2 lg:grid-cols-6">
+        {/* Near me — kept above the filters so it's the first thing you see */}
+        <div className="mt-8 flex flex-wrap items-center gap-2 rounded-xl border border-primary/25 bg-panel px-4 py-3">
+          <MapPin className="size-4 text-primary" />
+          <p className="mr-1 text-xs text-muted-foreground">
+            {origin
+              ? `Showing specialists within ${radius} km of you`
+              : "Find specialists closest to you using your device location."}
+          </p>
+          <Button size="sm" variant={origin ? "soft" : "brass"} disabled={locating} onClick={locateMe}>
+            <Crosshair className="size-4" /> {locating ? "Locating…" : origin ? "Update location" : "Near me"}
+          </Button>
+          {origin ? (
+            <>
+              <Select value={String(radius)} onValueChange={(value) => setRadius(Number(value))}>
+                <SelectTrigger className="h-9 w-[130px]">
+                  <SelectValue placeholder="Radius" />
+                </SelectTrigger>
+                <SelectContent>
+                  {NEAR_ME_RADII.map((km) => (
+                    <SelectItem key={km} value={String(km)}>
+                      Within {km} km
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setOrigin(null);
+                  setSort("rating");
+                }}
+              >
+                <X className="size-4" /> Clear
+              </Button>
+            </>
+          ) : null}
+        </div>
+
+        <div className="mt-3 grid gap-3 rounded-xl border border-border/70 bg-surface p-4 sm:grid-cols-2 lg:grid-cols-6">
           <div className="relative lg:col-span-2">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -284,6 +323,7 @@ function SpecialistsPage() {
               className="pl-9"
             />
           </div>
+
 
           <Select value={resultType} onValueChange={(value) => setResultType(value as ResultType)}>
             <SelectTrigger>
@@ -355,44 +395,6 @@ function SpecialistsPage() {
           </Select>
         </div>
 
-        {/* Near me */}
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-surface px-4 py-3">
-          <MapPin className="size-4 text-primary" />
-          <p className="mr-1 text-xs text-muted-foreground">
-            {origin
-              ? `Showing specialists within ${radius} km of you`
-              : "Find specialists closest to you using your device location."}
-          </p>
-          <Button size="sm" variant={origin ? "soft" : "brass"} disabled={locating} onClick={locateMe}>
-            <Crosshair className="size-4" /> {locating ? "Locating…" : origin ? "Update location" : "Search near me"}
-          </Button>
-          {origin ? (
-            <>
-              <Select value={String(radius)} onValueChange={(value) => setRadius(Number(value))}>
-                <SelectTrigger className="h-9 w-[130px]">
-                  <SelectValue placeholder="Radius" />
-                </SelectTrigger>
-                <SelectContent>
-                  {NEAR_ME_RADII.map((km) => (
-                    <SelectItem key={km} value={String(km)}>
-                      Within {km} km
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setOrigin(null);
-                  setSort("rating");
-                }}
-              >
-                <X className="size-4" /> Clear
-              </Button>
-            </>
-          ) : null}
-        </div>
 
 
         {resultType !== "specialists" && visibleGroups.length > 0 ? <section className="mt-8 border-b border-border/70 pb-8">
