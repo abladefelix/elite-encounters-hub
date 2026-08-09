@@ -1873,10 +1873,6 @@ function MessagesInbox({
                               </Tooltip>
                             </>
                           ) : null}
-
-
-
-
                           <Button
                             type="button"
                             variant="ghost"
