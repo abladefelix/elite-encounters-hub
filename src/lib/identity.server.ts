@@ -391,6 +391,40 @@ export async function signInWithIdentifier(
     }
   }
 
+  // Vetting is manual: nobody transacts — or even signs in — before an admin
+  // approves them. Admins themselves are exempt so the control room stays
+  // reachable.
+  const { data: vettingRows } = await client
+    .from("profiles")
+    .select("vetting")
+    .eq("id", data.session.user.id)
+    .maybeSingle();
+  const { data: preRoles } = await client
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", data.session.user.id);
+  const isAdminAccount = (preRoles ?? []).some((row) => row.role === "admin");
+  const vetting = vettingRows?.vetting ?? "pending";
+  if (!isAdminAccount && vetting !== "approved") {
+    await auth.auth.signOut();
+    await logActivity({
+      area: "auth",
+      event: "sign_in_unvetted",
+      severity: "warn",
+      actorId: data.session.user.id,
+      target: vetting,
+      ip: meta.ip ?? "",
+      userAgent: meta.userAgent ?? "",
+    });
+    throw new Error(
+      vetting === "rejected"
+        ? "Your Ashnight application wasn't approved. Contact support if you'd like it reviewed again."
+        : "Your account is still being vetted. An admin reviews every application manually — you'll be able to sign in as soon as it's approved.",
+    );
+  }
+
+
+
 
 
   const { registerSession } = await import("./session-management.server");
