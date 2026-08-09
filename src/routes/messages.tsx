@@ -301,6 +301,22 @@ function MessagesInbox({
     return map;
   }, [peopleQuery.data]);
 
+  /**
+   * Avatars live in a private bucket, so the raw stored path is not loadable by
+   * <img>. Sign every counterpart avatar once and look them up by path.
+   */
+  const avatarItems = useMemo(
+    () =>
+      (peopleQuery.data ?? []).flatMap((person) =>
+        person.avatar_url ? [{ bucket: "avatars" as const, value: person.avatar_url }] : [],
+      ),
+    [peopleQuery.data],
+  );
+  const { data: avatarUrls } = useStoredMedia(avatarItems);
+  const avatarFor = (person: ProfileRow | undefined) =>
+    person?.avatar_url ? avatarUrls?.[person.avatar_url] : undefined;
+
+
   const messagesQuery = useMessages(activeThread?.id);
   const messages = useMemo(() => messagesQuery.data ?? [], [messagesQuery.data]);
   const sendMessage = useSendMessage();
