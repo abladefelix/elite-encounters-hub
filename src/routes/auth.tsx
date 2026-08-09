@@ -736,7 +736,7 @@ export function AuthPage({
                   ) : null}
                   <p className="text-xs text-muted-foreground">
                     {coords
-                      ? `Pinned at ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)} — used for "near me" matching.`
+                      ? `Pinned at ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}${coords.accuracy ? ` · accurate to about ${Math.round(coords.accuracy)} m` : ""} — used for "near me" matching.`
                       : "Turn on location so we can match you with the closest specialists, or type your town or area."}
                   </p>
                   <div className="flex flex-wrap gap-2">

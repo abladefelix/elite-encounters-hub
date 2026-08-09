@@ -9,6 +9,8 @@
 export interface Coords {
   lat: number;
   lng: number;
+  /** Browser-reported 68% confidence radius in metres. */
+  accuracy?: number;
 }
 
 /** Radius options (km) offered in the directory's "Near me" control. */
@@ -55,25 +57,64 @@ export function formatDistance(km: number): string {
   return `${Math.round(km)} km away`;
 }
 
-/** Wraps the browser geolocation API in a promise with a readable error. */
+/**
+ * Waits briefly for GPS to warm up and returns the most accurate reading.
+ * Mobile browsers often emit a coarse network position first, followed by a
+ * much better GPS fix; accepting the first reading can put someone kilometres
+ * away from where they actually are.
+ */
 export function requestBrowserLocation(): Promise<Coords> {
   return new Promise((resolve, reject) => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       reject(new Error("This device can't share a location."));
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (position) =>
-        resolve({ lat: position.coords.latitude, lng: position.coords.longitude }),
-      (error) =>
+
+    let best: GeolocationPosition | null = null;
+    let settled = false;
+    let watchId: number | null = null;
+
+    const finish = (error?: GeolocationPositionError) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+
+      if (best && best.coords.accuracy <= 1_000) {
+        resolve({
+          lat: best.coords.latitude,
+          lng: best.coords.longitude,
+          accuracy: best.coords.accuracy,
+        });
+        return;
+      }
+
+      if (error?.code === GeolocationPositionError.PERMISSION_DENIED) {
+        reject(new Error("Location permission was declined — allow it in your browser or device settings."));
+        return;
+      }
+      if (best) {
         reject(
           new Error(
-            error.code === error.PERMISSION_DENIED
-              ? "Location permission was declined — allow it in your browser or device settings."
-              : "We couldn't read your location. Try again in a moment.",
+            "Your device only provided an approximate location. Turn on Precise location for Ashnight in your phone settings, then try again outdoors or near a window.",
           ),
-        ),
-      { enableHighAccuracy: true, timeout: 20_000, maximumAge: 0 },
+        );
+        return;
+      }
+      reject(new Error("We couldn't read your location. Try again outdoors or near a window."));
+    };
+
+    const timeoutId = window.setTimeout(() => finish(), 15_000);
+    watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        if (!best || position.coords.accuracy < best.coords.accuracy) best = position;
+        // A fix within 50 metres is precise enough for neighbourhood naming.
+        if (position.coords.accuracy <= 50) finish();
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) finish(error);
+      },
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 },
     );
   });
 }
