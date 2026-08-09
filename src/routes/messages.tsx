@@ -519,6 +519,10 @@ function MessagesInbox({
   const messageListRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!activeThread?.id) return;
+    // Wait for the thread's messages to actually be in the DOM: pinning against
+    // an empty list used to burn the "first open" flag, after which every later
+    // batch only got a smooth nudge that the still-growing list swallowed.
+    if (visibleMessages.length === 0) return;
     const first = jumpedThreadRef.current !== activeThread.id;
     if (first) jumpedThreadRef.current = activeThread.id;
 
@@ -540,8 +544,16 @@ function MessagesInbox({
       bottomRef.current?.scrollIntoView({ behavior, block: "end" });
     };
 
+    const nearBottom = () => {
+      const viewport = viewportOf();
+      if (!viewport) return true;
+      return viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 240;
+    };
+
     if (!first) {
-      jump("smooth");
+      // A new message while the member is reading older history shouldn't yank
+      // the view; otherwise glide down to it.
+      if (nearBottom()) jump("smooth");
       return;
     }
 
@@ -579,6 +591,7 @@ function MessagesInbox({
       observer?.disconnect();
     };
   }, [activeThread?.id, visibleMessages.length]);
+
 
 
 
