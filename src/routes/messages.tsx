@@ -1635,7 +1635,7 @@ function MessagesInbox({
                           ) : null}
                           {iAmClient && groupBooking.status === "accepted" && !groupBooking.paid_at ? (
                             <Button size="sm" variant="brass" disabled={!bookingsOpen || Boolean(groupAction)} onClick={() => void payGroupBooking()}>
-                              {groupAction === "pay" ? <Loader2 className="size-3.5 animate-spin" /> : <CediExchangeIcon className="size-3.5" />} Pay {money(groupBooking.total)}
+                              {groupAction === "pay" ? <Loader2 className="size-3.5 animate-spin" /> : <CediIcon className="size-3.5" />} Pay {money(groupBooking.total)}
                             </Button>
                           ) : null}
                         </div>
@@ -1772,7 +1772,7 @@ function MessagesInbox({
                         >
                           {bookingsOpen ? (
                             <>
-                              <CediExchangeIcon className="size-4" /> Request payment for a job
+                              <CediIcon className="size-4" /> Request payment for a job
                             </>
                           ) : (
                             <>
@@ -1896,7 +1896,7 @@ function MessagesInbox({
                                     onClick={openRequest}
                                   >
                                     {bookingsOpen ? (
-                                      <CediExchangeIcon className="size-4" />
+                                      <CediIcon className="size-4" />
                                     ) : (
                                       <Lock className="size-4 opacity-60" />
                                     )}
@@ -2444,7 +2444,7 @@ function MessageBubble({
                 {paying ? (
                   <Loader2 className="size-3.5 animate-spin" />
                 ) : (
-                  <CediExchangeIcon className="size-3.5" />
+                  <CediIcon className="size-3.5" />
                 )}
                 {dueWithFee ? `Pay ${money(dueWithFee)} into escrow` : "Pay into escrow"}
               </Button>
