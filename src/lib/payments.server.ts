@@ -287,9 +287,10 @@ export async function finalizeReference(
 
   if (entry) {
     if (entry.state !== "pending") return { applied: false, detail: "Already applied" };
-    const escrowed =
-      (settings.escrow.escrowEnabled ?? true) &&
-      (entry.kind === "booking" || (settings.escrow.tipsEscrowed ?? false));
+    // Cash gifts never sit in escrow — they belong to the specialist straight
+    // away. Only bookings can be held.
+    const escrowed = (settings.escrow.escrowEnabled ?? true) && entry.kind === "booking";
+
     const holdHours = entry.hold_hours || (settings.escrow.holdHours ?? 24);
     const now = new Date().toISOString();
 
