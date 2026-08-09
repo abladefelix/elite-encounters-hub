@@ -561,35 +561,37 @@ function ProfilePage() {
         </div>
 
         {/* invoices & receipts delivery */}
-        <Card className="mt-8 border-border/70 bg-panel p-5 sm:p-6">
-          <div className="flex items-start gap-3">
-            <IconContainer icon={ReceiptText} />
-            <div className="min-w-0">
-              <p className="font-display text-base font-semibold">Invoices & receipts</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Every document is always kept in your Billing tab. Choose here whether we also send
-                it to your email, your WhatsApp, or both.
-              </p>
+        {deliverySettings.enabled ? (
+          <Card className="mt-8 border-border/70 bg-panel p-5 sm:p-6">
+            <div className="flex items-start gap-3">
+              <IconContainer icon={ReceiptText} />
+              <div className="min-w-0">
+                <p className="font-display text-base font-semibold">Invoices & receipts</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Every document is always kept in your Billing tab. Choose here whether we also
+                  send it to your email, your WhatsApp, or both.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="mt-4 space-y-3">
-            <CallToggle
-              label="Send to my email"
-              hint="Goes to the address on your account."
-              checked={delivery.email}
-              onChange={(flag) => setDelivery((prev) => ({ ...prev, email: flag }))}
-            />
-            <CallToggle
-              label="Send to my WhatsApp"
-              hint={
-                deliverySettings.whatsappEnabled
-                  ? "Delivered as a WhatsApp message with the document summary."
-                  : "WhatsApp delivery is not switched on yet — we'll email you meanwhile."
-              }
-              checked={delivery.whatsapp}
-              onChange={(flag) => setDelivery((prev) => ({ ...prev, whatsapp: flag }))}
-            />
+            <div className="mt-4 space-y-3">
+              {deliverySettings.emailEnabled ? (
+                <CallToggle
+                  label="Send to my email"
+                  hint="Goes to the address on your account."
+                  checked={delivery.email}
+                  onChange={(flag) => setDelivery((prev) => ({ ...prev, email: flag }))}
+                />
+              ) : null}
+              {deliverySettings.whatsappEnabled ? (
+                <CallToggle
+                  label="Send to my WhatsApp"
+                  hint="Delivered as a WhatsApp message with the document summary."
+                  checked={delivery.whatsapp}
+                  onChange={(flag) => setDelivery((prev) => ({ ...prev, whatsapp: flag }))}
+                />
+              ) : null}
+
             {delivery.whatsapp ? (
               <div>
                 <Label htmlFor="whatsapp-number">WhatsApp number</Label>
