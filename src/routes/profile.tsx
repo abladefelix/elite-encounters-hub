@@ -130,6 +130,8 @@ function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [calls, setCalls] = useState<CallPreferences>(DEFAULT_CALL_PREFERENCES);
+  const [delivery, setDelivery] = useState<DocumentDeliveryPreferences>(DEFAULT_DOCUMENT_DELIVERY);
+  const { value: deliverySettings } = useDeliverySettings();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
