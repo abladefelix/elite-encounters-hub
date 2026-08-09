@@ -66,6 +66,10 @@ export function describeDelivery(prefs: DocumentDeliveryPreferences): string {
 /* ------------------------------------------------------- admin-side settings */
 
 export interface DeliverySettings {
+  /** Master switch for sending paperwork outside the app at all. */
+  enabled: boolean;
+  /** Master switch for the email channel. */
+  emailEnabled: boolean;
   /** Master switch for the WhatsApp channel. */
   whatsappEnabled: boolean;
   /** Fall back to email when a WhatsApp send is not possible. */
@@ -75,6 +79,8 @@ export interface DeliverySettings {
 }
 
 export const DEFAULT_DELIVERY_SETTINGS: DeliverySettings = {
+  enabled: true,
+  emailEnabled: true,
   whatsappEnabled: false,
   whatsappFallbackToEmail: true,
   whatsappSenderName: "Ashnight",

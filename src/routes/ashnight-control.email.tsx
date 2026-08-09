@@ -294,20 +294,58 @@ function WhatsAppDeliveryCard() {
           <MessageCircle className="size-4" />
         </span>
         <div>
-          <h2 className="font-display text-lg">WhatsApp paperwork</h2>
+          <h2 className="font-display text-lg">Invoice &amp; receipt delivery</h2>
           <p className="text-xs text-muted-foreground">
-            Members choose email, WhatsApp or both for invoices and receipts on their profile.
+            Members choose email, WhatsApp or both for invoices and receipts on their profile. Only
+            the channels you switch on here are offered to them.
           </p>
         </div>
-        <Badge className="ml-auto" variant={ready ? "default" : "secondary"}>
-          {ready ? "credentials set" : "credentials missing"}
+        <Badge className="ml-auto" variant={value.enabled ? "default" : "secondary"}>
+          {value.enabled ? "on" : "off"}
         </Badge>
       </div>
 
       <div className="mt-4 space-y-4">
         <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
           <div>
-            <p className="text-sm font-medium">Send documents over WhatsApp</p>
+            <p className="text-sm font-medium">Send paperwork outside the app</p>
+            <p className="text-xs text-muted-foreground">
+              Master switch. When off, invoices and receipts stay in the member&apos;s Billing tab
+              only and nothing is emailed or messaged.
+            </p>
+          </div>
+          <Switch
+            checked={value.enabled}
+            disabled={loading || busy}
+            aria-label="Enable document delivery"
+            onCheckedChange={(checked) => void update({ enabled: checked })}
+          />
+        </div>
+
+        <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+          <div>
+            <p className="text-sm font-medium">Email channel</p>
+            <p className="text-xs text-muted-foreground">
+              Sends from the verified sender domain above. Needs the domain set up before mail can
+              leave.
+            </p>
+          </div>
+          <Switch
+            checked={value.emailEnabled}
+            disabled={loading || busy || !value.enabled}
+            aria-label="Enable email delivery"
+            onCheckedChange={(checked) => void update({ emailEnabled: checked })}
+          />
+        </div>
+
+        <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium">WhatsApp channel</p>
+              <Badge variant={ready ? "default" : "secondary"}>
+                {ready ? "credentials set" : "credentials missing"}
+              </Badge>
+            </div>
             <p className="text-xs text-muted-foreground">
               Uses the WhatsApp Cloud API credentials in Settings → Integration vault
               (whatsapp_phone_number_id and whatsapp_access_token).
@@ -315,7 +353,7 @@ function WhatsAppDeliveryCard() {
           </div>
           <Switch
             checked={value.whatsappEnabled}
-            disabled={loading || busy}
+            disabled={loading || busy || !value.enabled}
             aria-label="Enable WhatsApp delivery"
             onCheckedChange={(checked) => void update({ whatsappEnabled: checked })}
           />
@@ -331,7 +369,7 @@ function WhatsAppDeliveryCard() {
           </div>
           <Switch
             checked={value.whatsappFallbackToEmail}
-            disabled={loading || busy}
+            disabled={loading || busy || !value.enabled}
             aria-label="Fall back to email"
             onCheckedChange={(checked) => void update({ whatsappFallbackToEmail: checked })}
           />
