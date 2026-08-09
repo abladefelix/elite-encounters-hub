@@ -547,25 +547,35 @@ function MessagesInbox({
 
     jump("auto");
     const frame = requestAnimationFrame(() => jump("auto"));
-    const timers = [80, 250, 600].map((delay) =>
+    const timers = [50, 120, 250, 450, 700, 1000, 1500, 2200, 3000, 4000].map((delay) =>
       window.setTimeout(() => jump("auto"), delay),
     );
 
     // Images, videos and payment cards keep growing after the first paint, which
     // pushes the newest message back out of view. Stay pinned while the thread
-    // settles instead of scrolling once and hoping the height is final.
+    // settles instead of scrolling once and hoping the height is final. On the
+    // native shell the web view also resizes after mount (safe areas, keyboard
+    // insets), so watch the scroll viewport as well and keep the window wide.
     let observer: ResizeObserver | undefined;
     const node = messageListRef.current;
-    if (node && typeof ResizeObserver !== "undefined") {
+    const viewport = viewportOf();
+    if (typeof ResizeObserver !== "undefined") {
       observer = new ResizeObserver(() => jump("auto"));
-      observer.observe(node);
+      if (node) observer.observe(node);
+      if (viewport) observer.observe(viewport);
     }
-    const stop = window.setTimeout(() => observer?.disconnect(), 2500);
+    // Late-loading media fires load/error after layout — re-pin on each.
+    const onMediaLoad = () => jump("auto");
+    node?.addEventListener("load", onMediaLoad, true);
+    node?.addEventListener("loadeddata", onMediaLoad, true);
+    const stop = window.setTimeout(() => observer?.disconnect(), 5000);
 
     return () => {
       cancelAnimationFrame(frame);
       timers.forEach((timer) => window.clearTimeout(timer));
       window.clearTimeout(stop);
+      node?.removeEventListener("load", onMediaLoad, true);
+      node?.removeEventListener("loadeddata", onMediaLoad, true);
       observer?.disconnect();
     };
   }, [activeThread?.id, visibleMessages.length]);
