@@ -1229,14 +1229,6 @@ function MessagesInbox({
     setGiftOpen(true);
   }
 
-  function openRequest() {
-    if (!bookingsOpen) {
-      toast("Booking requests are paused by Ashnight right now.");
-      return;
-    }
-    setRequestOpen(true);
-  }
-
   return (
     <TooltipProvider>
       <div
