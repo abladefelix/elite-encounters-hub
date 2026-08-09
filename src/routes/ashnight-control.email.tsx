@@ -255,7 +255,105 @@ function AdminEmail() {
         </div>
       </Card>
 
+      <WhatsAppDeliveryCard />
+
       <AdminAccountCard />
     </div>
   );
 }
+
+/** Control room card for the WhatsApp channel members can pick in their profile. */
+function WhatsAppDeliveryCard() {
+  const { value, save, loading } = useDeliverySettings();
+  const keys = useIntegrationKeys();
+  const [busy, setBusy] = useState(false);
+
+  const rows = keys.data ?? [];
+  const hasPhoneId = rows.some((row) => row.key === "whatsapp_phone_number_id" && row.value);
+  const hasToken = rows.some((row) => row.key === "whatsapp_access_token" && row.value);
+  const ready = hasPhoneId && hasToken;
+
+  async function update(patch: Partial<typeof value>) {
+    setBusy(true);
+    try {
+      await save({ ...value, ...patch });
+      toast.success("Delivery settings saved.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-center gap-2">
+        <span className="icon-box">
+          <MessageCircle className="size-4" />
+        </span>
+        <div>
+          <h2 className="font-display text-lg">WhatsApp paperwork</h2>
+          <p className="text-xs text-muted-foreground">
+            Members choose email, WhatsApp or both for invoices and receipts on their profile.
+          </p>
+        </div>
+        <Badge className="ml-auto" variant={ready ? "default" : "secondary"}>
+          {ready ? "credentials set" : "credentials missing"}
+        </Badge>
+      </div>
+
+      <div className="mt-4 space-y-4">
+        <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+          <div>
+            <p className="text-sm font-medium">Send documents over WhatsApp</p>
+            <p className="text-xs text-muted-foreground">
+              Uses the WhatsApp Cloud API credentials in Settings → Integration vault
+              (whatsapp_phone_number_id and whatsapp_access_token).
+            </p>
+          </div>
+          <Switch
+            checked={value.whatsappEnabled}
+            disabled={loading || busy}
+            aria-label="Enable WhatsApp delivery"
+            onCheckedChange={(checked) => void update({ whatsappEnabled: checked })}
+          />
+        </div>
+
+        <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+          <div>
+            <p className="text-sm font-medium">Fall back to email</p>
+            <p className="text-xs text-muted-foreground">
+              If a WhatsApp send is not possible, email the document instead so the member always
+              gets it.
+            </p>
+          </div>
+          <Switch
+            checked={value.whatsappFallbackToEmail}
+            disabled={loading || busy}
+            aria-label="Fall back to email"
+            onCheckedChange={(checked) => void update({ whatsappFallbackToEmail: checked })}
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="whatsapp-sender">Sender name in the message</Label>
+          <Input
+            id="whatsapp-sender"
+            className="mt-2"
+            value={value.whatsappSenderName}
+            disabled={loading || busy}
+            onChange={(event) => void update({ whatsappSenderName: event.target.value })}
+          />
+        </div>
+
+        {!ready ? (
+          <p className="text-xs text-muted-foreground">
+            Add the WhatsApp Cloud API phone number ID and access token in the integration vault to
+            start sending. Until then WhatsApp choices fall back to email.
+          </p>
+        ) : null}
+      </div>
+    </Card>
+  );
+}
+
