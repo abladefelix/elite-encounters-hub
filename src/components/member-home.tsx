@@ -158,13 +158,13 @@ function QuickActions({ isClient }: { isClient: boolean }) {
         { to: "/messages" as const, icon: MessageCircle, label: "Messages" },
         { to: "/specialists" as const, icon: Sparkles, label: "Specialists" },
         { to: "/wallet" as const, icon: Wallet, label: "Money" },
-        { to: "/support" as const, icon: User, label: "Support" },
+        { to: "/support" as const, icon: User, label: "Support", search: { tab: "complaints" } },
       ]
     : [
         { to: "/messages" as const, icon: MessageCircle, label: "Messages" },
         { to: "/wallet" as const, icon: Banknote, label: "Earnings" },
         { to: "/profile" as const, icon: User, label: "Profile" },
-        { to: "/support" as const, icon: MessageSquare, label: "Support" },
+        { to: "/support" as const, icon: MessageSquare, label: "Support", search: { tab: "complaints" } },
       ];
 
   return (
@@ -173,6 +173,7 @@ function QuickActions({ isClient }: { isClient: boolean }) {
         <Link
           key={action.to}
           to={action.to}
+          {...(action.search ? { search: action.search } : {})}
           className="flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-background/40 p-3 text-center transition-colors hover:border-primary/30 hover:bg-background/70"
         >
           <action.icon className="size-5 text-primary" />
