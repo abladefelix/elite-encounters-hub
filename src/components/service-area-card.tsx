@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useUpdateProfile } from "@/lib/queries";
 import { requestBrowserLocation } from "@/lib/geo";
+import { lookupPlaceName } from "@/lib/geo.functions";
 
 /**
  * Lets a member pin their working location from their own device so clients can
