@@ -1822,56 +1822,57 @@ function MessagesInbox({
 
                         <div className="flex flex-wrap items-center gap-1">
                           {iAmClient ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="Send a cash gift"
-                                  onClick={openGift}
-                                >
-                                  {giftsAllowed ? (
-                                    <GiftIcon className="size-4" />
-                                  ) : (
-                                    <Lock className="size-4 opacity-60" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {giftsAllowed
-                                  ? `Send a cash gift (${roomGifts.length} available in your room)`
-                                  : "Cash gifts are unavailable here"}
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="Request payment"
-                                  onClick={() =>
-                                    bookingsOpen
-                                      ? setQuoteOpen(true)
-                                      : toast("Payment requests are switched off right now.")
-                                  }
-                                >
-                                  {bookingsOpen ? (
-                                    <CediIcon className="size-4" />
-                                  ) : (
-                                    <Lock className="size-4 opacity-60" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {bookingsOpen
-                                  ? `Request payment from ${firstName}`
-                                  : "Payment requests are unavailable right now"}
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Send a cash gift"
+                                    onClick={openGift}
+                                  >
+                                    {giftsAllowed ? (
+                                      <GiftIcon className="size-4" />
+                                    ) : (
+                                      <Lock className="size-4 opacity-60" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {giftsAllowed
+                                    ? `Send a cash gift (${roomGifts.length} available in your room)`
+                                    : "Cash gifts are unavailable here"}
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Request to pay"
+                                    onClick={() =>
+                                      bookingsOpen
+                                        ? setQuoteOpen(true)
+                                        : toast("Payment requests are switched off right now.")
+                                    }
+                                  >
+                                    {bookingsOpen ? (
+                                      <CediIcon className="size-4" />
+                                    ) : (
+                                      <Lock className="size-4 opacity-60" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {bookingsOpen
+                                    ? `Request to pay ${firstName}`
+                                    : "Payment requests are unavailable right now"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </>
+                          ) : null}
 
 
 
