@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { Info, Loader2, Mail, ShieldCheck } from "lucide-react";
+import { Crosshair, Info, Loader2, Mail, MapPin, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -27,6 +27,7 @@ import { useBranding } from "@/lib/branding";
 import { CaptchaField } from "@/components/captcha-field";
 import { useCaptcha } from "@/lib/captcha";
 import { verifyAuthCaptcha } from "@/lib/captcha.functions";
+import { requestBrowserLocation, type Coords } from "@/lib/geo";
 
 /** Only same-origin relative paths are ever used as a post-login destination. */
 function safeNext(value: unknown) {
@@ -121,6 +122,11 @@ export function AuthPage({
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
   const [awaitingVetting, setAwaitingVetting] = useState(false);
+  // Location is mandatory at sign-up: either the device position, or the area
+  // typed by hand when the member declines the permission prompt.
+  const [coords, setCoords] = useState<Coords | null>(null);
+  const [locationLabel, setLocationLabel] = useState("");
+  const [locating, setLocating] = useState(false);
 
   const captcha = useCaptcha();
   const [signInToken, setSignInToken] = useState("");
@@ -236,6 +242,22 @@ export function AuthPage({
     }
   }
 
+  /** Turns on device location for the sign-up form. */
+  async function useMyLocation() {
+    setLocating(true);
+    try {
+      const point = await requestBrowserLocation();
+      setCoords(point);
+      toast.success("Location captured.");
+    } catch (error) {
+      toast.error(readableError(error, "We couldn't read your location."), {
+        description: "You can type your town or area instead.",
+      });
+    } finally {
+      setLocating(false);
+    }
+  }
+
   /** Turns the configured answers into auth metadata the profile trigger reads. */
   function buildMetadata() {
     const text = (key: string) =>
@@ -267,6 +289,8 @@ export function AuthPage({
       extra,
       accepted_terms: acceptTerms || !config.legal.requireTerms ? "true" : "false",
       accepted_privacy: acceptPrivacy || !config.legal.requirePrivacy ? "true" : "false",
+      ...(coords ? { latitude: coords.lat, longitude: coords.lng } : {}),
+      location_label: locationLabel.trim(),
     };
   }
 
@@ -319,6 +343,12 @@ export function AuthPage({
     }
     if (password.length < 8) {
       toast.error("Choose a password with at least 8 characters.");
+      return;
+    }
+    if (!coords && locationLabel.trim().length < 3) {
+      toast.error("Your location is required.", {
+        description: "Turn on location, or type the town or area you're in.",
+      });
       return;
     }
 
@@ -677,6 +707,39 @@ export function AuthPage({
                     onReject={(message) => toast.error(message)}
                   />
                 ) : null}
+
+                <div className="space-y-3 rounded-lg border border-primary/25 bg-secondary/40 p-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <MapPin className="size-4 text-primary" />
+                    Location<span className="text-primary">*</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {coords
+                      ? `Pinned at ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)} — used for "near me" matching.`
+                      : "Turn on location so we can match you with the closest specialists, or type your town or area."}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={coords ? "soft" : "brass"}
+                      disabled={locating}
+                      onClick={useMyLocation}
+                    >
+                      <Crosshair className="size-4" />
+                      {locating ? "Locating…" : coords ? "Update location" : "Turn on location"}
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-location">Town or area</Label>
+                    <Input
+                      id="signup-location"
+                      value={locationLabel}
+                      placeholder="e.g. East Legon, Accra"
+                      onChange={(event) => setLocationLabel(event.target.value)}
+                    />
+                  </div>
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">
