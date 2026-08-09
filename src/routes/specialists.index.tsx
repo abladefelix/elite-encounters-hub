@@ -114,8 +114,27 @@ function SpecialistsPage() {
   const [availability, setAvailability] = useState<"all" | "online" | "verified">("all");
   const [resultType, setResultType] = useState<ResultType>("all");
   const [selectedGroup, setSelectedGroup] = useState<BookableGroup | null>(null);
+  // "Near me": the member's own device position plus the radius they accept.
+  const [origin, setOrigin] = useState<Coords | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [radius, setRadius] = useState<number>(10);
   const teamScroller = useRef<HTMLDivElement>(null);
   const listGroups = useServerFn(listBookableGroups);
+
+  async function locateMe() {
+    setLocating(true);
+    try {
+      const coords = await requestBrowserLocation();
+      setOrigin(coords);
+      setSort("distance");
+      toast.success("Showing specialists closest to you first.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't read your location.");
+    } finally {
+      setLocating(false);
+    }
+  }
+
 
   // A specialist never browses the roster — they only meet a client once that
   // client opens a thread with them.
