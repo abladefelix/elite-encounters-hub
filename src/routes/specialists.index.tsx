@@ -431,13 +431,23 @@ function SpecialistsPage() {
               </div>
             ) : (
               <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-                {visible.map((specialist) => (
-                  <SpecialistTile
-                    key={specialist.id}
-                    specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
-                  />
-                ))}
+                {visible.map((specialist) => {
+                  const away = distances.get(specialist.id);
+                  return (
+                    <div key={specialist.id}>
+                      <SpecialistTile
+                        specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
+                      />
+                      {away !== undefined ? (
+                        <p className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <MapPin className="size-3" /> {formatDistance(away)}
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
+
             )}
 
             {rowsLayout ? null : <RosterPagination
