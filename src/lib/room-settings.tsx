@@ -335,13 +335,14 @@ function sanitizeModeration(value: unknown): ModerationSettings {
     "blockPhoneNumbers",
     "blockContactSharing",
     "flaggedWordsEnabled",
+    "scanImages",
     "notifyMember",
     "logHits",
   ] as const) {
     if (typeof record[key] === "boolean") next[key] = record[key] as boolean;
   }
 
-  for (const key of ["phoneAction", "contactAction", "flaggedWordsAction"] as const) {
+  for (const key of ["phoneAction", "contactAction", "flaggedWordsAction", "imageAction"] as const) {
     const action = record[key];
     if (action === "warn" || action === "mask" || action === "block") next[key] = action;
   }

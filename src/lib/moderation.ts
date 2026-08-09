@@ -38,6 +38,12 @@ export interface ModerationSettings {
   /** Detect and act on emails, links and social handles. */
   blockContactSharing: boolean;
   contactAction: ModerationAction;
+  /**
+   * Run shared photos through a vision scan, so a business card, a WhatsApp
+   * screenshot or a scribbled momo number is caught the same way typed text is.
+   */
+  scanImages: boolean;
+  imageAction: ModerationAction;
   /** Act on the flagged-word list below. */
   flaggedWordsEnabled: boolean;
   flaggedWordsAction: ModerationAction;
@@ -67,6 +73,8 @@ export const DEFAULT_MODERATION_SETTINGS: ModerationSettings = {
   phoneAction: "block",
   blockContactSharing: true,
   contactAction: "mask",
+  scanImages: true,
+  imageAction: "block",
   flaggedWordsEnabled: true,
   flaggedWordsAction: "warn",
   flaggedWords: DEFAULT_FLAGGED_WORDS,
@@ -77,7 +85,7 @@ export const DEFAULT_MODERATION_SETTINGS: ModerationSettings = {
 
 /* ----------------------------------------------------------------- detection */
 
-export type FindingKind = "phone" | "email" | "link" | "handle" | "word";
+export type FindingKind = "phone" | "email" | "link" | "handle" | "word" | "image";
 
 export interface Finding {
   kind: FindingKind;
@@ -92,6 +100,7 @@ export const FINDING_LABEL: Record<FindingKind, string> = {
   link: "External link",
   handle: "Social handle",
   word: "Flagged word",
+  image: "Image content",
 };
 
 const EMAIL = /[\w.+-]+\s?(?:@|\(at\)|\[at\]|\sat\s)\s?[\w-]+(?:\.[\w-]{2,})+/gi;

@@ -164,6 +164,23 @@ function AdminModeration() {
               />
             </div>
           </Row>
+          <Row
+            label="Scan shared photos"
+            hint="Reads pictures for phone numbers, momo details, QR codes and off-app arrangements."
+          >
+            <div className="flex items-center gap-3">
+              <ActionSelect
+                value={moderation.imageAction}
+                onChange={(value) => setModerationField("imageAction", value)}
+                disabled={!moderation.scanImages}
+              />
+              <Switch
+                checked={moderation.scanImages}
+                onCheckedChange={(value) => setModerationField("scanImages", value)}
+                aria-label="Scan shared photos"
+              />
+            </div>
+          </Row>
           <Row label="Flagged words" hint="Act on the word list below.">
             <div className="flex items-center gap-3">
               <ActionSelect
