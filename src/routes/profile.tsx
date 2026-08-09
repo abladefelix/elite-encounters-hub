@@ -33,6 +33,7 @@ import {
 } from "@/lib/document-delivery";
 import { ReceiptText } from "lucide-react";
 import { PortfolioManager } from "@/components/portfolio-manager";
+import { ServiceAreaCard } from "@/components/service-area-card";
 
 
 import { useFeatureFlags } from "@/lib/feature-flags";
