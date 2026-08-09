@@ -32,14 +32,14 @@ export const COPY_GROUPS = [
     keys: [
       {
         key: "specialist",
-        label: "Specialist (singular)",
-        value: "Specialist",
+        label: "Doll (singular)",
+        value: "Doll",
         usedIn: ["Specialist profile page", "Chat header", "Booking & quote dialogs", "Wallet"],
       },
       {
         key: "specialists",
-        label: "Specialists (plural)",
-        value: "Specialists",
+        label: "Dolls (plural)",
+        value: "Dolls",
         usedIn: ["Header nav", "Mobile tab bar", "Directory page title", "Home page"],
       },
       {
@@ -118,8 +118,8 @@ export const COPY_GROUPS = [
     keys: [
       {
         key: "nav.specialists",
-        label: "Browse specialists link",
-        value: "Specialists",
+        label: "Browse dolls link",
+        value: "Dolls",
         usedIn: ["Header nav (desktop)", "Mobile menu", "Mobile tab bar"],
       },
       {

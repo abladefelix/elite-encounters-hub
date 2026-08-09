@@ -53,6 +53,41 @@ export interface PhraseRule {
   excludeSelectors: string[];
 }
 
+/**
+ * Built-in wording the platform always speaks, applied before any admin rule.
+ *
+ * The people who deliver the work are called "Dolls" everywhere in the product,
+ * while the code, database and API keep the older `specialist` naming. Rewriting
+ * at render time keeps the two in step without a mass rename. Plural first so
+ * "Specialists" never resolves to "Dolls" via the singular rule.
+ */
+export const BASE_PHRASE_RULES: PhraseRule[] = [
+  {
+    id: "base-dolls-plural",
+    find: "specialists",
+    replace: "dolls",
+    matchCase: false,
+    wholeWord: true,
+    enabled: true,
+    scope: "everywhere",
+    paths: [],
+    selectors: [],
+    excludeSelectors: [],
+  },
+  {
+    id: "base-dolls-singular",
+    find: "specialist",
+    replace: "doll",
+    matchCase: false,
+    wholeWord: true,
+    enabled: true,
+    scope: "everywhere",
+    paths: [],
+    selectors: [],
+    excludeSelectors: [],
+  },
+];
+
 export function newPhraseRule(): PhraseRule {
   return {
     id: `rule-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
@@ -258,7 +293,10 @@ function shouldSkip(node: Node) {
  */
 export function WordingOverrides() {
   const { locale } = useLocaleSettings();
-  const rules = useMemo(() => locale.phrases ?? [], [locale.phrases]);
+  const rules = useMemo(
+    () => [...BASE_PHRASE_RULES, ...(locale.phrases ?? [])],
+    [locale.phrases],
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
