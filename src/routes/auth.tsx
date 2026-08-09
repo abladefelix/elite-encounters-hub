@@ -249,7 +249,21 @@ export function AuthPage({
     try {
       const point = await requestBrowserLocation();
       setCoords(point);
-      toast.success("Location captured.");
+      let place = "";
+      try {
+        const result = await lookupPlaceName({ data: { lat: point.lat, lng: point.lng } });
+        place = result.label;
+      } catch {
+        place = "";
+      }
+      if (place) {
+        setPlaceName(place);
+        setLocationLabel((current) => (current.trim() ? current : place));
+        toast.success(`Location captured — ${place}`);
+      } else {
+        setPlaceName("");
+        toast.success("Location captured.");
+      }
     } catch (error) {
       toast.error(readableError(error, "We couldn't read your location."), {
         description: "You can type your town or area instead.",
