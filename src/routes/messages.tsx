@@ -867,22 +867,35 @@ function MessagesInbox({
     });
   }
 
-  /** Specialist prices the visit; the client pays from the thread. */
+  /** Specialist prices the visit or the member scopes a visit to pay for. */
   async function handleQuote(quote: QuoteDraft) {
     if (!activeThread) return;
     try {
-      const result = await sendQuote({
-        data: {
-          threadId: activeThread.id,
-          serviceId: quote.serviceId,
-          serviceName: quote.serviceName,
-          hours: quote.hours,
-          rate: quote.rate,
-          addons: quote.addons,
-          scheduledForIso: quote.scheduledForIso,
-          notes: quote.notes,
-        },
-      });
+      const result = iAmClient
+        ? await sendClientBookingRequest({
+            data: {
+              threadId: activeThread.id,
+              serviceId: quote.serviceId,
+              serviceName: quote.serviceName,
+              hours: quote.hours,
+              rate: quote.rate,
+              addons: quote.addons,
+              scheduledForIso: quote.scheduledForIso,
+              notes: quote.notes,
+            },
+          })
+        : await sendQuote({
+            data: {
+              threadId: activeThread.id,
+              serviceId: quote.serviceId,
+              serviceName: quote.serviceName,
+              hours: quote.hours,
+              rate: quote.rate,
+              addons: quote.addons,
+              scheduledForIso: quote.scheduledForIso,
+              notes: quote.addons,
+            },
+          });
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["messages", activeThread.id] }),
@@ -891,9 +904,15 @@ function MessagesInbox({
       ]);
 
       setQuoteOpen(false);
-      toast.success("Payment request sent", {
-        description: `${firstName} can pay ${money(result.total)} straight into escrow.`,
-      });
+      if (iAmClient) {
+        toast.success("Request to pay sent", {
+          description: `${firstName} will review it; you can pay ${money(result.total)} into escrow once they acknowledge.`,
+        });
+      } else {
+        toast.success("Payment request sent", {
+          description: `${firstName} can pay ${money(result.total)} straight into escrow.`,
+        });
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Payment request could not be sent");
     }
