@@ -53,15 +53,14 @@ async function viaGoogle(lat: number, lng: number, key: string): Promise<string>
   };
   if (body.status !== "OK" || !body.results?.length) return "";
 
-  const components = body.results.flatMap((result) => result.address_components ?? []);
+  // Only the first (most precise) result — mixing components across results can
+  // stitch together pieces of places that are nowhere near each other.
+  const components = body.results[0]?.address_components ?? [];
   const pick = (type: string) =>
     components.find((component) => component.types.includes(type))?.long_name;
 
   return tidy([
-    pick("point_of_interest") ??
-      pick("premise") ??
-      pick("route") ??
-      pick("sublocality_level_2"),
+    pick("route") ?? pick("sublocality_level_2"),
     pick("neighborhood") ?? pick("sublocality_level_1") ?? pick("sublocality"),
     pick("locality") ?? pick("postal_town") ?? pick("administrative_area_level_2"),
   ]);
