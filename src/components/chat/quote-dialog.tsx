@@ -272,6 +272,18 @@ export function QuoteDialog({
 
           <dl className="space-y-1 text-sm">
             <div className="flex items-center justify-between">
+              <dt className="text-muted-foreground">
+                {Number.isFinite(hoursNum) ? hoursNum : 0}h × {money(Number.isFinite(rateNum) ? rateNum : 0)}/h
+              </dt>
+              <dd>{money(Math.max(0, subtotal - addonsAmount))}</dd>
+            </div>
+            {addonsAmount ? (
+              <div className="flex items-center justify-between">
+                <dt className="text-muted-foreground">Add-ons</dt>
+                <dd>{money(addonsAmount)}</dd>
+              </div>
+            ) : null}
+            <div className="flex items-center justify-between">
               <dt className="text-muted-foreground">Subtotal</dt>
               <dd>{money(subtotal)}</dd>
             </div>
