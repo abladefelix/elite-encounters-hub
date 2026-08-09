@@ -2236,22 +2236,22 @@ function MessageBubble({
 
 }) {
   if (message.kind === "system") {
+    const raw = message.body ?? "";
     // The acknowledgement note is written for the member ("you can now pay").
     // The specialist only needs the confirmation that she acknowledged it.
-    const ackMatch = /^The specialist acknowledged (.*?)\.\s*The member can now pay securely into escrow\.$/i.exec(
-      message.body ?? "",
+    const ackMatch = /^The specialist acknowledged (.*?)\.\s*The member can now pay securely into escrow\.?$/i.exec(
+      raw,
     );
     // The "awaiting acknowledgement" note is only for the specialist to act on.
-    const askMatch = /^The member sent this request for acknowledgement — (.*?)\.\s*Payment opens once the specialist acknowledges\.$/i.exec(
-      message.body ?? "",
-    );
-    if (askMatch && isClient) return null;
+    const isAsk = /request for acknowledgement/i.test(raw);
+    const askDetail = /request for acknowledgement\s*[—-]?\s*(.*?)\.\s*Payment opens once/i.exec(raw)?.[1];
+    if (isAsk && isClient) return null;
     const body =
-      askMatch && !isClient
-        ? `The member sent this request for acknowledgement — ${askMatch[1]}. Payment opens once you acknowledge.`
+      isAsk && !isClient
+        ? `The member sent this request for acknowledgement${askDetail ? ` — ${askDetail}` : ""}. Payment opens once you acknowledge.`
         : ackMatch && !isClient
           ? `You acknowledged ${ackMatch[1]}. Waiting for the member to pay into escrow.`
-          : message.body;
+          : raw;
 
     return (
       <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-3">
