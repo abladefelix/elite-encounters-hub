@@ -1921,7 +1921,8 @@ function MessagesInbox({
         {activeThread ? (
           <>
             <QuoteDialog
-              clientName={firstName}
+              mode={iAmClient ? "client" : "specialist"}
+              peerName={firstName}
               defaultRate={profile?.hourly_rate ?? 0}
               open={quoteOpen}
               onOpenChange={setQuoteOpen}
