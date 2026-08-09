@@ -28,6 +28,7 @@ import { CaptchaField } from "@/components/captcha-field";
 import { useCaptcha } from "@/lib/captcha";
 import { verifyAuthCaptcha } from "@/lib/captcha.functions";
 import { requestBrowserLocation, type Coords } from "@/lib/geo";
+import { lookupPlaceName } from "@/lib/geo.functions";
 
 /** Only same-origin relative paths are ever used as a post-login destination. */
 function safeNext(value: unknown) {
@@ -126,6 +127,7 @@ export function AuthPage({
   // typed by hand when the member declines the permission prompt.
   const [coords, setCoords] = useState<Coords | null>(null);
   const [locationLabel, setLocationLabel] = useState("");
+  const [placeName, setPlaceName] = useState("");
   const [locating, setLocating] = useState(false);
 
   const captcha = useCaptcha();
@@ -248,7 +250,21 @@ export function AuthPage({
     try {
       const point = await requestBrowserLocation();
       setCoords(point);
-      toast.success("Location captured.");
+      let place = "";
+      try {
+        const result = await lookupPlaceName({ data: { lat: point.lat, lng: point.lng } });
+        place = result.label;
+      } catch {
+        place = "";
+      }
+      if (place) {
+        setPlaceName(place);
+        setLocationLabel((current) => (current.trim() ? current : place));
+        toast.success(`Location captured — ${place}`);
+      } else {
+        setPlaceName("");
+        toast.success("Location captured.");
+      }
     } catch (error) {
       toast.error(readableError(error, "We couldn't read your location."), {
         description: "You can type your town or area instead.",
@@ -713,6 +729,11 @@ export function AuthPage({
                     <MapPin className="size-4 text-primary" />
                     Location<span className="text-primary">*</span>
                   </div>
+                  {coords && placeName ? (
+                    <p className="text-xs font-medium text-foreground">
+                      You’re in {placeName}
+                    </p>
+                  ) : null}
                   <p className="text-xs text-muted-foreground">
                     {coords
                       ? `Pinned at ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)} — used for "near me" matching.`

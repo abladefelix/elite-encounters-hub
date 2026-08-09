@@ -157,6 +157,13 @@ export const EXPECTED_KEYS: { key: string; label: string; description: string; s
       description: "Verifies each solved security check on the server. Never leaves the box.",
       secret: true,
     },
+    {
+      key: "google_maps_api_key",
+      label: "Google Maps API key",
+      description:
+        "Geocoding API key used to name a member's pinned location. Optional — OpenStreetMap is used when blank.",
+      secret: true,
+    },
   ];
 
 

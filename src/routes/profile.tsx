@@ -416,6 +416,7 @@ function ProfilePage() {
           latitude={profile.latitude ?? null}
           longitude={profile.longitude ?? null}
           updatedAt={profile.location_updated_at ?? null}
+          locationLabel={profile.city ?? null}
         />
 
 
