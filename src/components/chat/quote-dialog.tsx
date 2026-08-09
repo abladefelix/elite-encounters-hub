@@ -188,6 +188,27 @@ export function QuoteDialog({
             ) : null}
           </div>
 
+          <div className="space-y-1.5">
+            <Label>Duration</Label>
+            <div className="flex flex-wrap gap-2">
+              {DURATION_PRESETS.map((preset) => {
+                const active = Number(hours) === preset.hours;
+                return (
+                  <Button
+                    key={preset.label}
+                    type="button"
+                    size="sm"
+                    variant={active ? "default" : "outline"}
+                    className="h-8 rounded-full px-3 text-xs"
+                    onClick={() => setHours(String(preset.hours))}
+                  >
+                    {preset.label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="quote-hours">Hours</Label>
@@ -201,6 +222,7 @@ export function QuoteDialog({
                 onChange={(event) => setHours(event.target.value)}
               />
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="quote-rate">Rate (GHS/hour)</Label>
               <Input
