@@ -3,8 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
-  Banknote,
   CheckCheck,
+  Wallet,
   Copy,
   Download,
   Eraser,
@@ -1635,7 +1635,7 @@ function MessagesInbox({
                           ) : null}
                           {iAmClient && groupBooking.status === "accepted" && !groupBooking.paid_at ? (
                             <Button size="sm" variant="brass" disabled={!bookingsOpen || Boolean(groupAction)} onClick={() => void payGroupBooking()}>
-                              {groupAction === "pay" ? <Loader2 className="size-3.5 animate-spin" /> : <Banknote className="size-3.5" />} Pay {money(groupBooking.total)}
+                              {groupAction === "pay" ? <Loader2 className="size-3.5 animate-spin" /> : <Wallet className="size-3.5" />} Pay {money(groupBooking.total)}
                             </Button>
                           ) : null}
                         </div>
@@ -1772,7 +1772,7 @@ function MessagesInbox({
                         >
                           {bookingsOpen ? (
                             <>
-                              <Banknote className="size-4" /> Request payment for a job
+                              <Wallet className="size-4" /> Request payment for a job
                             </>
                           ) : (
                             <>
@@ -1896,7 +1896,7 @@ function MessagesInbox({
                                     onClick={openRequest}
                                   >
                                     {bookingsOpen ? (
-                                      <Banknote className="size-4" />
+                                      <Wallet className="size-4" />
                                     ) : (
                                       <Lock className="size-4 opacity-60" />
                                     )}
@@ -2444,7 +2444,7 @@ function MessageBubble({
                 {paying ? (
                   <Loader2 className="size-3.5 animate-spin" />
                 ) : (
-                  <Banknote className="size-3.5" />
+                  <Wallet className="size-3.5" />
                 )}
                 {dueWithFee ? `Pay ${money(dueWithFee)} into escrow` : "Pay into escrow"}
               </Button>
