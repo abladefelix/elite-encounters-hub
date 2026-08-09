@@ -166,6 +166,17 @@ function SpecialistsPage() {
     });
   }, [groups.data, query, room, service, allowedRooms]);
 
+  // Distance from the member's device to every specialist that pinned a location.
+  const distances = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!origin) return map;
+    for (const row of profiles ?? []) {
+      const point = coordsOf(row);
+      if (point) map.set(row.id, distanceKm(origin, point));
+    }
+    return map;
+  }, [origin, profiles]);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = (profiles ?? []).filter((s) => {
@@ -180,16 +191,23 @@ function SpecialistsPage() {
       const matchesAvailability =
         availability === "all" ||
         (availability === "online" ? s.available : s.verified);
-      return matchesRoom && matchesQuery && matchesService && matchesAvailability;
+      // Near me only keeps specialists who pinned a location inside the radius.
+      const away = distances.get(s.id);
+      const matchesRadius = !origin || (away !== undefined && away <= radius);
+      return matchesRoom && matchesQuery && matchesService && matchesAvailability && matchesRadius;
     });
 
     return [...filtered].sort((a, b) => {
+      if (sort === "distance") {
+        return (distances.get(a.id) ?? Infinity) - (distances.get(b.id) ?? Infinity);
+      }
       if (sort === "rate-low") return a.hourly_rate - b.hourly_rate;
       if (sort === "rate-high") return b.hourly_rate - a.hourly_rate;
       if (sort === "experience") return b.years_experience - a.years_experience;
       return b.rating - a.rating;
     });
-  }, [profiles, query, service, sort, serviceMap, allowedRooms, availability]);
+  }, [profiles, query, service, sort, serviceMap, allowedRooms, availability, distances, origin, radius]);
+
 
   const hasAnySpecialists = (profiles?.length ?? 0) > 0;
 
