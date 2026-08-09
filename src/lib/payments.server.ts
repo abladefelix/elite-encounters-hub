@@ -128,6 +128,7 @@ export interface ServerSettings {
     holdHours?: number;
     requireClientConfirm?: boolean;
     autoConfirmHours?: number;
+    autoConfirmAction?: "clearing" | "release";
     autoReleaseEnabled?: boolean;
     tipsEnabled?: boolean;
     tipFeePct?: number;
