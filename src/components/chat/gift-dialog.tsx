@@ -202,10 +202,10 @@ export function GiftDialog({
             </div>
             <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-accent" />
-              {settings.tipsEscrowed
-                ? `Held in escrow and deposited automatically after ${settings.holdHours}h if no issue is raised.`
-                : "Deposited to the specialist straight away — gifts aren't refundable."}
+              Gifts skip escrow — {firstName} is paid straight away, so gifts aren&apos;t
+              refundable.
             </p>
+
           </div>
         </div>
         )}
