@@ -221,7 +221,7 @@ function SpecialistsPage() {
   // Any filter change (or a shrinking result set) sends you back to page one.
   useEffect(() => {
     setPage(1);
-  }, [query, room, service, sort, availability, resultType]);
+  }, [query, room, service, sort, availability, resultType, origin, radius]);
   useEffect(() => {
     setPage((current) => Math.min(current, pageCount));
   }, [pageCount]);
@@ -232,7 +232,7 @@ function SpecialistsPage() {
   );
 
   const filtersActive =
-    query.trim() !== "" || room !== "all" || service !== "all" || availability !== "all" || resultType !== "all";
+    query.trim() !== "" || room !== "all" || service !== "all" || availability !== "all" || resultType !== "all" || Boolean(origin);
 
   const pageStart = (Math.min(page, pageCount) - 1) * PAGE_SIZE;
   const visible = results.slice(pageStart, pageStart + PAGE_SIZE);
