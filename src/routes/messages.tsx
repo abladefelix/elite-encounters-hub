@@ -752,7 +752,14 @@ function MessagesInbox({
       file,
       onStored: async (storedPath) => {
         const url = await signAttachment(storedPath);
-        await post({ body: file.name, attachment_url: url, attachment_name: file.name });
+        // The body is never rendered for attachments (the preview is), so keep it
+        // a neutral label — raw file names like "IMG-20240101-WA0007.jpg" trip the
+        // contact-detail moderation filter and blocked innocent photos.
+        await post({
+          body: kindLabel === "photo" ? "Photo" : "File",
+          attachment_url: url,
+          attachment_name: file.name,
+        });
       },
     });
   }
