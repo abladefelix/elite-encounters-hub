@@ -350,7 +350,7 @@ export const confirmEscrowComplete = createServerFn({ method: "POST" })
     const admin = await adminClient();
     const { data: entry } = await admin
       .from("escrow_entries")
-      .select("id, client_id, state, booking_id, group_booking_id")
+      .select("id, client_id, specialist_id, state, booking_id, group_booking_id, thread_id, label, payout_amount")
       .eq("id", data.escrowId)
       .maybeSingle();
     if (!entry) throw new Error("That payment no longer exists.");
