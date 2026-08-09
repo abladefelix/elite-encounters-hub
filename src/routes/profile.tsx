@@ -548,7 +548,64 @@ function ProfilePage() {
           </Button>
         </div>
 
+        {/* invoices & receipts delivery */}
+        <Card className="mt-8 border-border/70 bg-panel p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <IconContainer icon={ReceiptText} />
+            <div className="min-w-0">
+              <p className="font-display text-base font-semibold">Invoices & receipts</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Every document is always kept in your Billing tab. Choose here whether we also send
+                it to your email, your WhatsApp, or both.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <CallToggle
+              label="Send to my email"
+              hint="Goes to the address on your account."
+              checked={delivery.email}
+              onChange={(flag) => setDelivery((prev) => ({ ...prev, email: flag }))}
+            />
+            <CallToggle
+              label="Send to my WhatsApp"
+              hint={
+                deliverySettings.whatsappEnabled
+                  ? "Delivered as a WhatsApp message with the document summary."
+                  : "WhatsApp delivery is not switched on yet — we'll email you meanwhile."
+              }
+              checked={delivery.whatsapp}
+              onChange={(flag) => setDelivery((prev) => ({ ...prev, whatsapp: flag }))}
+            />
+            {delivery.whatsapp ? (
+              <div>
+                <Label htmlFor="whatsapp-number">WhatsApp number</Label>
+                <Input
+                  id="whatsapp-number"
+                  className="mt-2"
+                  inputMode="tel"
+                  placeholder={fields.phone || "024 123 4567"}
+                  value={delivery.whatsappNumber}
+                  onChange={(event) =>
+                    setDelivery((prev) => ({ ...prev, whatsappNumber: event.target.value }))
+                  }
+                />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Leave blank to use your account phone number
+                  {fields.phone ? ` (${fields.phone})` : ""}.
+                </p>
+              </div>
+            ) : null}
+          </div>
+
+          <p className="mt-4 text-xs text-muted-foreground">
+            Currently: {describeDelivery(delivery)}. Saved with the Save profile button above.
+          </p>
+        </Card>
+
         {/* call preferences */}
+
         <Card className="mt-8 border-border/70 bg-panel p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <IconContainer icon={PhoneCall} />
