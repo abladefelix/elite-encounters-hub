@@ -497,7 +497,39 @@ export function AuthPage({
     toast.success("Reset link sent. Check your inbox.");
   }
 
+  if (awaitingVetting) {
+    return (
+      <main className="mx-auto flex min-h-[80svh] max-w-md flex-col justify-center px-4 py-10">
+        <Card>
+          <CardHeader className="text-center">
+            <div className="mx-auto icon-box">
+              <ShieldCheck className="size-5" />
+            </div>
+            <CardTitle className="mt-3">Account created — awaiting vetting</CardTitle>
+            <CardDescription>
+              Every {branding.name} account is reviewed and approved by an admin by hand. You'll be
+              able to sign in as soon as your account is approved — we'll let you know.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setAwaitingVetting(false);
+                setAuthMode("signin");
+              }}
+            >
+              Back to sign in
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
   if (checkEmail) {
+
     return (
       <main className="mx-auto flex min-h-[80svh] max-w-md flex-col justify-center px-4 py-10">
         <Card>
