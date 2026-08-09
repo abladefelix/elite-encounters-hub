@@ -270,6 +270,13 @@ function AdminEscrow() {
               value={settings.requireClientConfirm}
               onChange={(value) => void setSetting("requireClientConfirm", value)}
             />
+            <Toggle
+              label="Deposit on member confirmation"
+              hint="On means marking a visit complete transfers the payout to the Doll instantly. Off starts the hold window first."
+              value={settings.releaseOnConfirm ?? true}
+              onChange={(value) => void setSetting("releaseOnConfirm", value)}
+            />
+
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

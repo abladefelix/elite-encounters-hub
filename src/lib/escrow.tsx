@@ -54,6 +54,12 @@ export interface EscrowSettings {
    * `clearing` starts the hold window, `release` deposits the payout straight away.
    */
   autoConfirmAction: "clearing" | "release";
+  /**
+   * When the member marks the visit complete, deposit the payout into the
+   * Doll's earnings immediately instead of starting the hold window.
+   */
+  releaseOnConfirm: boolean;
+
   /** Hours after release during which a client may still raise an issue. */
   disputeWindowHours: number;
   /** Hours the trust team has to resolve a dispute (target, shown to admins). */
@@ -77,6 +83,8 @@ export const DEFAULT_ESCROW_SETTINGS: EscrowSettings = {
   requireClientConfirm: true,
   autoConfirmHours: 24,
   autoConfirmAction: "release",
+  releaseOnConfirm: true,
+
   disputeWindowHours: 48,
   disputeSlaHours: 24,
   autoReleaseEnabled: true,
@@ -219,9 +227,18 @@ export function useEscrow(): EscrowContextValue {
   const confirmEscrow = useServerFn(confirmEscrowComplete);
   const raiseIssueFn = useServerFn(raiseEscrowIssue);
   const refreshEntries = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: ["escrow"] }),
+    async () => {
+      // Money moved: refresh every surface that shows escrow, earnings,
+      // bookings, chat lines or notification counts.
+      await Promise.all(
+        ["escrow", "bookings", "messages", "notifications", "threads", "documents"].map((key) =>
+          queryClient.invalidateQueries({ queryKey: [key] }),
+        ),
+      );
+    },
     [queryClient],
   );
+
 
 
   // Settlement is performed server-side by the scheduled pass at
