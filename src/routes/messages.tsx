@@ -1851,54 +1851,29 @@ function MessagesInbox({
                         </div>
 
                         <div className="flex flex-wrap items-center gap-1">
-                          {iAmClient ? (
-                            <>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Request service & pay with Paystack"
-                                    onClick={openRequest}
-                                  >
-                                    {bookingsOpen ? (
-                                      <CediIcon className="size-4" />
-                                    ) : (
-                                      <Lock className="size-4 opacity-60" />
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {bookingsOpen
-                                    ? "Request service & pay with Paystack"
-                                    : "Booking requests are paused"}
-                                </TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Send a cash gift"
-                                    onClick={openGift}
-                                  >
-                                    {giftsAllowed ? (
-                                      <GiftIcon className="size-4" />
-                                    ) : (
-                                      <Lock className="size-4 opacity-60" />
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {giftsAllowed
-                                    ? `Send a cash gift (${roomGifts.length} available in your room)`
-                                    : "Cash gifts are unavailable here"}
-                                </TooltipContent>
-                              </Tooltip>
-                            </>
-                          ) : null}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Send a cash gift"
+                                onClick={openGift}
+                              >
+                                {giftsAllowed ? (
+                                  <GiftIcon className="size-4" />
+                                ) : (
+                                  <Lock className="size-4 opacity-60" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {giftsAllowed
+                                ? `Send a cash gift (${roomGifts.length} available in your room)`
+                                : "Cash gifts are unavailable here"}
+                            </TooltipContent>
+                          </Tooltip>
+
 
                           <Button
                             type="button"
