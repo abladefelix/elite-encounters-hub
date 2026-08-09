@@ -117,6 +117,8 @@ export function AuthPage({
   const [acceptMarketing, setAcceptMarketing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
+  const [awaitingVetting, setAwaitingVetting] = useState(false);
+
   const captcha = useCaptcha();
   const [signInToken, setSignInToken] = useState("");
   const [signUpToken, setSignUpToken] = useState("");
