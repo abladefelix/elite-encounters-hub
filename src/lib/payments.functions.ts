@@ -358,16 +358,25 @@ export const confirmEscrowComplete = createServerFn({ method: "POST" })
     if (entry.state !== "held") throw new Error("This payment isn't waiting for confirmation.");
 
     const settings = await serverSettings();
+    // Admin decides whether confirming deposits straight away or starts the
+    // hold window first.
+    const instant =
+      (settings.escrow.releaseOnConfirm ?? true) && (settings.escrow.autoReleaseEnabled ?? true);
+    const patch = instant
+      ? {
+          state: "released" as const,
+          release_at: null,
+          released_at: new Date().toISOString(),
+          admin_note: "Member confirmed the visit — payout deposited automatically.",
+        }
+      : {
+          state: "clearing" as const,
+          release_at: hoursFromNow(settings.escrow.holdHours ?? 24),
+          admin_note: "Member confirmed the visit — clearing window started.",
+        };
     const target = entry.group_booking_id
-      ? admin.from("escrow_entries").update({ state: "clearing", release_at: hoursFromNow(settings.escrow.holdHours ?? 24), admin_note: "Member confirmed the group visit — clearing window started." }).eq("group_booking_id", entry.group_booking_id).eq("state", "held")
-      : admin
-      .from("escrow_entries")
-      .update({
-        state: "clearing",
-        release_at: hoursFromNow(settings.escrow.holdHours ?? 24),
-        admin_note: "Member confirmed the visit — clearing window started.",
-      })
-      .eq("id", entry.id);
+      ? admin.from("escrow_entries").update(patch).eq("group_booking_id", entry.group_booking_id).eq("state", "held")
+      : admin.from("escrow_entries").update(patch).eq("id", entry.id);
     const { error } = await target;
     if (error) throw new Error(error.message);
     if (entry.booking_id) {
@@ -384,7 +393,9 @@ export const confirmEscrowComplete = createServerFn({ method: "POST" })
         thread_id: entry.thread_id,
         author_id: null,
         kind: "system",
-        body: "The member marked this visit complete. The payout is now clearing and lands in the Doll's earnings once the hold window ends.",
+        body: instant
+          ? "The member marked this visit complete. The payout has been deposited into the Doll's earnings."
+          : "The member marked this visit complete. The payout is now clearing and lands in the Doll's earnings once the hold window ends.",
         escrow_id: entry.id,
         booking_id: entry.booking_id,
       });
@@ -393,20 +404,25 @@ export const confirmEscrowComplete = createServerFn({ method: "POST" })
       {
         user_id: entry.specialist_id,
         kind: "escrow",
-        title: "Visit marked complete",
-        body: `The member confirmed “${entry.label}”. Your payout is clearing and will be released once the hold window ends.`,
+        title: instant ? "Payout deposited" : "Visit marked complete",
+        body: instant
+          ? `The member confirmed “${entry.label}”. Your payout has been deposited into your earnings.`
+          : `The member confirmed “${entry.label}”. Your payout is clearing and will be released once the hold window ends.`,
         link: "/wallet",
       },
       {
         user_id: entry.client_id,
         kind: "escrow",
         title: "You marked the service complete",
-        body: `Thanks — “${entry.label}” is confirmed. The payment leaves escrow after the hold window unless you raise an issue.`,
+        body: instant
+          ? `Thanks — “${entry.label}” is confirmed and the payment has been released to the Doll.`
+          : `Thanks — “${entry.label}” is confirmed. The payment leaves escrow after the hold window unless you raise an issue.`,
         link: "/wallet",
       },
     ]);
-    return { ok: true };
+    return { ok: true, released: instant };
   });
+
 
 /** Member freezes a payout while a problem is looked at. */
 export const raiseEscrowIssue = createServerFn({ method: "POST" })
