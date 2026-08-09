@@ -893,7 +893,7 @@ function MessagesInbox({
               rate: quote.rate,
               addons: quote.addons,
               scheduledForIso: quote.scheduledForIso,
-              notes: quote.addons,
+              notes: quote.notes,
             },
           });
 
