@@ -31,7 +31,7 @@ export type ProfileRow = Omit<
 >;
 /** The exact column set a signed-in member is allowed to read on `profiles`. */
 export const PUBLIC_PROFILE_COLUMNS =
-  "id, display_name, city, headline, bio, avatar_url, likes, dislikes, languages, hourly_rate, years_experience, response_minutes, room, vetting, rating, jobs_completed, verified, available, suspended, last_seen_at, created_at, updated_at, username, account_status, status_reason, status_changed_at, terms_accepted_at, privacy_accepted_at";
+  "id, display_name, city, headline, bio, avatar_url, likes, dislikes, languages, hourly_rate, years_experience, response_minutes, room, vetting, rating, jobs_completed, verified, available, suspended, last_seen_at, created_at, updated_at, username, account_status, status_reason, status_changed_at, terms_accepted_at, privacy_accepted_at, latitude, longitude, location_updated_at";
 export type ServiceRow = Tables["services"]["Row"];
 export type ApplicationRow = Tables["applications"]["Row"];
 export type ThreadRow = Tables["threads"]["Row"];
