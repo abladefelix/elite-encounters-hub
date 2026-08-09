@@ -27,6 +27,16 @@ import { useRoomSettings } from "@/lib/room-settings";
 import { useServiceCatalog } from "@/lib/service-catalog";
 import { money } from "@/lib/types";
 
+/** Quick duration picks — "Full night" and "All day" are block bookings. */
+const DURATION_PRESETS: { label: string; hours: number }[] = [
+  { label: "2h", hours: 2 },
+  { label: "3h", hours: 3 },
+  { label: "6h", hours: 6 },
+  { label: "Full night · 12h", hours: 12 },
+  { label: "All day · 24h", hours: 24 },
+];
+
+
 export interface QuoteDraft {
   serviceId: string | null;
   serviceName: string;
