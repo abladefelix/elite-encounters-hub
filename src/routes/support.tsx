@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DataPager, usePaged } from "@/components/ui/data-pager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
@@ -86,6 +87,11 @@ function SupportPage() {
 
   const unread = (notifications.data ?? []).filter((row) => !row.read_at).length;
 
+  // Long histories are paged client-side so the tabs stay short on mobile.
+  const inboxPaged = usePaged(notifications.data ?? [], 10);
+  const complaintsPaged = usePaged(complaints.data ?? [], 10);
+  const documentsPaged = usePaged(documents.data ?? [], 10);
+
   async function submitComplaint() {
     if (!user) return;
     if (subject.trim().length < 4 || body.trim().length < 12) {
@@ -151,7 +157,7 @@ function SupportPage() {
               </CardContent>
             </Card>
           ) : null}
-          {(notifications.data ?? []).map((row) => (
+          {inboxPaged.rows.map((row) => (
             <Card key={row.id} className={row.read_at ? "opacity-70" : "border-primary/40"}>
               <CardContent className="flex items-start gap-3 py-4">
                 <div className="min-w-0 flex-1">
@@ -186,6 +192,7 @@ function SupportPage() {
               </CardContent>
             </Card>
           ))}
+          <DataPager paged={inboxPaged} label="notifications" />
         </TabsContent>
 
         {/* --------------------------------------------------- complaints */}
@@ -240,7 +247,7 @@ function SupportPage() {
             </CardContent>
           </Card>
 
-          {(complaints.data ?? []).map((row) => (
+          {complaintsPaged.rows.map((row) => (
             <Card key={row.id}>
               <CardContent className="space-y-2 py-4">
                 <div className="flex flex-wrap items-center gap-2">
@@ -262,6 +269,7 @@ function SupportPage() {
               </CardContent>
             </Card>
           ))}
+          <DataPager paged={complaintsPaged} label="complaints" />
         </TabsContent>
 
         {/* ---------------------------------------------------- documents */}
@@ -273,9 +281,10 @@ function SupportPage() {
               </CardContent>
             </Card>
           ) : null}
-          {(documents.data ?? []).map((row) => (
+          {documentsPaged.rows.map((row) => (
             <DocumentCard key={row.id} row={row} />
           ))}
+          <DataPager paged={documentsPaged} label="documents" />
         </TabsContent>
       </Tabs>
     </main>
