@@ -20,7 +20,6 @@ import {
   MoreVertical,
   Paperclip,
   Phone,
-  Plus,
   Search,
   ShieldAlert,
   Send,
