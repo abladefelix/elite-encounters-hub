@@ -134,6 +134,7 @@ import { useCopy } from "@/lib/locale";
 import { validateMediaFile } from "@/lib/media-validation";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { moderateMessage } from "@/lib/moderation";
+import { scanChatImage } from "@/lib/image-moderation.functions";
 import {
   ESCROW_STATE_LABEL,
   relativeTime,
@@ -742,6 +743,48 @@ function MessagesInbox({
     if (problem) {
       toast.error(problem);
       return;
+    }
+    // A picture can carry a phone number, a momo screenshot or a QR code that
+    // typed-text rules never see, so photos get a vision scan before upload.
+    const exemptRoom = moderation.contactExemptRooms[room] ?? false;
+    if (
+      kindLabel === "photo" &&
+      moderation.enabled &&
+      moderation.scanImages &&
+      !exemptRoom &&
+      moderation.imageAction !== "warn"
+    ) {
+      const scanning = toast.loading("Checking the photo…");
+      try {
+        const dataUrl = await readAsDataUrl(file);
+        const scan = await scanChatImage({ data: { dataUrl } });
+        toast.dismiss(scanning);
+        if (scan.block) {
+          if (moderation.logHits) {
+            logHit.mutate({
+              thread_id: activeThread.id,
+              author_id: userId,
+              original_body: `Photo blocked: ${scan.reason || "off-platform details"}`,
+              categories: ["image"],
+              terms: scan.reason ? [scan.reason] : [],
+              action: "block",
+            });
+          }
+          toast.error("Photo not sent — house rules", {
+            description: scan.reason
+              ? `Ashnight keeps deals on-platform. Detected ${scan.reason}.`
+              : "It shows contact or payment details that belong on-platform.",
+          });
+          if (moderation.notifyMember) {
+            systemNote(
+              `A photo was blocked by Ashnight moderation — ${scan.reason || "off-platform details in the image"}.`,
+            );
+          }
+          return;
+        }
+      } catch {
+        toast.dismiss(scanning);
+      }
     }
     // The progress row lives above the composer, with cancel and retry, so a
     // slow connection is visible instead of looking like a frozen chat.
@@ -2819,4 +2862,14 @@ function MediaAttachment({ url, name }: { url: string; name: string }) {
       </Dialog>
     </>
   );
+}
+
+/** Reads a picked file as a base64 data URL for the image moderation scan. */
+function readAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error("Could not read the file"));
+    reader.readAsDataURL(file);
+  });
 }
