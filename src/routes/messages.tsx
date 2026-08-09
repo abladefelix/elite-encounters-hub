@@ -1382,7 +1382,7 @@ function MessagesInbox({
                         className="flex min-w-0 flex-1 gap-3 p-4 text-left"
                       >
                         <Avatar className="size-10 border border-border">
-                          {other?.avatar_url ? <AvatarImage src={other.avatar_url} alt={name} /> : null}
+                          {avatarFor(other) ? <AvatarImage src={avatarFor(other)} alt={name} /> : null}
                           <AvatarFallback className="bg-surface-strong text-xs">
                             {initials(name)}
                           </AvatarFallback>
