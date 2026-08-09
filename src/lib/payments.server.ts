@@ -319,13 +319,40 @@ export async function finalizeReference(
       await admin.from("messages").insert({
         thread_id: entry.thread_id,
         author_id: null,
-        kind: "system",
+        kind: entry.kind === "gift" ? "gift" : "system",
         escrow_id: entry.id,
-        body: `Payment confirmed — GHS ${entry.amount.toLocaleString()} is ${
-          patch.state === "released" ? "on its way to the specialist" : "secured in Ashnight escrow"
-        }.`,
+        body:
+          entry.kind === "gift"
+            ? `${entry.label || "Cash gift"} — GHS ${entry.amount.toLocaleString()} gift sent. GHS ${entry.payout_amount.toLocaleString()} has been deposited straight to the specialist, no escrow hold.`
+            : `Payment confirmed — GHS ${entry.amount.toLocaleString()} is ${
+                patch.state === "released"
+                  ? "on its way to the specialist"
+                  : "secured in Ashnight escrow"
+              }.`,
       });
     }
+
+    // A gift is not a job — the specialist is told it's a tip that has already
+    // landed in their earnings, and the sender gets the same confirmation.
+    if (entry.kind === "gift") {
+      await admin.from("notifications").insert([
+        {
+          user_id: entry.specialist_id,
+          kind: "gift",
+          title: "You received a cash gift 🎁",
+          body: `${entry.label || "A cash gift"} — GHS ${entry.payout_amount.toLocaleString()} has been added to your earnings. This is a gift, not a booking, so there's nothing to complete.`,
+          link: "/wallet",
+        },
+        {
+          user_id: entry.client_id,
+          kind: "gift",
+          title: "Gift sent",
+          body: `Your ${entry.label || "cash gift"} of GHS ${entry.amount.toLocaleString()} was delivered straight to your Doll — gifts skip escrow and aren't refundable.`,
+          link: "/wallet",
+        },
+      ]);
+    }
+
 
     // The specialist is told the moment the money clears, so they can go and do
     // the work. Only bookings trigger this; gifts need no action.
