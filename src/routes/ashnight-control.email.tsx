@@ -6,7 +6,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Copy, Loader2, Mail, Save, ShieldCheck } from "lucide-react";
+import { Copy, Loader2, Mail, MessageCircle, Save, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { AdminAccountCard } from "@/components/admin-account-card";
