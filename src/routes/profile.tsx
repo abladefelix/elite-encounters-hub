@@ -23,7 +23,15 @@ import {
   readCallPreferences,
   type CallPreferences,
 } from "@/lib/call-preferences";
-import { saveMyCallPreferences } from "@/lib/identity.functions";
+import { saveMyCallPreferences, saveMyDocumentDelivery } from "@/lib/identity.functions";
+import {
+  DEFAULT_DOCUMENT_DELIVERY,
+  describeDelivery,
+  readDocumentDelivery,
+  useDeliverySettings,
+  type DocumentDeliveryPreferences,
+} from "@/lib/document-delivery";
+import { ReceiptText } from "lucide-react";
 import { PortfolioManager } from "@/components/portfolio-manager";
 
 
@@ -122,6 +130,8 @@ function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [calls, setCalls] = useState<CallPreferences>(DEFAULT_CALL_PREFERENCES);
+  const [delivery, setDelivery] = useState<DocumentDeliveryPreferences>(DEFAULT_DOCUMENT_DELIVERY);
+  const { value: deliverySettings } = useDeliverySettings();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
@@ -141,6 +151,7 @@ function ProfilePage() {
     if (!profile) return;
     setFields(toFields(profile));
     setCalls(readCallPreferences(profile.extra));
+    setDelivery(readDocumentDelivery(profile.extra));
     const stored = profile.avatar_url;
     if (!stored) {
       setAvatarUrl(null);
@@ -286,6 +297,7 @@ function ProfilePage() {
       // Call prefs merge server-side so a stale `extra` snapshot can never wipe
       // freshly uploaded gallery photos or the intro clip.
       await saveMyCallPreferences({ data: calls });
+      await saveMyDocumentDelivery({ data: delivery });
 
       if (isSpecialist) {
         await setSpecialistServices.mutateAsync({ specialistId: user.id, serviceIds });
@@ -548,7 +560,64 @@ function ProfilePage() {
           </Button>
         </div>
 
+        {/* invoices & receipts delivery */}
+        <Card className="mt-8 border-border/70 bg-panel p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <IconContainer icon={ReceiptText} />
+            <div className="min-w-0">
+              <p className="font-display text-base font-semibold">Invoices & receipts</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Every document is always kept in your Billing tab. Choose here whether we also send
+                it to your email, your WhatsApp, or both.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <CallToggle
+              label="Send to my email"
+              hint="Goes to the address on your account."
+              checked={delivery.email}
+              onChange={(flag) => setDelivery((prev) => ({ ...prev, email: flag }))}
+            />
+            <CallToggle
+              label="Send to my WhatsApp"
+              hint={
+                deliverySettings.whatsappEnabled
+                  ? "Delivered as a WhatsApp message with the document summary."
+                  : "WhatsApp delivery is not switched on yet — we'll email you meanwhile."
+              }
+              checked={delivery.whatsapp}
+              onChange={(flag) => setDelivery((prev) => ({ ...prev, whatsapp: flag }))}
+            />
+            {delivery.whatsapp ? (
+              <div>
+                <Label htmlFor="whatsapp-number">WhatsApp number</Label>
+                <Input
+                  id="whatsapp-number"
+                  className="mt-2"
+                  inputMode="tel"
+                  placeholder={fields.phone || "024 123 4567"}
+                  value={delivery.whatsappNumber}
+                  onChange={(event) =>
+                    setDelivery((prev) => ({ ...prev, whatsappNumber: event.target.value }))
+                  }
+                />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Leave blank to use your account phone number
+                  {fields.phone ? ` (${fields.phone})` : ""}.
+                </p>
+              </div>
+            ) : null}
+          </div>
+
+          <p className="mt-4 text-xs text-muted-foreground">
+            Currently: {describeDelivery(delivery)}. Saved with the Save profile button above.
+          </p>
+        </Card>
+
         {/* call preferences */}
+
         <Card className="mt-8 border-border/70 bg-panel p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <IconContainer icon={PhoneCall} />
