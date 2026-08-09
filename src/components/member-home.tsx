@@ -173,7 +173,7 @@ function QuickActions({ isClient }: { isClient: boolean }) {
         <Link
           key={action.to}
           to={action.to}
-          search={action.search}
+          {...(action.search ? { search: action.search } : {})}
           className="flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-background/40 p-3 text-center transition-colors hover:border-primary/30 hover:bg-background/70"
         >
           <action.icon className="size-5 text-primary" />
