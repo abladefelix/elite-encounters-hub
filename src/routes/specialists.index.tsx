@@ -350,9 +350,50 @@ function SpecialistsPage() {
               <SelectItem value="experience">Most experienced</SelectItem>
               <SelectItem value="rate-low">Rate: low to high</SelectItem>
               <SelectItem value="rate-high">Rate: high to low</SelectItem>
+              {origin ? <SelectItem value="distance">Closest to me</SelectItem> : null}
             </SelectContent>
           </Select>
         </div>
+
+        {/* Near me */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-surface px-4 py-3">
+          <MapPin className="size-4 text-primary" />
+          <p className="mr-1 text-xs text-muted-foreground">
+            {origin
+              ? `Showing specialists within ${radius} km of you`
+              : "Find specialists closest to you using your device location."}
+          </p>
+          <Button size="sm" variant={origin ? "soft" : "brass"} disabled={locating} onClick={locateMe}>
+            <Crosshair className="size-4" /> {locating ? "Locating…" : origin ? "Update location" : "Search near me"}
+          </Button>
+          {origin ? (
+            <>
+              <Select value={String(radius)} onValueChange={(value) => setRadius(Number(value))}>
+                <SelectTrigger className="h-9 w-[130px]">
+                  <SelectValue placeholder="Radius" />
+                </SelectTrigger>
+                <SelectContent>
+                  {NEAR_ME_RADII.map((km) => (
+                    <SelectItem key={km} value={String(km)}>
+                      Within {km} km
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setOrigin(null);
+                  setSort("rating");
+                }}
+              >
+                <X className="size-4" /> Clear
+              </Button>
+            </>
+          ) : null}
+        </div>
+
 
         {resultType !== "specialists" && visibleGroups.length > 0 ? <section className="mt-8 border-b border-border/70 pb-8">
           <div className="flex items-center justify-between gap-3"><div><div className="flex items-center gap-2"><Users className="size-4 text-primary" /><h2 className="font-display text-lg font-semibold">Ash groups</h2></div><p className="mt-1 text-xs text-muted-foreground">Admin-assigned crews that work, chat, and receive protected payment as one Ash group.</p></div><div className="hidden gap-1 sm:flex"><Button size="icon" variant="soft" aria-label="Scroll Ash groups left" onClick={() => teamScroller.current?.scrollBy({ left: -500, behavior: "smooth" })}><ChevronLeft className="size-4" /></Button><Button size="icon" variant="soft" aria-label="Scroll Ash groups right" onClick={() => teamScroller.current?.scrollBy({ left: 500, behavior: "smooth" })}><ChevronRight className="size-4" /></Button></div></div>
