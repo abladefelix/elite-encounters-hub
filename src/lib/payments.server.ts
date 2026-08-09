@@ -129,6 +129,8 @@ export interface ServerSettings {
     requireClientConfirm?: boolean;
     autoConfirmHours?: number;
     autoConfirmAction?: "clearing" | "release";
+    releaseOnConfirm?: boolean;
+
     autoReleaseEnabled?: boolean;
     tipsEnabled?: boolean;
     tipFeePct?: number;
