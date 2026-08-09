@@ -97,6 +97,7 @@ import { REPORT_REASON_LABEL } from "@/lib/reports";
 import { paystackChannel } from "@/lib/paystack";
 import {
   acknowledgeBookingRequest,
+  createClientBookingRequest,
   createSpecialistQuote,
   requestBookingAcknowledgement,
   startBookingCheckout,
