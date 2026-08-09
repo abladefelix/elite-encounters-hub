@@ -120,6 +120,7 @@ import {
   useRatings,
   useReportMutations,
   useSendMessage,
+  useStoredMedia,
   useSubmitRating,
   useThreads,
   type BookingRow,
@@ -300,6 +301,22 @@ function MessagesInbox({
     for (const person of peopleQuery.data ?? []) map.set(person.id, person);
     return map;
   }, [peopleQuery.data]);
+
+  /**
+   * Avatars live in a private bucket, so the raw stored path is not loadable by
+   * <img>. Sign every counterpart avatar once and look them up by path.
+   */
+  const avatarItems = useMemo(
+    () =>
+      (peopleQuery.data ?? []).flatMap((person) =>
+        person.avatar_url ? [{ bucket: "avatars" as const, value: person.avatar_url }] : [],
+      ),
+    [peopleQuery.data],
+  );
+  const { data: avatarUrls } = useStoredMedia(avatarItems);
+  const avatarFor = (person: ProfileRow | undefined) =>
+    person?.avatar_url ? avatarUrls?.[person.avatar_url] : undefined;
+
 
   const messagesQuery = useMessages(activeThread?.id);
   const messages = useMemo(() => messagesQuery.data ?? [], [messagesQuery.data]);
@@ -1365,7 +1382,7 @@ function MessagesInbox({
                         className="flex min-w-0 flex-1 gap-3 p-4 text-left"
                       >
                         <Avatar className="size-10 border border-border">
-                          {other?.avatar_url ? <AvatarImage src={other.avatar_url} alt={name} /> : null}
+                          {avatarFor(other) ? <AvatarImage src={avatarFor(other)} alt={name} /> : null}
                           <AvatarFallback className="bg-surface-strong text-xs">
                             {initials(name)}
                           </AvatarFallback>
@@ -1471,7 +1488,7 @@ function MessagesInbox({
                         <ArrowLeft className="size-4" />
                       </Button>
                       <Avatar className="size-9 shrink-0 border border-border sm:size-10">
-                        {peer?.avatar_url ? <AvatarImage src={peer.avatar_url} alt={peerName} /> : null}
+                        {avatarFor(peer) ? <AvatarImage src={avatarFor(peer)} alt={peerName} /> : null}
                         <AvatarFallback className="bg-surface-strong text-xs">
                           {initials(peerName)}
                         </AvatarFallback>
