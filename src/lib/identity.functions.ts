@@ -228,3 +228,30 @@ export const saveMyDocumentDelivery = createServerFn({ method: "POST" })
     await saveDocumentDelivery(context.userId, data);
     return { ok: true };
   });
+
+/**
+ * Creates a pending member account server-side so the browser never holds a
+ * session before an admin approves the applicant.
+ */
+export const registerMemberAccount = createServerFn({ method: "POST" })
+  .validator((input) =>
+    z
+      .object({
+        email: z.string().trim().email().max(254),
+        password: z.string().min(8).max(200),
+        metadata: z.record(z.string(), z.unknown()),
+        files: z
+          .object({
+            avatar: z.string().max(200).optional(),
+            photos: z.array(z.string().max(200)).max(12).optional(),
+            video: z.string().max(200).optional(),
+          })
+          .optional(),
+        emailRedirectTo: z.string().max(500).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { registerMember } = await import("./identity.server");
+    return registerMember(data);
+  });
