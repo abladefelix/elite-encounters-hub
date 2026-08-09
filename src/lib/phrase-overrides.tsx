@@ -65,7 +65,7 @@ export const BASE_PHRASE_RULES: PhraseRule[] = [
   {
     id: "base-dolls-plural",
     find: "specialists",
-    replace: "Dolls",
+    replace: "dolls",
     matchCase: false,
     wholeWord: true,
     enabled: true,
@@ -77,7 +77,7 @@ export const BASE_PHRASE_RULES: PhraseRule[] = [
   {
     id: "base-dolls-singular",
     find: "specialist",
-    replace: "Doll",
+    replace: "doll",
     matchCase: false,
     wholeWord: true,
     enabled: true,
@@ -293,7 +293,10 @@ function shouldSkip(node: Node) {
  */
 export function WordingOverrides() {
   const { locale } = useLocaleSettings();
-  const rules = useMemo(() => locale.phrases ?? [], [locale.phrases]);
+  const rules = useMemo(
+    () => [...BASE_PHRASE_RULES, ...(locale.phrases ?? [])],
+    [locale.phrases],
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
