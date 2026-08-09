@@ -57,7 +57,7 @@ export const Route = createFileRoute("/specialists/")({
   component: SpecialistsPage,
 });
 
-type SortKey = "rating" | "rate-low" | "rate-high" | "experience";
+type SortKey = "rating" | "rate-low" | "rate-high" | "experience" | "distance";
 type ResultType = "all" | "specialists" | "groups";
 
 function toSpecialist(profile: ProfileRow, serviceNames: string[]): Specialist {
