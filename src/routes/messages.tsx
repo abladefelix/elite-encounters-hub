@@ -1748,39 +1748,6 @@ function MessagesInbox({
 
 
                     <div className="z-10 max-h-[55%] shrink-0 overflow-y-auto overscroll-contain border-t border-border/70 bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:max-h-none sm:overflow-visible sm:p-4">
-                      {activeThread.is_group ? null : iAmClient ? (
-                        <Button variant="brass" className="w-full" onClick={openRequest}>
-                          {bookingsOpen ? (
-                            <>
-                              <Plus className="size-4" /> Request service &amp; pay
-                            </>
-                          ) : (
-                            <>
-                              <Lock className="size-4" /> Booking requests paused
-                            </>
-                          )}
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="brass"
-                          className="w-full"
-                          onClick={() =>
-                            bookingsOpen
-                              ? setQuoteOpen(true)
-                              : toast("Booking requests are paused by Ashnight right now.")
-                          }
-                        >
-                          {bookingsOpen ? (
-                            <>
-                              <CediIcon className="size-4" /> Request payment for a job
-                            </>
-                          ) : (
-                            <>
-                              <Lock className="size-4" /> Payment requests paused
-                            </>
-                          )}
-                        </Button>
-                      )}
 
                       <UploadProgressList
                         tasks={uploads.tasks}
