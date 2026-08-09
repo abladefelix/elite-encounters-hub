@@ -352,12 +352,11 @@ function AdminEscrow() {
               value={settings.tipsEnabled}
               onChange={(value) => void setSetting("tipsEnabled", value)}
             />
-            <Toggle
-              label="Route gifts through escrow"
-              hint="Off means gifts deposit instantly and can't be reversed."
-              value={settings.tipsEscrowed}
-              onChange={(value) => void setSetting("tipsEscrowed", value)}
-            />
+            <p className="rounded-lg border border-border bg-panel p-3 text-xs text-muted-foreground">
+              Cash gifts never go through escrow — they deposit straight to the specialist&apos;s
+              earnings and can&apos;t be reversed.
+            </p>
+
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <NumberField
