@@ -127,6 +127,7 @@ export function AuthPage({
   // typed by hand when the member declines the permission prompt.
   const [coords, setCoords] = useState<Coords | null>(null);
   const [locationLabel, setLocationLabel] = useState("");
+  const [placeName, setPlaceName] = useState("");
   const [locating, setLocating] = useState(false);
 
   const captcha = useCaptcha();
