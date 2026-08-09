@@ -91,7 +91,11 @@ export function ServiceAreaCard({
             exact coordinates are never shown — only how far away you are.
           </p>
 
-          <p className="mt-3 text-xs">
+          {pinned && place ? (
+            <p className="mt-3 text-xs font-medium text-foreground">You’re in {place}</p>
+          ) : null}
+
+          <p className="mt-1 text-xs">
             {pinned ? (
               <span className="text-foreground">
                 Pinned at {latitude!.toFixed(4)}, {longitude!.toFixed(4)}
