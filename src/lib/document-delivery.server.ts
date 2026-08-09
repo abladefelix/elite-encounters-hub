@@ -166,11 +166,15 @@ export async function deliverDocument(documentId: string): Promise<DeliveryRepor
       .maybeSingle();
     const prefs = readDocumentDelivery(profile?.extra);
     const settings = await deliverySettings();
+    if (!settings.enabled) {
+      report.note = "Document delivery is switched off in admin";
+      return report;
+    }
     const body = summary(doc as never);
     const subject = `${doc.kind === "invoice" ? "Invoice" : "Receipt"} ${doc.number} · Ashnight`;
     const notes: string[] = [];
 
-    let wantsEmail = prefs.email;
+    let wantsEmail = prefs.email && settings.emailEnabled;
 
     if (prefs.whatsapp && settings.whatsappEnabled) {
       const target = toWhatsAppMsisdn(prefs.whatsappNumber || profile?.phone || "");
