@@ -303,7 +303,6 @@ function MessagesInbox({
   const messagesQuery = useMessages(activeThread?.id);
   const messages = useMemo(() => messagesQuery.data ?? [], [messagesQuery.data]);
   const sendMessage = useSendMessage();
-  const createBooking = useCreateBooking();
   const bookingsQuery = useBookings();
   const bookingsById = useMemo(() => {
     const map = new Map<string, BookingRow>();
