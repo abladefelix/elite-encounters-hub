@@ -687,5 +687,18 @@ export async function issueDocument(input: {
     .select("id")
     .maybeSingle();
   if (error) throw new Error(error.message);
+
+  // Deliver on the member's chosen channels (email / WhatsApp). Never blocks or
+  // rolls back the paperwork if a channel is unavailable.
+  if (data?.id) {
+    try {
+      const { deliverDocument } = await import("./document-delivery.server");
+      await deliverDocument(data.id);
+    } catch (deliveryError) {
+      console.error("Document delivery skipped:", deliveryError);
+    }
+  }
+
   return data?.id ?? null;
 }
+
