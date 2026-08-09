@@ -624,3 +624,25 @@ export async function saveCallPreferences(userId: string, calls: Record<string, 
     .eq("id", userId);
   if (saveError) throw new Error(saveError.message);
 }
+
+/**
+ * Merges a member's invoice/receipt delivery choice into `profiles.extra`.
+ * Read-then-merge server-side so a stale browser snapshot can't wipe media.
+ */
+export async function saveDocumentDelivery(
+  userId: string,
+  delivery: { email: boolean; whatsapp: boolean; whatsappNumber: string },
+) {
+  const db = await admin();
+  const { data, error } = await db.from("profiles").select("extra").eq("id", userId).maybeSingle();
+  if (error) throw new Error(error.message);
+  const extra = {
+    ...((data?.extra ?? {}) as Record<string, unknown>),
+    documentDelivery: delivery,
+  };
+  const { error: saveError } = await db
+    .from("profiles")
+    .update({ extra: extra as never })
+    .eq("id", userId);
+  if (saveError) throw new Error(saveError.message);
+}

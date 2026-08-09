@@ -210,3 +210,21 @@ export const saveMyCallPreferences = createServerFn({ method: "POST" })
     await saveCallPreferences(context.userId, data);
     return { ok: true };
   });
+
+/** Saves the caller's own invoice/receipt delivery choice (email / WhatsApp). */
+export const saveMyDocumentDelivery = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input) =>
+    z
+      .object({
+        email: z.boolean(),
+        whatsapp: z.boolean(),
+        whatsappNumber: z.string().trim().max(24).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { saveDocumentDelivery } = await import("./identity.server");
+    await saveDocumentDelivery(context.userId, data);
+    return { ok: true };
+  });
