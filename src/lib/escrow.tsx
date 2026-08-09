@@ -227,9 +227,18 @@ export function useEscrow(): EscrowContextValue {
   const confirmEscrow = useServerFn(confirmEscrowComplete);
   const raiseIssueFn = useServerFn(raiseEscrowIssue);
   const refreshEntries = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: ["escrow"] }),
+    async () => {
+      // Money moved: refresh every surface that shows escrow, earnings,
+      // bookings, chat lines or notification counts.
+      await Promise.all(
+        ["escrow", "bookings", "messages", "notifications", "threads", "documents"].map((key) =>
+          queryClient.invalidateQueries({ queryKey: [key] }),
+        ),
+      );
+    },
     [queryClient],
   );
+
 
 
   // Settlement is performed server-side by the scheduled pass at
