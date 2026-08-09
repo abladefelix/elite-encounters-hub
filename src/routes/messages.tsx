@@ -85,10 +85,6 @@ import { CallOverlay, type CallMode } from "@/components/chat/call-overlay";
 import { sendRing } from "@/lib/call-ring";
 import { useIsOnline } from "@/lib/presence";
 import { useTypingIndicator } from "@/lib/typing";
-import {
-  ServiceRequestDialog,
-  type ServiceRequestDraft,
-} from "@/components/chat/service-request-dialog";
 import { QuoteDialog, type QuoteDraft } from "@/components/chat/quote-dialog";
 import { GiftDialog, type GiftDraft } from "@/components/chat/gift-dialog";
 import { ReportDialog, type ReportDraft } from "@/components/chat/report-dialog";
@@ -117,7 +113,6 @@ import {
   unhideThread,
   markThreadRead,
   useBookings,
-  useCreateBooking,
   useLogModerationHit,
   useMessages,
   useProfilesByIds,
@@ -245,7 +240,6 @@ function MessagesInbox({
   const [draft, setDraft] = useState("");
   const [call, setCall] = useState<CallMode | null>(null);
   const [locating, setLocating] = useState(false);
-  const [requestOpen, setRequestOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [payingBookingId, setPayingBookingId] = useState("");
   const [ackBookingId, setAckBookingId] = useState("");
@@ -961,41 +955,6 @@ function MessagesInbox({
       setAckBookingId("");
     }
   }
-
-  async function handleBooking(request: ServiceRequestDraft) {
-    if (!activeThread || !peerId) return;
-    try {
-      const booking = await createBooking.mutateAsync({
-        thread_id: activeThread.id,
-        client_id: userId,
-        specialist_id: peerId,
-        service_id: request.serviceId,
-        service_name: request.service,
-        hours: request.hours,
-        addons: request.addons,
-        rate: request.rate,
-        platform_fee_pct: platform.platformFeePct,
-        scheduled_for: request.scheduledForIso,
-        notes: request.notes,
-        status: "requested",
-      });
-
-      await post({
-        kind: "booking",
-        booking_id: booking.id,
-        body: `${request.service} · ${request.hours}h${
-          request.scheduledFor ? ` · ${request.scheduledFor}` : ""
-        }${request.addons.length ? ` · Add-ons: ${request.addons.join(", ")}` : ""} · ${money(
-          request.total,
-        )} — awaiting specialist acknowledgement (${paystackChannel(request.channel).label} at payment)`,
-      });
-
-      await sendForAcknowledgement(booking.id);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Booking could not be created");
-    }
-  }
-
 
   async function handleGift(gift: GiftDraft) {
     if (!activeThread || !peerId) return;
@@ -1929,14 +1888,6 @@ function MessagesInbox({
 
         {activeThread ? (
           <>
-            <ServiceRequestDialog
-              specialistName={peerName}
-              hourlyRate={peer?.hourly_rate ?? 0}
-              open={requestOpen}
-              onOpenChange={setRequestOpen}
-              onConfirm={(request) => void handleBooking(request)}
-            />
-
             <QuoteDialog
               clientName={firstName}
               defaultRate={profile?.hourly_rate ?? 0}
