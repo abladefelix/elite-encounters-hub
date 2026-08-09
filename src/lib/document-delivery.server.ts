@@ -180,7 +180,7 @@ export async function deliverDocument(documentId: string): Promise<DeliveryRepor
       const target = toWhatsAppMsisdn(prefs.whatsappNumber || profile?.phone || "");
       if (!target) {
         notes.push("No WhatsApp number on file");
-        if (settings.whatsappFallbackToEmail) wantsEmail = true;
+        if (settings.whatsappFallbackToEmail && settings.emailEnabled) wantsEmail = true;
       } else {
         const greeting = `Hi ${profile?.display_name || "there"} — here is your ${
           doc.kind === "invoice" ? "invoice" : "receipt"
@@ -188,11 +188,11 @@ export async function deliverDocument(documentId: string): Promise<DeliveryRepor
         const result = await sendWhatsApp(target, greeting);
         report.whatsapp = result.outcome;
         if (result.note) notes.push(result.note);
-        if (result.outcome !== "sent" && settings.whatsappFallbackToEmail) wantsEmail = true;
+        if (result.outcome !== "sent" && settings.whatsappFallbackToEmail && settings.emailEnabled) wantsEmail = true;
       }
     } else if (prefs.whatsapp) {
       notes.push("WhatsApp delivery is switched off in admin");
-      if (settings.whatsappFallbackToEmail) wantsEmail = true;
+      if (settings.whatsappFallbackToEmail && settings.emailEnabled) wantsEmail = true;
     }
 
     if (wantsEmail) {
