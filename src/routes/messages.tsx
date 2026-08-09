@@ -20,7 +20,6 @@ import {
   MoreVertical,
   Paperclip,
   Phone,
-  Plus,
   Search,
   ShieldAlert,
   Send,
@@ -86,10 +85,6 @@ import { CallOverlay, type CallMode } from "@/components/chat/call-overlay";
 import { sendRing } from "@/lib/call-ring";
 import { useIsOnline } from "@/lib/presence";
 import { useTypingIndicator } from "@/lib/typing";
-import {
-  ServiceRequestDialog,
-  type ServiceRequestDraft,
-} from "@/components/chat/service-request-dialog";
 import { QuoteDialog, type QuoteDraft } from "@/components/chat/quote-dialog";
 import { GiftDialog, type GiftDraft } from "@/components/chat/gift-dialog";
 import { ReportDialog, type ReportDraft } from "@/components/chat/report-dialog";
@@ -118,7 +113,6 @@ import {
   unhideThread,
   markThreadRead,
   useBookings,
-  useCreateBooking,
   useLogModerationHit,
   useMessages,
   useProfilesByIds,
@@ -246,7 +240,6 @@ function MessagesInbox({
   const [draft, setDraft] = useState("");
   const [call, setCall] = useState<CallMode | null>(null);
   const [locating, setLocating] = useState(false);
-  const [requestOpen, setRequestOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [payingBookingId, setPayingBookingId] = useState("");
   const [ackBookingId, setAckBookingId] = useState("");
@@ -310,7 +303,6 @@ function MessagesInbox({
   const messagesQuery = useMessages(activeThread?.id);
   const messages = useMemo(() => messagesQuery.data ?? [], [messagesQuery.data]);
   const sendMessage = useSendMessage();
-  const createBooking = useCreateBooking();
   const bookingsQuery = useBookings();
   const bookingsById = useMemo(() => {
     const map = new Map<string, BookingRow>();
@@ -963,41 +955,6 @@ function MessagesInbox({
     }
   }
 
-  async function handleBooking(request: ServiceRequestDraft) {
-    if (!activeThread || !peerId) return;
-    try {
-      const booking = await createBooking.mutateAsync({
-        thread_id: activeThread.id,
-        client_id: userId,
-        specialist_id: peerId,
-        service_id: request.serviceId,
-        service_name: request.service,
-        hours: request.hours,
-        addons: request.addons,
-        rate: request.rate,
-        platform_fee_pct: platform.platformFeePct,
-        scheduled_for: request.scheduledForIso,
-        notes: request.notes,
-        status: "requested",
-      });
-
-      await post({
-        kind: "booking",
-        booking_id: booking.id,
-        body: `${request.service} · ${request.hours}h${
-          request.scheduledFor ? ` · ${request.scheduledFor}` : ""
-        }${request.addons.length ? ` · Add-ons: ${request.addons.join(", ")}` : ""} · ${money(
-          request.total,
-        )} — awaiting specialist acknowledgement (${paystackChannel(request.channel).label} at payment)`,
-      });
-
-      await sendForAcknowledgement(booking.id);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Booking could not be created");
-    }
-  }
-
-
   async function handleGift(gift: GiftDraft) {
     if (!activeThread || !peerId) return;
     try {
@@ -1228,14 +1185,6 @@ function MessagesInbox({
       return;
     }
     setGiftOpen(true);
-  }
-
-  function openRequest() {
-    if (!bookingsOpen) {
-      toast("Booking requests are paused by Ashnight right now.");
-      return;
-    }
-    setRequestOpen(true);
   }
 
   return (
@@ -1748,39 +1697,6 @@ function MessagesInbox({
 
 
                     <div className="z-10 max-h-[55%] shrink-0 overflow-y-auto overscroll-contain border-t border-border/70 bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:max-h-none sm:overflow-visible sm:p-4">
-                      {activeThread.is_group ? null : iAmClient ? (
-                        <Button variant="brass" className="w-full" onClick={openRequest}>
-                          {bookingsOpen ? (
-                            <>
-                              <Plus className="size-4" /> Request service &amp; pay
-                            </>
-                          ) : (
-                            <>
-                              <Lock className="size-4" /> Booking requests paused
-                            </>
-                          )}
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="brass"
-                          className="w-full"
-                          onClick={() =>
-                            bookingsOpen
-                              ? setQuoteOpen(true)
-                              : toast("Booking requests are paused by Ashnight right now.")
-                          }
-                        >
-                          {bookingsOpen ? (
-                            <>
-                              <CediIcon className="size-4" /> Request payment for a job
-                            </>
-                          ) : (
-                            <>
-                              <Lock className="size-4" /> Payment requests paused
-                            </>
-                          )}
-                        </Button>
-                      )}
 
                       <UploadProgressList
                         tasks={uploads.tasks}
@@ -1884,54 +1800,29 @@ function MessagesInbox({
                         </div>
 
                         <div className="flex flex-wrap items-center gap-1">
-                          {iAmClient ? (
-                            <>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Request service & pay with Paystack"
-                                    onClick={openRequest}
-                                  >
-                                    {bookingsOpen ? (
-                                      <CediIcon className="size-4" />
-                                    ) : (
-                                      <Lock className="size-4 opacity-60" />
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {bookingsOpen
-                                    ? "Request service & pay with Paystack"
-                                    : "Booking requests are paused"}
-                                </TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Send a cash gift"
-                                    onClick={openGift}
-                                  >
-                                    {giftsAllowed ? (
-                                      <GiftIcon className="size-4" />
-                                    ) : (
-                                      <Lock className="size-4 opacity-60" />
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {giftsAllowed
-                                    ? `Send a cash gift (${roomGifts.length} available in your room)`
-                                    : "Cash gifts are unavailable here"}
-                                </TooltipContent>
-                              </Tooltip>
-                            </>
-                          ) : null}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Send a cash gift"
+                                onClick={openGift}
+                              >
+                                {giftsAllowed ? (
+                                  <GiftIcon className="size-4" />
+                                ) : (
+                                  <Lock className="size-4 opacity-60" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {giftsAllowed
+                                ? `Send a cash gift (${roomGifts.length} available in your room)`
+                                : "Cash gifts are unavailable here"}
+                            </TooltipContent>
+                          </Tooltip>
+
 
                           <Button
                             type="button"
@@ -1996,14 +1887,6 @@ function MessagesInbox({
 
         {activeThread ? (
           <>
-            <ServiceRequestDialog
-              specialistName={peerName}
-              hourlyRate={peer?.hourly_rate ?? 0}
-              open={requestOpen}
-              onOpenChange={setRequestOpen}
-              onConfirm={(request) => void handleBooking(request)}
-            />
-
             <QuoteDialog
               clientName={firstName}
               defaultRate={profile?.hourly_rate ?? 0}
