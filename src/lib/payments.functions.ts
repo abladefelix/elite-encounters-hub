@@ -350,7 +350,7 @@ export const confirmEscrowComplete = createServerFn({ method: "POST" })
     const admin = await adminClient();
     const { data: entry } = await admin
       .from("escrow_entries")
-      .select("id, client_id, state, booking_id, group_booking_id")
+      .select("id, client_id, specialist_id, state, booking_id, group_booking_id, thread_id, label, payout_amount")
       .eq("id", data.escrowId)
       .maybeSingle();
     if (!entry) throw new Error("That payment no longer exists.");
@@ -376,6 +376,35 @@ export const confirmEscrowComplete = createServerFn({ method: "POST" })
     if (entry.group_booking_id) {
       await admin.from("group_bookings").update({ status: "completed" }).eq("id", entry.group_booking_id);
     }
+
+    // Tell both sides: a system line lands in the thread the Doll is reading,
+    // and each person gets their own notification wording.
+    if (entry.thread_id) {
+      await admin.from("messages").insert({
+        thread_id: entry.thread_id,
+        author_id: null,
+        kind: "system",
+        body: "The member marked this visit complete. The payout is now clearing and lands in the Doll's earnings once the hold window ends.",
+        escrow_id: entry.id,
+        booking_id: entry.booking_id,
+      });
+    }
+    await admin.from("notifications").insert([
+      {
+        user_id: entry.specialist_id,
+        kind: "escrow",
+        title: "Visit marked complete",
+        body: `The member confirmed “${entry.label}”. Your payout is clearing and will be released once the hold window ends.`,
+        link: "/wallet",
+      },
+      {
+        user_id: entry.client_id,
+        kind: "escrow",
+        title: "You marked the service complete",
+        body: `Thanks — “${entry.label}” is confirmed. The payment leaves escrow after the hold window unless you raise an issue.`,
+        link: "/wallet",
+      },
+    ]);
     return { ok: true };
   });
 
