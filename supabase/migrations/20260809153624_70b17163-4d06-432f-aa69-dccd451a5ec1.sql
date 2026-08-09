@@ -1,0 +1,1 @@
+GRANT SELECT (latitude, longitude, location_updated_at) ON public.profiles TO authenticated;
