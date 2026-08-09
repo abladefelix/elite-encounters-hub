@@ -81,7 +81,9 @@ export interface DeliverySettings {
 export const DEFAULT_DELIVERY_SETTINGS: DeliverySettings = {
   enabled: true,
   emailEnabled: true,
-  whatsappEnabled: false,
+  // Offered to members by default; if the WhatsApp Cloud API keys are missing
+  // the send falls back to email instead of failing silently.
+  whatsappEnabled: true,
   whatsappFallbackToEmail: true,
   whatsappSenderName: "Ashnight",
 };
