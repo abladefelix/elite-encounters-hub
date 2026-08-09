@@ -1488,7 +1488,7 @@ function MessagesInbox({
                         <ArrowLeft className="size-4" />
                       </Button>
                       <Avatar className="size-9 shrink-0 border border-border sm:size-10">
-                        {peer?.avatar_url ? <AvatarImage src={peer.avatar_url} alt={peerName} /> : null}
+                        {avatarFor(peer) ? <AvatarImage src={avatarFor(peer)} alt={peerName} /> : null}
                         <AvatarFallback className="bg-surface-strong text-xs">
                           {initials(peerName)}
                         </AvatarFallback>
