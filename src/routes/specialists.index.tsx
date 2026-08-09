@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronLeft, ChevronRight, Lock, Search, SlidersHorizontal, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crosshair, Lock, MapPin, Search, SlidersHorizontal, Users, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useServices, useSpecialists, type ProfileRow } from "@/lib/queries";
 import { ALL_TIERS, accessibleTiers, tierLabel, type Specialist, type Tier } from "@/lib/types";
+import {
+  NEAR_ME_RADII,
+  coordsOf,
+  distanceKm,
+  formatDistance,
+  requestBrowserLocation,
+  type Coords,
+} from "@/lib/geo";
 import { listBookableGroups } from "@/lib/group-bookings.functions";
 
 export const Route = createFileRoute("/specialists/")({
@@ -48,7 +57,7 @@ export const Route = createFileRoute("/specialists/")({
   component: SpecialistsPage,
 });
 
-type SortKey = "rating" | "rate-low" | "rate-high" | "experience";
+type SortKey = "rating" | "rate-low" | "rate-high" | "experience" | "distance";
 type ResultType = "all" | "specialists" | "groups";
 
 function toSpecialist(profile: ProfileRow, serviceNames: string[]): Specialist {
@@ -105,8 +114,27 @@ function SpecialistsPage() {
   const [availability, setAvailability] = useState<"all" | "online" | "verified">("all");
   const [resultType, setResultType] = useState<ResultType>("all");
   const [selectedGroup, setSelectedGroup] = useState<BookableGroup | null>(null);
+  // "Near me": the member's own device position plus the radius they accept.
+  const [origin, setOrigin] = useState<Coords | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [radius, setRadius] = useState<number>(10);
   const teamScroller = useRef<HTMLDivElement>(null);
   const listGroups = useServerFn(listBookableGroups);
+
+  async function locateMe() {
+    setLocating(true);
+    try {
+      const coords = await requestBrowserLocation();
+      setOrigin(coords);
+      setSort("distance");
+      toast.success("Showing specialists closest to you first.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't read your location.");
+    } finally {
+      setLocating(false);
+    }
+  }
+
 
   // A specialist never browses the roster — they only meet a client once that
   // client opens a thread with them.
@@ -138,6 +166,17 @@ function SpecialistsPage() {
     });
   }, [groups.data, query, room, service, allowedRooms]);
 
+  // Distance from the member's device to every specialist that pinned a location.
+  const distances = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!origin) return map;
+    for (const row of profiles ?? []) {
+      const point = coordsOf(row);
+      if (point) map.set(row.id, distanceKm(origin, point));
+    }
+    return map;
+  }, [origin, profiles]);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = (profiles ?? []).filter((s) => {
@@ -152,16 +191,23 @@ function SpecialistsPage() {
       const matchesAvailability =
         availability === "all" ||
         (availability === "online" ? s.available : s.verified);
-      return matchesRoom && matchesQuery && matchesService && matchesAvailability;
+      // Near me only keeps specialists who pinned a location inside the radius.
+      const away = distances.get(s.id);
+      const matchesRadius = !origin || (away !== undefined && away <= radius);
+      return matchesRoom && matchesQuery && matchesService && matchesAvailability && matchesRadius;
     });
 
     return [...filtered].sort((a, b) => {
+      if (sort === "distance") {
+        return (distances.get(a.id) ?? Infinity) - (distances.get(b.id) ?? Infinity);
+      }
       if (sort === "rate-low") return a.hourly_rate - b.hourly_rate;
       if (sort === "rate-high") return b.hourly_rate - a.hourly_rate;
       if (sort === "experience") return b.years_experience - a.years_experience;
       return b.rating - a.rating;
     });
-  }, [profiles, query, service, sort, serviceMap, allowedRooms, availability]);
+  }, [profiles, query, service, sort, serviceMap, allowedRooms, availability, distances, origin, radius]);
+
 
   const hasAnySpecialists = (profiles?.length ?? 0) > 0;
 
@@ -175,7 +221,7 @@ function SpecialistsPage() {
   // Any filter change (or a shrinking result set) sends you back to page one.
   useEffect(() => {
     setPage(1);
-  }, [query, room, service, sort, availability, resultType]);
+  }, [query, room, service, sort, availability, resultType, origin, radius]);
   useEffect(() => {
     setPage((current) => Math.min(current, pageCount));
   }, [pageCount]);
@@ -186,7 +232,7 @@ function SpecialistsPage() {
   );
 
   const filtersActive =
-    query.trim() !== "" || room !== "all" || service !== "all" || availability !== "all" || resultType !== "all";
+    query.trim() !== "" || room !== "all" || service !== "all" || availability !== "all" || resultType !== "all" || Boolean(origin);
 
   const pageStart = (Math.min(page, pageCount) - 1) * PAGE_SIZE;
   const visible = results.slice(pageStart, pageStart + PAGE_SIZE);
@@ -304,9 +350,50 @@ function SpecialistsPage() {
               <SelectItem value="experience">Most experienced</SelectItem>
               <SelectItem value="rate-low">Rate: low to high</SelectItem>
               <SelectItem value="rate-high">Rate: high to low</SelectItem>
+              {origin ? <SelectItem value="distance">Closest to me</SelectItem> : null}
             </SelectContent>
           </Select>
         </div>
+
+        {/* Near me */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-surface px-4 py-3">
+          <MapPin className="size-4 text-primary" />
+          <p className="mr-1 text-xs text-muted-foreground">
+            {origin
+              ? `Showing specialists within ${radius} km of you`
+              : "Find specialists closest to you using your device location."}
+          </p>
+          <Button size="sm" variant={origin ? "soft" : "brass"} disabled={locating} onClick={locateMe}>
+            <Crosshair className="size-4" /> {locating ? "Locating…" : origin ? "Update location" : "Search near me"}
+          </Button>
+          {origin ? (
+            <>
+              <Select value={String(radius)} onValueChange={(value) => setRadius(Number(value))}>
+                <SelectTrigger className="h-9 w-[130px]">
+                  <SelectValue placeholder="Radius" />
+                </SelectTrigger>
+                <SelectContent>
+                  {NEAR_ME_RADII.map((km) => (
+                    <SelectItem key={km} value={String(km)}>
+                      Within {km} km
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setOrigin(null);
+                  setSort("rating");
+                }}
+              >
+                <X className="size-4" /> Clear
+              </Button>
+            </>
+          ) : null}
+        </div>
+
 
         {resultType !== "specialists" && visibleGroups.length > 0 ? <section className="mt-8 border-b border-border/70 pb-8">
           <div className="flex items-center justify-between gap-3"><div><div className="flex items-center gap-2"><Users className="size-4 text-primary" /><h2 className="font-display text-lg font-semibold">Ash groups</h2></div><p className="mt-1 text-xs text-muted-foreground">Admin-assigned crews that work, chat, and receive protected payment as one Ash group.</p></div><div className="hidden gap-1 sm:flex"><Button size="icon" variant="soft" aria-label="Scroll Ash groups left" onClick={() => teamScroller.current?.scrollBy({ left: -500, behavior: "smooth" })}><ChevronLeft className="size-4" /></Button><Button size="icon" variant="soft" aria-label="Scroll Ash groups right" onClick={() => teamScroller.current?.scrollBy({ left: 500, behavior: "smooth" })}><ChevronRight className="size-4" /></Button></div></div>
@@ -344,13 +431,23 @@ function SpecialistsPage() {
               </div>
             ) : (
               <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-                {visible.map((specialist) => (
-                  <SpecialistTile
-                    key={specialist.id}
-                    specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
-                  />
-                ))}
+                {visible.map((specialist) => {
+                  const away = distances.get(specialist.id);
+                  return (
+                    <div key={specialist.id}>
+                      <SpecialistTile
+                        specialist={toSpecialist(specialist, serviceMap?.get(specialist.id) ?? [])}
+                      />
+                      {away !== undefined ? (
+                        <p className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <MapPin className="size-3" /> {formatDistance(away)}
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
+
             )}
 
             {rowsLayout ? null : <RosterPagination

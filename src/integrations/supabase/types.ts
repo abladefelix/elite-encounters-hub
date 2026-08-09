@@ -1438,8 +1438,11 @@ export type Database = {
           jobs_completed: number
           languages: string[]
           last_seen_at: string | null
+          latitude: number | null
           likes: string[]
           locality: string
+          location_updated_at: string | null
+          longitude: number | null
           phone: string | null
           privacy_accepted_at: string | null
           rating: number
@@ -1476,8 +1479,11 @@ export type Database = {
           jobs_completed?: number
           languages?: string[]
           last_seen_at?: string | null
+          latitude?: number | null
           likes?: string[]
           locality?: string
+          location_updated_at?: string | null
+          longitude?: number | null
           phone?: string | null
           privacy_accepted_at?: string | null
           rating?: number
@@ -1514,8 +1520,11 @@ export type Database = {
           jobs_completed?: number
           languages?: string[]
           last_seen_at?: string | null
+          latitude?: number | null
           likes?: string[]
           locality?: string
+          location_updated_at?: string | null
+          longitude?: number | null
           phone?: string | null
           privacy_accepted_at?: string | null
           rating?: number

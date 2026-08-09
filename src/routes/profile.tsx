@@ -33,6 +33,7 @@ import {
 } from "@/lib/document-delivery";
 import { ReceiptText } from "lucide-react";
 import { PortfolioManager } from "@/components/portfolio-manager";
+import { ServiceAreaCard } from "@/components/service-area-card";
 
 
 import { useFeatureFlags } from "@/lib/feature-flags";
@@ -409,6 +410,15 @@ function ProfilePage() {
             </div>
           </div>
         </Card>
+
+        <ServiceAreaCard
+          userId={user.id}
+          latitude={profile.latitude ?? null}
+          longitude={profile.longitude ?? null}
+          updatedAt={profile.location_updated_at ?? null}
+        />
+
+
 
         {/* details */}
         <Card className="mt-5 border-border/70 bg-surface p-5 sm:p-6">
