@@ -17,29 +17,45 @@ export function ServiceAreaCard({
   latitude,
   longitude,
   updatedAt,
+  locationLabel,
 }: {
   userId: string;
   latitude: number | null;
   longitude: number | null;
   updatedAt: string | null;
+  locationLabel?: string | null;
 }) {
   const updateProfile = useUpdateProfile();
   const [busy, setBusy] = useState(false);
+  const [place, setPlace] = useState(locationLabel ?? "");
   const pinned = typeof latitude === "number" && typeof longitude === "number";
 
   async function capture() {
     setBusy(true);
     try {
       const coords = await requestBrowserLocation();
+      let label = "";
+      try {
+        const result = await lookupPlaceName({ data: { lat: coords.lat, lng: coords.lng } });
+        label = result.label;
+      } catch {
+        label = "";
+      }
       await updateProfile.mutateAsync({
         id: userId,
         patch: {
           latitude: coords.lat,
           longitude: coords.lng,
           location_updated_at: new Date().toISOString(),
+          ...(label ? { location_label: label } : {}),
         },
       });
-      toast.success("Location pinned — you'll now show up in Near me searches.");
+      setPlace(label);
+      toast.success(
+        label
+          ? `Location pinned — ${label}`
+          : "Location pinned — you'll now show up in Near me searches.",
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't save your location.");
     } finally {
@@ -54,6 +70,7 @@ export function ServiceAreaCard({
         id: userId,
         patch: { latitude: null, longitude: null, location_updated_at: null },
       });
+      setPlace("");
       toast.success("Location removed.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't remove your location.");
