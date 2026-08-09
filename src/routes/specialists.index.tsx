@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronLeft, ChevronRight, Crosshair, Lock, MapPin, Search, SlidersHorizontal, Users, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Crosshair, Lock, MapPin, Search, SlidersHorizontal, Users, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -108,6 +108,8 @@ function useSpecialistServiceMap() {
 function SpecialistsPage() {
   const { user, profile, isSpecialist, isAdmin } = useAuth();
   const [query, setQuery] = useState("");
+  // Only the search box is on show; the rest of the filters drop down on request.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [room, setRoom] = useState<Tier | "all">("all");
   const [service, setService] = useState("all");
   const [sort, setSort] = useState<SortKey>("rating");
@@ -274,8 +276,35 @@ function SpecialistsPage() {
           Your room decides who you can book — you can still browse everyone.
         </p>
 
+        {/* Search stays on show; the filters drop down underneath it. */}
+        <div className="mt-8 flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onFocus={() => setFiltersOpen(true)}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search name, city, specialism"
+              className="pl-9"
+            />
+          </div>
+          <Button
+            variant={filtersOpen ? "soft" : "outline"}
+            onClick={() => setFiltersOpen((open) => !open)}
+            aria-expanded={filtersOpen}
+          >
+            <SlidersHorizontal className="size-4" />
+            <span className="hidden sm:inline">Filters</span>
+            <ChevronDown
+              className={`size-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`}
+            />
+          </Button>
+        </div>
+
+        {filtersOpen ? (
+          <>
         {/* Near me — kept above the filters so it's the first thing you see */}
-        <div className="mt-8 flex flex-wrap items-center gap-2 rounded-xl border border-primary/25 bg-panel px-4 py-3">
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-primary/25 bg-panel px-4 py-3">
           <MapPin className="size-4 text-primary" />
           <p className="mr-1 text-xs text-muted-foreground">
             {origin
@@ -313,18 +342,7 @@ function SpecialistsPage() {
           ) : null}
         </div>
 
-        <div className="mt-3 grid gap-3 rounded-xl border border-border/70 bg-surface p-4 sm:grid-cols-2 lg:grid-cols-6">
-          <div className="relative lg:col-span-2">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search name, city, specialism"
-              className="pl-9"
-            />
-          </div>
-
-
+        <div className="mt-3 grid gap-3 rounded-xl border border-border/70 bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4">
           <Select value={resultType} onValueChange={(value) => setResultType(value as ResultType)}>
             <SelectTrigger>
               <Users className="size-4 text-muted-foreground" />
@@ -394,6 +412,8 @@ function SpecialistsPage() {
             </SelectContent>
           </Select>
         </div>
+          </>
+        ) : null}
 
 
 
