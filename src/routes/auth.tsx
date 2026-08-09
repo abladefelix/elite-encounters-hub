@@ -453,8 +453,12 @@ export function AuthPage({
       setCheckEmail(true);
       return;
     }
-    toast.success("Account created.");
+    // Every account is vetted by hand, so a fresh sign-up never keeps its
+    // session: we end it here and show the waiting notice instead.
+    await supabase.auth.signOut();
+    setAwaitingVetting(true);
   }
+
 
 
   async function signInWithGoogle() {
