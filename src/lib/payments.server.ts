@@ -283,6 +283,7 @@ export async function finalizeReference(
     .from("escrow_entries")
     .select("*")
     .eq("paystack_reference", ref)
+    .limit(1)
     .maybeSingle();
 
   if (entry) {
@@ -445,6 +446,7 @@ export async function finalizeReference(
     .from("memberships")
     .select("*")
     .eq("paystack_reference", ref)
+    .limit(1)
     .maybeSingle();
 
   if (membership) {
@@ -688,6 +690,7 @@ export async function issueDocument(input: {
       .select("id")
       .eq("kind", input.kind)
       .eq("paystack_reference", input.paystackReference)
+      .limit(1)
       .maybeSingle();
     if (existing) return existing.id;
   }
