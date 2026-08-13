@@ -30,14 +30,17 @@ export const startSpecialistChat = createServerFn({ method: "POST" })
     if (specialistError) throw new Error(specialistError.message);
     if (!specialist) throw new Error("This specialist is not available in your room.");
 
+    // Historic data can hold more than one thread for the same pair, so read a
+    // list and take the oldest instead of demanding exactly one row.
     const { data: existing, error: existingError } = await context.supabase
       .from("threads")
       .select("id")
       .eq("client_id", context.userId)
       .eq("specialist_id", data.specialistId)
-      .maybeSingle();
+      .order("created_at", { ascending: true })
+      .limit(1);
     if (existingError) throw new Error(existingError.message);
-    if (existing) return existing;
+    if (existing && existing.length > 0) return existing[0]!;
 
     // The caller and specialist visibility have already been verified with the
     // authenticated, RLS-scoped client above. Use a fresh privileged client
