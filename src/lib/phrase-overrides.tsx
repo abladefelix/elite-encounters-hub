@@ -86,6 +86,30 @@ export const BASE_PHRASE_RULES: PhraseRule[] = [
     selectors: [],
     excludeSelectors: [],
   },
+  {
+    id: "base-service-plural",
+    find: "visits",
+    replace: "services",
+    matchCase: false,
+    wholeWord: true,
+    enabled: true,
+    scope: "everywhere",
+    paths: [],
+    selectors: [],
+    excludeSelectors: [],
+  },
+  {
+    id: "base-service-singular",
+    find: "visit",
+    replace: "service",
+    matchCase: false,
+    wholeWord: true,
+    enabled: true,
+    scope: "everywhere",
+    paths: [],
+    selectors: [],
+    excludeSelectors: [],
+  },
 ];
 
 export function newPhraseRule(): PhraseRule {
