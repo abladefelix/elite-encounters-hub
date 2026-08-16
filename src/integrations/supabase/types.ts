@@ -1621,6 +1621,74 @@ export type Database = {
           },
         ]
       }
+      repair_runs: {
+        Row: {
+          applied: number
+          applied_at: string | null
+          approved_by: string | null
+          auto: boolean
+          created_at: string
+          detail: string
+          detected: number
+          error_id: string | null
+          id: string
+          label: string
+          repair_key: string
+          requested_by: string | null
+          risk: string
+          snapshot: Json
+          status: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          applied?: number
+          applied_at?: string | null
+          approved_by?: string | null
+          auto?: boolean
+          created_at?: string
+          detail?: string
+          detected?: number
+          error_id?: string | null
+          id?: string
+          label: string
+          repair_key: string
+          requested_by?: string | null
+          risk?: string
+          snapshot?: Json
+          status?: string
+          summary?: string
+          updated_at?: string
+        }
+        Update: {
+          applied?: number
+          applied_at?: string | null
+          approved_by?: string | null
+          auto?: boolean
+          created_at?: string
+          detail?: string
+          detected?: number
+          error_id?: string | null
+          id?: string
+          label?: string
+          repair_key?: string
+          requested_by?: string | null
+          risk?: string
+          snapshot?: Json
+          status?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_runs_error_id_fkey"
+            columns: ["error_id"]
+            isOneToOne: false
+            referencedRelation: "system_errors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           admin_note: string
@@ -1964,6 +2032,72 @@ export type Database = {
           {
             foreignKeyName: "specialist_services_specialist_id_fkey"
             columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_errors: {
+        Row: {
+          details: Json
+          fingerprint: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          message: string
+          occurrences: number
+          route: string
+          severity: string
+          source: string
+          stack: string
+          status: string
+          suggested_repair: string
+          user_id: string | null
+        }
+        Insert: {
+          details?: Json
+          fingerprint: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          message: string
+          occurrences?: number
+          route?: string
+          severity?: string
+          source?: string
+          stack?: string
+          status?: string
+          suggested_repair?: string
+          user_id?: string | null
+        }
+        Update: {
+          details?: Json
+          fingerprint?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          message?: string
+          occurrences?: number
+          route?: string
+          severity?: string
+          source?: string
+          stack?: string
+          status?: string
+          suggested_repair?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_errors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_errors_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "specialist_directory"
             referencedColumns: ["id"]
