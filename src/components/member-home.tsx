@@ -24,6 +24,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MemberDashboardStrip } from "@/components/member-dashboard-strip";
 import { SpecialistShowcase } from "@/components/specialist-showcase";
+import { PendingApprovalHome } from "@/components/pending-approval-home";
 import { SiteHeader } from "@/components/site-header";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -252,6 +253,11 @@ export function MemberHome() {
   const { user, profile, isSpecialist } = useAuth();
   const isClient = !isSpecialist;
   const { data: specialists, isLoading: specialistsLoading } = useSpecialists("all");
+
+  // Not vetted yet: show the waiting room instead of an empty dashboard.
+  if (profile && (profile.account_status === "pending" || profile.vetting !== "approved")) {
+    return <PendingApprovalHome />;
+  }
 
   const firstName = (profile?.display_name ?? "there").split(" ")[0];
   const hour = new Date().getHours();
