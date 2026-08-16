@@ -39,6 +39,7 @@ import { Route as AshnightControlFeaturesRouteImport } from './routes/ashnight-c
 import { Route as AshnightControlFinanceRouteImport } from './routes/ashnight-control.finance'
 import { Route as AshnightControlGroupsRouteImport } from './routes/ashnight-control.groups'
 import { Route as AshnightControlLogsRouteImport } from './routes/ashnight-control.logs'
+import { Route as AshnightControlMaintenanceRouteImport } from './routes/ashnight-control.maintenance'
 import { Route as AshnightControlModerationRouteImport } from './routes/ashnight-control.moderation'
 import { Route as AshnightControlNotificationsRouteImport } from './routes/ashnight-control.notifications'
 import { Route as AshnightControlPerformanceRouteImport } from './routes/ashnight-control.performance'
@@ -212,6 +213,12 @@ const AshnightControlLogsRoute = AshnightControlLogsRouteImport.update({
   path: '/logs',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const AshnightControlMaintenanceRoute =
+  AshnightControlMaintenanceRouteImport.update({
+    id: '/maintenance',
+    path: '/maintenance',
+    getParentRoute: () => AshnightControlRoute,
+  } as any)
 const AshnightControlModerationRoute =
   AshnightControlModerationRouteImport.update({
     id: '/moderation',
@@ -343,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/finance': typeof AshnightControlFinanceRoute
   '/ashnight-control/groups': typeof AshnightControlGroupsRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
+  '/ashnight-control/maintenance': typeof AshnightControlMaintenanceRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
   '/ashnight-control/performance': typeof AshnightControlPerformanceRoute
@@ -393,6 +401,7 @@ export interface FileRoutesByTo {
   '/ashnight-control/finance': typeof AshnightControlFinanceRoute
   '/ashnight-control/groups': typeof AshnightControlGroupsRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
+  '/ashnight-control/maintenance': typeof AshnightControlMaintenanceRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
   '/ashnight-control/performance': typeof AshnightControlPerformanceRoute
@@ -445,6 +454,7 @@ export interface FileRoutesById {
   '/ashnight-control/finance': typeof AshnightControlFinanceRoute
   '/ashnight-control/groups': typeof AshnightControlGroupsRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
+  '/ashnight-control/maintenance': typeof AshnightControlMaintenanceRoute
   '/ashnight-control/moderation': typeof AshnightControlModerationRoute
   '/ashnight-control/notifications': typeof AshnightControlNotificationsRoute
   '/ashnight-control/performance': typeof AshnightControlPerformanceRoute
@@ -498,6 +508,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/finance'
     | '/ashnight-control/groups'
     | '/ashnight-control/logs'
+    | '/ashnight-control/maintenance'
     | '/ashnight-control/moderation'
     | '/ashnight-control/notifications'
     | '/ashnight-control/performance'
@@ -548,6 +559,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/finance'
     | '/ashnight-control/groups'
     | '/ashnight-control/logs'
+    | '/ashnight-control/maintenance'
     | '/ashnight-control/moderation'
     | '/ashnight-control/notifications'
     | '/ashnight-control/performance'
@@ -599,6 +611,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/finance'
     | '/ashnight-control/groups'
     | '/ashnight-control/logs'
+    | '/ashnight-control/maintenance'
     | '/ashnight-control/moderation'
     | '/ashnight-control/notifications'
     | '/ashnight-control/performance'
@@ -857,6 +870,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlLogsRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/maintenance': {
+      id: '/ashnight-control/maintenance'
+      path: '/maintenance'
+      fullPath: '/ashnight-control/maintenance'
+      preLoaderRoute: typeof AshnightControlMaintenanceRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/moderation': {
       id: '/ashnight-control/moderation'
       path: '/moderation'
@@ -1009,6 +1029,7 @@ interface AshnightControlRouteChildren {
   AshnightControlFinanceRoute: typeof AshnightControlFinanceRoute
   AshnightControlGroupsRoute: typeof AshnightControlGroupsRoute
   AshnightControlLogsRoute: typeof AshnightControlLogsRoute
+  AshnightControlMaintenanceRoute: typeof AshnightControlMaintenanceRoute
   AshnightControlModerationRoute: typeof AshnightControlModerationRoute
   AshnightControlNotificationsRoute: typeof AshnightControlNotificationsRoute
   AshnightControlPerformanceRoute: typeof AshnightControlPerformanceRoute
@@ -1040,6 +1061,7 @@ const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlFinanceRoute: AshnightControlFinanceRoute,
   AshnightControlGroupsRoute: AshnightControlGroupsRoute,
   AshnightControlLogsRoute: AshnightControlLogsRoute,
+  AshnightControlMaintenanceRoute: AshnightControlMaintenanceRoute,
   AshnightControlModerationRoute: AshnightControlModerationRoute,
   AshnightControlNotificationsRoute: AshnightControlNotificationsRoute,
   AshnightControlPerformanceRoute: AshnightControlPerformanceRoute,

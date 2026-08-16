@@ -18,6 +18,7 @@ import { MobileTabBar } from "../components/mobile-tab-bar";
 import { IncomingCallWatcher } from "../components/chat/incoming-call-watcher";
 import { NativeShell } from "../components/native-shell";
 import { WordingOverrides } from "../lib/phrase-overrides";
+import { ClientErrorReporter, MaintenanceGate } from "../components/app-maintenance";
 
 
 import { AuthProvider } from "../hooks/use-auth";
@@ -177,6 +178,10 @@ function RootComponent() {
                 <WordingOverrides />
                 {/* Applies the admin's appearance settings to member pages. */}
                 <AppearanceStyles />
+                {/* Forwards member-side breakage to the control room inbox. */}
+                <ClientErrorReporter />
+                {/* Shows the admin maintenance notice to members when enabled. */}
+                <MaintenanceGate />
                 <Toaster position="top-center" />
 
                 </PresenceProvider>
