@@ -1947,10 +1947,10 @@ function MessagesInbox({
                                   ? setQuoteOpen(true)
                                   : toast("Payment requests are switched off right now.")
                               }
-                              aria-label="Request to pay"
+                              aria-label={`Book ${firstName}`}
                             >
                               <CediIcon className="size-4" />
-                              Request to pay
+                              Book {firstName}
                             </Button>
                           </div>
                         ) : null}
