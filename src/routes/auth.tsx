@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useFeatureFlags } from "@/lib/feature-flags";
-import { isEmailShaped, isGhanaCardShaped, GHANA_CARD_HINT } from "@/lib/account-status";
+import { isEmailShaped } from "@/lib/account-status";
 import {
   checkAvailability,
   registerMemberAccount,
@@ -56,7 +56,6 @@ function signUpErrorMessage(raw: string) {
   const text = (raw || "").toLowerCase();
   if (text.includes("username")) return "That username is already taken. Try another one.";
   if (text.includes("phone")) return "That phone number is already registered.";
-  if (text.includes("ghana_card")) return "That Ghana Card number is already registered.";
   if (text.includes("already registered") || text.includes("already exists"))
     return "An account already uses that email address. Try signing in instead.";
   if (text.includes("password")) return "Choose a stronger password (at least 8 characters).";
@@ -300,8 +299,6 @@ export function AuthPage({
       years_experience: text("yearsExperience"),
       languages: text("languages"),
       hourly_rate: text("hourlyRate"),
-      ghana_card_number: text("ghanaCard").replace(/[^A-Za-z0-9]/g, "").toUpperCase(),
-      ghana_card_expiry: text("ghanaCardExpiry"),
       extra,
       accepted_terms: acceptTerms || !config.legal.requireTerms ? "true" : "false",
       accepted_privacy: acceptPrivacy || !config.legal.requirePrivacy ? "true" : "false",
@@ -370,11 +367,6 @@ export function AuthPage({
 
     const username = fieldText("username");
     const phone = fieldText("phone");
-    const ghanaCard = fieldText("ghanaCard");
-    if (ghanaCard && !isGhanaCardShaped(ghanaCard)) {
-      toast.error("That Ghana Card number doesn't look right.", { description: GHANA_CARD_HINT });
-      return;
-    }
 
     if (captcha.enabled && !signUpToken) {
       toast.error("Complete the security check first.");
@@ -399,7 +391,7 @@ export function AuthPage({
     // raw database constraint error.
     try {
       const availability = await checkAvailability({
-        data: { username, email, phone, ghanaCard },
+        data: { username, email, phone },
       });
       const problems: string[] = [];
       if (availability.username === "taken") problems.push("that username is already taken");
@@ -408,9 +400,6 @@ export function AuthPage({
       if (availability.email === "taken") problems.push("that email already has an account");
       if (availability.phone === "taken") problems.push("that phone number is already registered");
       if (availability.phone === "invalid") problems.push("that phone number is too short");
-      if (availability.ghanaCard === "taken")
-        problems.push("that Ghana Card number is already registered");
-      if (availability.ghanaCard === "invalid") problems.push(GHANA_CARD_HINT.toLowerCase());
       if (problems.length) {
         setBusy(false);
         toast.error("We couldn't create that account", {
