@@ -73,12 +73,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SiteHeader } from "@/components/site-header";
 import { TierBadge } from "@/components/tier-badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -136,12 +131,7 @@ import { validateMediaFile } from "@/lib/media-validation";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { moderateMessage } from "@/lib/moderation";
 import { scanChatImage } from "@/lib/image-moderation.functions";
-import {
-  ESCROW_STATE_LABEL,
-  relativeTime,
-  useEscrow,
-  type EscrowEntry,
-} from "@/lib/escrow";
+import { ESCROW_STATE_LABEL, relativeTime, useEscrow, type EscrowEntry } from "@/lib/escrow";
 import { tierLabel, initials, money, type Tier } from "@/lib/types";
 import { packsForRoom, useEmojiPacks } from "@/lib/chat-emoji";
 import { splitFoldedMessages, useChatHistorySettings } from "@/lib/chat-history";
@@ -149,8 +139,6 @@ import { cn } from "@/lib/utils";
 
 /** Local-only list of messages this device has hidden. */
 const HIDDEN_MESSAGES_KEY = "ashnight-hidden-messages-v1";
-
-
 
 export const Route = createFileRoute("/messages")({
   validateSearch: (search: Record<string, unknown>): { thread?: string } => {
@@ -197,7 +185,6 @@ function dayLabel(iso: string) {
   if (dayKey(iso) === yesterday.toDateString()) return "Yesterday";
   return date.toLocaleDateString("en-GH", { day: "2-digit", month: "short", year: "numeric" });
 }
-
 
 function MessagesPage() {
   const { loading, user, profile } = useAuth();
@@ -272,7 +259,9 @@ function MessagesInbox({
     try {
       const raw = window.localStorage.getItem(HIDDEN_MESSAGES_KEY);
       const parsed = raw ? (JSON.parse(raw) as unknown) : [];
-      return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+      return Array.isArray(parsed)
+        ? parsed.filter((id): id is string => typeof id === "string")
+        : [];
     } catch {
       return [];
     }
@@ -319,7 +308,6 @@ function MessagesInbox({
   const { data: avatarUrls } = useStoredMedia(avatarItems);
   const avatarFor = (person: ProfileRow | undefined) =>
     person?.avatar_url ? avatarUrls?.[person.avatar_url] : undefined;
-
 
   const messagesQuery = useMessages(activeThread?.id);
   const messages = useMemo(() => messagesQuery.data ?? [], [messagesQuery.data]);
@@ -438,11 +426,9 @@ function MessagesInbox({
   // Admin-published emoji packs the current room is allowed to use.
   const { packs: emojiPacks } = useEmojiPacks();
   const extraEmojiGroups = useMemo(
-    () =>
-      packsForRoom(emojiPacks, room).map((pack) => ({ label: pack.label, emoji: pack.emoji })),
+    () => packsForRoom(emojiPacks, room).map((pack) => ({ label: pack.label, emoji: pack.emoji })),
     [emojiPacks, room],
   );
-
 
   // Live device presence: the availability switch only reads "Available now"
   // while the member's device is actually reachable.
@@ -504,7 +490,9 @@ function MessagesInbox({
     queryFn: () => loadGroupBooking({ data: { threadId: activeThread?.id ?? "" } }),
   });
   const groupBooking = groupBookingQuery.data;
-  const myGroupLeg = groupBooking?.group_booking_members.find((member) => member.specialist_id === userId);
+  const myGroupLeg = groupBooking?.group_booking_members.find(
+    (member) => member.specialist_id === userId,
+  );
 
   async function answerGroupRequest(available: boolean) {
     if (!groupBooking) return;
@@ -513,7 +501,9 @@ function MessagesInbox({
       await respondGroupBooking({ data: { groupBookingId: groupBooking.id, available } });
       await groupBookingQuery.refetch();
       await queryClient.invalidateQueries({ queryKey: ["messages", activeThread?.id] });
-      toast.success(available ? "Availability confirmed" : "The client has been told you are unavailable");
+      toast.success(
+        available ? "Availability confirmed" : "The client has been told you are unavailable",
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Your response could not be saved");
     } finally {
@@ -525,8 +515,15 @@ function MessagesInbox({
     if (!groupBooking) return;
     setGroupAction("pay");
     try {
-      const result = await groupCheckout({ data: { groupBookingId: groupBooking.id, callbackUrl: `${window.location.origin}/payment/return` } });
-      toast.success("Taking you to Paystack…", { description: `${money(result.amount)} will be divided into protected escrow allocations.` });
+      const result = await groupCheckout({
+        data: {
+          groupBookingId: groupBooking.id,
+          callbackUrl: `${window.location.origin}/payment/return`,
+        },
+      });
+      toast.success("Taking you to Paystack…", {
+        description: `${money(result.amount)} will be divided into protected escrow allocations.`,
+      });
       window.location.href = result.authorizationUrl;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Group payment could not be started");
@@ -618,9 +615,6 @@ function MessagesInbox({
     };
   }, [activeThread?.id, visibleMessages.length]);
 
-
-
-
   // Switching conversations drops any half-composed reply.
   useEffect(() => {
     setReplyTo(null);
@@ -648,15 +642,15 @@ function MessagesInbox({
     if (!activeThread) return null;
     try {
       return await sendMessage.mutateAsync({
-      thread_id: activeThread.id,
-      author_id: input.kind === "system" ? null : userId,
-      kind: input.kind ?? "text",
-      body: input.body,
-      escrow_id: input.escrow_id ?? null,
-      booking_id: input.booking_id ?? null,
-      attachment_url: input.attachment_url ?? null,
-      attachment_name: input.attachment_name ?? null,
-      reply_to_id: input.reply_to_id ?? null,
+        thread_id: activeThread.id,
+        author_id: input.kind === "system" ? null : userId,
+        kind: input.kind ?? "text",
+        body: input.body,
+        escrow_id: input.escrow_id ?? null,
+        booking_id: input.booking_id ?? null,
+        attachment_url: input.attachment_url ?? null,
+        attachment_name: input.attachment_name ?? null,
+        reply_to_id: input.reply_to_id ?? null,
         redacted: input.redacted ?? false,
       });
     } catch (error) {
@@ -700,7 +694,9 @@ function MessagesInbox({
           : `Blocked for ${verdict.reason ?? "flagged wording"}.`,
       });
       if (moderation.notifyMember) {
-        systemNote(`A message was blocked by Ashnight moderation — ${verdict.reason ?? "house rules"}.`);
+        systemNote(
+          `A message was blocked by Ashnight moderation — ${verdict.reason ?? "house rules"}.`,
+        );
       }
       return;
     }
@@ -745,14 +741,14 @@ function MessagesInbox({
     if (!file || !activeThread) return;
     const allowed = kindLabel === "photo" ? photosAllowed : filesAllowed;
     if (!allowed) {
-      toast(`${kindLabel === "photo" ? "Photo" : "File"} sharing isn't included in the ${tierLabel(room)} room`);
+      toast(
+        `${kindLabel === "photo" ? "Photo" : "File"} sharing isn't included in the ${tierLabel(room)} room`,
+      );
       return;
     }
     const problem = await validateMediaFile(
       file,
-      kindLabel === "photo"
-        ? { kind: "image", maxMB: 10 }
-        : { kind: "document", maxMB: 20 },
+      kindLabel === "photo" ? { kind: "image", maxMB: 10 } : { kind: "document", maxMB: 20 },
     );
     if (problem) {
       toast.error(problem);
@@ -848,8 +844,7 @@ function MessagesInbox({
       await post({
         kind: "location",
         body: lat + "," + lng,
-        attachment_url:
-          "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng,
+        attachment_url: "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng,
         attachment_name: "Shared location",
       });
     } catch (error) {
@@ -868,10 +863,9 @@ function MessagesInbox({
     const modeWord = mode === "video" ? t("chat.video") : t("chat.voice");
     const callWord = t("chat.call");
     if (!allowed) {
-      toast.error(
-        `${modeWord} ${callWord}s are switched off for the ${tierLabel(room)} room`,
-        { description: "Upgrade your room or ask support to enable it." },
-      );
+      toast.error(`${modeWord} ${callWord}s are switched off for the ${tierLabel(room)} room`, {
+        description: "Upgrade your room or ask support to enable it.",
+      });
       return;
     }
     if (!activeThread || !peerId) return;
@@ -1051,7 +1045,9 @@ function MessagesInbox({
         description: "The member has been asked to pay into escrow.",
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "That request could not be acknowledged");
+      toast.error(
+        error instanceof Error ? error.message : "That request could not be acknowledged",
+      );
     } finally {
       setAckBookingId("");
     }
@@ -1079,7 +1075,6 @@ function MessagesInbox({
       toast.error(error instanceof Error ? error.message : "Gift could not be sent");
     }
   }
-
 
   function handleReport(reportDraft: ReportDraft) {
     if (!activeThread || !peerId) return;
@@ -1153,8 +1148,6 @@ function MessagesInbox({
     setRatingBooking(booking ?? null);
     setRatingOpen(true);
   }
-
-
 
   /** Which side of a thread this member sits on, for the hidden-at column. */
   function sideOf(thread: ThreadRow) {
@@ -1275,7 +1268,6 @@ function MessagesInbox({
       toast.error("Your browser blocked the clipboard");
     }
   }
-
 
   function openGift() {
     if (!escrow.tipsEnabled) {
@@ -1415,104 +1407,108 @@ function MessagesInbox({
                           item.id === activeThread?.id && "bg-secondary",
                         )}
                       >
-                      {selectMode ? (
-                        <label className="flex min-w-0 flex-1 cursor-pointer gap-3 p-4 text-left">
-                          <Checkbox
-                            className="mt-3"
-                            checked={selectedIds.includes(item.id)}
-                            aria-label={`Select conversation with ${name}`}
-                            onCheckedChange={(checked) =>
-                              setSelectedIds((current) =>
-                                checked
-                                  ? [...current, item.id]
-                                  : current.filter((id) => id !== item.id),
-                              )
-                            }
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold">{name}</p>
-                            <p className="mt-1 truncate text-xs text-muted-foreground">
-                              {item.last_message || "No messages yet"}
-                            </p>
-                          </div>
-                        </label>
-                      ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveThreadId(item.id);
-                          setShowListOnMobile(false);
-                        }}
-                        className="flex min-w-0 flex-1 gap-3 p-4 text-left"
-                      >
-                        <Avatar className="size-10 border border-border">
-                          {avatarFor(other) ? <AvatarImage src={avatarFor(other)} alt={name} /> : null}
-                          <AvatarFallback className="bg-surface-strong text-xs">
-                            {initials(name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p
-                              className={cn(
-                                "truncate text-sm",
-                                unread ? "font-semibold" : "font-medium",
-                              )}
-                            >
-                              {name}
-                            </p>
-                            <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
-                              {timeLabel(item.last_message_at)}
-                            </span>
-                          </div>
-                          <p
-                            className={cn(
-                              "mt-1 truncate text-xs",
-                              unread ? "text-foreground" : "text-muted-foreground",
-                            )}
+                        {selectMode ? (
+                          <label className="flex min-w-0 flex-1 cursor-pointer gap-3 p-4 text-left">
+                            <Checkbox
+                              className="mt-3"
+                              checked={selectedIds.includes(item.id)}
+                              aria-label={`Select conversation with ${name}`}
+                              onCheckedChange={(checked) =>
+                                setSelectedIds((current) =>
+                                  checked
+                                    ? [...current, item.id]
+                                    : current.filter((id) => id !== item.id),
+                                )
+                              }
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold">{name}</p>
+                              <p className="mt-1 truncate text-xs text-muted-foreground">
+                                {item.last_message || "No messages yet"}
+                              </p>
+                            </div>
+                          </label>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveThreadId(item.id);
+                              setShowListOnMobile(false);
+                            }}
+                            className="flex min-w-0 flex-1 gap-3 p-4 text-left"
                           >
-                            {item.last_message || "No messages yet"}
-                          </p>
-                        </div>
-                        {unread ? (
-                          <Badge className="h-5 min-w-5 justify-center rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">
-                            •
-                          </Badge>
-                        ) : null}
-                      </button>
-                      )}
+                            <Avatar className="size-10 border border-border">
+                              {avatarFor(other) ? (
+                                <AvatarImage src={avatarFor(other)} alt={name} />
+                              ) : null}
+                              <AvatarFallback className="bg-surface-strong text-xs">
+                                {initials(name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p
+                                  className={cn(
+                                    "truncate text-sm",
+                                    unread ? "font-semibold" : "font-medium",
+                                  )}
+                                >
+                                  {name}
+                                </p>
+                                <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                                  {timeLabel(item.last_message_at)}
+                                </span>
+                              </div>
+                              <p
+                                className={cn(
+                                  "mt-1 truncate text-xs",
+                                  unread ? "text-foreground" : "text-muted-foreground",
+                                )}
+                              >
+                                {item.last_message || "No messages yet"}
+                              </p>
+                            </div>
+                            {unread ? (
+                              <Badge className="h-5 min-w-5 justify-center rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">
+                                •
+                              </Badge>
+                            ) : null}
+                          </button>
+                        )}
                         {selectMode ? null : (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Options for the conversation with ${name}`}
-                              className="mr-2 mt-3 size-8 shrink-0 text-muted-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100"
-                            >
-                              <MoreVertical className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-52">
-                            <DropdownMenuLabel className="truncate text-xs">{name}</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onSelect={() => {
-                                setActiveThreadId(item.id);
-                                setShowListOnMobile(false);
-                              }}
-                            >
-                              Open conversation
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onSelect={() => setRemoveThread(item)}
-                            >
-                              <Trash2 className="size-4" /> Remove from my list
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Options for the conversation with ${name}`}
+                                className="mr-2 mt-3 size-8 shrink-0 text-muted-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                              >
+                                <MoreVertical className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-52">
+                              <DropdownMenuLabel className="truncate text-xs">
+                                {name}
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  setActiveThreadId(item.id);
+                                  setShowListOnMobile(false);
+                                }}
+                              >
+                                Open conversation
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onSelect={() => setRemoveThread(item)}
+                              >
+                                <Trash2 className="size-4" /> Remove from my list
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         )}
                       </div>
                     );
@@ -1524,7 +1520,6 @@ function MessagesInbox({
                         : "No conversations yet. Open one from a specialist profile."}
                     </p>
                   ) : null}
-
                 </ScrollArea>
               </aside>
 
@@ -1552,7 +1547,9 @@ function MessagesInbox({
                         <ArrowLeft className="size-4" />
                       </Button>
                       <Avatar className="size-9 shrink-0 border border-border sm:size-10">
-                        {avatarFor(peer) ? <AvatarImage src={avatarFor(peer)} alt={peerName} /> : null}
+                        {avatarFor(peer) ? (
+                          <AvatarImage src={avatarFor(peer)} alt={peerName} />
+                        ) : null}
                         <AvatarFallback className="bg-surface-strong text-xs">
                           {initials(peerName)}
                         </AvatarFallback>
@@ -1574,7 +1571,8 @@ function MessagesInbox({
                                 : `Replies in ~${peer?.response_minutes ?? 30}m`}
                           {myRating ? (
                             <span className="flex items-center gap-1 text-primary">
-                              · <Star className="size-3 fill-primary" /> {myRating.toFixed(1)} from you
+                              · <Star className="size-3 fill-primary" /> {myRating.toFixed(1)} from
+                              you
                             </span>
                           ) : null}
                         </p>
@@ -1639,16 +1637,13 @@ function MessagesInbox({
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onSelect={() =>
-                                setRemoveThread(activeThread as ThreadRow)
-                              }
+                              onSelect={() => setRemoveThread(activeThread as ThreadRow)}
                             >
                               <Trash2 className="size-4" /> Remove conversation
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-
                     </header>
 
                     {!audioAllowed && !videoAllowed ? (
@@ -1663,36 +1658,93 @@ function MessagesInbox({
                         <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center">
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <Badge variant={groupBooking.status === "accepted" ? "default" : groupBooking.status === "cancelled" ? "destructive" : "secondary"}>
+                              <Badge
+                                variant={
+                                  groupBooking.status === "accepted"
+                                    ? "default"
+                                    : groupBooking.status === "cancelled"
+                                      ? "destructive"
+                                      : "secondary"
+                                }
+                              >
                                 Ash group · {groupBooking.status}
                               </Badge>
-                              <span className="text-sm font-semibold">{groupBooking.service_name}</span>
-                              <span className="text-xs text-muted-foreground">{groupBooking.hours}h · {money(groupBooking.total)}</span>
+                              <span className="text-sm font-semibold">
+                                {groupBooking.service_name}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {groupBooking.hours}h · {money(groupBooking.total)}
+                              </span>
                             </div>
                             <div className="mt-2 flex flex-wrap gap-2">
                               {groupBooking.group_booking_members.map((member) => (
-                                <span key={member.id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                  <span className={cn("size-2 rounded-full", member.status === "confirmed" ? "bg-primary" : member.status === "declined" ? "bg-destructive" : "bg-muted-foreground/40")} />
-                                  {member.profiles?.display_name ?? member.role_label} · {member.status}
+                                <span
+                                  key={member.id}
+                                  className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                                >
+                                  <span
+                                    className={cn(
+                                      "size-2 rounded-full",
+                                      member.status === "confirmed"
+                                        ? "bg-primary"
+                                        : member.status === "declined"
+                                          ? "bg-destructive"
+                                          : "bg-muted-foreground/40",
+                                    )}
+                                  />
+                                  {member.profiles?.display_name ?? member.role_label} ·{" "}
+                                  {member.status}
                                 </span>
                               ))}
                             </div>
                           </div>
-                          {!iAmClient && myGroupLeg?.status === "pending" && groupBooking.status === "requested" ? (
+                          {!iAmClient &&
+                          myGroupLeg?.status === "pending" &&
+                          groupBooking.status === "requested" ? (
                             <div className="flex shrink-0 gap-2">
-                              <Button size="sm" variant="outline" disabled={Boolean(groupAction)} onClick={() => void answerGroupRequest(false)}>Decline</Button>
-                              <Button size="sm" variant="brass" disabled={Boolean(groupAction)} onClick={() => void answerGroupRequest(true)}>{groupAction === "confirm" ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCheck className="size-3.5" />} Confirm</Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={Boolean(groupAction)}
+                                onClick={() => void answerGroupRequest(false)}
+                              >
+                                Decline
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="brass"
+                                disabled={Boolean(groupAction)}
+                                onClick={() => void answerGroupRequest(true)}
+                              >
+                                {groupAction === "confirm" ? (
+                                  <Loader2 className="size-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCheck className="size-3.5" />
+                                )}{" "}
+                                Confirm
+                              </Button>
                             </div>
                           ) : null}
-                          {iAmClient && groupBooking.status === "accepted" && !groupBooking.paid_at ? (
-                            <Button size="sm" variant="brass" disabled={!bookingsOpen || Boolean(groupAction)} onClick={() => void payGroupBooking()}>
-                              {groupAction === "pay" ? <Loader2 className="size-3.5 animate-spin" /> : <CediIcon className="size-3.5" />} Pay {money(groupBooking.total)}
+                          {iAmClient &&
+                          groupBooking.status === "accepted" &&
+                          !groupBooking.paid_at ? (
+                            <Button
+                              size="sm"
+                              variant="brass"
+                              disabled={!bookingsOpen || Boolean(groupAction)}
+                              onClick={() => void payGroupBooking()}
+                            >
+                              {groupAction === "pay" ? (
+                                <Loader2 className="size-3.5 animate-spin" />
+                              ) : (
+                                <CediIcon className="size-3.5" />
+                              )}{" "}
+                              Pay {money(groupBooking.total)}
                             </Button>
                           ) : null}
                         </div>
                       </div>
                     ) : null}
-
 
                     <ScrollArea className="h-0 min-h-0 flex-1">
                       <div ref={messageListRef} className="space-y-4 p-4 sm:p-6">
@@ -1776,7 +1828,9 @@ function MessagesInbox({
                                   message.escrow_id
                                     ? escrowEntries.find((entry) => entry.id === message.escrow_id)
                                     : message.booking_id
-                                      ? escrowEntries.find((entry) => entry.booking_id === message.booking_id)
+                                      ? escrowEntries.find(
+                                          (entry) => entry.booking_id === message.booking_id,
+                                        )
                                       : undefined
                                 }
                                 canResolve={iAmClient}
@@ -1785,13 +1839,13 @@ function MessagesInbox({
                                     ? bookingsById.get(message.booking_id)
                                     : undefined
                                 }
-                                 canPay={iAmClient && bookingsOpen}
-                                 isClient={iAmClient}
-                                 ackBusy={
-                                   !!message.booking_id && ackBookingId === message.booking_id
-                                 }
-                                 onAskAcknowledgement={(id) => void sendForAcknowledgement(id)}
-                                 onAcknowledge={(id) => void acknowledgeBooking(id)}
+                                canPay={iAmClient && bookingsOpen}
+                                isClient={iAmClient}
+                                ackBusy={
+                                  !!message.booking_id && ackBookingId === message.booking_id
+                                }
+                                onAskAcknowledgement={(id) => void sendForAcknowledgement(id)}
+                                onAcknowledge={(id) => void acknowledgeBooking(id)}
                                 paying={
                                   !!message.booking_id && payingBookingId === message.booking_id
                                 }
@@ -1818,9 +1872,7 @@ function MessagesInbox({
                       </div>
                     </ScrollArea>
 
-
                     <div className="z-10 max-h-[55%] shrink-0 overflow-y-auto overscroll-contain border-t border-border/70 bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:max-h-none sm:overflow-visible sm:p-4">
-
                       <UploadProgressList
                         tasks={uploads.tasks}
                         onRetry={uploads.retry}
@@ -1876,6 +1928,29 @@ function MessagesInbox({
                               onClick={() => setReplyTo(null)}
                             >
                               <X className="size-4" />
+                            </Button>
+                          </div>
+                        ) : null}
+
+                        {iAmClient ? (
+                          <div className="flex items-center justify-between gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-3 py-2">
+                            <span className="text-xs font-medium text-primary">
+                              Ready to book {firstName}?
+                            </span>
+                            <Button
+                              type="button"
+                              variant="brass"
+                              size="sm"
+                              className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
+                              onClick={() =>
+                                bookingsOpen
+                                  ? setQuoteOpen(true)
+                                  : toast("Payment requests are switched off right now.")
+                              }
+                              aria-label="Request to pay"
+                            >
+                              <CediIcon className="size-4" />
+                              Request to pay
                             </Button>
                           </div>
                         ) : null}
@@ -1947,32 +2022,6 @@ function MessagesInbox({
                                     : "Cash gifts are unavailable here"}
                                 </TooltipContent>
                               </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Request to pay"
-                                    onClick={() =>
-                                      bookingsOpen
-                                        ? setQuoteOpen(true)
-                                        : toast("Payment requests are switched off right now.")
-                                    }
-                                  >
-                                    {bookingsOpen ? (
-                                      <CediIcon className="size-4" />
-                                    ) : (
-                                      <Lock className="size-4 opacity-60" />
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {bookingsOpen
-                                    ? `Request to pay ${firstName}`
-                                    : "Payment requests are unavailable right now"}
-                                </TooltipContent>
-                              </Tooltip>
                             </>
                           ) : null}
                           <Button
@@ -1983,7 +2032,9 @@ function MessagesInbox({
                             onClick={() =>
                               filesAllowed
                                 ? fileRef.current?.click()
-                                : toast(`File sharing isn't included in the ${tierLabel(room)} room`)
+                                : toast(
+                                    `File sharing isn't included in the ${tierLabel(room)} room`,
+                                  )
                             }
                           >
                             {filesAllowed ? (
@@ -2000,7 +2051,9 @@ function MessagesInbox({
                             onClick={() =>
                               photosAllowed
                                 ? photoRef.current?.click()
-                                : toast(`Photo sharing isn't included in the ${tierLabel(room)} room`)
+                                : toast(
+                                    `Photo sharing isn't included in the ${tierLabel(room)} room`,
+                                  )
                             }
                           >
                             {photosAllowed ? (
@@ -2046,7 +2099,6 @@ function MessagesInbox({
               onOpenChange={setQuoteOpen}
               onConfirm={(quote) => void handleQuote(quote)}
             />
-
 
             <GiftDialog
               specialistName={peerName}
@@ -2106,9 +2158,9 @@ function MessagesInbox({
           <AlertDialogHeader>
             <AlertDialogTitle>Remove this conversation?</AlertDialogTitle>
             <AlertDialogDescription>
-              You can undo this for a few seconds afterwards. It disappears from your list only — the other member keeps their copy, and bookings,
-              payments and escrow records are untouched. If they message you again, the thread comes
-              back.
+              You can undo this for a few seconds afterwards. It disappears from your list only —
+              the other member keeps their copy, and bookings, payments and escrow records are
+              untouched. If they message you again, the thread comes back.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2196,11 +2248,8 @@ function MessagesInbox({
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-
       </AlertDialog>
-
     </TooltipProvider>
-
   );
 }
 
@@ -2241,7 +2290,6 @@ function CallControl({
     </Tooltip>
   );
 }
-
 
 function MessageBubble({
   message,
@@ -2289,20 +2337,20 @@ function MessageBubble({
   onDelete: () => void;
   onReply: (message: MessageRowType) => void;
   onReport: () => void;
-
-
-
 }) {
   if (message.kind === "system") {
     const raw = message.body ?? "";
     // The acknowledgement note is written for the member ("you can now pay").
     // The specialist only needs the confirmation that she acknowledged it.
-    const ackMatch = /^The specialist acknowledged (.*?)\.\s*The member can now pay securely into escrow\.?$/i.exec(
-      raw,
-    );
+    const ackMatch =
+      /^The specialist acknowledged (.*?)\.\s*The member can now pay securely into escrow\.?$/i.exec(
+        raw,
+      );
     // The "awaiting acknowledgement" note is only for the specialist to act on.
     const isAsk = /request for acknowledgement/i.test(raw);
-    const askDetail = /request for acknowledgement\s*[—-]?\s*(.*?)\.\s*Payment opens once/i.exec(raw)?.[1];
+    const askDetail = /request for acknowledgement\s*[—-]?\s*(.*?)\.\s*Payment opens once/i.exec(
+      raw,
+    )?.[1];
     if (isAsk && isClient) return null;
     const body =
       isAsk && !isClient
@@ -2319,9 +2367,7 @@ function MessageBubble({
         <p className="text-[12px] leading-snug text-muted-foreground">{body}</p>
       </div>
     );
-
   }
-
 
   if (message.kind === "gift") {
     return (
@@ -2428,7 +2474,9 @@ function MessageBubble({
                   <Button
                     size="sm"
                     variant="soft"
-                    onClick={() => onDispute(escrow.id, "Member raised an issue from the chat thread.")}
+                    onClick={() =>
+                      onDispute(escrow.id, "Member raised an issue from the chat thread.")
+                    }
                   >
                     <ShieldAlert className="size-3.5" /> Raise an issue
                   </Button>
@@ -2513,15 +2561,14 @@ function MessageBubble({
             </p>
           ) : (
             <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <CheckCheck className="size-3.5" /> Awaiting {unpaid ? "payment" : "confirmation"} from{" "}
-              {peerFirstName}
+              <CheckCheck className="size-3.5" /> Awaiting {unpaid ? "payment" : "confirmation"}{" "}
+              from {peerFirstName}
             </p>
           )}
         </div>
       </div>
     );
   }
-
 
   return (
     <div className={cn("group flex items-end gap-1", mine ? "justify-end" : "justify-start")}>
@@ -2736,12 +2783,28 @@ function MessageActions({
   );
 }
 
-
 /** Emoji tray — sending emoji never depends on the device keyboard. */
 const EMOJI_GROUPS: { label: string; emoji: string[] }[] = [
   {
     label: "Smileys",
-    emoji: ["😀", "😄", "😅", "😂", "🙂", "😉", "😍", "😘", "😎", "🤗", "🤔", "😐", "😴", "😢", "😭", "😡"],
+    emoji: [
+      "😀",
+      "😄",
+      "😅",
+      "😂",
+      "🙂",
+      "😉",
+      "😍",
+      "😘",
+      "😎",
+      "🤗",
+      "🤔",
+      "😐",
+      "😴",
+      "😢",
+      "😭",
+      "😡",
+    ],
   },
   {
     label: "Gestures",
@@ -2749,7 +2812,24 @@ const EMOJI_GROUPS: { label: string; emoji: string[] }[] = [
   },
   {
     label: "Life",
-    emoji: ["❤️", "🔥", "✨", "🎉", "💯", "⭐", "🧹", "🧼", "🫧", "🏠", "🕒", "📍", "💰", "🧾", "✅", "❌"],
+    emoji: [
+      "❤️",
+      "🔥",
+      "✨",
+      "🎉",
+      "💯",
+      "⭐",
+      "🧹",
+      "🧼",
+      "🫧",
+      "🏠",
+      "🕒",
+      "📍",
+      "💰",
+      "🧾",
+      "✅",
+      "❌",
+    ],
   },
 ];
 
@@ -2800,7 +2880,6 @@ function EmojiPicker({
     </Popover>
   );
 }
-
 
 /** Live escrow status for a booking or gift, as the member sees it. */
 function EscrowStrip({ entry }: { entry: EscrowEntry }) {
