@@ -24,6 +24,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MemberDashboardStrip } from "@/components/member-dashboard-strip";
 import { SpecialistShowcase } from "@/components/specialist-showcase";
+import { PendingApprovalHome } from "@/components/pending-approval-home";
 import { SiteHeader } from "@/components/site-header";
 import { useAuth } from "@/hooks/use-auth";
 import {
