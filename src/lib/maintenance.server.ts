@@ -13,7 +13,25 @@ import { admin, logActivity } from "./identity.server";
 import { DEFAULT_MAINTENANCE_CONFIG, type MaintenanceConfig } from "./maintenance";
 
 type Db = Awaited<ReturnType<typeof admin>>;
-type Row = Record<string, unknown>;
+interface Row {
+  id?: unknown;
+  client_id?: unknown;
+  specialist_id?: unknown;
+  last_message?: unknown;
+  thread_id?: unknown;
+  user_id?: unknown;
+  participant_role?: unknown;
+  link?: unknown;
+  rating?: unknown;
+  expected?: unknown;
+  display_name?: unknown;
+  group_id?: unknown;
+  total?: unknown;
+  reference?: unknown;
+  label?: unknown;
+  status?: unknown;
+  [key: string]: unknown;
+}
 export interface Snapshot {
   rows: Row[];
   note?: string;
