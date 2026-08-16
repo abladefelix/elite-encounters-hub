@@ -463,6 +463,16 @@ function MessagesInbox({
 
   const escrowEntries = activeThread ? threadEntries(activeThread.id) : [];
 
+  /**
+   * A paid service is "live" while its money still sits in escrow. While that's
+   * the case the composer shows "Booked · <name>" instead of the book button —
+   * it only unlocks again once the service is confirmed complete (released /
+   * refunded) or an issue is raised (disputed).
+   */
+  const liveBookingEscrow = escrowEntries.find(
+    (entry) => entry.kind === "booking" && (entry.state === "held" || entry.state === "clearing"),
+  );
+
   // Only a client who actually paid for and received a visit may rate.
   const allBookings = useMemo(() => bookingsQuery.data ?? [], [bookingsQuery.data]);
   const canRatePeer =
