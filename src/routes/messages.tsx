@@ -1880,6 +1880,29 @@ function MessagesInbox({
                           </div>
                         ) : null}
 
+                        {iAmClient ? (
+                          <div className="flex items-center justify-between gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-3 py-2">
+                            <span className="text-xs font-medium text-primary">
+                              Ready to book {firstName}?
+                            </span>
+                            <Button
+                              type="button"
+                              variant="brass"
+                              size="sm"
+                              className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
+                              onClick={() =>
+                                bookingsOpen
+                                  ? setQuoteOpen(true)
+                                  : toast("Payment requests are switched off right now.")
+                              }
+                              aria-label="Request to pay"
+                            >
+                              <CediIcon className="size-4" />
+                              Request to pay
+                            </Button>
+                          </div>
+                        ) : null}
+
                         <div className="flex w-full items-end gap-2 rounded-2xl border border-border/70 bg-surface-strong/60 px-3 py-2 transition-colors focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 sm:px-4">
                           <EmojiPicker
                             extraGroups={extraEmojiGroups}
