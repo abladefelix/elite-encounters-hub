@@ -32,9 +32,7 @@ export type BuiltinFieldKey =
   | "bio"
   | "yearsExperience"
   | "languages"
-  | "hourlyRate"
-  | "ghanaCard"
-  | "ghanaCardExpiry";
+  | "hourlyRate";
 
 export interface BuiltinFieldMeta {
   key: BuiltinFieldKey;
@@ -75,19 +73,6 @@ export const BUILTIN_FIELDS: BuiltinFieldMeta[] = [
   { key: "yearsExperience", label: "Years of experience", hint: "Whole number of years.", type: "number" },
   { key: "languages", label: "Languages", hint: "Comma separated.", type: "text", placeholder: "English, Twi" },
   { key: "hourlyRate", label: "Hourly rate (GHS)", hint: "Starting rate, editable later.", type: "number" },
-  {
-    key: "ghanaCard",
-    label: "Ghana Card number",
-    hint: "Ghana Card (National ID) number. Checked during vetting and unique across Ashnight.",
-    type: "text",
-    placeholder: "GHA-123456789-0",
-  },
-  {
-    key: "ghanaCardExpiry",
-    label: "Ghana Card expiry",
-    hint: "Expiry date printed on the card.",
-    type: "date",
-  },
 ];
 
 export interface SignupFieldConfig {
@@ -156,8 +141,6 @@ export const DEFAULT_SIGNUP_CONFIG: SignupConfig = {
     yearsExperience: field(true, true, "specialist"),
     languages: field(true, false, "specialist"),
     hourlyRate: field(false, false, "specialist"),
-    ghanaCard: field(true, true, "both"),
-    ghanaCardExpiry: field(true, false, "specialist"),
   },
   custom: [],
   legal: {
