@@ -2,6 +2,8 @@ import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Bell, Download, FileText, LifeBuoy, Loader2, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { CustomFormFields } from "@/components/custom-form-fields";
+import { customAnswerLines, useFormFields, validateCustom } from "@/lib/form-fields";
 
 import { BrandMark } from "@/components/brand-mark";
 import { Badge } from "@/components/ui/badge";
@@ -84,6 +86,8 @@ function SupportPage() {
   const [category, setCategory] = useState(COMPLAINT_CATEGORIES[0]!);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const complaintForm = useFormFields("complaint");
+  const [complaintExtras, setComplaintExtras] = useState<Record<string, string | boolean>>({});
 
   const unread = (notifications.data ?? []).filter((row) => !row.read_at).length;
 
@@ -98,16 +102,22 @@ function SupportPage() {
       toast.error("Add a short subject and describe what happened.");
       return;
     }
+    const extrasError = validateCustom(complaintForm.custom, complaintExtras);
+    if (extrasError) {
+      toast.error(extrasError);
+      return;
+    }
     try {
       await raise.mutateAsync({
         userId: user.id,
         category,
         subject: subject.trim(),
-        body: body.trim(),
+        body: [body.trim(), ...customAnswerLines(complaintForm.custom, complaintExtras)].join("\n\n"),
         contactEmail: user.email ?? "",
       });
       setSubject("");
       setBody("");
+      setComplaintExtras({});
       toast.success("Complaint received", {
         description: "Ashnight support will follow up in your inbox.",
       });
@@ -205,8 +215,11 @@ function SupportPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Category</Label>
+              {complaintForm.intro ? (
+                <p className="text-xs text-muted-foreground">{complaintForm.intro}</p>
+              ) : null}
+              <div className={complaintForm.visible("category") ? "space-y-2" : "hidden"}>
+                <Label>{complaintForm.label("category", "Category")}</Label>
                 <Select value={category} onValueChange={setCategory}>
                   <SelectTrigger>
                     <SelectValue />
@@ -221,28 +234,52 @@ function SupportPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="complaint-subject">Subject</Label>
+                <Label htmlFor="complaint-subject">
+                  {complaintForm.label("subject", "Subject")}
+                </Label>
                 <Input
                   id="complaint-subject"
                   value={subject}
                   maxLength={140}
                   onChange={(event) => setSubject(event.target.value)}
-                  placeholder="Specialist didn't arrive for the 4pm visit"
+                  placeholder={complaintForm.placeholder(
+                    "subject",
+                    "Specialist didn't arrive for the 4pm visit",
+                  )}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="complaint-body">What happened?</Label>
+                <Label htmlFor="complaint-body">
+                  {complaintForm.label("body", "What happened?")}
+                </Label>
                 <Textarea
                   id="complaint-body"
                   rows={5}
                   maxLength={2000}
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
-                  placeholder="Give dates, amounts and anything else that helps us investigate."
+                  placeholder={complaintForm.placeholder(
+                    "body",
+                    "Give dates, amounts and anything else that helps us investigate.",
+                  )}
                 />
               </div>
+              {complaintForm.custom.length ? (
+                <CustomFormFields
+                  idPrefix="complaint"
+                  fields={complaintForm.custom}
+                  values={complaintExtras}
+                  onChange={(id, value) =>
+                    setComplaintExtras((current) => ({ ...current, [id]: value }))
+                  }
+                />
+              ) : null}
               <Button onClick={() => void submitComplaint()} disabled={raise.isPending}>
-                {raise.isPending ? <Loader2 className="size-4 animate-spin" /> : "Send to support"}
+                {raise.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  complaintForm.submitLabel("Send to support")
+                )}
               </Button>
             </CardContent>
           </Card>
