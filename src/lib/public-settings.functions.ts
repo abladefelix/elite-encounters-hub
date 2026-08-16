@@ -15,6 +15,7 @@ const PUBLIC_SECTIONS = [
   "branding",
   "locale",
   "signup",
+  "forms",
   "features",
   "rooms",
   "platform",

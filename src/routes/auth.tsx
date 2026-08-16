@@ -28,6 +28,8 @@ import { CaptchaField } from "@/components/captcha-field";
 import { useCaptcha } from "@/lib/captcha";
 import { verifyAuthCaptcha } from "@/lib/captcha.functions";
 import { requestBrowserLocation, type Coords } from "@/lib/geo";
+import { CustomFormFields } from "@/components/custom-form-fields";
+import { identifierCopy, useSigninConfig, validateCustom } from "@/lib/form-fields";
 import { lookupPlaceName } from "@/lib/geo.functions";
 
 /** Only same-origin relative paths are ever used as a post-login destination. */
@@ -107,6 +109,8 @@ export function AuthPage({
   const { flags } = useFeatureFlags();
   const { branding } = useBranding();
   const { config } = useSignupConfig();
+  const { signin, helper: signinFields } = useSigninConfig();
+  const signinId = identifierCopy(signin.identifierMode);
   const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -131,6 +135,7 @@ export function AuthPage({
 
   const captcha = useCaptcha();
   const [signInToken, setSignInToken] = useState("");
+  const [signInExtras, setSignInExtras] = useState<Record<string, string | boolean>>({});
   const [signUpToken, setSignUpToken] = useState("");
   const [captchaRound, setCaptchaRound] = useState(0);
   const [authMode, setAuthMode] = useState<"signin" | "signup">(
@@ -164,7 +169,7 @@ export function AuthPage({
 
 
   /** Google is opt-in: admins turn it on in Control room → Features. */
-  const googleEnabled = flags.googleSignIn;
+  const googleEnabled = flags.googleSignIn && signin.showGoogle;
   const portfolioEnabled = flags.specialistPortfolioUploads && role === "specialist";
 
   const fieldText = (key: string) =>
@@ -190,7 +195,20 @@ export function AuthPage({
     const who = identifier.replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, "").trim();
 
     if (who.length < 3) {
-      toast.error("Enter your username or email address.");
+      toast.error(`Enter your ${signinId.label.toLowerCase()}.`);
+      return;
+    }
+    if (signin.identifierMode === "email" && !isEmailShaped(who)) {
+      toast.error("Enter a valid email address.");
+      return;
+    }
+    if (signin.identifierMode === "username" && isEmailShaped(who)) {
+      toast.error("Sign in with your username, not your email address.");
+      return;
+    }
+    const extrasError = validateCustom(signinFields.custom, signInExtras);
+    if (extrasError) {
+      toast.error(extrasError);
       return;
     }
     if (captcha.enabled && !signInToken) {
@@ -563,20 +581,22 @@ export function AuthPage({
       </div>
 
       <Tabs value={authMode} onValueChange={(value) => setAuthMode(value as "signin" | "signup")}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="signin">Sign in</TabsTrigger>
-          <TabsTrigger value="signup">Create account</TabsTrigger>
+        <TabsList className={signin.showSignupTab ? "grid w-full grid-cols-2" : "grid w-full"}>
+          <TabsTrigger value="signin">{signin.signinTabLabel || "Sign in"}</TabsTrigger>
+          {signin.showSignupTab ? (
+            <TabsTrigger value="signup">{signin.signupTabLabel || "Create account"}</TabsTrigger>
+          ) : null}
         </TabsList>
 
         <TabsContent value="signin">
           <Card>
             <CardContent className="space-y-4 pt-6">
-              <Alert className="border-border/70 bg-secondary/40">
-                <Info className="size-4" />
-                <AlertDescription>
-                  Create an account or sign in to view and book vetted specialists.
-                </AlertDescription>
-              </Alert>
+              {signinFields.intro ? (
+                <Alert className="border-border/70 bg-secondary/40">
+                  <Info className="size-4" />
+                  <AlertDescription>{signinFields.intro}</AlertDescription>
+                </Alert>
+              ) : null}
               {googleEnabled ? (
                 <>
                   <Button
@@ -596,7 +616,9 @@ export function AuthPage({
               ) : null}
               <form className="space-y-4" onSubmit={signIn}>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-identifier">Username or email</Label>
+                  <Label htmlFor="signin-identifier">
+                    {signinFields.label("identifier", signinId.label)}
+                  </Label>
                   <Input
                     id="signin-identifier"
                     type="text"
@@ -606,18 +628,22 @@ export function AuthPage({
                     autoCorrect="off"
                     spellCheck={false}
                     inputMode="email"
-                    placeholder="ashfan_kojo or you@example.com"
+                    placeholder={signinFields.placeholder("identifier", signinId.placeholder)}
                     value={identifier}
                     onChange={(event) => setIdentifier(event.target.value)}
                   />
 
-                  <p className="text-xs text-muted-foreground">
-                    Either works — your username is unique across Ashnight.
-                  </p>
+                  {signinFields.hint("identifier", signinId.hint) ? (
+                    <p className="text-xs text-muted-foreground">
+                      {signinFields.hint("identifier", signinId.hint)}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
+                  <Label htmlFor="signin-password">
+                    {signinFields.label("password", "Password")}
+                  </Label>
                   <Input
                     id="signin-password"
                     type="password"
@@ -626,22 +652,41 @@ export function AuthPage({
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                   />
+                  {signinFields.hint("password") ? (
+                    <p className="text-xs text-muted-foreground">
+                      {signinFields.hint("password")}
+                    </p>
+                  ) : null}
                 </div>
+                <CustomFormFields
+                  idPrefix="signin"
+                  fields={signinFields.custom}
+                  values={signInExtras}
+                  onChange={(id, value) =>
+                    setSignInExtras((current) => ({ ...current, [id]: value }))
+                  }
+                />
                 <CaptchaField onToken={setSignInToken} resetKey={captchaRound} />
                 <Button
                   type="submit"
                   className="w-full"
                   disabled={busy || (captcha.enabled && !signInToken)}
                 >
-                  {busy ? <Loader2 className="size-4 animate-spin" /> : "Sign in"}
+                  {busy ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    signinFields.submitLabel("Sign in")
+                  )}
                 </Button>
-                <button
-                  type="button"
-                  className="w-full text-xs text-muted-foreground underline-offset-4 hover:underline"
-                  onClick={sendReset}
-                >
-                  Forgot your password?
-                </button>
+                {signin.showForgot ? (
+                  <button
+                    type="button"
+                    className="w-full text-xs text-muted-foreground underline-offset-4 hover:underline"
+                    onClick={sendReset}
+                  >
+                    Forgot your password?
+                  </button>
+                ) : null}
               </form>
             </CardContent>
           </Card>

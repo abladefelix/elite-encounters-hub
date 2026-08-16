@@ -28,7 +28,7 @@ export interface BrandingSettings {
 
 export const DEFAULT_BRANDING: BrandingSettings = {
   name: "Ashnight",
-  tagline: "Members-only access to vetted ash specialists.",
+  tagline: "Members-only access to vetted ash dolls.",
   description:
     "A members-only ash services platform. Every specialist and every client is manually vetted before onboarding.",
   legalLine:

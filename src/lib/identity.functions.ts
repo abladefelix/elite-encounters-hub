@@ -228,6 +228,20 @@ export const saveMyDocumentDelivery = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Saves the caller's answers to the admin's custom profile questions. */
+export const saveMyProfileAnswers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input) =>
+    z
+      .object({ answers: z.record(z.string(), z.union([z.string().max(2000), z.boolean()])) })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { saveProfileFormAnswers } = await import("./identity.server");
+    await saveProfileFormAnswers(context.userId, data.answers);
+    return { ok: true };
+  });
+
 /**
  * Creates a pending member account server-side so the browser never holds a
  * session before an admin approves the applicant.
