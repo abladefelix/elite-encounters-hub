@@ -1964,51 +1964,25 @@ function MessagesInbox({
                                     )}
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>
-                                  {giftsAllowed
-                                    ? `Send a cash gift (${roomGifts.length} available in your room)`
-                                    : "Cash gifts are unavailable here"}
-                                </TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Request to pay"
-                                    onClick={() =>
-                                      bookingsOpen
-                                        ? setQuoteOpen(true)
-                                        : toast("Payment requests are switched off right now.")
-                                    }
-                                  >
-                                    {bookingsOpen ? (
-                                      <CediIcon className="size-4" />
-                                    ) : (
-                                      <Lock className="size-4 opacity-60" />
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {bookingsOpen
-                                    ? `Request to pay ${firstName}`
-                                    : "Payment requests are unavailable right now"}
-                                </TooltipContent>
-                              </Tooltip>
-                            </>
-                          ) : null}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Attach file"
-                            onClick={() =>
-                              filesAllowed
-                                ? fileRef.current?.click()
-                                : toast(`File sharing isn't included in the ${tierLabel(room)} room`)
-                            }
-                          >
+                              <TooltipContent>
+                                {giftsAllowed
+                                  ? `Send a cash gift (${roomGifts.length} available in your room)`
+                                  : "Cash gifts are unavailable here"}
+                              </TooltipContent>
+                            </Tooltip>
+                          </>
+                        ) : null}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Attach file"
+                          onClick={() =>
+                            filesAllowed
+                              ? fileRef.current?.click()
+                              : toast(`File sharing isn't included in the ${tierLabel(room)} room`)
+                          }
+                        >
                             {filesAllowed ? (
                               <Paperclip className="size-4" />
                             ) : (
