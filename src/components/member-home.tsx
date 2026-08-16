@@ -253,6 +253,11 @@ export function MemberHome() {
   const isClient = !isSpecialist;
   const { data: specialists, isLoading: specialistsLoading } = useSpecialists("all");
 
+  // Not vetted yet: show the waiting room instead of an empty dashboard.
+  if (profile && (profile.account_status === "pending" || profile.vetting !== "approved")) {
+    return <PendingApprovalHome />;
+  }
+
   const firstName = (profile?.display_name ?? "there").split(" ")[0];
   const hour = new Date().getHours();
   const greeting =
