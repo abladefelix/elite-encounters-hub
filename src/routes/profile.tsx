@@ -81,6 +81,15 @@ export const Route = createFileRoute("/profile")({
 
 const MAX_AVATAR_BYTES = 1_500_000;
 
+/** Admin field key -> the profile column it controls, for required checks. */
+const REQUIRED_MAP: Record<string, keyof EditableFields> = {
+  displayName: "display_name",
+  headline: "headline",
+  city: "city",
+  phone: "phone",
+  bio: "bio",
+};
+
 interface EditableFields {
   display_name: string;
   headline: string;
@@ -161,6 +170,8 @@ function ProfilePage() {
     setFields(toFields(profile));
     setCalls(readCallPreferences(profile.extra));
     setDelivery(readDocumentDelivery(profile.extra));
+    const extra = (profile.extra ?? {}) as Record<string, unknown>;
+    setAnswers(((extra["formAnswers"] as Record<string, string | boolean>) ?? {}));
     const stored = profile.avatar_url;
     if (!stored) {
       setAvatarUrl(null);
