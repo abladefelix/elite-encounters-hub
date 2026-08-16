@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CediIcon } from "@/components/icons/cedi-icon";
 import {
   ArrowLeft,
+  Check,
   CheckCheck,
   ChevronDown,
   ChevronUp,
