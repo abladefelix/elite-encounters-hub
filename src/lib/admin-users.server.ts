@@ -145,11 +145,10 @@ export async function createUser(input: CreateUserInput) {
     email,
     username: input.fields.username ?? undefined,
     phone: input.fields.phone ?? undefined,
-    ghanaCard: input.fields.ghana_card_number ?? undefined,
   });
   for (const [key, state] of Object.entries(availability)) {
-    if (state === "taken") throw new Error(`That ${key.replace("ghanaCard", "Ghana Card")} is already in use.`);
-    if (state === "invalid") throw new Error(`That ${key.replace("ghanaCard", "Ghana Card")} isn't valid.`);
+    if (state === "taken") throw new Error(`That ${key} is already in use.`);
+    if (state === "invalid") throw new Error(`That ${key} isn't valid.`);
   }
 
   const { data, error } = await client.auth.admin.createUser({

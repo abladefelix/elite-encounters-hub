@@ -115,14 +115,12 @@ export interface AvailabilityInput {
   username?: string | undefined;
   email?: string | undefined;
   phone?: string | undefined;
-  ghanaCard?: string | undefined;
 }
 
 export interface AvailabilityResult {
   username: "free" | "taken" | "invalid" | "skipped";
   email: "free" | "taken" | "invalid" | "skipped";
   phone: "free" | "taken" | "invalid" | "skipped";
-  ghanaCard: "free" | "taken" | "invalid" | "skipped";
 }
 
 /**
@@ -136,7 +134,6 @@ export async function checkAvailability(input: AvailabilityInput): Promise<Avail
     username: "skipped",
     email: "skipped",
     phone: "skipped",
-    ghanaCard: "skipped",
   };
 
   const username = normalizeUsername(input.username ?? "");
@@ -170,22 +167,6 @@ export async function checkAvailability(input: AvailabilityInput): Promise<Avail
       const { data } = await client.from("profiles").select("id, phone").not("phone", "is", null);
       const hit = (data ?? []).some((row) => normalizePhone(row.phone ?? "") === phone);
       result.phone = hit ? "taken" : "free";
-    }
-  }
-
-  const card = normalizeCard(input.ghanaCard ?? "");
-  if (card) {
-    if (!/^GHA[0-9]{9,12}$/.test(card)) {
-      result.ghanaCard = "invalid";
-    } else {
-      const { data } = await client
-        .from("profiles")
-        .select("id, ghana_card_number")
-        .not("ghana_card_number", "is", null);
-      const hit = (data ?? []).some(
-        (row) => normalizeCard(row.ghana_card_number ?? "") === card,
-      );
-      result.ghanaCard = hit ? "taken" : "free";
     }
   }
 

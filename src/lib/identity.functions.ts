@@ -20,7 +20,6 @@ export const checkAvailability = createServerFn({ method: "POST" })
         username: z.string().trim().max(64).optional(),
         email: z.string().trim().max(254).optional(),
         phone: z.string().trim().max(32).optional(),
-        ghanaCard: z.string().trim().max(32).optional(),
       })
       .parse(input),
   )
