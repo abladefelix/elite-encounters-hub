@@ -1945,22 +1945,31 @@ function MessagesInbox({
                         {iAmClient ? (
                           <div className="flex items-center justify-between gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-3 py-2">
                             <span className="text-xs font-medium text-primary">
-                              Ready to book {firstName}?
+                              {liveBookingEscrow
+                                ? "Paid and held in escrow"
+                                : `Ready to book ${firstName}?`}
                             </span>
                             <Button
                               type="button"
-                              variant="brass"
+                              variant={liveBookingEscrow ? "outline" : "brass"}
                               size="sm"
+                              disabled={Boolean(liveBookingEscrow)}
                               className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
                               onClick={() =>
                                 bookingsOpen
                                   ? setQuoteOpen(true)
                                   : toast("Payment requests are switched off right now.")
                               }
-                              aria-label={`Book ${firstName}`}
+                              aria-label={
+                                liveBookingEscrow ? `Booked ${firstName}` : `Book ${firstName}`
+                              }
                             >
-                              <CediIcon className="size-4" />
-                              Book {firstName}
+                              {liveBookingEscrow ? (
+                                <Check className="size-4" />
+                              ) : (
+                                <CediIcon className="size-4" />
+                              )}
+                              {liveBookingEscrow ? "Booked" : "Book"} {firstName}
                             </Button>
                           </div>
                         ) : null}
