@@ -176,25 +176,28 @@ function ProfileChecklist() {
 }
 
 function RoomsPeek() {
-  const { rooms } = useRoomSettings();
-  const list = (rooms ?? []).slice(0, 3);
+  const { roomIds, profileOf } = useRoomSettings();
+  const list = roomIds.slice(0, 3);
   if (!list.length) return null;
 
   return (
     <Card className="border-border/70 bg-panel p-5">
       <h2 className="font-display text-base font-semibold">Rooms you can join once approved</h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        {list.map((room) => (
-          <div key={room.tier} className="rounded-xl border border-border/60 bg-background/40 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <p className="font-display text-sm font-semibold">{tierLabel(room.tier)}</p>
-              <Badge variant="outline" className="text-[0.65rem]">
-                {money(room.price)}
-              </Badge>
+        {list.map((tier) => {
+          const info = profileOf(tier);
+          return (
+            <div key={tier} className="rounded-xl border border-border/60 bg-background/40 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-display text-sm font-semibold">{tierLabel(tier)}</p>
+                <Badge variant="outline" className="text-[0.65rem]">
+                  {money(info.priceMonthly)}
+                </Badge>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{info.tagline}</p>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">{room.tagline}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <Button asChild variant="soft" size="sm" className="mt-4">
         <Link to="/rooms">Preview the rooms</Link>
