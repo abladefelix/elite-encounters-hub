@@ -37,6 +37,7 @@ import { Route as AshnightControlEmailRouteImport } from './routes/ashnight-cont
 import { Route as AshnightControlEscrowRouteImport } from './routes/ashnight-control.escrow'
 import { Route as AshnightControlFeaturesRouteImport } from './routes/ashnight-control.features'
 import { Route as AshnightControlFinanceRouteImport } from './routes/ashnight-control.finance'
+import { Route as AshnightControlFormsRouteImport } from './routes/ashnight-control.forms'
 import { Route as AshnightControlGroupsRouteImport } from './routes/ashnight-control.groups'
 import { Route as AshnightControlLogsRouteImport } from './routes/ashnight-control.logs'
 import { Route as AshnightControlMaintenanceRouteImport } from './routes/ashnight-control.maintenance'
@@ -203,6 +204,11 @@ const AshnightControlFinanceRoute = AshnightControlFinanceRouteImport.update({
   path: '/finance',
   getParentRoute: () => AshnightControlRoute,
 } as any)
+const AshnightControlFormsRoute = AshnightControlFormsRouteImport.update({
+  id: '/forms',
+  path: '/forms',
+  getParentRoute: () => AshnightControlRoute,
+} as any)
 const AshnightControlGroupsRoute = AshnightControlGroupsRouteImport.update({
   id: '/groups',
   path: '/groups',
@@ -348,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/finance': typeof AshnightControlFinanceRoute
+  '/ashnight-control/forms': typeof AshnightControlFormsRoute
   '/ashnight-control/groups': typeof AshnightControlGroupsRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
   '/ashnight-control/maintenance': typeof AshnightControlMaintenanceRoute
@@ -399,6 +406,7 @@ export interface FileRoutesByTo {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/finance': typeof AshnightControlFinanceRoute
+  '/ashnight-control/forms': typeof AshnightControlFormsRoute
   '/ashnight-control/groups': typeof AshnightControlGroupsRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
   '/ashnight-control/maintenance': typeof AshnightControlMaintenanceRoute
@@ -452,6 +460,7 @@ export interface FileRoutesById {
   '/ashnight-control/escrow': typeof AshnightControlEscrowRoute
   '/ashnight-control/features': typeof AshnightControlFeaturesRoute
   '/ashnight-control/finance': typeof AshnightControlFinanceRoute
+  '/ashnight-control/forms': typeof AshnightControlFormsRoute
   '/ashnight-control/groups': typeof AshnightControlGroupsRoute
   '/ashnight-control/logs': typeof AshnightControlLogsRoute
   '/ashnight-control/maintenance': typeof AshnightControlMaintenanceRoute
@@ -506,6 +515,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/finance'
+    | '/ashnight-control/forms'
     | '/ashnight-control/groups'
     | '/ashnight-control/logs'
     | '/ashnight-control/maintenance'
@@ -557,6 +567,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/finance'
+    | '/ashnight-control/forms'
     | '/ashnight-control/groups'
     | '/ashnight-control/logs'
     | '/ashnight-control/maintenance'
@@ -609,6 +620,7 @@ export interface FileRouteTypes {
     | '/ashnight-control/escrow'
     | '/ashnight-control/features'
     | '/ashnight-control/finance'
+    | '/ashnight-control/forms'
     | '/ashnight-control/groups'
     | '/ashnight-control/logs'
     | '/ashnight-control/maintenance'
@@ -856,6 +868,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AshnightControlFinanceRouteImport
       parentRoute: typeof AshnightControlRoute
     }
+    '/ashnight-control/forms': {
+      id: '/ashnight-control/forms'
+      path: '/forms'
+      fullPath: '/ashnight-control/forms'
+      preLoaderRoute: typeof AshnightControlFormsRouteImport
+      parentRoute: typeof AshnightControlRoute
+    }
     '/ashnight-control/groups': {
       id: '/ashnight-control/groups'
       path: '/groups'
@@ -1027,6 +1046,7 @@ interface AshnightControlRouteChildren {
   AshnightControlEscrowRoute: typeof AshnightControlEscrowRoute
   AshnightControlFeaturesRoute: typeof AshnightControlFeaturesRoute
   AshnightControlFinanceRoute: typeof AshnightControlFinanceRoute
+  AshnightControlFormsRoute: typeof AshnightControlFormsRoute
   AshnightControlGroupsRoute: typeof AshnightControlGroupsRoute
   AshnightControlLogsRoute: typeof AshnightControlLogsRoute
   AshnightControlMaintenanceRoute: typeof AshnightControlMaintenanceRoute
@@ -1059,6 +1079,7 @@ const AshnightControlRouteChildren: AshnightControlRouteChildren = {
   AshnightControlEscrowRoute: AshnightControlEscrowRoute,
   AshnightControlFeaturesRoute: AshnightControlFeaturesRoute,
   AshnightControlFinanceRoute: AshnightControlFinanceRoute,
+  AshnightControlFormsRoute: AshnightControlFormsRoute,
   AshnightControlGroupsRoute: AshnightControlGroupsRoute,
   AshnightControlLogsRoute: AshnightControlLogsRoute,
   AshnightControlMaintenanceRoute: AshnightControlMaintenanceRoute,

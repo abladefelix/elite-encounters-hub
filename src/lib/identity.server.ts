@@ -662,6 +662,30 @@ export async function saveDocumentDelivery(
   if (saveError) throw new Error(saveError.message);
 }
 
+/**
+ * Merges a member's answers to the admin's custom profile questions into
+ * `profiles.extra` under `formAnswers`. Read-then-merge so nothing else in
+ * `extra` (gallery media, call prefs, delivery choice) is lost.
+ */
+export async function saveProfileFormAnswers(
+  userId: string,
+  answers: Record<string, string | boolean>,
+) {
+  const db = await admin();
+  const { data, error } = await db.from("profiles").select("extra").eq("id", userId).maybeSingle();
+  if (error) throw new Error(error.message);
+  const current = (data?.extra ?? {}) as Record<string, unknown>;
+  const merged = {
+    ...current,
+    formAnswers: { ...((current["formAnswers"] as object) ?? {}), ...answers },
+  };
+  const { error: saveError } = await db
+    .from("profiles")
+    .update({ extra: merged as never })
+    .eq("id", userId);
+  if (saveError) throw new Error(saveError.message);
+}
+
 /* ------------------------------------------------------------ registration */
 
 export interface RegisterFileRequest {

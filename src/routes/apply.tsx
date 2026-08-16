@@ -24,6 +24,8 @@ import { useApplications, useSubmitApplication } from "@/lib/queries";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useServiceCatalog } from "@/lib/service-catalog";
 import { cn } from "@/lib/utils";
+import { CustomFormFields } from "@/components/custom-form-fields";
+import { customAnswerLines, useFormFields, validateCustom } from "@/lib/form-fields";
 
 const ROOM_TIERS: { id: "basic" | "premium" | "ultimate"; name: string }[] = [
   { id: "basic", name: "Basic Room" },
@@ -89,6 +91,8 @@ function ApplyPage() {
   );
   const [services, setServices] = useState<string[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const applyForm = useFormFields("apply");
+  const [extraAnswers, setExtraAnswers] = useState<Record<string, string | boolean>>({});
 
   // A completed or rejected historical application must not block a new room
   // request. Only an application that is currently being reviewed for this
@@ -188,7 +192,13 @@ function ApplyPage() {
       return;
     }
 
-    if (role === "specialist" && services.length === 0) {
+    const extrasError = validateCustom(applyForm.custom, extraAnswers);
+    if (extrasError) {
+      toast.error(extrasError);
+      return;
+    }
+
+    if (applyForm.visible("services") && role === "specialist" && services.length === 0) {
       toast.error("Pick at least one service you render");
       return;
     }
@@ -214,7 +224,7 @@ function ApplyPage() {
         city,
         // Specialists don't pick a room — admins place them after vetting.
         suggested_room: role === "specialist" ? "basic" : room,
-        pitch: about,
+        pitch: [about, ...customAnswerLines(applyForm.custom, extraAnswers)].join("\n\n"),
       },
 
       {
@@ -285,15 +295,19 @@ function ApplyPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Full name" name="fullName" error={errors.fullName} />
-                <Field label="Phone" name="phone" error={errors.phone} />
-                <Field label="City" name="city" error={errors.city} />
+                <Field
+                  label={applyForm.label("fullName", "Full name")}
+                  name="fullName"
+                  error={errors.fullName}
+                />
+                <Field label={applyForm.label("phone", "Phone")} name="phone" error={errors.phone} />
+                <Field label={applyForm.label("city", "City")} name="city" error={errors.city} />
               </div>
 
-              {role === "client" ? (
+              {role === "client" && applyForm.visible("room") ? (
                 <div>
                   <Label htmlFor="room" className="text-sm">
-                    Room you'd like to join
+                    {applyForm.label("room", "Room you'd like to join")}
                   </Label>
                   <Select value={room} onValueChange={(value) => setRoom(value as typeof room)}>
                     <SelectTrigger id="room" className="mt-2">
@@ -325,9 +339,9 @@ function ApplyPage() {
               )}
 
 
-              {role === "specialist" ? (
+              {role === "specialist" && applyForm.visible("services") ? (
                 <div>
-                  <Label className="text-sm">Services you render</Label>
+                  <Label className="text-sm">{applyForm.label("services", "Services you render")}</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Ashnight operations publishes this catalogue — pick everything you cover.
                   </p>
@@ -366,11 +380,23 @@ function ApplyPage() {
                 </div>
               ) : null}
 
+              {applyForm.custom.length ? (
+                <CustomFormFields
+                  idPrefix="apply"
+                  fields={applyForm.custom}
+                  values={extraAnswers}
+                  onChange={(id, value) =>
+                    setExtraAnswers((current) => ({ ...current, [id]: value }))
+                  }
+                />
+              ) : null}
+
               <div>
                 <Label htmlFor="about" className="text-sm">
-                  {role === "client"
+                  {applyForm.section.fields["about"]?.label?.trim() ||
+                    (role === "client"
                     ? "What do you need cleaned, and how often?"
-                    : "Your experience, specialisms and availability"}
+                      : "Your experience, specialisms and availability")}
                 </Label>
                 <Textarea
                   id="about"

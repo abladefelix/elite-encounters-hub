@@ -22,6 +22,7 @@ export type SettingsSection =
   | "integrations"
   | "security"
   | "signup"
+  | "forms"
   | "backups"
   | "email"
   | "addons"

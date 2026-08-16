@@ -95,6 +95,7 @@ const NAV: {
   { to: "/ashnight-control/finance", label: "Finance & accounting", icon: Calculator, area: "finance" },
   { to: "/ashnight-control/logs", label: "Activity log", icon: ScrollText, area: "logs" },
   { to: "/ashnight-control/signup", label: "Sign-up form", icon: ClipboardList, area: "signup" },
+  { to: "/ashnight-control/forms", label: "Form fields", icon: ClipboardList, area: "forms" },
   { to: "/ashnight-control/features", label: "Features", icon: ToggleLeft, area: "features" },
   { to: "/ashnight-control/branding", label: "Brand & wording", icon: Palette, area: "branding" },
   { to: "/ashnight-control/appearance", label: "Appearance & layout", icon: Palette, area: "appearance" },

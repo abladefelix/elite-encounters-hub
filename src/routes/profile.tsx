@@ -23,7 +23,13 @@ import {
   readCallPreferences,
   type CallPreferences,
 } from "@/lib/call-preferences";
-import { saveMyCallPreferences, saveMyDocumentDelivery } from "@/lib/identity.functions";
+import {
+  saveMyCallPreferences,
+  saveMyDocumentDelivery,
+  saveMyProfileAnswers,
+} from "@/lib/identity.functions";
+import { CustomFormFields } from "@/components/custom-form-fields";
+import { useFormFields, validateCustom } from "@/lib/form-fields";
 import {
   DEFAULT_DOCUMENT_DELIVERY,
   describeDelivery,
@@ -74,6 +80,15 @@ export const Route = createFileRoute("/profile")({
 });
 
 const MAX_AVATAR_BYTES = 1_500_000;
+
+/** Admin field key -> the profile column it controls, for required checks. */
+const REQUIRED_MAP: Record<string, keyof EditableFields> = {
+  displayName: "display_name",
+  headline: "headline",
+  city: "city",
+  phone: "phone",
+  bio: "bio",
+};
 
 interface EditableFields {
   display_name: string;
@@ -129,6 +144,8 @@ function ProfilePage() {
   const [fields, setFields] = useState<EditableFields | null>(null);
   const [serviceIds, setServiceIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const profileForm = useFormFields("profile");
+  const [answers, setAnswers] = useState<Record<string, string | boolean>>({});
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [calls, setCalls] = useState<CallPreferences>(DEFAULT_CALL_PREFERENCES);
   const [delivery, setDelivery] = useState<DocumentDeliveryPreferences>(DEFAULT_DOCUMENT_DELIVERY);
@@ -153,6 +170,8 @@ function ProfilePage() {
     setFields(toFields(profile));
     setCalls(readCallPreferences(profile.extra));
     setDelivery(readDocumentDelivery(profile.extra));
+    const extra = (profile.extra ?? {}) as Record<string, unknown>;
+    setAnswers(((extra["formAnswers"] as Record<string, string | boolean>) ?? {}));
     const stored = profile.avatar_url;
     if (!stored) {
       setAvatarUrl(null);
@@ -278,6 +297,18 @@ function ProfilePage() {
 
   async function saveProfile() {
     if (!user || !fields) return;
+    const missing = profileForm.section.fields;
+    for (const [key, column] of Object.entries(REQUIRED_MAP)) {
+      if (missing[key]?.required && !String(fields[column] ?? "").trim()) {
+        toast.error(`${profileForm.label(key, key)} is required.`);
+        return;
+      }
+    }
+    const extrasError = validateCustom(profileForm.custom, answers);
+    if (extrasError) {
+      toast.error(extrasError);
+      return;
+    }
     try {
       await updateProfile.mutateAsync({
         id: user.id,
@@ -299,6 +330,9 @@ function ProfilePage() {
       // freshly uploaded gallery photos or the intro clip.
       await saveMyCallPreferences({ data: calls });
       await saveMyDocumentDelivery({ data: delivery });
+      if (profileForm.custom.length) {
+        await saveMyProfileAnswers({ data: { answers } });
+      }
 
       if (isSpecialist) {
         await setSpecialistServices.mutateAsync({ specialistId: user.id, serviceIds });
@@ -424,41 +458,84 @@ function ProfilePage() {
         {/* details */}
         <Card className="mt-5 border-border/70 bg-surface p-5 sm:p-6">
           <h2 className="font-display text-base font-semibold">Details</h2>
+          {profileForm.intro ? (
+            <p className="mt-1 text-xs text-muted-foreground">{profileForm.intro}</p>
+          ) : null}
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <TextField
-              label="Full name"
-              value={fields.display_name}
-              onChange={(value) => patch("display_name", value)}
-            />
-            <TextField
-              label="Headline"
-              value={fields.headline}
-              onChange={(value) => patch("headline", value)}
-            />
-            <TextField label="City" value={fields.city} onChange={(value) => patch("city", value)} />
-            <TextField label="Phone" value={fields.phone} onChange={(value) => patch("phone", value)} />
+            {profileForm.visible("displayName") ? (
+              <TextField
+                label={profileForm.label("displayName", "Full name")}
+                value={fields.display_name}
+                onChange={(value) => patch("display_name", value)}
+                {...(profileForm.hint("displayName")
+                  ? { hint: profileForm.hint("displayName") as string }
+                  : {})}
+              />
+            ) : null}
+            {profileForm.visible("headline") ? (
+              <TextField
+                label={profileForm.label("headline", "Headline")}
+                value={fields.headline}
+                onChange={(value) => patch("headline", value)}
+                {...(profileForm.hint("headline")
+                  ? { hint: profileForm.hint("headline") as string }
+                  : {})}
+              />
+            ) : null}
+            {profileForm.visible("city") ? (
+              <TextField
+                label={profileForm.label("city", "City")}
+                value={fields.city}
+                onChange={(value) => patch("city", value)}
+              />
+            ) : null}
+            {profileForm.visible("phone") ? (
+              <TextField
+                label={profileForm.label("phone", "Phone")}
+                value={fields.phone}
+                onChange={(value) => patch("phone", value)}
+              />
+            ) : null}
             {isSpecialist ? (
               <>
-                <TextField
-                  label="Hourly rate (GHS)"
-                  type="number"
-                  value={String(fields.hourly_rate)}
-                  onChange={(value) => patch("hourly_rate", Number(value) || 0)}
-                  hint={`Members see ${money(fields.hourly_rate)} per hour`}
-                />
-                <TextField
-                  label="Years of experience"
-                  type="number"
-                  value={String(fields.years_experience)}
-                  onChange={(value) => patch("years_experience", Number(value) || 0)}
-                />
+                {profileForm.visible("hourlyRate") ? (
+                  <TextField
+                    label={profileForm.label("hourlyRate", "Hourly rate (GHS)")}
+                    type="number"
+                    value={String(fields.hourly_rate)}
+                    onChange={(value) => patch("hourly_rate", Number(value) || 0)}
+                    hint={
+                      profileForm.hint("hourlyRate") ??
+                      `Members see ${money(fields.hourly_rate)} per hour`
+                    }
+                  />
+                ) : null}
+                {profileForm.visible("yearsExperience") ? (
+                  <TextField
+                    label={profileForm.label("yearsExperience", "Years of experience")}
+                    type="number"
+                    value={String(fields.years_experience)}
+                    onChange={(value) => patch("years_experience", Number(value) || 0)}
+                  />
+                ) : null}
               </>
             ) : null}
           </div>
 
-          <div className="mt-4">
+          {profileForm.custom.length ? (
+            <div className="mt-4 space-y-4">
+              <CustomFormFields
+                idPrefix="profile"
+                fields={profileForm.custom}
+                values={answers}
+                onChange={(id, value) => setAnswers((current) => ({ ...current, [id]: value }))}
+              />
+            </div>
+          ) : null}
+
+          <div className={profileForm.visible("bio") ? "mt-4" : "hidden"}>
             <Label htmlFor="bio" className="text-sm">
-              About you
+              {profileForm.label("bio", "About you")}
             </Label>
             <Textarea
               id="bio"
