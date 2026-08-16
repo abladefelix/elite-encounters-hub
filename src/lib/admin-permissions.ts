@@ -52,6 +52,7 @@ export const ADMIN_AREAS: AdminArea[] = [
   { key: "backups", label: "Backups", group: "Platform" },
   { key: "server", label: "Server & DNS", group: "Platform" },
   { key: "demo", label: "Demo data", group: "Platform" },
+  { key: "maintenance", label: "Maintenance & repairs", group: "Platform" },
   { key: "deploy", label: "Deploy", group: "Platform" },
 ];
 

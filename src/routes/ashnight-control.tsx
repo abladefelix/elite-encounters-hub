@@ -31,6 +31,7 @@ import {
   Users,
   UserCog,
   MonitorSmartphone,
+  Wrench,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -102,6 +103,7 @@ const NAV: {
   { to: "/ashnight-control/backups", label: "Backups", icon: DatabaseBackup, area: "backups" },
   { to: "/ashnight-control/server", label: "Server & DNS", icon: Server, area: "server" },
   { to: "/ashnight-control/demo", label: "Demo data", icon: Database, area: "demo" },
+  { to: "/ashnight-control/maintenance", label: "Maintenance & repairs", icon: Wrench, area: "maintenance" },
   { to: "/ashnight-control/deploy", label: "Deploy", icon: Rocket, area: "deploy" },
 ];
 

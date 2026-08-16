@@ -37,7 +37,8 @@ export type SettingsSection =
   | "chatHistory"
   | "notifications"
   | "delivery"
-  | "appearance";
+  | "appearance"
+  | "maintenance";
 
 type SettingsBlob = Partial<Record<SettingsSection, unknown>>;
 
