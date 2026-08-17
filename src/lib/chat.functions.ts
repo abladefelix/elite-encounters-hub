@@ -5,7 +5,7 @@ import { requireActiveSession } from "@/lib/active-session-middleware";
 
 export const startSpecialistChat = createServerFn({ method: "POST" })
   .middleware([requireActiveSession])
-  .inputValidator((input) => z.object({ specialistId: z.string().uuid() }).parse(input))
+  .validator((input) => z.object({ specialistId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     if (data.specialistId === context.userId) {
       throw new Error("You can't message your own profile.");

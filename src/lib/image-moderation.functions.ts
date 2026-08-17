@@ -31,7 +31,7 @@ Ordinary photos (people, rooms, cleaning work, receipts issued by the platform, 
 Reply with JSON only: {"block": boolean, "reason": "<short phrase naming what was found, empty when allowed>"}`;
 
 export const scanChatImage = createServerFn({ method: "POST" })
-  .inputValidator((input: { dataUrl: string }) => {
+  .validator((input: { dataUrl: string }) => {
     if (typeof input?.dataUrl !== "string" || !input.dataUrl.startsWith("data:image/")) {
       throw new Error("An image is required");
     }

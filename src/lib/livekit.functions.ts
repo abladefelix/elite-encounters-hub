@@ -26,7 +26,7 @@ export interface CallTokenResult {
 
 export const getCallToken = createServerFn({ method: "POST" })
   .middleware([requireActiveSession])
-  .inputValidator((input: unknown) => inputSchema.parse(input))
+  .validator((input: unknown) => inputSchema.parse(input))
   .handler(async ({ data, context }): Promise<CallTokenResult> => {
     const { supabase, userId } = context;
 

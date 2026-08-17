@@ -11,7 +11,7 @@ const inputSchema = z.object({
 });
 
 export const lookupPlaceName = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => inputSchema.parse(input))
+  .validator((input: unknown) => inputSchema.parse(input))
   .handler(async ({ data }): Promise<{ label: string }> => {
     const { describeCoordinates } = await import("@/lib/geo.server");
     return { label: await describeCoordinates(data.lat, data.lng) };
