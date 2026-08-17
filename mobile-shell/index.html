@@ -131,7 +131,15 @@
           busy = true;
           retryEl.disabled = true;
           statusEl.textContent = "Checking for a connection…";
-          var ok = navigator.onLine === false ? false : await reachable();
+          // On Android this page runs from the local app scheme with no plugin
+          // access, so a cross-origin probe can fail even on a healthy network.
+          // A manual tap therefore trusts navigator.onLine and just goes.
+          var ok =
+            navigator.onLine === false
+              ? false
+              : manual
+                ? true
+                : await reachable();
           if (ok) {
             statusEl.textContent = "Back online — reopening Ashnight…";
             window.location.replace(appUrl);
