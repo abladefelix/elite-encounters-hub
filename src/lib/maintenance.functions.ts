@@ -31,7 +31,7 @@ export const listRepairRuns = createServerFn({ method: "POST" })
   });
 
 export const stageRepair = createServerFn({ method: "POST" })
-  .inputValidator((input: { key: string; errorId?: string | null }) => input)
+  .validator((input: { key: string; errorId?: string | null }) => input)
   .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }) => {
     const { assertAdminArea } = await import("./identity.server");
@@ -41,7 +41,7 @@ export const stageRepair = createServerFn({ method: "POST" })
   });
 
 export const approveRepairRun = createServerFn({ method: "POST" })
-  .inputValidator((input: { runId: string }) => input)
+  .validator((input: { runId: string }) => input)
   .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }) => {
     const { assertAdminArea } = await import("./identity.server");
@@ -51,7 +51,7 @@ export const approveRepairRun = createServerFn({ method: "POST" })
   });
 
 export const skipRepairRun = createServerFn({ method: "POST" })
-  .inputValidator((input: { runId: string; note?: string }) => input)
+  .validator((input: { runId: string; note?: string }) => input)
   .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }) => {
     const { assertAdminArea } = await import("./identity.server");
@@ -61,7 +61,7 @@ export const skipRepairRun = createServerFn({ method: "POST" })
   });
 
 export const revertRepairRun = createServerFn({ method: "POST" })
-  .inputValidator((input: { runId: string }) => input)
+  .validator((input: { runId: string }) => input)
   .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }) => {
     const { assertAdminArea } = await import("./identity.server");
@@ -71,7 +71,7 @@ export const revertRepairRun = createServerFn({ method: "POST" })
   });
 
 export const diagnoseErrorText = createServerFn({ method: "POST" })
-  .inputValidator((input: { text: string }) => input)
+  .validator((input: { text: string }) => input)
   .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }) => {
     const { assertAdminArea } = await import("./identity.server");
@@ -81,7 +81,7 @@ export const diagnoseErrorText = createServerFn({ method: "POST" })
   });
 
 export const updateErrorStatus = createServerFn({ method: "POST" })
-  .inputValidator((input: { id: string; status: "open" | "fixed" | "ignored" }) => input)
+  .validator((input: { id: string; status: "open" | "fixed" | "ignored" }) => input)
   .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }) => {
     const { assertAdminArea } = await import("./identity.server");
@@ -101,7 +101,7 @@ export const clearHandledErrors = createServerFn({ method: "POST" })
 
 /** Any signed-in member's browser reports what broke on their screen. */
 export const reportAppError = createServerFn({ method: "POST" })
-  .inputValidator((input: { message: string; stack?: string; route?: string }) => input)
+  .validator((input: { message: string; stack?: string; route?: string }) => input)
   .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }) => {
     const { recordError } = await import("./maintenance.server");

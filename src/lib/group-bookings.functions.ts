@@ -20,7 +20,7 @@ export const listBookableGroups = createServerFn({ method: "GET" })
 
 export const requestGroupBooking = createServerFn({ method: "POST" })
   .middleware([requireActiveSession])
-  .inputValidator((input) => z.object({
+  .validator((input) => z.object({
     groupId: z.string().uuid(),
     serviceId: z.string().uuid(),
     hours: z.number().positive().max(48),
@@ -51,7 +51,7 @@ export const requestGroupBooking = createServerFn({ method: "POST" })
 
 export const getGroupBookingForThread = createServerFn({ method: "POST" })
   .middleware([requireActiveSession])
-  .inputValidator((input) => z.object({ threadId: z.string().uuid() }).parse(input))
+  .validator((input) => z.object({ threadId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: thread } = await supabaseAdmin
@@ -78,7 +78,7 @@ export const getGroupBookingForThread = createServerFn({ method: "POST" })
 
 export const respondToGroupBooking = createServerFn({ method: "POST" })
   .middleware([requireActiveSession])
-  .inputValidator((input) => z.object({ groupBookingId: z.string().uuid(), available: z.boolean() }).parse(input))
+  .validator((input) => z.object({ groupBookingId: z.string().uuid(), available: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: result, error } = await supabaseAdmin.rpc("respond_group_booking_availability", {
