@@ -26,6 +26,10 @@ const config: CapacitorConfig = {
     androidScheme: "https",
     iosScheme: "https",
     cleartext: false,
+    // Load the bundled offline screen (mobile-shell/index.html) when the live
+    // site can't be reached — without this the web view hangs on a blank page
+    // and the splash never goes away.
+    errorPath: "index.html",
     // Anything not listed here opens in the system browser instead of the app.
     allowNavigation: [
       liveHost,
@@ -64,9 +68,10 @@ const config: CapacitorConfig = {
     // CENTER_CROP / aspectFill covers every phone shape without letter-boxing.
     SplashScreen: {
       // The web app calls SplashScreen.hide() itself (see src/components/native-shell.tsx),
-      // so the OS must not race it with an automatic timeout.
-      launchAutoHide: false,
-      launchShowDuration: 3000,
+      // but the OS must also time out on its own: with no connection the web app
+      // never boots, and launchAutoHide: false left the splash up forever.
+      launchAutoHide: true,
+      launchShowDuration: 4000,
       backgroundColor: "#0b0d12",
       androidScaleType: "CENTER_CROP",
       showSpinner: false,

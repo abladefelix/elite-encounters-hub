@@ -14,7 +14,7 @@
     "start": "node .output/server/index.mjs",
     "mobile:add:ios": "cap add ios",
     "mobile:add:android": "cap add android",
-    "mobile:sync": "cap sync && node scripts/native-permissions.mjs",
+    "mobile:sync": "node scripts/mobile-shell-url.mjs && cap sync && node scripts/native-permissions.mjs",
     "mobile:permissions": "node scripts/native-permissions.mjs",
     "mobile:assets": "capacitor-assets generate --iconBackgroundColor \"#0b0d12\" --iconBackgroundColorDark \"#0b0d12\" --splashBackgroundColor \"#0b0d12\" --splashBackgroundColorDark \"#0b0d12\"",
     "mobile:open:ios": "cap open ios",

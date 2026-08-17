@@ -3,10 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- Rewritten by scripts/mobile-shell-url.mjs during `npm run mobile:sync`. -->
+    <meta name="ashnight-app-url" content="https://ashnight.caymanirs.com" />
     <title>Ashnight</title>
     <style>
       :root {
-        color-scheme: light dark;
+        color-scheme: dark;
       }
       body {
         margin: 0;
@@ -45,10 +47,28 @@
         margin: 0 0 0.5rem;
       }
       p {
-        margin: 0;
+        margin: 0 auto;
         font-size: 0.9rem;
-        opacity: 0.7;
+        opacity: 0.72;
         max-width: 22rem;
+      }
+      button {
+        margin-top: 1.5rem;
+        font: inherit;
+        font-weight: 600;
+        color: #0b0d12;
+        background: #c9a227;
+        border: 0;
+        border-radius: 999px;
+        padding: 0.7rem 1.6rem;
+      }
+      button[disabled] {
+        opacity: 0.6;
+      }
+      .status {
+        margin-top: 0.9rem;
+        font-size: 0.78rem;
+        opacity: 0.55;
       }
     </style>
   </head>
@@ -57,11 +77,87 @@
       <div class="brand" aria-hidden="true">
         <span class="big"></span><span class="small"></span>
       </div>
-      <h1>Ashnight is offline</h1>
-      <p>
-        You need an internet connection to book vetted cleaning specialists. Reconnect and reopen
-        the app to continue.
+      <h1>You're offline</h1>
+      <p id="copy">
+        Ashnight needs an internet connection. Turn off airplane mode or reconnect to Wi‑Fi — we'll
+        take you straight back in.
       </p>
+      <button id="retry" type="button">Try again</button>
+      <p class="status" id="status">Checking for a connection…</p>
     </main>
+    <script>
+      (function () {
+        var appUrl =
+          (document.querySelector('meta[name="ashnight-app-url"]') || {}).content ||
+          "https://ashnight.caymanirs.com";
+        var statusEl = document.getElementById("status");
+        var retryEl = document.getElementById("retry");
+        var busy = false;
+
+        function reachable() {
+          // A cache-busted HEAD-ish probe against our own origin. Bounded by a
+          // timeout so a dead radio can never leave this screen spinning.
+          return new Promise(function (resolve) {
+            var done = false;
+            var controller = typeof AbortController === "function" ? new AbortController() : null;
+            var timer = setTimeout(function () {
+              if (done) return;
+              done = true;
+              if (controller) controller.abort();
+              resolve(false);
+            }, 6000);
+            fetch(appUrl + "/favicon.png?_=" + Date.now(), {
+              cache: "no-store",
+              mode: "no-cors",
+              signal: controller ? controller.signal : undefined,
+            })
+              .then(function () {
+                if (done) return;
+                done = true;
+                clearTimeout(timer);
+                resolve(true);
+              })
+              .catch(function () {
+                if (done) return;
+                done = true;
+                clearTimeout(timer);
+                resolve(false);
+              });
+          });
+        }
+
+        async function attempt(manual) {
+          if (busy) return;
+          busy = true;
+          retryEl.disabled = true;
+          statusEl.textContent = "Checking for a connection…";
+          var ok = navigator.onLine === false ? false : await reachable();
+          if (ok) {
+            statusEl.textContent = "Back online — reopening Ashnight…";
+            window.location.replace(appUrl);
+            return;
+          }
+          busy = false;
+          retryEl.disabled = false;
+          statusEl.textContent = manual
+            ? "Still no connection. We'll keep trying automatically."
+            : "Waiting for a connection…";
+        }
+
+        retryEl.addEventListener("click", function () {
+          void attempt(true);
+        });
+        window.addEventListener("online", function () {
+          void attempt(false);
+        });
+        document.addEventListener("visibilitychange", function () {
+          if (document.visibilityState === "visible") void attempt(false);
+        });
+        setInterval(function () {
+          void attempt(false);
+        }, 5000);
+        void attempt(false);
+      })();
+    </script>
   </body>
 </html>
