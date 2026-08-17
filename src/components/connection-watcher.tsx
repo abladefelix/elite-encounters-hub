@@ -12,7 +12,7 @@ import { useNetworkStatus } from "@/lib/network-status";
 const SLOW_TOAST_COOLDOWN_MS = 120_000;
 
 export function ConnectionWatcher() {
-  const { online, quality, latency, check } = useNetworkStatus();
+  const { online, quality, check } = useNetworkStatus();
   const wasOffline = useRef(false);
   const lastSlowToast = useRef(0);
   const [checking, setChecking] = useState(false);
