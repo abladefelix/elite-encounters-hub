@@ -1,6 +1,7 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
+import { isClientDisconnect } from "./lib/client-disconnect";
 import { attachAshnightAuth } from "@/lib/function-auth-attacher";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
@@ -11,6 +12,7 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
     if (error != null && typeof error === "object" && "statusCode" in error) {
       throw error;
     }
+    if (isClientDisconnect(error)) return new Response(null, { status: 499 });
     console.error(error);
     return new Response(renderErrorPage(), {
       status: 500,
