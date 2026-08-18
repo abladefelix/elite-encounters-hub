@@ -2199,6 +2199,35 @@ function MessagesInbox({
 
         {activeThread ? (
           <>
+            <Dialog open={peerPhotoOpen} onOpenChange={setPeerPhotoOpen}>
+              <DialogContent className="max-h-[85dvh] w-[calc(100vw-2rem)] max-w-sm overflow-y-auto p-4">
+                <DialogHeader>
+                  <DialogTitle className="text-base">{peerName}</DialogTitle>
+                </DialogHeader>
+                <div className="overflow-hidden rounded-xl border border-border/70 bg-surface-strong">
+                  {avatarFor(peer) ? (
+                    <img
+                      src={avatarFor(peer)}
+                      alt={`${peerName}'s profile picture`}
+                      className="h-auto w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex aspect-square items-center justify-center text-3xl font-semibold text-muted-foreground">
+                      {initials(peerName)}
+                    </div>
+                  )}
+                </div>
+                {peer?.id && iAmClient ? (
+                  <Button asChild variant="outline" className="w-full">
+                    <Link to="/specialists/$specialistId" params={{ specialistId: peer.id }}>
+                      View full profile
+                    </Link>
+                  </Button>
+                ) : null}
+              </DialogContent>
+            </Dialog>
+
+
             <QuoteDialog
               mode={iAmClient ? "client" : "specialist"}
               peerName={firstName}
