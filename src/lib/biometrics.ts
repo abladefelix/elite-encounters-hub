@@ -14,11 +14,12 @@ function bufferToBase64(buffer: ArrayBuffer): string {
   return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 }
 
-function base64ToBuffer(value: string): Uint8Array {
+function base64ToBuffer(value: string): ArrayBuffer {
   const binary = atob(value);
-  const bytes = new Uint8Array(binary.length);
+  const buffer = new ArrayBuffer(binary.length);
+  const bytes = new Uint8Array(buffer);
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-  return bytes;
+  return buffer;
 }
 
 /** True when this browser/device can do platform biometrics at all. */
