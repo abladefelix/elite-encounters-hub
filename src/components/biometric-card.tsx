@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { useIsNativeApp } from "@/lib/native";
 import {
   biometricLockEnabled,
   biometricsSupported,
@@ -19,6 +20,7 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
   const [supported, setSupported] = useState<boolean | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
+  const native = useIsNativeApp();
 
   useEffect(() => {
     void biometricsSupported().then(setSupported);
@@ -57,7 +59,9 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
       <CardContent className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           {supported === false
-            ? "This device does not offer a biometric sensor Ashnight can use."
+            ? native
+              ? "Add a fingerprint or Face ID in your phone's settings first, then switch this on."
+              : "Biometric unlock works in the Ashnight app on your phone — this browser has no sensor Ashnight can use."
             : enabled
               ? "On for this device only."
               : "Off — the app opens straight into your session."}
