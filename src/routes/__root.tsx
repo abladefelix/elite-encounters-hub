@@ -187,6 +187,8 @@ function RootComponent() {
                 <MaintenanceGate />
                 {/* Offline bar + slow-connection nudges. */}
                 <ConnectionWatcher />
+                {/* Device biometric lock (opt-in per device). No-op when off. */}
+                <BiometricGate />
                 <Toaster position="top-center" />
 
                 </PresenceProvider>
