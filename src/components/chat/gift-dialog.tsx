@@ -213,7 +213,7 @@ export function GiftDialog({
         )}
 
         <DialogFooter>
-          <Button variant="brass" onClick={confirm} disabled={!gift}>
+          <Button variant="brass" className="w-full sm:w-auto" onClick={confirm} disabled={!gift}>
             <Lock className="size-4" />
             <GiftIcon className="size-4" /> Send {money(amount)} gift
           </Button>
