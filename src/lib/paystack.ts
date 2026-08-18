@@ -23,7 +23,7 @@ export const PAYSTACK_CHANNELS: PaystackChannelOption[] = [
     label: "Mobile money",
     hint: "MTN MoMo, Telecel Cash, AirtelTigo Money",
   },
-  { id: "card", label: "Card", hint: "Visa, Mastercard, Verve" },
+  { id: "card", label: "Card", hint: "Visa, Mastercard" },
 ];
 
 export const DEFAULT_PAYSTACK_CHANNEL: PaystackChannel = "mobile_money";
