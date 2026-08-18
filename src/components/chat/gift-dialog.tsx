@@ -100,7 +100,7 @@ export function GiftDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[92dvh] w-[calc(100vw-1rem)] max-w-lg flex-col gap-0 overflow-hidden border-border/70 bg-surface p-0 sm:w-[calc(100vw-3rem)]">
+      <DialogContent className="flex max-h-[92dvh] w-[calc(100vw-1rem)] max-w-lg flex-col gap-0 overflow-hidden rounded-md border-border/70 bg-surface p-0 sm:w-[calc(100vw-3rem)]">
         <DialogHeader className="shrink-0 border-b border-border/60 p-4 text-left sm:p-6 sm:pb-4">
           <DialogTitle className="font-display text-base sm:text-lg">
             Send {firstName} a gift
