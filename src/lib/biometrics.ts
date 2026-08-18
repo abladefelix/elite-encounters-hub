@@ -7,6 +7,8 @@
  * verify the owner before the UI is shown. No server round trip, so it never
  * changes who the Supabase session belongs to — it only guards this device.
  */
+import { isNativeApp } from "@/lib/native";
+
 const CRED_KEY = "ashnight:biometric-credential";
 const ENABLED_KEY = "ashnight:biometric-enabled";
 
@@ -22,8 +24,28 @@ function base64ToBuffer(value: string): ArrayBuffer {
   return buffer;
 }
 
-/** True when this browser/device can do platform biometrics at all. */
+/** Loads the Capacitor biometric plugin, but only inside the native shell. */
+async function nativeBiometrics() {
+  if (!isNativeApp()) return null;
+  try {
+    const mod = await import("@aparajita/capacitor-biometric-auth");
+    return mod.BiometricAuth;
+  } catch {
+    return null;
+  }
+}
+
+/** True when this device can do Face ID / Touch ID / fingerprint. */
 export async function biometricsSupported(): Promise<boolean> {
+  const native = await nativeBiometrics();
+  if (native) {
+    try {
+      const info = await native.checkBiometry();
+      return Boolean(info.isAvailable);
+    } catch {
+      return false;
+    }
+  }
   if (typeof window === "undefined" || !window.PublicKeyCredential) return false;
   try {
     return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
@@ -44,6 +66,23 @@ export function biometricLockEnabled(): boolean {
 export async function enableBiometricLock(userLabel: string): Promise<void> {
   if (!(await biometricsSupported())) {
     throw new Error("This device does not offer Face ID, Touch ID or fingerprint unlock.");
+  }
+  const native = await nativeBiometrics();
+  if (native) {
+    // The OS owns the enrolment, so we only need a successful prompt once and a
+    // marker that this device opted in.
+    await native.authenticate({
+      reason: "Confirm it's you to turn on biometric unlock",
+      cancelTitle: "Cancel",
+      allowDeviceCredential: true,
+      iosFallbackTitle: "Use passcode",
+      androidTitle: "Ashnight",
+      androidSubtitle: "Confirm it's you",
+      androidConfirmationRequired: false,
+    });
+    window.localStorage.setItem(CRED_KEY, "native");
+    window.localStorage.setItem(ENABLED_KEY, "1");
+    return;
   }
   const challenge = window.crypto.getRandomValues(new Uint8Array(32));
   const userId = window.crypto.getRandomValues(new Uint8Array(16));
@@ -80,6 +119,24 @@ export async function verifyBiometric(): Promise<boolean> {
   if (typeof window === "undefined") return false;
   const stored = window.localStorage.getItem(CRED_KEY);
   if (!stored) return false;
+  const native = await nativeBiometrics();
+  if (native) {
+    try {
+      await native.authenticate({
+        reason: "Unlock Ashnight",
+        cancelTitle: "Cancel",
+        allowDeviceCredential: true,
+        iosFallbackTitle: "Use passcode",
+        androidTitle: "Ashnight",
+        androidSubtitle: "Verify to continue",
+        androidConfirmationRequired: false,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  if (stored === "native") return false;
   try {
     const assertion = await navigator.credentials.get({
       publicKey: {
