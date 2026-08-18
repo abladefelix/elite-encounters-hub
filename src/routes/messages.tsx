@@ -1610,7 +1610,13 @@ function MessagesInbox({
                       </button>
                       <div className="min-w-0 overflow-hidden">
                         <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-semibold">{peerName}</p>
+                          <button
+                            type="button"
+                            onClick={() => setPeerPhotoOpen(true)}
+                            className="truncate text-left text-sm font-semibold hover:underline"
+                          >
+                            {peerName}
+                          </button>
                           {peer?.room ? (
                             <TierBadge tier={peer.room} className="hidden sm:inline-flex" />
                           ) : null}
