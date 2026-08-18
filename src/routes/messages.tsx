@@ -685,11 +685,26 @@ function MessagesInbox({
 
   // Returning from a cancelled/closed Paystack checkout can restore this page
   // from the browser cache. Clear transient loading controls so the request is
-  // actionable again instead of showing a permanently spinning button.
+  // actionable again instead of showing a permanently spinning button, and let
+  // the member know privately that they cancelled — this stays a local toast so
+  // nothing about the abandoned payment reaches the specialist's chat.
   useEffect(() => {
     const resetCheckoutState = () => {
       setPayingBookingId("");
       setGroupAction("");
+      let pending: string | null = null;
+      try {
+        pending = window.sessionStorage.getItem(CHECKOUT_PENDING_KEY);
+        if (pending) window.sessionStorage.removeItem(CHECKOUT_PENDING_KEY);
+      } catch {
+        pending = null;
+      }
+      if (pending) {
+        toast("Payment cancelled", {
+          description:
+            "You left the payment page, so nothing was charged. Only you can see this — the request is still open whenever you're ready to pay.",
+        });
+      }
     };
     window.addEventListener("pageshow", resetCheckoutState);
     window.addEventListener("focus", resetCheckoutState);
