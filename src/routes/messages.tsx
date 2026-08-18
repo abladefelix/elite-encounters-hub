@@ -1592,14 +1592,21 @@ function MessagesInbox({
                       >
                         <ArrowLeft className="size-4" />
                       </Button>
-                      <Avatar className="size-9 shrink-0 border border-border sm:size-10">
-                        {avatarFor(peer) ? (
-                          <AvatarImage src={avatarFor(peer)} alt={peerName} />
-                        ) : null}
-                        <AvatarFallback className="bg-surface-strong text-xs">
-                          {initials(peerName)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <button
+                        type="button"
+                        onClick={() => setPeerPhotoOpen(true)}
+                        className="shrink-0 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                        aria-label={`View ${peerName}'s profile picture`}
+                      >
+                        <Avatar className="size-9 border border-border sm:size-10">
+                          {avatarFor(peer) ? (
+                            <AvatarImage src={avatarFor(peer)} alt={peerName} />
+                          ) : null}
+                          <AvatarFallback className="bg-surface-strong text-xs">
+                            {initials(peerName)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </button>
                       <div className="min-w-0 overflow-hidden">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-semibold">{peerName}</p>
