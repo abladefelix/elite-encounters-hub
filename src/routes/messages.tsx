@@ -466,21 +466,39 @@ function MessagesInbox({
   const escrowEntries = activeThread ? threadEntries(activeThread.id) : [];
 
   /**
+   * A client can forget to tap "Service complete" or raise an issue. Admin sets
+   * the grace window (Escrow → auto-confirm hours); once it passes the booking
+   * stops blocking the composer so the client can book the same doll again.
+   */
+  const bookingGraceMs =
+    (escrow.autoReleaseEnabled ?? true) ? (escrow.autoConfirmHours ?? 24) * 3_600_000 : null;
+
+  function pastBookingGrace(timestamp: string | null | undefined) {
+    if (bookingGraceMs === null || !timestamp) return false;
+    const started = new Date(timestamp).getTime();
+    if (Number.isNaN(started)) return false;
+    return Date.now() - started >= bookingGraceMs;
+  }
+
+  /**
    * A paid service is "live" while its money still sits in escrow. While that's
    * the case the composer shows "Booked · <name>" instead of the book button —
    * it only unlocks again once the service is confirmed complete (released /
-   * refunded) or an issue is raised (disputed).
+   * refunded), an issue is raised (disputed), or the admin grace window passes.
    */
   const liveBookingEscrow = escrowEntries.find(
-    (entry) => entry.kind === "booking" && (entry.state === "held" || entry.state === "clearing"),
+    (entry) =>
+      entry.kind === "booking" &&
+      (entry.state === "held" || entry.state === "clearing") &&
+      !pastBookingGrace(entry.paid_at ?? entry.created_at),
   );
 
   /**
    * Any booking in this thread that isn't finished yet — requested, accepted by
    * the doll, or paid and in progress. While one exists the client cannot open a
    * second request for the same doll: the button jumps to the live one instead.
-   * It only unlocks again once that booking is completed, disputed, refunded or
-   * cancelled.
+   * It unlocks once that booking is completed, disputed, refunded or cancelled —
+   * or once the admin-set grace window elapses on a paid booking nobody closed.
    */
   const openBookingRequest = useMemo(() => {
     if (!activeThread) return undefined;
@@ -489,9 +507,11 @@ function MessagesInbox({
         booking.thread_id === activeThread.id &&
         (booking.status === "requested" ||
           booking.status === "accepted" ||
-          booking.status === "paid"),
+          (booking.status === "paid" && !pastBookingGrace(booking.updated_at))),
     );
-  }, [activeThread, bookingsQuery.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeThread, bookingsQuery.data, bookingGraceMs]);
+
 
 
   /** Scrolls the chat to an existing request bubble so it's obvious it exists. */
