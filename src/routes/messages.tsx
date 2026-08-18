@@ -140,6 +140,9 @@ import { cn } from "@/lib/utils";
 
 /** Local-only list of messages this device has hidden. */
 const HIDDEN_MESSAGES_KEY = "ashnight-hidden-messages-v1";
+/** Marks that this member was sent to Paystack, so an abandoned checkout can be
+ * flagged back to them privately (never in the shared conversation). */
+const CHECKOUT_PENDING_KEY = "ashnight-checkout-pending-v1";
 
 export const Route = createFileRoute("/messages")({
   validateSearch: (search: Record<string, unknown>): { thread?: string } => {
