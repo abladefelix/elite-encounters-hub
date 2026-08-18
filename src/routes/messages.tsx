@@ -2003,7 +2003,9 @@ function MessagesInbox({
                               {liveBookingEscrow
                                 ? `Booked ${firstName} · funds held in escrow`
                                 : openBookingRequest
-                                  ? "Request already sent"
+                                  ? openBookingRequest.status === "paid"
+                                    ? "Service in progress"
+                                    : "Request already sent"
                                   : `Ready to book ${firstName}?`}
                             </span>
                             {liveBookingEscrow ? (
@@ -2062,7 +2064,11 @@ function MessagesInbox({
                                 ) : (
                                   <CediIcon className="size-4" />
                                 )}
-                                {openBookingRequest ? "View request" : `Book ${firstName}`}
+                                {openBookingRequest
+                                  ? openBookingRequest.status === "paid"
+                                    ? "View service"
+                                    : "View request"
+                                  : `Book ${firstName}`}
                               </Button>
                             )}
                           </div>
