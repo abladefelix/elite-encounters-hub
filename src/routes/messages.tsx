@@ -1979,34 +1979,73 @@ function MessagesInbox({
                         ) : null}
 
                         {iAmClient ? (
-                          <div className="flex items-center justify-between gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-3 py-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-3 py-2">
                             <span className="text-xs font-medium text-primary">
                               {liveBookingEscrow
-                                ? "Paid and held in escrow"
-                                : `Ready to book ${firstName}?`}
+                                ? `Booked ${firstName} · funds held in escrow`
+                                : openBookingRequest
+                                  ? "Request already sent"
+                                  : `Ready to book ${firstName}?`}
                             </span>
-                            <Button
-                              type="button"
-                              variant={liveBookingEscrow ? "outline" : "brass"}
-                              size="sm"
-                              disabled={Boolean(liveBookingEscrow)}
-                              className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
-                              onClick={() =>
-                                bookingsOpen
-                                  ? setQuoteOpen(true)
-                                  : toast("Payment requests are switched off right now.")
-                              }
-                              aria-label={
-                                liveBookingEscrow ? `Booked ${firstName}` : `Book ${firstName}`
-                              }
-                            >
-                              {liveBookingEscrow ? (
-                                <Check className="size-4" />
-                              ) : (
-                                <CediIcon className="size-4" />
-                              )}
-                              {liveBookingEscrow ? "Booked" : "Book"} {firstName}
-                            </Button>
+                            {liveBookingEscrow ? (
+                              <div className="flex flex-wrap items-center gap-2">
+                                {liveBookingEscrow.state === "held" ? (
+                                  <Button
+                                    type="button"
+                                    variant="brass"
+                                    size="sm"
+                                    className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
+                                    onClick={() => void confirmAndReview(liveBookingEscrow.id)}
+                                  >
+                                    <CheckCheck className="size-4" /> Service complete
+                                  </Button>
+                                ) : null}
+                                <Button
+                                  type="button"
+                                  variant="soft"
+                                  size="sm"
+                                  className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
+                                  onClick={() =>
+                                    void raiseIssue(
+                                      liveBookingEscrow.id,
+                                      "Member raised an issue from the chat thread.",
+                                    )
+                                  }
+                                >
+                                  <ShieldAlert className="size-4" /> Raise an issue
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant={openBookingRequest ? "outline" : "brass"}
+                                size="sm"
+                                className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
+                                onClick={() => {
+                                  if (!bookingsOpen) {
+                                    toast("Payment requests are switched off right now.");
+                                    return;
+                                  }
+                                  if (openBookingRequest) {
+                                    revealBooking(openBookingRequest.id);
+                                    return;
+                                  }
+                                  setQuoteOpen(true);
+                                }}
+                                aria-label={
+                                  openBookingRequest
+                                    ? "View your open request"
+                                    : `Book ${firstName}`
+                                }
+                              >
+                                {openBookingRequest ? (
+                                  <Check className="size-4" />
+                                ) : (
+                                  <CediIcon className="size-4" />
+                                )}
+                                {openBookingRequest ? "View request" : `Book ${firstName}`}
+                              </Button>
+                            )}
                           </div>
                         ) : null}
 
