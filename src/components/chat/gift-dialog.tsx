@@ -118,7 +118,7 @@ export function GiftDialog({
         <div className="space-y-5">
           <div>
             <Label>Choose a gift</Label>
-            <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {catalog.map((item) => {
                 const active = item.id === giftId && !custom.trim();
                 return (
