@@ -2,14 +2,14 @@
  * Paystack payment layer (front-end model).
  *
  * Ashnight collects client payments through Paystack, which is the natural fit
- * for Ghana: cards, mobile money (MTN / Telecel / AirtelTigo), bank transfer
- * and USSD, all settled in GHS. This module holds the channel catalogue and
+ * for Ghana: cards and mobile money (MTN / Telecel / AirtelTigo), all settled
+ * in GHS. This module holds the channel catalogue and
  * the reference format so the checkout UI stays declarative. When the backend
  * lands, `initializePaystack` is the single place to swap the simulated
  * authorisation for a real transaction initialise call.
  */
 
-export type PaystackChannel = "mobile_money" | "card" | "bank_transfer" | "ussd";
+export type PaystackChannel = "mobile_money" | "card";
 
 export interface PaystackChannelOption {
   id: PaystackChannel;
@@ -24,8 +24,6 @@ export const PAYSTACK_CHANNELS: PaystackChannelOption[] = [
     hint: "MTN MoMo, Telecel Cash, AirtelTigo Money",
   },
   { id: "card", label: "Card", hint: "Visa, Mastercard, Verve" },
-  { id: "bank_transfer", label: "Bank transfer", hint: "Pay from your bank app" },
-  { id: "ussd", label: "USSD", hint: "Dial a short code to approve" },
 ];
 
 export const DEFAULT_PAYSTACK_CHANNEL: PaystackChannel = "mobile_money";
