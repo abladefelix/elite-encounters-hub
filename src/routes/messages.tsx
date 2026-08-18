@@ -1096,6 +1096,11 @@ function MessagesInbox({
       toast.success("Taking you to Paystack…", {
         description: `${money(checkout.amount)} will be held in Ashnight escrow.`,
       });
+      try {
+        window.sessionStorage.setItem(CHECKOUT_PENDING_KEY, bookingId);
+      } catch {
+        // Private-mode storage failures just mean no cancel notice.
+      }
       window.location.href = checkout.authorizationUrl;
     } catch (error) {
       setPayingBookingId("");
