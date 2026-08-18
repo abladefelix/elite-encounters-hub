@@ -24,8 +24,6 @@ function base64ToBuffer(value: string): ArrayBuffer {
   return buffer;
 }
 
-let nativeChecked: { available: boolean } | null = null;
-
 /** Loads the Capacitor biometric plugin, but only inside the native shell. */
 async function nativeBiometrics() {
   if (!isNativeApp()) return null;
@@ -43,8 +41,7 @@ export async function biometricsSupported(): Promise<boolean> {
   if (native) {
     try {
       const info = await native.checkBiometry();
-      nativeChecked = { available: Boolean(info.isAvailable) };
-      return nativeChecked.available;
+      return Boolean(info.isAvailable);
     } catch {
       return false;
     }
