@@ -140,6 +140,9 @@ import { cn } from "@/lib/utils";
 
 /** Local-only list of messages this device has hidden. */
 const HIDDEN_MESSAGES_KEY = "ashnight-hidden-messages-v1";
+/** Marks that this member was sent to Paystack, so an abandoned checkout can be
+ * flagged back to them privately (never in the shared conversation). */
+const CHECKOUT_PENDING_KEY = "ashnight-checkout-pending-v1";
 
 export const Route = createFileRoute("/messages")({
   validateSearch: (search: Record<string, unknown>): { thread?: string } => {
@@ -685,11 +688,26 @@ function MessagesInbox({
 
   // Returning from a cancelled/closed Paystack checkout can restore this page
   // from the browser cache. Clear transient loading controls so the request is
-  // actionable again instead of showing a permanently spinning button.
+  // actionable again instead of showing a permanently spinning button, and let
+  // the member know privately that they cancelled — this stays a local toast so
+  // nothing about the abandoned payment reaches the specialist's chat.
   useEffect(() => {
     const resetCheckoutState = () => {
       setPayingBookingId("");
       setGroupAction("");
+      let pending: string | null = null;
+      try {
+        pending = window.sessionStorage.getItem(CHECKOUT_PENDING_KEY);
+        if (pending) window.sessionStorage.removeItem(CHECKOUT_PENDING_KEY);
+      } catch {
+        pending = null;
+      }
+      if (pending) {
+        toast("Payment cancelled", {
+          description:
+            "You left the payment page, so nothing was charged. Only you can see this — the request is still open whenever you're ready to pay.",
+        });
+      }
     };
     window.addEventListener("pageshow", resetCheckoutState);
     window.addEventListener("focus", resetCheckoutState);
@@ -1078,6 +1096,11 @@ function MessagesInbox({
       toast.success("Taking you to Paystack…", {
         description: `${money(checkout.amount)} will be held in Ashnight escrow.`,
       });
+      try {
+        window.sessionStorage.setItem(CHECKOUT_PENDING_KEY, bookingId);
+      } catch {
+        // Private-mode storage failures just mean no cancel notice.
+      }
       window.location.href = checkout.authorizationUrl;
     } catch (error) {
       setPayingBookingId("");
