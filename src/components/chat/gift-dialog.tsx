@@ -100,7 +100,7 @@ export function GiftDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto border-border/70 bg-surface">
+      <DialogContent className="max-h-[85dvh] w-[calc(100vw-1.5rem)] max-w-lg overflow-y-auto overflow-x-hidden border-border/70 bg-surface p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="font-display">Send {firstName} a gift</DialogTitle>
           <DialogDescription>
