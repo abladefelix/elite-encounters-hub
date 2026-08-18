@@ -2526,7 +2526,10 @@ function MessageBubble({
       : 0;
     return (
       <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
-        <div className="max-w-sm rounded-xl border border-primary/30 bg-primary/10 p-4">
+        <div
+          id={`booking-msg-${message.id}`}
+          className="max-w-sm rounded-xl border border-primary/30 bg-primary/10 p-4 transition-shadow"
+        >
           <p className="eyebrow text-primary">
             {paid
               ? "Service confirmed · funds in escrow"
