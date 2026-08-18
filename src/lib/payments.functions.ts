@@ -14,7 +14,7 @@ const tier = z.enum(["basic", "premium", "ultimate"]);
 
 const checkoutBase = z.object({
   callbackUrl: z.string().url().max(500),
-  channel: z.enum(["mobile_money", "card", "bank_transfer", "ussd"]).optional(),
+  channel: z.enum(["mobile_money", "card"]).optional(),
 });
 
 /** Client pays for a booking they already created in the thread. */
