@@ -130,7 +130,7 @@ export function GiftDialog({
                       setCustom("");
                     }}
                     className={cn(
-                      "rounded-xl border border-border bg-background p-3 text-center transition-colors hover:border-primary/50",
+                      "min-w-0 break-words rounded-xl border border-border bg-background p-3 text-center transition-colors hover:border-primary/50",
                       active && "border-primary/60 bg-primary/10",
                     )}
                   >
