@@ -474,6 +474,32 @@ function MessagesInbox({
     (entry) => entry.kind === "booking" && (entry.state === "held" || entry.state === "clearing"),
   );
 
+  /**
+   * A booking request the client already sent in this thread that hasn't been
+   * paid or cancelled yet. Tapping "Book" again jumps to it instead of stacking
+   * duplicate requests in the chat.
+   */
+  const openBookingRequest = useMemo(() => {
+    if (!activeThread) return undefined;
+    return (bookingsQuery.data ?? []).find(
+      (booking) =>
+        booking.thread_id === activeThread.id &&
+        (booking.status === "requested" || booking.status === "accepted"),
+    );
+  }, [activeThread, bookingsQuery.data]);
+
+  /** Scrolls the chat to an existing request bubble so it's obvious it exists. */
+  function revealBooking(bookingId: string) {
+    const message = messages.find((item) => item.booking_id === bookingId);
+    const node = message ? document.getElementById(`booking-msg-${message.id}`) : null;
+    if (node) {
+      node.scrollIntoView({ behavior: "smooth", block: "center" });
+      node.classList.add("ring-2", "ring-primary");
+      window.setTimeout(() => node.classList.remove("ring-2", "ring-primary"), 1600);
+    }
+  }
+
+
   // Only a client who actually paid for and received a visit may rate.
   const allBookings = useMemo(() => bookingsQuery.data ?? [], [bookingsQuery.data]);
   const canRatePeer =
