@@ -177,10 +177,12 @@ export function GiftDialog({
               <SelectTrigger id="gift-channel" className="mt-2">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-w-[calc(100vw-3rem)]">
                 {PAYSTACK_CHANNELS.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
-                    {option.label} — {option.hint}
+                    <span className="block truncate">
+                      {option.label} — {option.hint}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
