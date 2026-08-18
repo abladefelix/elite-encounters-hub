@@ -46,6 +46,9 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
     }
   }
 
+  // Web build never offers this lock — the card only exists in the mobile app.
+  if (!native) return null;
+
   return (
     <Card>
       <CardHeader>
@@ -59,9 +62,7 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
       <CardContent className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           {supported === false
-            ? native
-              ? "Add a fingerprint or Face ID in your phone's settings first, then switch this on."
-              : "Biometric unlock works in the Ashnight app on your phone — this browser has no sensor Ashnight can use."
+            ? "Add a fingerprint or Face ID in your phone's settings first, then switch this on."
             : enabled
               ? "On for this device only."
               : "Off — the app opens straight into your session."}
