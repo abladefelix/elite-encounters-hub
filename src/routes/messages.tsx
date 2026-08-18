@@ -982,6 +982,15 @@ function MessagesInbox({
   /** Specialist prices the visit or the member scopes a visit to pay for. */
   async function handleQuote(quote: QuoteDraft) {
     if (!activeThread) return;
+    // One open request per conversation — never stack duplicates.
+    if (iAmClient && openBookingRequest) {
+      setQuoteOpen(false);
+      revealBooking(openBookingRequest.id);
+      toast("You already have an open request", {
+        description: "Finish or cancel that request before creating a new one.",
+      });
+      return;
+    }
     try {
       const result = iAmClient
         ? await sendClientBookingRequest({
