@@ -100,15 +100,18 @@ export function GiftDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85dvh] w-[calc(100vw-1.5rem)] max-w-lg overflow-y-auto overflow-x-hidden border-border/70 bg-surface p-4 sm:p-6">
-        <DialogHeader>
-          <DialogTitle className="font-display">Send {firstName} a gift</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="flex max-h-[92dvh] w-[calc(100vw-1rem)] max-w-lg flex-col gap-0 overflow-hidden border-border/70 bg-surface p-0 sm:w-[calc(100vw-3rem)]">
+        <DialogHeader className="shrink-0 border-b border-border/60 p-4 text-left sm:p-6 sm:pb-4">
+          <DialogTitle className="font-display text-base sm:text-lg">
+            Send {firstName} a gift
+          </DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">
             Gifts carry real cash value in cedis. {firstName} receives{" "}
             {money(split.net)} of a {money(amount)} gift.
           </DialogDescription>
         </DialogHeader>
 
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
         {catalog.length === 0 ? (
           <p className="rounded-lg border border-border bg-panel p-4 text-sm text-muted-foreground">
             Gifting isn&apos;t available in your room right now. Ask support about rooms that
@@ -116,6 +119,7 @@ export function GiftDialog({
           </p>
         ) : (
         <div className="space-y-5">
+
           <div>
             <Label>Choose a gift</Label>
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -211,13 +215,15 @@ export function GiftDialog({
           </div>
         </div>
         )}
+        </div>
 
-        <DialogFooter>
+        <DialogFooter className="shrink-0 border-t border-border/60 p-4 sm:p-6 sm:pt-4">
           <Button variant="brass" className="w-full sm:w-auto" onClick={confirm} disabled={!gift}>
             <Lock className="size-4" />
             <GiftIcon className="size-4" /> Send {money(amount)} gift
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
