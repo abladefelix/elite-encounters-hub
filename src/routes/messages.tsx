@@ -476,18 +476,23 @@ function MessagesInbox({
   );
 
   /**
-   * A booking request the client already sent in this thread that hasn't been
-   * paid or cancelled yet. Tapping "Book" again jumps to it instead of stacking
-   * duplicate requests in the chat.
+   * Any booking in this thread that isn't finished yet — requested, accepted by
+   * the doll, or paid and in progress. While one exists the client cannot open a
+   * second request for the same doll: the button jumps to the live one instead.
+   * It only unlocks again once that booking is completed, disputed, refunded or
+   * cancelled.
    */
   const openBookingRequest = useMemo(() => {
     if (!activeThread) return undefined;
     return (bookingsQuery.data ?? []).find(
       (booking) =>
         booking.thread_id === activeThread.id &&
-        (booking.status === "requested" || booking.status === "accepted"),
+        (booking.status === "requested" ||
+          booking.status === "accepted" ||
+          booking.status === "paid"),
     );
   }, [activeThread, bookingsQuery.data]);
+
 
   /** Scrolls the chat to an existing request bubble so it's obvious it exists. */
   function revealBooking(bookingId: string) {
