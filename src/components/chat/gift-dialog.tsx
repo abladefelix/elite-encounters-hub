@@ -100,7 +100,7 @@ export function GiftDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto border-border/70 bg-surface">
+      <DialogContent className="max-h-[85dvh] w-[calc(100vw-1.5rem)] max-w-lg overflow-y-auto overflow-x-hidden border-border/70 bg-surface p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="font-display">Send {firstName} a gift</DialogTitle>
           <DialogDescription>
@@ -118,7 +118,7 @@ export function GiftDialog({
         <div className="space-y-5">
           <div>
             <Label>Choose a gift</Label>
-            <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {catalog.map((item) => {
                 const active = item.id === giftId && !custom.trim();
                 return (
@@ -130,7 +130,7 @@ export function GiftDialog({
                       setCustom("");
                     }}
                     className={cn(
-                      "rounded-xl border border-border bg-background p-3 text-center transition-colors hover:border-primary/50",
+                      "min-w-0 break-words rounded-xl border border-border bg-background p-3 text-center transition-colors hover:border-primary/50",
                       active && "border-primary/60 bg-primary/10",
                     )}
                   >
@@ -177,10 +177,12 @@ export function GiftDialog({
               <SelectTrigger id="gift-channel" className="mt-2">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-w-[calc(100vw-3rem)]">
                 {PAYSTACK_CHANNELS.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
-                    {option.label} — {option.hint}
+                    <span className="block truncate">
+                      {option.label} — {option.hint}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -211,7 +213,7 @@ export function GiftDialog({
         )}
 
         <DialogFooter>
-          <Button variant="brass" onClick={confirm} disabled={!gift}>
+          <Button variant="brass" className="w-full sm:w-auto" onClick={confirm} disabled={!gift}>
             <Lock className="size-4" />
             <GiftIcon className="size-4" /> Send {money(amount)} gift
           </Button>

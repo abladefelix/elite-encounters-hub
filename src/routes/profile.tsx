@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { IconContainer } from "@/components/ui/icon-container";
 import { TierBadge } from "@/components/tier-badge";
 import { TwoFactorCard } from "@/components/two-factor-card";
+import { BiometricCard } from "@/components/biometric-card";
 import { PhoneCall } from "lucide-react";
 import {
   DEFAULT_CALL_PREFERENCES,
@@ -770,6 +771,10 @@ function ProfilePage() {
             flags.requireTwoFactorForSpecialists && isSpecialist
           }
         />
+        <div className="mt-8">
+          <BiometricCard userLabel={profile?.display_name ?? profile?.username ?? "Ashnight member"} />
+        </div>
+
       </div>
 
       <SiteFooter />

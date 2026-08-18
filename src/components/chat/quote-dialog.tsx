@@ -275,7 +275,7 @@ export function QuoteDialog({
           ) : null}
 
           <div className="space-y-1.5">
-            <Label htmlFor="quote-when">Proposed visit (optional)</Label>
+            <Label htmlFor="quote-when">Proposed date (optional)</Label>
             <Input
               id="quote-when"
               type="datetime-local"

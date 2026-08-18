@@ -77,7 +77,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SiteHeader } from "@/components/site-header";
 import { TierBadge } from "@/components/tier-badge";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CallOverlay, type CallMode } from "@/components/chat/call-overlay";
 import { sendRing } from "@/lib/call-ring";
 import { useIsOnline } from "@/lib/presence";
@@ -234,6 +234,7 @@ function MessagesInbox({
   const [call, setCall] = useState<CallMode | null>(null);
   const [locating, setLocating] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [peerPhotoOpen, setPeerPhotoOpen] = useState(false);
   const [payingBookingId, setPayingBookingId] = useState("");
   const [ackBookingId, setAckBookingId] = useState("");
   const [groupAction, setGroupAction] = useState<"confirm" | "decline" | "pay" | "">("");
@@ -473,6 +474,32 @@ function MessagesInbox({
   const liveBookingEscrow = escrowEntries.find(
     (entry) => entry.kind === "booking" && (entry.state === "held" || entry.state === "clearing"),
   );
+
+  /**
+   * A booking request the client already sent in this thread that hasn't been
+   * paid or cancelled yet. Tapping "Book" again jumps to it instead of stacking
+   * duplicate requests in the chat.
+   */
+  const openBookingRequest = useMemo(() => {
+    if (!activeThread) return undefined;
+    return (bookingsQuery.data ?? []).find(
+      (booking) =>
+        booking.thread_id === activeThread.id &&
+        (booking.status === "requested" || booking.status === "accepted"),
+    );
+  }, [activeThread, bookingsQuery.data]);
+
+  /** Scrolls the chat to an existing request bubble so it's obvious it exists. */
+  function revealBooking(bookingId: string) {
+    const message = messages.find((item) => item.booking_id === bookingId);
+    const node = message ? document.getElementById(`booking-msg-${message.id}`) : null;
+    if (node) {
+      node.scrollIntoView({ behavior: "smooth", block: "center" });
+      node.classList.add("ring-2", "ring-primary");
+      window.setTimeout(() => node.classList.remove("ring-2", "ring-primary"), 1600);
+    }
+  }
+
 
   // Only a client who actually paid for and received a visit may rate.
   const allBookings = useMemo(() => bookingsQuery.data ?? [], [bookingsQuery.data]);
@@ -956,6 +983,15 @@ function MessagesInbox({
   /** Specialist prices the visit or the member scopes a visit to pay for. */
   async function handleQuote(quote: QuoteDraft) {
     if (!activeThread) return;
+    // One open request per conversation — never stack duplicates.
+    if (iAmClient && openBookingRequest) {
+      setQuoteOpen(false);
+      revealBooking(openBookingRequest.id);
+      toast("You already have an open request", {
+        description: "Finish or cancel that request before creating a new one.",
+      });
+      return;
+    }
     try {
       const result = iAmClient
         ? await sendClientBookingRequest({
@@ -1557,17 +1593,30 @@ function MessagesInbox({
                       >
                         <ArrowLeft className="size-4" />
                       </Button>
-                      <Avatar className="size-9 shrink-0 border border-border sm:size-10">
-                        {avatarFor(peer) ? (
-                          <AvatarImage src={avatarFor(peer)} alt={peerName} />
-                        ) : null}
-                        <AvatarFallback className="bg-surface-strong text-xs">
-                          {initials(peerName)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <button
+                        type="button"
+                        onClick={() => setPeerPhotoOpen(true)}
+                        className="shrink-0 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                        aria-label={`View ${peerName}'s profile picture`}
+                      >
+                        <Avatar className="size-9 border border-border sm:size-10">
+                          {avatarFor(peer) ? (
+                            <AvatarImage src={avatarFor(peer)} alt={peerName} />
+                          ) : null}
+                          <AvatarFallback className="bg-surface-strong text-xs">
+                            {initials(peerName)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </button>
                       <div className="min-w-0 overflow-hidden">
                         <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-semibold">{peerName}</p>
+                          <button
+                            type="button"
+                            onClick={() => setPeerPhotoOpen(true)}
+                            className="truncate text-left text-sm font-semibold hover:underline"
+                          >
+                            {peerName}
+                          </button>
                           {peer?.room ? (
                             <TierBadge tier={peer.room} className="hidden sm:inline-flex" />
                           ) : null}
@@ -1944,34 +1993,73 @@ function MessagesInbox({
                         ) : null}
 
                         {iAmClient ? (
-                          <div className="flex items-center justify-between gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-3 py-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-3 py-2">
                             <span className="text-xs font-medium text-primary">
                               {liveBookingEscrow
-                                ? "Paid and held in escrow"
-                                : `Ready to book ${firstName}?`}
+                                ? `Booked ${firstName} · funds held in escrow`
+                                : openBookingRequest
+                                  ? "Request already sent"
+                                  : `Ready to book ${firstName}?`}
                             </span>
-                            <Button
-                              type="button"
-                              variant={liveBookingEscrow ? "outline" : "brass"}
-                              size="sm"
-                              disabled={Boolean(liveBookingEscrow)}
-                              className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
-                              onClick={() =>
-                                bookingsOpen
-                                  ? setQuoteOpen(true)
-                                  : toast("Payment requests are switched off right now.")
-                              }
-                              aria-label={
-                                liveBookingEscrow ? `Booked ${firstName}` : `Book ${firstName}`
-                              }
-                            >
-                              {liveBookingEscrow ? (
-                                <Check className="size-4" />
-                              ) : (
-                                <CediIcon className="size-4" />
-                              )}
-                              {liveBookingEscrow ? "Booked" : "Book"} {firstName}
-                            </Button>
+                            {liveBookingEscrow ? (
+                              <div className="flex flex-wrap items-center gap-2">
+                                {liveBookingEscrow.state === "held" ? (
+                                  <Button
+                                    type="button"
+                                    variant="brass"
+                                    size="sm"
+                                    className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
+                                    onClick={() => void confirmAndReview(liveBookingEscrow.id)}
+                                  >
+                                    <CheckCheck className="size-4" /> Service complete
+                                  </Button>
+                                ) : null}
+                                <Button
+                                  type="button"
+                                  variant="soft"
+                                  size="sm"
+                                  className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
+                                  onClick={() =>
+                                    void raiseIssue(
+                                      liveBookingEscrow.id,
+                                      "Member raised an issue from the chat thread.",
+                                    )
+                                  }
+                                >
+                                  <ShieldAlert className="size-4" /> Raise an issue
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant={openBookingRequest ? "outline" : "brass"}
+                                size="sm"
+                                className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
+                                onClick={() => {
+                                  if (!bookingsOpen) {
+                                    toast("Payment requests are switched off right now.");
+                                    return;
+                                  }
+                                  if (openBookingRequest) {
+                                    revealBooking(openBookingRequest.id);
+                                    return;
+                                  }
+                                  setQuoteOpen(true);
+                                }}
+                                aria-label={
+                                  openBookingRequest
+                                    ? "View your open request"
+                                    : `Book ${firstName}`
+                                }
+                              >
+                                {openBookingRequest ? (
+                                  <Check className="size-4" />
+                                ) : (
+                                  <CediIcon className="size-4" />
+                                )}
+                                {openBookingRequest ? "View request" : `Book ${firstName}`}
+                              </Button>
+                            )}
                           </div>
                         ) : null}
 
@@ -2111,6 +2199,35 @@ function MessagesInbox({
 
         {activeThread ? (
           <>
+            <Dialog open={peerPhotoOpen} onOpenChange={setPeerPhotoOpen}>
+              <DialogContent className="max-h-[85dvh] w-[calc(100vw-2rem)] max-w-sm overflow-y-auto p-4">
+                <DialogHeader>
+                  <DialogTitle className="text-base">{peerName}</DialogTitle>
+                </DialogHeader>
+                <div className="overflow-hidden rounded-xl border border-border/70 bg-surface-strong">
+                  {avatarFor(peer) ? (
+                    <img
+                      src={avatarFor(peer)}
+                      alt={`${peerName}'s profile picture`}
+                      className="h-auto w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex aspect-square items-center justify-center text-3xl font-semibold text-muted-foreground">
+                      {initials(peerName)}
+                    </div>
+                  )}
+                </div>
+                {peer?.id && iAmClient ? (
+                  <Button asChild variant="outline" className="w-full">
+                    <Link to="/specialists/$specialistId" params={{ specialistId: peer.id }}>
+                      View full profile
+                    </Link>
+                  </Button>
+                ) : null}
+              </DialogContent>
+            </Dialog>
+
+
             <QuoteDialog
               mode={iAmClient ? "client" : "specialist"}
               peerName={firstName}
@@ -2452,7 +2569,10 @@ function MessageBubble({
       : 0;
     return (
       <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
-        <div className="max-w-sm rounded-xl border border-primary/30 bg-primary/10 p-4">
+        <div
+          id={`booking-msg-${message.id}`}
+          className="max-w-sm rounded-xl border border-primary/30 bg-primary/10 p-4 transition-shadow"
+        >
           <p className="eyebrow text-primary">
             {paid
               ? "Service confirmed · funds in escrow"
@@ -2485,22 +2605,10 @@ function MessageBubble({
             <>
               <EscrowStrip entry={escrow} />
               {canResolve && (escrow.state === "held" || escrow.state === "clearing") ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {escrow.state === "held" ? (
-                    <Button size="sm" variant="brass" onClick={() => onConfirm(escrow.id)}>
-                      <CheckCheck className="size-3.5" /> Visit complete
-                    </Button>
-                  ) : null}
-                  <Button
-                    size="sm"
-                    variant="soft"
-                    onClick={() =>
-                      onDispute(escrow.id, "Member raised an issue from the chat thread.")
-                    }
-                  >
-                    <ShieldAlert className="size-3.5" /> Raise an issue
-                  </Button>
-                </div>
+                <p className="mt-3 text-[11px] text-muted-foreground">
+                  Use the Service complete / Raise an issue buttons above the message box when the
+                  service is done.
+                </p>
               ) : null}
             </>
           ) : cancelled ? (

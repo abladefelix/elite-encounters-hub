@@ -17,6 +17,7 @@ import { AppearanceStyles } from "../components/appearance-styles";
 import { MobileTabBar } from "../components/mobile-tab-bar";
 import { IncomingCallWatcher } from "../components/chat/incoming-call-watcher";
 import { NativeShell } from "../components/native-shell";
+import { BiometricGate } from "../components/biometric-gate";
 import { WordingOverrides } from "../lib/phrase-overrides";
 import { ClientErrorReporter, MaintenanceGate } from "../components/app-maintenance";
 import { ConnectionWatcher } from "../components/connection-watcher";
@@ -187,6 +188,8 @@ function RootComponent() {
                 <MaintenanceGate />
                 {/* Offline bar + slow-connection nudges. */}
                 <ConnectionWatcher />
+                {/* Device biometric lock (opt-in per device). No-op when off. */}
+                <BiometricGate />
                 <Toaster position="top-center" />
 
                 </PresenceProvider>
