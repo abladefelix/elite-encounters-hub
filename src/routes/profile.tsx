@@ -770,6 +770,10 @@ function ProfilePage() {
             flags.requireTwoFactorForSpecialists && isSpecialist
           }
         />
+        <div className="mt-8">
+          <BiometricCard userLabel={profile?.display_name ?? profile?.username ?? "Ashnight member"} />
+        </div>
+
       </div>
 
       <SiteFooter />
