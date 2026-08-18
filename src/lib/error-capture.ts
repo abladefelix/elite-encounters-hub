@@ -1,3 +1,5 @@
+import { isClientDisconnect } from "./client-disconnect";
+
 // Captures the original Error out-of-band so server.ts can recover the stack
 // when h3 has already swallowed the throw into a generic 500 Response.
 
@@ -54,6 +56,10 @@ function isErrorLike(value: unknown): value is Error {
 // recorded for consumeLastCapturedError and expanded before serialization.
 const originalConsoleError = console.error.bind(console);
 console.error = (...args: unknown[]) => {
+  // A browser walking away mid-request (reload, HMR, cancelled prefetch) surfaces
+  // as "Error: aborted" from node's http server, outside any request handler.
+  // Logging it makes the error pipeline report a phantom blank-screen crash.
+  if (args.some((arg) => isErrorLike(arg) && isClientDisconnect(arg))) return;
   const expanded = args.map((arg) => {
     if (!isErrorLike(arg)) return arg;
     record(arg);
