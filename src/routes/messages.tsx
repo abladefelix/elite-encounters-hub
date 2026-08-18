@@ -2562,22 +2562,10 @@ function MessageBubble({
             <>
               <EscrowStrip entry={escrow} />
               {canResolve && (escrow.state === "held" || escrow.state === "clearing") ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {escrow.state === "held" ? (
-                    <Button size="sm" variant="brass" onClick={() => onConfirm(escrow.id)}>
-                      <CheckCheck className="size-3.5" /> Visit complete
-                    </Button>
-                  ) : null}
-                  <Button
-                    size="sm"
-                    variant="soft"
-                    onClick={() =>
-                      onDispute(escrow.id, "Member raised an issue from the chat thread.")
-                    }
-                  >
-                    <ShieldAlert className="size-3.5" /> Raise an issue
-                  </Button>
-                </div>
+                <p className="mt-3 text-[11px] text-muted-foreground">
+                  Use the Service complete / Raise an issue buttons above the message box when the
+                  service is done.
+                </p>
               ) : null}
             </>
           ) : cancelled ? (
