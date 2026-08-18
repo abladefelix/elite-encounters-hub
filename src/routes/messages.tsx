@@ -234,6 +234,7 @@ function MessagesInbox({
   const [call, setCall] = useState<CallMode | null>(null);
   const [locating, setLocating] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [peerPhotoOpen, setPeerPhotoOpen] = useState(false);
   const [payingBookingId, setPayingBookingId] = useState("");
   const [ackBookingId, setAckBookingId] = useState("");
   const [groupAction, setGroupAction] = useState<"confirm" | "decline" | "pay" | "">("");
