@@ -50,6 +50,13 @@ function PaymentReturn() {
   const [state, setState] = useState<State>({ phase: "checking" });
 
   useEffect(() => {
+    // Reaching this page means checkout was completed, not abandoned — clear the
+    // private "you cancelled" marker the chat sets before redirecting.
+    try {
+      window.sessionStorage.removeItem("ashnight-checkout-pending-v1");
+    } catch {
+      // Ignore private-mode storage failures.
+    }
     if (!ref) {
       setState({ phase: "failed", message: "No payment reference was returned." });
       return;
