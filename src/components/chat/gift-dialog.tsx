@@ -215,13 +215,15 @@ export function GiftDialog({
           </div>
         </div>
         )}
+        </div>
 
-        <DialogFooter>
+        <DialogFooter className="shrink-0 border-t border-border/60 p-4 sm:p-6 sm:pt-4">
           <Button variant="brass" className="w-full sm:w-auto" onClick={confirm} disabled={!gift}>
             <Lock className="size-4" />
             <GiftIcon className="size-4" /> Send {money(amount)} gift
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
