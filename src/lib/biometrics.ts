@@ -24,6 +24,8 @@ export interface BiometryStatus {
   reason: string;
   /** True when the native plugin isn't in the installed binary at all. */
   pluginMissing: boolean;
+  /** What the OS says it has: faceId / touchId / fingerprint / none. */
+  biometryType: string;
 }
 
 /** Loads the Capacitor biometric plugin, but only inside the native shell. */
@@ -88,6 +90,7 @@ export async function biometryStatus(): Promise<BiometryStatus> {
       deviceIsSecure: false,
       reason: "Biometric unlock is only available in the Ashnight mobile app.",
       pluginMissing: true,
+      biometryType: "none",
     };
   }
   try {
@@ -106,6 +109,7 @@ export async function biometryStatus(): Promise<BiometryStatus> {
             ? "No fingerprint or Face ID enrolled — your device passcode will be used instead."
             : "Set a passcode and enrol Face ID or a fingerprint in your device settings first."),
       pluginMissing: false,
+      biometryType: String(info.biometryType ?? "none"),
     };
   } catch (error) {
     return {
@@ -115,6 +119,7 @@ export async function biometryStatus(): Promise<BiometryStatus> {
       reason:
         error instanceof Error ? error.message : "The device could not report its biometrics.",
       pluginMissing: false,
+      biometryType: "unknown",
     };
   }
 }
@@ -136,9 +141,10 @@ export async function enableBiometricLock(_userLabel: string): Promise<void> {
   if (!native) {
     throw new Error("Biometric unlock is only available in the Ashnight mobile app.");
   }
-  // Authenticate directly instead of requiring checkBiometry() first. On a
-  // small number of iOS/WebView combinations the capability check can stall,
-  // while LocalAuthentication itself still responds correctly.
+  // A prompt that returns instantly means the native side never showed any UI
+  // (unimplemented bridge method, or nothing enrolled to prompt with). Measure
+  // it so we can say that out loud instead of silently "enabling" nothing.
+  const startedAt = Date.now();
   await native.authenticate({
     reason: "Confirm it's you to turn on biometric unlock",
     cancelTitle: "Cancel",
@@ -148,6 +154,15 @@ export async function enableBiometricLock(_userLabel: string): Promise<void> {
     androidSubtitle: "Confirm it's you",
     androidConfirmationRequired: false,
   });
+  if (Date.now() - startedAt < 250) {
+    const status = await biometryStatus();
+    if (!status.usable) {
+      throw new Error(
+        status.reason ||
+          "This device didn't show a biometric prompt. Enrol Face ID, Touch ID or a fingerprint in device settings, then try again.",
+      );
+    }
+  }
   window.localStorage.setItem(ENABLED_KEY, "1");
 }
 
