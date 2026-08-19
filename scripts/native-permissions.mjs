@@ -90,7 +90,10 @@ function patchLaunchScreen() {
   if (!existsSync(path)) return;
   const original = readFileSync(path, "utf8");
   // aspectFit leaves bars around the launch image; aspectFill covers the screen.
-  const patched = original.replace(/contentMode="scaleAspectFit"/g, 'contentMode="scaleAspectFill"');
+  const patched = original.replace(
+    /contentMode="scaleAspectFit"/g,
+    'contentMode="scaleAspectFill"',
+  );
   if (patched !== original) {
     writeFileSync(path, patched);
     console.log("✓ LaunchScreen.storyboard — splash now fills the screen");
@@ -109,7 +112,9 @@ function patchAndroidManifest() {
   const missing = ANDROID_PERMISSIONS.filter((name) => !manifest.includes(name));
 
   if (missing.length > 0) {
-    const block = missing.map((name) => `    <uses-permission android:name="${name}" />`).join("\n");
+    const block = missing
+      .map((name) => `    <uses-permission android:name="${name}" />`)
+      .join("\n");
     manifest = manifest.replace(/<\/manifest>/, `${block}\n</manifest>`);
     writeFileSync(path, manifest);
     console.log(`✓ AndroidManifest.xml — added ${missing.length} permission(s)`);
