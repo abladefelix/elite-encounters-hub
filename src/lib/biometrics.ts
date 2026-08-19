@@ -43,6 +43,18 @@ async function nativeBiometrics() {
   }
 }
 
+/**
+ * Synchronous native registration check for settings UI. Do not gate the
+ * switch on checkBiometry(): some iOS WebViews can leave that optional
+ * capability query unresolved even though authenticate() works normally.
+ */
+export function biometricPluginInstalled(): boolean {
+  if (!isNativeApp()) return false;
+  const cap = (window as unknown as { Capacitor?: { isPluginAvailable?: (n: string) => boolean } })
+    .Capacitor;
+  return cap?.isPluginAvailable?.("BiometricAuthNative") === true;
+}
+
 async function withTimeout<T>(promise: Promise<T>, milliseconds: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
