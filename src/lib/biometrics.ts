@@ -50,7 +50,10 @@ async function withTimeout<T>(promise: Promise<T>, milliseconds: number): Promis
       promise,
       new Promise<never>((_, reject) => {
         timer = setTimeout(
-          () => reject(new Error("The device biometric check did not respond. Try the switch directly.")),
+          () =>
+            reject(
+              new Error("The device biometric check did not respond. Try the switch directly."),
+            ),
           milliseconds,
         );
       }),
@@ -97,7 +100,8 @@ export async function biometryStatus(): Promise<BiometryStatus> {
       usable: false,
       biometryAvailable: false,
       deviceIsSecure: false,
-      reason: error instanceof Error ? error.message : "The device could not report its biometrics.",
+      reason:
+        error instanceof Error ? error.message : "The device could not report its biometrics.",
       pluginMissing: false,
     };
   }
