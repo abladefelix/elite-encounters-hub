@@ -19,6 +19,7 @@ import {
 export function BiometricCard({ userLabel }: { userLabel: string }) {
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [setupError, setSetupError] = useState("");
   const native = useIsNativeApp();
 
   useEffect(() => {
@@ -26,19 +27,29 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
   }, []);
 
   async function toggle(next: boolean) {
+    if (busy) return;
+    const previous = enabled;
+    setEnabled(next);
+    setSetupError("");
     setBusy(true);
     try {
       if (next) {
         await enableBiometricLock(userLabel);
-        setEnabled(true);
         toast.success("Biometric unlock is on for this device");
       } else {
         disableBiometricLock();
-        setEnabled(false);
         toast("Biometric unlock switched off");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Biometric setup failed.");
+      setEnabled(previous);
+      const nativeError = error as { message?: unknown; reason?: unknown; code?: unknown };
+      const message =
+        (typeof nativeError?.message === "string" && nativeError.message) ||
+        (typeof nativeError?.reason === "string" && nativeError.reason) ||
+        (typeof nativeError?.code === "string" && `Device authentication failed (${nativeError.code}).`) ||
+        "Biometric setup failed. Check Face ID or fingerprint access in device settings.";
+      setSetupError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -59,14 +70,23 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
           Ask for Face ID, Touch ID or your device passcode whenever Ashnight opens on this device.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground">
-          {!pluginInstalled
-            ? "This app build doesn't include biometric unlock — sync and reinstall the latest native build."
-            : enabled
-              ? "On for this device only."
-              : "Off — turn it on to verify with this device."}
-        </p>
+      <CardContent className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">
+            {!pluginInstalled
+              ? "This app build doesn't include biometric unlock — sync and reinstall the latest native build."
+              : busy
+                ? "Confirm with Face ID, Touch ID or your device passcode."
+                : enabled
+                  ? "On for this device only."
+                  : "Off — turn it on to verify with this device."}
+          </p>
+          {setupError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {setupError}
+            </p>
+          ) : null}
+        </div>
         <Switch
           checked={enabled}
           disabled={busy || !pluginInstalled}
