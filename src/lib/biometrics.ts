@@ -52,9 +52,8 @@ type NativePluginHeader = {
 
 function nativeBiometricHeader(): NativePluginHeader | null {
   if (!isNativeApp()) return null;
-  const cap = (
-    window as unknown as { Capacitor?: { PluginHeaders?: NativePluginHeader[] } }
-  ).Capacitor;
+  const cap = (window as unknown as { Capacitor?: { PluginHeaders?: NativePluginHeader[] } })
+    .Capacitor;
   const header = cap?.PluginHeaders?.find((candidate) => candidate.name === "BiometricAuthNative");
   if (!header) return null;
   const methods = header.methods ?? [];
