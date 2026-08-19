@@ -45,6 +45,42 @@ async function nativeBiometrics() {
   }
 }
 
+type CapacitorNativeBridge = {
+  nativePromise?: (pluginName: string, methodName: string, options: Record<string, unknown>) => Promise<unknown>;
+};
+
+const AUTH_OPTIONS = {
+  reason: "Unlock Ashnight",
+  cancelTitle: "Cancel",
+  allowDeviceCredential: true,
+  iosFallbackTitle: "Use passcode",
+  androidTitle: "Ashnight",
+  androidSubtitle: "Verify to continue",
+  androidConfirmationRequired: false,
+};
+
+/**
+ * Invoke the native method directly. This deliberately avoids the package's
+ * JavaScript fallback for internalAuthenticate(), which is an empty stub and
+ * can otherwise report success without ever presenting iOS authentication
+ * when an installed native project is out of sync with the web bundle.
+ */
+async function authenticateDevice(reason: string): Promise<void> {
+  const native = await nativeBiometrics();
+  if (!native) {
+    throw new Error("This app build does not include the native biometric plugin.");
+  }
+
+  const bridge = (window as unknown as { Capacitor?: CapacitorNativeBridge }).Capacitor;
+  const options = { ...AUTH_OPTIONS, reason };
+  if (typeof bridge?.nativePromise === "function") {
+    await bridge.nativePromise("BiometricAuthNative", "internalAuthenticate", options);
+    return;
+  }
+
+  await native.authenticate(options);
+}
+
 /**
  * Synchronous native registration check for settings UI. Do not gate the
  * switch on checkBiometry(): some iOS WebViews can leave that optional
@@ -137,32 +173,7 @@ export function biometricLockEnabled(): boolean {
 
 /** Enrols the device owner. Throws with a readable message when declined. */
 export async function enableBiometricLock(_userLabel: string): Promise<void> {
-  const native = await nativeBiometrics();
-  if (!native) {
-    throw new Error("Biometric unlock is only available in the Ashnight mobile app.");
-  }
-  // A prompt that returns instantly means the native side never showed any UI
-  // (unimplemented bridge method, or nothing enrolled to prompt with). Measure
-  // it so we can say that out loud instead of silently "enabling" nothing.
-  const startedAt = Date.now();
-  await native.authenticate({
-    reason: "Confirm it's you to turn on biometric unlock",
-    cancelTitle: "Cancel",
-    allowDeviceCredential: true,
-    iosFallbackTitle: "Use passcode",
-    androidTitle: "Ashnight",
-    androidSubtitle: "Confirm it's you",
-    androidConfirmationRequired: false,
-  });
-  if (Date.now() - startedAt < 250) {
-    const status = await biometryStatus();
-    if (!status.usable) {
-      throw new Error(
-        status.reason ||
-          "This device didn't show a biometric prompt. Enrol Face ID, Touch ID or a fingerprint in device settings, then try again.",
-      );
-    }
-  }
+  await authenticateDevice("Confirm it's you to turn on biometric unlock");
   window.localStorage.setItem(ENABLED_KEY, "1");
 }
 
@@ -173,20 +184,15 @@ export function disableBiometricLock(): void {
 
 /** Prompts for Face ID / fingerprint. Returns true only when verified. */
 export async function verifyBiometric(): Promise<boolean> {
-  const native = await nativeBiometrics();
-  if (!native) return false;
   try {
-    await native.authenticate({
-      reason: "Unlock Ashnight",
-      cancelTitle: "Cancel",
-      allowDeviceCredential: true,
-      iosFallbackTitle: "Use passcode",
-      androidTitle: "Ashnight",
-      androidSubtitle: "Verify to continue",
-      androidConfirmationRequired: false,
-    });
+    await authenticateDevice("Unlock Ashnight");
     return true;
   } catch {
     return false;
   }
+}
+
+/** Settings-only test which preserves the native error for on-screen diagnosis. */
+export async function testBiometricPrompt(): Promise<void> {
+  await authenticateDevice("Test Face ID or Touch ID for Ashnight");
 }

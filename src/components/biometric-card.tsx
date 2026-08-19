@@ -12,7 +12,7 @@ import {
   biometryStatus,
   disableBiometricLock,
   enableBiometricLock,
-  verifyBiometric,
+  testBiometricPrompt,
   type BiometryStatus,
 } from "@/lib/biometrics";
 
@@ -33,13 +33,25 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
   }, []);
 
   async function testPrompt() {
+    if (busy) return;
     setSetupError("");
-    const ok = await verifyBiometric();
-    if (ok) toast.success("Device verified you");
-    else {
+    setBusy(true);
+    try {
+      await testBiometricPrompt();
+      toast.success("Device verified you");
+    } catch (error) {
       const fresh = await biometryStatus();
       setStatus(fresh);
-      setSetupError(fresh.reason || "The device prompt was cancelled or unavailable.");
+      const nativeError = error as { message?: unknown; code?: unknown };
+      const message =
+        (typeof nativeError?.message === "string" && nativeError.message) ||
+        (typeof nativeError?.code === "string" && `Native biometric error: ${nativeError.code}`) ||
+        fresh.reason ||
+        "The device prompt was cancelled or unavailable.";
+      setSetupError(message);
+      toast.error(message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -112,6 +124,7 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
               size="sm"
               variant="outline"
               onClick={() => void testPrompt()}
+              disabled={busy}
               className="mt-1"
             >
               Test device prompt
