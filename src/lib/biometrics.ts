@@ -31,12 +31,12 @@ export interface BiometryStatus {
 /** Loads the Capacitor biometric plugin, but only inside the native shell. */
 async function nativeBiometrics() {
   if (!isNativeApp()) return null;
-  // The JS shim always imports fine; what matters is whether the installed
-  // binary actually contains the native plugin. If it doesn't, every call
-  // throws "not implemented", so treat it as missing up front.
-  const cap = (window as unknown as { Capacitor?: { isPluginAvailable?: (n: string) => boolean } })
-    .Capacitor;
-  if (cap?.isPluginAvailable && !cap.isPluginAvailable("BiometricAuthNative")) return null;
+  // Do not use Capacitor.isPluginAvailable() here. This package registers an
+  // iOS JavaScript implementation, which makes that API return true even when
+  // the installed binary has no native plugin. In that case authenticate()
+  // reaches the package's intentionally empty native fallback and appears to
+  // succeed without ever showing Face ID.
+  if (!nativeBiometricHeader()) return null;
   try {
     const mod = await import("@aparajita/capacitor-biometric-auth");
     return mod.BiometricAuth;
@@ -45,9 +45,22 @@ async function nativeBiometrics() {
   }
 }
 
-type CapacitorNativeBridge = {
-  nativePromise?: (pluginName: string, methodName: string, options: Record<string, unknown>) => Promise<unknown>;
+type NativePluginHeader = {
+  name?: string;
+  methods?: Array<{ name?: string; rtype?: string }>;
 };
+
+function nativeBiometricHeader(): NativePluginHeader | null {
+  if (!isNativeApp()) return null;
+  const cap = (window as unknown as { Capacitor?: { PluginHeaders?: NativePluginHeader[] } })
+    .Capacitor;
+  const header = cap?.PluginHeaders?.find((candidate) => candidate.name === "BiometricAuthNative");
+  if (!header) return null;
+  const methods = header.methods ?? [];
+  const hasCheck = methods.some((method) => method.name === "checkBiometry");
+  const hasAuthenticate = methods.some((method) => method.name === "internalAuthenticate");
+  return hasCheck && hasAuthenticate ? header : null;
+}
 
 const AUTH_OPTIONS = {
   reason: "Unlock Ashnight",
@@ -59,25 +72,17 @@ const AUTH_OPTIONS = {
   androidConfirmationRequired: false,
 };
 
-/**
- * Invoke the native method directly. This deliberately avoids the package's
- * JavaScript fallback for internalAuthenticate(), which is an empty stub and
- * can otherwise report success without ever presenting iOS authentication
- * when an installed native project is out of sync with the web bundle.
- */
 async function authenticateDevice(reason: string): Promise<void> {
   const native = await nativeBiometrics();
   if (!native) {
-    throw new Error("This app build does not include the native biometric plugin.");
+    throw new Error(
+      "This iPhone build does not contain the native biometric plugin. Sync the iOS project, then make a new Xcode build.",
+    );
   }
 
-  const bridge = (window as unknown as { Capacitor?: CapacitorNativeBridge }).Capacitor;
   const options = { ...AUTH_OPTIONS, reason };
-  if (typeof bridge?.nativePromise === "function") {
-    await bridge.nativePromise("BiometricAuthNative", "internalAuthenticate", options);
-    return;
-  }
-
+  // Once the native header has been verified, the package proxy routes this
+  // through Capacitor's supported bridge and maps native errors correctly.
   await native.authenticate(options);
 }
 
@@ -87,10 +92,7 @@ async function authenticateDevice(reason: string): Promise<void> {
  * capability query unresolved even though authenticate() works normally.
  */
 export function biometricPluginInstalled(): boolean {
-  if (!isNativeApp()) return false;
-  const cap = (window as unknown as { Capacitor?: { isPluginAvailable?: (n: string) => boolean } })
-    .Capacitor;
-  return cap?.isPluginAvailable?.("BiometricAuthNative") === true;
+  return nativeBiometricHeader() !== null;
 }
 
 async function withTimeout<T>(promise: Promise<T>, milliseconds: number): Promise<T> {

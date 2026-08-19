@@ -70,12 +70,30 @@ function patchInfoPlist() {
   }
 }
 
+function verifyIosBiometricPlugin() {
+  const path = resolve(root, "ios/App/Podfile");
+  if (!existsSync(path)) {
+    console.log("• iOS project not present — biometric plugin cannot be verified");
+    return;
+  }
+  const podfile = readFileSync(path, "utf8");
+  if (!podfile.includes("AparajitaCapacitorBiometricAuth")) {
+    throw new Error(
+      "iOS biometric plugin is missing from Podfile. Run `bunx cap sync ios` before building in Xcode.",
+    );
+  }
+  console.log("✓ iOS biometric plugin — registered in Podfile");
+}
+
 function patchLaunchScreen() {
   const path = resolve(root, "ios/App/App/Base.lproj/LaunchScreen.storyboard");
   if (!existsSync(path)) return;
   const original = readFileSync(path, "utf8");
   // aspectFit leaves bars around the launch image; aspectFill covers the screen.
-  const patched = original.replace(/contentMode="scaleAspectFit"/g, 'contentMode="scaleAspectFill"');
+  const patched = original.replace(
+    /contentMode="scaleAspectFit"/g,
+    'contentMode="scaleAspectFill"',
+  );
   if (patched !== original) {
     writeFileSync(path, patched);
     console.log("✓ LaunchScreen.storyboard — splash now fills the screen");
@@ -94,7 +112,9 @@ function patchAndroidManifest() {
   const missing = ANDROID_PERMISSIONS.filter((name) => !manifest.includes(name));
 
   if (missing.length > 0) {
-    const block = missing.map((name) => `    <uses-permission android:name="${name}" />`).join("\n");
+    const block = missing
+      .map((name) => `    <uses-permission android:name="${name}" />`)
+      .join("\n");
     manifest = manifest.replace(/<\/manifest>/, `${block}\n</manifest>`);
     writeFileSync(path, manifest);
     console.log(`✓ AndroidManifest.xml — added ${missing.length} permission(s)`);
@@ -104,5 +124,6 @@ function patchAndroidManifest() {
 }
 
 patchInfoPlist();
+verifyIosBiometricPlugin();
 patchLaunchScreen();
 patchAndroidManifest();
