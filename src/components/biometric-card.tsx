@@ -2,14 +2,18 @@ import { Fingerprint } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useIsNativeApp } from "@/lib/native";
 import {
   biometricLockEnabled,
   biometricPluginInstalled,
+  biometryStatus,
   disableBiometricLock,
   enableBiometricLock,
+  verifyBiometric,
+  type BiometryStatus,
 } from "@/lib/biometrics";
 
 /**
@@ -20,11 +24,24 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [setupError, setSetupError] = useState("");
+  const [status, setStatus] = useState<BiometryStatus | null>(null);
   const native = useIsNativeApp();
 
   useEffect(() => {
     setEnabled(biometricLockEnabled());
+    void biometryStatus().then(setStatus);
   }, []);
+
+  async function testPrompt() {
+    setSetupError("");
+    const ok = await verifyBiometric();
+    if (ok) toast.success("Device verified you");
+    else {
+      const fresh = await biometryStatus();
+      setStatus(fresh);
+      setSetupError(fresh.reason || "The device prompt was cancelled or unavailable.");
+    }
+  }
 
   async function toggle(next: boolean) {
     if (busy) return;
@@ -81,6 +98,25 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
                   ? "On for this device only."
                   : "Off — turn it on to verify with this device."}
           </p>
+          {status && !status.pluginMissing ? (
+            <p className="text-xs text-muted-foreground">
+              Device reports: {status.biometryType} · biometry{" "}
+              {status.biometryAvailable ? "ready" : "unavailable"} · passcode{" "}
+              {status.deviceIsSecure ? "set" : "not set"}
+              {status.reason ? ` · ${status.reason}` : ""}
+            </p>
+          ) : null}
+          {pluginInstalled ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void testPrompt()}
+              className="mt-1"
+            >
+              Test device prompt
+            </Button>
+          ) : null}
           {setupError ? (
             <p className="text-sm text-destructive" role="alert">
               {setupError}
