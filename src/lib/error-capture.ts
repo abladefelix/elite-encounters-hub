@@ -69,11 +69,43 @@ console.error = (...args: unknown[]) => {
 };
 
 if (typeof globalThis.addEventListener === "function") {
-  globalThis.addEventListener("error", (event) => record((event as ErrorEvent).error ?? event));
-  globalThis.addEventListener("unhandledrejection", (event) =>
-    record((event as PromiseRejectionEvent).reason),
-  );
+  globalThis.addEventListener("error", (event) => {
+    const error = (event as ErrorEvent).error ?? event;
+    if (isClientDisconnect(error)) {
+      // Browser closed the socket mid-request — not a crash, and letting it
+      // bubble makes the error pipeline report a phantom blank screen.
+      event.preventDefault?.();
+      event.stopImmediatePropagation?.();
+      return;
+    }
+    record(error);
+  });
+  globalThis.addEventListener("unhandledrejection", (event) => {
+    const reason = (event as PromiseRejectionEvent).reason;
+    if (isClientDisconnect(reason)) {
+      event.preventDefault?.();
+      event.stopImmediatePropagation?.();
+      return;
+    }
+    record(reason);
+  });
 }
+
+// Node's http server emits "Error: aborted" from abortIncoming at the process
+// level (outside any request handler) when a client walks away. Swallow it so it
+// never reaches the crash reporter.
+const nodeProcess = (globalThis as { process?: NodeJS.Process }).process;
+if (nodeProcess?.on) {
+  nodeProcess.on("uncaughtException", (error) => {
+    if (isClientDisconnect(error)) return;
+    console.error(error);
+  });
+  nodeProcess.on("unhandledRejection", (reason) => {
+    if (isClientDisconnect(reason)) return;
+    console.error(reason);
+  });
+}
+
 
 export function consumeLastCapturedError(): unknown {
   if (!lastCapturedError) return undefined;
