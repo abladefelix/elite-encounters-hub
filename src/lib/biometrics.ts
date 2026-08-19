@@ -11,6 +11,7 @@
 import { isNativeApp } from "@/lib/native";
 
 const ENABLED_KEY = "ashnight:biometric-enabled";
+const BIOMETRY_CHECK_TIMEOUT_MS = 5000;
 
 export interface BiometryStatus {
   /** True when the lock can be switched on (biometry enrolled, or a device passcode exists). */
@@ -42,6 +43,26 @@ async function nativeBiometrics() {
   }
 }
 
+async function withTimeout<T>(promise: Promise<T>, milliseconds: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error("The device biometric check did not respond. Try the switch directly."),
+            ),
+          milliseconds,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 /**
  * Full picture of what this device can do. The card uses it to explain *why*
  * the toggle is off instead of just greying it out with no reason.
@@ -58,7 +79,7 @@ export async function biometryStatus(): Promise<BiometryStatus> {
     };
   }
   try {
-    const info = await native.checkBiometry();
+    const info = await withTimeout(native.checkBiometry(), BIOMETRY_CHECK_TIMEOUT_MS);
     const biometryAvailable = Boolean(info.isAvailable);
     const deviceIsSecure = Boolean(info.deviceIsSecure);
     return {
@@ -79,7 +100,8 @@ export async function biometryStatus(): Promise<BiometryStatus> {
       usable: false,
       biometryAvailable: false,
       deviceIsSecure: false,
-      reason: error instanceof Error ? error.message : "The device could not report its biometrics.",
+      reason:
+        error instanceof Error ? error.message : "The device could not report its biometrics.",
       pluginMissing: false,
     };
   }
@@ -102,10 +124,9 @@ export async function enableBiometricLock(_userLabel: string): Promise<void> {
   if (!native) {
     throw new Error("Biometric unlock is only available in the Ashnight mobile app.");
   }
-  const status = await biometryStatus();
-  if (!status.usable) {
-    throw new Error(status.reason);
-  }
+  // Authenticate directly instead of requiring checkBiometry() first. On a
+  // small number of iOS/WebView combinations the capability check can stall,
+  // while LocalAuthentication itself still responds correctly.
   await native.authenticate({
     reason: "Confirm it's you to turn on biometric unlock",
     cancelTitle: "Cancel",
