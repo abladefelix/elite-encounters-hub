@@ -56,8 +56,7 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
           <Fingerprint className="size-4 text-primary" /> Biometric unlock
         </CardTitle>
         <CardDescription>
-          Ask for Face ID, Touch ID or your device passcode whenever Ashnight opens on this
-          device.
+          Ask for Face ID, Touch ID or your device passcode whenever Ashnight opens on this device.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex items-center justify-between gap-4">
