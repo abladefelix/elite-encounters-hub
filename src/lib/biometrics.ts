@@ -28,6 +28,12 @@ export interface BiometryStatus {
 /** Loads the Capacitor biometric plugin, but only inside the native shell. */
 async function nativeBiometrics() {
   if (!isNativeApp()) return null;
+  // The JS shim always imports fine; what matters is whether the installed
+  // binary actually contains the native plugin. If it doesn't, every call
+  // throws "not implemented", so treat it as missing up front.
+  const cap = (window as unknown as { Capacitor?: { isPluginAvailable?: (n: string) => boolean } })
+    .Capacitor;
+  if (cap?.isPluginAvailable && !cap.isPluginAvailable("BiometricAuthNative")) return null;
   try {
     const mod = await import("@aparajita/capacitor-biometric-auth");
     return mod.BiometricAuth;
