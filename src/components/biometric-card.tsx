@@ -24,8 +24,14 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
   const native = useIsNativeApp();
 
   useEffect(() => {
-    void biometryStatus().then(setStatus);
+    let active = true;
+    void biometryStatus().then((nextStatus) => {
+      if (active) setStatus(nextStatus);
+    });
     setEnabled(biometricLockEnabled());
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function toggle(next: boolean) {
@@ -50,7 +56,10 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
   // Web build never offers this lock — the card only exists in the mobile app.
   if (!native) return null;
 
-  const usable = status?.usable === true;
+  // If the plugin exists but its preliminary capability check times out, keep
+  // the switch available: the OS authentication prompt is the authoritative
+  // test and will return a readable error when the device is not configured.
+  const usable = status?.usable === true || (status !== null && !status.pluginMissing);
 
   return (
     <Card>
