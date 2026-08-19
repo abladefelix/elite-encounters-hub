@@ -27,6 +27,10 @@ const IOS_KEYS = {
     "Ashnight saves receipts and images you download to your photo library.",
   NSLocationWhenInUseUsageDescription:
     "Ashnight uses your location only when you choose to share it in a chat.",
+  // Without this key iOS refuses Face ID outright — the biometric toggle stays
+  // disabled and checkBiometry() reports biometry as unavailable.
+  NSFaceIDUsageDescription:
+    "Ashnight uses Face ID to unlock the app so only you can open your account.",
 };
 
 const ANDROID_PERMISSIONS = [
@@ -35,6 +39,9 @@ const ANDROID_PERMISSIONS = [
   "android.permission.MODIFY_AUDIO_SETTINGS",
   "android.permission.ACCESS_FINE_LOCATION",
   "android.permission.ACCESS_COARSE_LOCATION",
+  // Required for the fingerprint / face unlock prompt.
+  "android.permission.USE_BIOMETRIC",
+  "android.permission.USE_FINGERPRINT",
 ];
 
 function patchInfoPlist() {

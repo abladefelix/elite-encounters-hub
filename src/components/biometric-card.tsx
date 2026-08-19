@@ -7,9 +7,10 @@ import { Switch } from "@/components/ui/switch";
 import { useIsNativeApp } from "@/lib/native";
 import {
   biometricLockEnabled,
-  biometricsSupported,
+  biometryStatus,
   disableBiometricLock,
   enableBiometricLock,
+  type BiometryStatus,
 } from "@/lib/biometrics";
 
 /**
@@ -17,13 +18,13 @@ import {
  * local to the device on purpose — enrolling on a phone must not lock a laptop.
  */
 export function BiometricCard({ userLabel }: { userLabel: string }) {
-  const [supported, setSupported] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<BiometryStatus | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const native = useIsNativeApp();
 
   useEffect(() => {
-    void biometricsSupported().then(setSupported);
+    void biometryStatus().then(setStatus);
     setEnabled(biometricLockEnabled());
   }, []);
 
@@ -49,6 +50,8 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
   // Web build never offers this lock — the card only exists in the mobile app.
   if (!native) return null;
 
+  const usable = status?.usable === true;
+
   return (
     <Card>
       <CardHeader>
@@ -61,15 +64,21 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
       </CardHeader>
       <CardContent className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
-          {supported === false
-            ? "Add a fingerprint or Face ID in your phone's settings first, then switch this on."
-            : enabled
-              ? "On for this device only."
-              : "Off — the app opens straight into your session."}
+          {status === null
+            ? "Checking this device…"
+            : status.pluginMissing
+              ? "This build of the app doesn't include the unlock module yet — reinstall the latest app build."
+              : !usable
+                ? status.reason
+                : enabled
+                  ? status.biometryAvailable
+                    ? "On for this device only."
+                    : "On for this device — your device passcode will be used."
+                  : "Off — the app opens straight into your session."}
         </p>
         <Switch
           checked={enabled}
-          disabled={busy || supported !== true}
+          disabled={busy || !usable}
           onCheckedChange={(next) => void toggle(next)}
           aria-label="Biometric unlock"
         />

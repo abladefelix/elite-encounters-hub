@@ -12,6 +12,19 @@ import { isNativeApp } from "@/lib/native";
 
 const ENABLED_KEY = "ashnight:biometric-enabled";
 
+export interface BiometryStatus {
+  /** True when the lock can be switched on (biometry enrolled, or a device passcode exists). */
+  usable: boolean;
+  /** True when the OS reports enrolled biometry (Face ID / Touch ID / fingerprint). */
+  biometryAvailable: boolean;
+  /** True when the device has a passcode / PIN / pattern — usable as a fallback. */
+  deviceIsSecure: boolean;
+  /** Human-readable reason from the OS when biometry is unavailable. */
+  reason: string;
+  /** True when the native plugin isn't in the installed binary at all. */
+  pluginMissing: boolean;
+}
+
 /** Loads the Capacitor biometric plugin, but only inside the native shell. */
 async function nativeBiometrics() {
   if (!isNativeApp()) return null;
@@ -23,16 +36,53 @@ async function nativeBiometrics() {
   }
 }
 
-/** True when this device can do Face ID / Touch ID / fingerprint. */
-export async function biometricsSupported(): Promise<boolean> {
+/**
+ * Full picture of what this device can do. The card uses it to explain *why*
+ * the toggle is off instead of just greying it out with no reason.
+ */
+export async function biometryStatus(): Promise<BiometryStatus> {
   const native = await nativeBiometrics();
-  if (!native) return false;
+  if (!native) {
+    return {
+      usable: false,
+      biometryAvailable: false,
+      deviceIsSecure: false,
+      reason: "Biometric unlock is only available in the Ashnight mobile app.",
+      pluginMissing: true,
+    };
+  }
   try {
     const info = await native.checkBiometry();
-    return Boolean(info.isAvailable);
-  } catch {
-    return false;
+    const biometryAvailable = Boolean(info.isAvailable);
+    const deviceIsSecure = Boolean(info.deviceIsSecure);
+    return {
+      usable: biometryAvailable || deviceIsSecure,
+      biometryAvailable,
+      deviceIsSecure,
+      reason:
+        info.reason ||
+        (biometryAvailable
+          ? ""
+          : deviceIsSecure
+            ? "No fingerprint or Face ID enrolled — your device passcode will be used instead."
+            : "Set a passcode and enrol Face ID or a fingerprint in your device settings first."),
+      pluginMissing: false,
+    };
+  } catch (error) {
+    return {
+      usable: false,
+      biometryAvailable: false,
+      deviceIsSecure: false,
+      reason: error instanceof Error ? error.message : "The device could not report its biometrics.",
+      pluginMissing: false,
+    };
   }
+}
+
+/** True when this device can do Face ID / Touch ID / fingerprint (or passcode fallback). */
+export async function biometricsSupported(): Promise<boolean> {
+  const status = await biometryStatus();
+  return status.usable;
 }
 
 export function biometricLockEnabled(): boolean {
@@ -46,8 +96,9 @@ export async function enableBiometricLock(_userLabel: string): Promise<void> {
   if (!native) {
     throw new Error("Biometric unlock is only available in the Ashnight mobile app.");
   }
-  if (!(await biometricsSupported())) {
-    throw new Error("This device does not offer Face ID, Touch ID or fingerprint unlock.");
+  const status = await biometryStatus();
+  if (!status.usable) {
+    throw new Error(status.reason);
   }
   await native.authenticate({
     reason: "Confirm it's you to turn on biometric unlock",
