@@ -1,5 +1,5 @@
 import { Fingerprint, ShieldCheck } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import {
   biometricLockEnabled,
   disableBiometricLock,
   isBiometricPromptActive,
+  onBiometricLockChange,
   verifyBiometric,
 } from "@/lib/biometrics";
 
@@ -19,6 +20,8 @@ export function BiometricGate() {
   const [locked, setLocked] = useState(false);
   const [checking, setChecking] = useState(false);
   const [failed, setFailed] = useState(false);
+  const lockedRef = useRef(false);
+  lockedRef.current = locked;
 
   const unlock = useCallback(async () => {
     setChecking(true);
@@ -39,15 +42,27 @@ export function BiometricGate() {
     void unlock();
   }, [unlock]);
 
-  // Re-lock when the app is sent to the background and brought back.
+  // The setting can be switched on while the app is already running: arm the
+  // lock straight away so the next resume asks for Face ID / fingerprint.
+  useEffect(() => onBiometricLockChange((enabled) => {
+    if (!enabled) setLocked(false);
+  }), []);
+
+  // Re-lock when the app is sent to the background, and ask again on resume.
+  // The check happens inside the handler so switching the lock on mid-session
+  // takes effect without a reload.
   useEffect(() => {
-    if (!biometricLockEnabled()) return;
     const onVisibility = () => {
-      if (document.visibilityState === "hidden" && !isBiometricPromptActive()) setLocked(true);
+      if (!biometricLockEnabled() || isBiometricPromptActive()) return;
+      if (document.visibilityState === "hidden") {
+        setLocked(true);
+      } else if (document.visibilityState === "visible" && lockedRef.current) {
+        void unlock();
+      }
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, []);
+  }, [unlock]);
 
   useEffect(() => {
     document.documentElement.style.overflow = locked ? "hidden" : "";
