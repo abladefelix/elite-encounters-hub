@@ -54,11 +54,8 @@ export function BiometricGate() {
       if (!biometricLockEnabled() || isBiometricPromptActive()) return;
       if (document.visibilityState === "hidden") {
         setLocked(true);
-      } else if (document.visibilityState === "visible") {
-        setLocked((wasLocked) => {
-          if (wasLocked) void unlock();
-          return wasLocked;
-        });
+      } else if (document.visibilityState === "visible" && lockedRef.current) {
+        void unlock();
       }
     };
     document.addEventListener("visibilitychange", onVisibility);
