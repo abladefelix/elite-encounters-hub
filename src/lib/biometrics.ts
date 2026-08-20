@@ -12,6 +12,7 @@ import { isNativeApp } from "@/lib/native";
 
 const ENABLED_KEY = "ashnight:biometric-enabled";
 const BIOMETRY_CHECK_TIMEOUT_MS = 5000;
+let biometricPromptActive = false;
 
 export interface BiometryStatus {
   /** True when the lock can be switched on (biometry enrolled, or a device passcode exists). */
@@ -83,7 +84,17 @@ async function authenticateDevice(reason: string): Promise<void> {
   const options = { ...AUTH_OPTIONS, reason };
   // Once the native header has been verified, the package proxy routes this
   // through Capacitor's supported bridge and maps native errors correctly.
-  await native.authenticate(options);
+  biometricPromptActive = true;
+  try {
+    await native.authenticate(options);
+  } finally {
+    biometricPromptActive = false;
+  }
+}
+
+/** Prevents a native prompt from being mistaken for the app going to sleep. */
+export function isBiometricPromptActive(): boolean {
+  return biometricPromptActive;
 }
 
 /**
