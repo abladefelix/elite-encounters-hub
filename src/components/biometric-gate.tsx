@@ -3,7 +3,12 @@ import { useCallback, useEffect, useState } from "react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
-import { biometricLockEnabled, disableBiometricLock, verifyBiometric } from "@/lib/biometrics";
+import {
+  biometricLockEnabled,
+  disableBiometricLock,
+  isBiometricPromptActive,
+  verifyBiometric,
+} from "@/lib/biometrics";
 
 /**
  * Covers the app with a lock screen when the member has switched on device
@@ -38,7 +43,7 @@ export function BiometricGate() {
   useEffect(() => {
     if (!biometricLockEnabled()) return;
     const onVisibility = () => {
-      if (document.visibilityState === "hidden") setLocked(true);
+      if (document.visibilityState === "hidden" && !isBiometricPromptActive()) setLocked(true);
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);

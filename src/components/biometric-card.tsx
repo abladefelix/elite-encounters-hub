@@ -64,7 +64,7 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
     try {
       if (next) {
         await enableBiometricLock(userLabel);
-        toast.success("Biometric unlock is on for this device");
+        toast.success("Biometric unlock is on and will be required when the app next locks");
       } else {
         disableBiometricLock();
         toast("Biometric unlock switched off");
@@ -75,7 +75,8 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
       const message =
         (typeof nativeError?.message === "string" && nativeError.message) ||
         (typeof nativeError?.reason === "string" && nativeError.reason) ||
-        (typeof nativeError?.code === "string" && `Device authentication failed (${nativeError.code}).`) ||
+        (typeof nativeError?.code === "string" &&
+          `Device authentication failed (${nativeError.code}).`) ||
         "Biometric setup failed. Check Face ID or fingerprint access in device settings.";
       setSetupError(message);
       toast.error(message);
@@ -105,9 +106,9 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
             {!pluginInstalled
               ? "This app build doesn't include biometric unlock — sync and reinstall the latest native build."
               : busy
-                ? "Confirm with Face ID, Touch ID or your device passcode."
+                ? "Updating biometric unlock for this device."
                 : enabled
-                  ? "On for this device only."
+                  ? "On for this device only — verification runs when the app next locks."
                   : "Off — turn it on to verify with this device."}
           </p>
           {status && !status.pluginMissing ? (

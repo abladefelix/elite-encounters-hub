@@ -12,6 +12,7 @@ import { isNativeApp } from "@/lib/native";
 
 const ENABLED_KEY = "ashnight:biometric-enabled";
 const BIOMETRY_CHECK_TIMEOUT_MS = 5000;
+let biometricPromptActive = false;
 
 export interface BiometryStatus {
   /** True when the lock can be switched on (biometry enrolled, or a device passcode exists). */
@@ -83,7 +84,17 @@ async function authenticateDevice(reason: string): Promise<void> {
   const options = { ...AUTH_OPTIONS, reason };
   // Once the native header has been verified, the package proxy routes this
   // through Capacitor's supported bridge and maps native errors correctly.
-  await native.authenticate(options);
+  biometricPromptActive = true;
+  try {
+    await native.authenticate(options);
+  } finally {
+    biometricPromptActive = false;
+  }
+}
+
+/** Prevents a native prompt from being mistaken for the app going to sleep. */
+export function isBiometricPromptActive(): boolean {
+  return biometricPromptActive;
 }
 
 /**
@@ -173,9 +184,21 @@ export function biometricLockEnabled(): boolean {
   return window.localStorage.getItem(ENABLED_KEY) === "1";
 }
 
-/** Enrols the device owner. Throws with a readable message when declined. */
+/**
+ * Enables the local lock for this installation.
+ *
+ * Face ID / Touch ID enrolment belongs to iOS and cannot be performed by an
+ * app. Do not authenticate here: cancelling or an unavailable prompt used to
+ * make the settings switch immediately roll back. The BiometricGate performs
+ * the real OS verification when the app next opens or resumes.
+ */
 export async function enableBiometricLock(_userLabel: string): Promise<void> {
-  await authenticateDevice("Confirm it's you to turn on biometric unlock");
+  const native = await nativeBiometrics();
+  if (!native) {
+    throw new Error(
+      "This iPhone build does not contain the native biometric plugin. Sync the iOS project, then make a new Xcode build.",
+    );
+  }
   window.localStorage.setItem(ENABLED_KEY, "1");
 }
 
