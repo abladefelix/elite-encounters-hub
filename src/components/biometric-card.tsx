@@ -64,7 +64,7 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
     try {
       if (next) {
         await enableBiometricLock(userLabel);
-        toast.success("Biometric unlock is on and will be required when the app next locks");
+        toast.success("Device verified — biometric unlock is on");
       } else {
         disableBiometricLock();
         toast("Biometric unlock switched off");
@@ -109,7 +109,7 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
                 ? "Updating biometric unlock for this device."
                 : enabled
                   ? "On for this device only — verification runs when the app next locks."
-                  : "Off — turn it on to verify with this device."}
+                  : "Off — turn it on and complete the device prompt."}
           </p>
           {status && !status.pluginMissing ? (
             <p className="text-xs text-muted-foreground">

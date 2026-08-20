@@ -8,10 +8,13 @@
  * this device opted in and ask the OS to verify the owner before the UI shows.
  * No server round trip, so it never changes who the session belongs to.
  */
+import { BiometricAuth } from "@aparajita/capacitor-biometric-auth";
+
 import { isNativeApp } from "@/lib/native";
 
 const ENABLED_KEY = "ashnight:biometric-enabled";
 const BIOMETRY_CHECK_TIMEOUT_MS = 5000;
+const BIOMETRY_AUTH_TIMEOUT_MS = 30000;
 let biometricPromptActive = false;
 
 export interface BiometryStatus {
@@ -29,8 +32,8 @@ export interface BiometryStatus {
   biometryType: string;
 }
 
-/** Loads the Capacitor biometric plugin, but only inside the native shell. */
-async function nativeBiometrics() {
+/** Returns the already-registered Capacitor plugin only inside the native shell. */
+function nativeBiometrics() {
   if (!isNativeApp()) return null;
   // Do not use Capacitor.isPluginAvailable() here. This package registers an
   // iOS JavaScript implementation, which makes that API return true even when
@@ -38,12 +41,7 @@ async function nativeBiometrics() {
   // reaches the package's intentionally empty native fallback and appears to
   // succeed without ever showing Face ID.
   if (!nativeBiometricHeader()) return null;
-  try {
-    const mod = await import("@aparajita/capacitor-biometric-auth");
-    return mod.BiometricAuth;
-  } catch {
-    return null;
-  }
+  return BiometricAuth;
 }
 
 type NativePluginHeader = {
@@ -74,7 +72,7 @@ const AUTH_OPTIONS = {
 };
 
 async function authenticateDevice(reason: string): Promise<void> {
-  const native = await nativeBiometrics();
+  const native = nativeBiometrics();
   if (!native) {
     throw new Error(
       "This iPhone build does not contain the native biometric plugin. Sync the iOS project, then make a new Xcode build.",
@@ -86,7 +84,11 @@ async function authenticateDevice(reason: string): Promise<void> {
   // through Capacitor's supported bridge and maps native errors correctly.
   biometricPromptActive = true;
   try {
-    await native.authenticate(options);
+    await withTimeout(
+      native.authenticate(options),
+      BIOMETRY_AUTH_TIMEOUT_MS,
+      "The iPhone biometric bridge did not answer. The installed app does not have a working Face ID connection; sync iOS and rebuild the app.",
+    );
   } finally {
     biometricPromptActive = false;
   }
@@ -106,17 +108,18 @@ export function biometricPluginInstalled(): boolean {
   return nativeBiometricHeader() !== null;
 }
 
-async function withTimeout<T>(promise: Promise<T>, milliseconds: number): Promise<T> {
+async function withTimeout<T>(
+  promise: Promise<T>,
+  milliseconds: number,
+  timeoutMessage: string,
+): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       promise,
       new Promise<never>((_, reject) => {
         timer = setTimeout(
-          () =>
-            reject(
-              new Error("The device biometric check did not respond. Try the switch directly."),
-            ),
+          () => reject(new Error(timeoutMessage)),
           milliseconds,
         );
       }),
@@ -131,7 +134,7 @@ async function withTimeout<T>(promise: Promise<T>, milliseconds: number): Promis
  * the toggle is off instead of just greying it out with no reason.
  */
 export async function biometryStatus(): Promise<BiometryStatus> {
-  const native = await nativeBiometrics();
+  const native = nativeBiometrics();
   if (!native) {
     return {
       usable: false,
@@ -143,7 +146,11 @@ export async function biometryStatus(): Promise<BiometryStatus> {
     };
   }
   try {
-    const info = await withTimeout(native.checkBiometry(), BIOMETRY_CHECK_TIMEOUT_MS);
+    const info = await withTimeout(
+      native.checkBiometry(),
+      BIOMETRY_CHECK_TIMEOUT_MS,
+      "The device biometric check did not respond.",
+    );
     const biometryAvailable = Boolean(info.isAvailable);
     const deviceIsSecure = Boolean(info.deviceIsSecure);
     return {
@@ -187,18 +194,12 @@ export function biometricLockEnabled(): boolean {
 /**
  * Enables the local lock for this installation.
  *
- * Face ID / Touch ID enrolment belongs to iOS and cannot be performed by an
- * app. Do not authenticate here: cancelling or an unavailable prompt used to
- * make the settings switch immediately roll back. The BiometricGate performs
- * the real OS verification when the app next opens or resumes.
+ * Face ID / Touch ID enrolment belongs to iOS. Before persisting this setting,
+ * require one successful native authentication so the switch can never claim
+ * to be enabled when the native bridge or device setup is not working.
  */
 export async function enableBiometricLock(_userLabel: string): Promise<void> {
-  const native = await nativeBiometrics();
-  if (!native) {
-    throw new Error(
-      "This iPhone build does not contain the native biometric plugin. Sync the iOS project, then make a new Xcode build.",
-    );
-  }
+  await authenticateDevice("Enable biometric unlock for Ashnight");
   window.localStorage.setItem(ENABLED_KEY, "1");
 }
 
