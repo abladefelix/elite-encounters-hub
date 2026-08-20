@@ -177,6 +177,18 @@ export function biometricLockEnabled(): boolean {
   return window.localStorage.getItem(ENABLED_KEY) === "1";
 }
 
+const lockListeners = new Set<(enabled: boolean) => void>();
+
+/** Lets the lock screen react the moment the setting changes, without a reload. */
+export function onBiometricLockChange(listener: (enabled: boolean) => void): () => void {
+  lockListeners.add(listener);
+  return () => lockListeners.delete(listener);
+}
+
+function announceLockChange(enabled: boolean) {
+  lockListeners.forEach((listener) => listener(enabled));
+}
+
 /**
  * Enables the local lock for this installation. One successful OS evaluation is
  * required first, so the switch can never claim to be on while the native
