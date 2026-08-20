@@ -94,18 +94,6 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
               {status.reason ? ` · ${status.reason}` : ""}
             </p>
           ) : null}
-          {pluginInstalled ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => void testPrompt()}
-              disabled={busy}
-              className="mt-1"
-            >
-              Test device prompt
-            </Button>
-          ) : null}
           {setupError ? (
             <p className="text-sm text-destructive" role="alert">
               {setupError}
