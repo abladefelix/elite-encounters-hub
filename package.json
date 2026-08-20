@@ -22,7 +22,6 @@
     "mobile:build:android": "bun run mobile:sync && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
-    "@aparajita/capacitor-biometric-auth": "^10.0.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
     "@capacitor/core": "^8.5.0",
@@ -31,6 +30,7 @@
     "@capacitor/share": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
+    "@capgo/capacitor-native-biometric": "8.6.6",
     "@hookform/resolvers": "^5.9.0",
     "@lovable.dev/email-js": "0.1.2",
     "@radix-ui/react-accordion": "^1.2.20",
