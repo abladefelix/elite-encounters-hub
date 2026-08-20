@@ -197,11 +197,13 @@ function announceLockChange(enabled: boolean) {
 export async function enableBiometricLock(_userLabel: string): Promise<void> {
   await authenticateDevice("Enable biometric unlock for Ashnight");
   window.localStorage.setItem(ENABLED_KEY, "1");
+  announceLockChange(true);
 }
 
 export function disableBiometricLock(): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(ENABLED_KEY);
+  announceLockChange(false);
 }
 
 /** Prompts for Face ID / fingerprint. Returns true only when verified. */
