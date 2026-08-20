@@ -2,9 +2,8 @@ import { Fingerprint } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsNativeApp } from "@/lib/native";
 import {
   biometricLockEnabled,
@@ -12,7 +11,6 @@ import {
   biometryStatus,
   disableBiometricLock,
   enableBiometricLock,
-  testBiometricPrompt,
   type BiometryStatus,
 } from "@/lib/biometrics";
 
@@ -31,29 +29,6 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
     setEnabled(biometricLockEnabled());
     void biometryStatus().then(setStatus);
   }, []);
-
-  async function testPrompt() {
-    if (busy) return;
-    setSetupError("");
-    setBusy(true);
-    try {
-      await testBiometricPrompt();
-      toast.success("Device verified you");
-    } catch (error) {
-      const fresh = await biometryStatus();
-      setStatus(fresh);
-      const nativeError = error as { message?: unknown; code?: unknown };
-      const message =
-        (typeof nativeError?.message === "string" && nativeError.message) ||
-        (typeof nativeError?.code === "string" && `Native biometric error: ${nativeError.code}`) ||
-        fresh.reason ||
-        "The device prompt was cancelled or unavailable.";
-      setSetupError(message);
-      toast.error(message);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function toggle(next: boolean) {
     if (busy) return;
@@ -118,18 +93,6 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
               {status.deviceIsSecure ? "set" : "not set"}
               {status.reason ? ` · ${status.reason}` : ""}
             </p>
-          ) : null}
-          {pluginInstalled ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => void testPrompt()}
-              disabled={busy}
-              className="mt-1"
-            >
-              Test device prompt
-            </Button>
           ) : null}
           {setupError ? (
             <p className="text-sm text-destructive" role="alert">
