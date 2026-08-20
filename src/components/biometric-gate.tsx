@@ -20,6 +20,8 @@ export function BiometricGate() {
   const [locked, setLocked] = useState(false);
   const [checking, setChecking] = useState(false);
   const [failed, setFailed] = useState(false);
+  const lockedRef = useRef(false);
+  lockedRef.current = locked;
 
   const unlock = useCallback(async () => {
     setChecking(true);
