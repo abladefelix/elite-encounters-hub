@@ -64,7 +64,9 @@ export function BiometricCard({ userLabel }: { userLabel: string }) {
     try {
       if (next) {
         await enableBiometricLock(userLabel);
-        toast.success("Biometric unlock is on and will be required when the app next locks");
+        toast.success(
+          "Biometric unlock is on and will be required when the app next locks",
+        );
       } else {
         disableBiometricLock();
         toast("Biometric unlock switched off");
