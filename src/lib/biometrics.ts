@@ -4,17 +4,22 @@
  * Native app only. The web build never offers or enforces this lock — every
  * function short-circuits in a browser, so nothing changes there.
  *
+ * Follows Apple's current LocalAuthentication guidance, which the plugin
+ * implements natively:
+ *  - ask the OS for availability (`isAvailable`) purely to explain state,
+ *  - never treat availability as authentication: always evaluate the policy,
+ *  - allow the device passcode as the documented fallback,
+ *  - surface the OS error (cancel, lockout, not enrolled) verbatim.
+ *
  * It is a *local* lock: the OS owns the enrolment, we only store a marker that
  * this device opted in and ask the OS to verify the owner before the UI shows.
- * No server round trip, so it never changes who the session belongs to.
  */
-import { BiometricAuth } from "@aparajita/capacitor-biometric-auth";
+import { BiometryType, NativeBiometric } from "@capgo/capacitor-native-biometric";
 
 import { isNativeApp } from "@/lib/native";
 
 const ENABLED_KEY = "ashnight:biometric-enabled";
-const BIOMETRY_CHECK_TIMEOUT_MS = 5000;
-const BIOMETRY_AUTH_TIMEOUT_MS = 30000;
+const BIOMETRY_CHECK_TIMEOUT_MS = 8000;
 let biometricPromptActive = false;
 
 export interface BiometryStatus {
@@ -28,67 +33,58 @@ export interface BiometryStatus {
   reason: string;
   /** True when the native plugin isn't in the installed binary at all. */
   pluginMissing: boolean;
-  /** What the OS says it has: faceId / touchId / fingerprint / none. */
+  /** What the OS says it has: Face ID / Touch ID / fingerprint / none. */
   biometryType: string;
 }
 
-/** Returns the already-registered Capacitor plugin only inside the native shell. */
-function nativeBiometrics() {
-  if (!isNativeApp()) return null;
-  // Do not use Capacitor.isPluginAvailable() here. This package registers an
-  // iOS JavaScript implementation, which makes that API return true even when
-  // the installed binary has no native plugin. In that case authenticate()
-  // reaches the package's intentionally empty native fallback and appears to
-  // succeed without ever showing Face ID.
-  if (!nativeBiometricHeader()) return null;
-  return BiometricAuth;
-}
-
-type NativePluginHeader = {
-  name?: string;
-  methods?: Array<{ name?: string; rtype?: string }>;
+const TYPE_LABELS: Record<number, string> = {
+  [BiometryType.NONE]: "none",
+  [BiometryType.TOUCH_ID]: "Touch ID",
+  [BiometryType.FACE_ID]: "Face ID",
+  [BiometryType.FINGERPRINT]: "fingerprint",
+  [BiometryType.FACE_AUTHENTICATION]: "face unlock",
+  [BiometryType.IRIS_AUTHENTICATION]: "iris",
+  [BiometryType.MULTIPLE]: "multiple biometrics",
+  [BiometryType.DEVICE_CREDENTIAL]: "device passcode",
 };
 
-function nativeBiometricHeader(): NativePluginHeader | null {
-  if (!isNativeApp()) return null;
-  const cap = (window as unknown as { Capacitor?: { PluginHeaders?: NativePluginHeader[] } })
-    .Capacitor;
-  const header = cap?.PluginHeaders?.find((candidate) => candidate.name === "BiometricAuthNative");
-  if (!header) return null;
-  const methods = header.methods ?? [];
-  const hasCheck = methods.some((method) => method.name === "checkBiometry");
-  const hasAuthenticate = methods.some((method) => method.name === "internalAuthenticate");
-  return hasCheck && hasAuthenticate ? header : null;
+/** True when the native plugin is present in the installed binary. */
+export function biometricPluginInstalled(): boolean {
+  if (!isNativeApp()) return false;
+  const cap = (
+    window as unknown as {
+      Capacitor?: { PluginHeaders?: Array<{ name?: string }>; isPluginAvailable?: (n: string) => boolean };
+    }
+  ).Capacitor;
+  if (!cap) return false;
+  // PluginHeaders only lists plugins compiled into the binary, so it is the
+  // authoritative signal. Fall back to isPluginAvailable on older bridges.
+  const headers = cap.PluginHeaders;
+  if (Array.isArray(headers)) {
+    return headers.some((header) => header.name === "NativeBiometric");
+  }
+  return cap.isPluginAvailable?.("NativeBiometric") === true;
 }
 
-const AUTH_OPTIONS = {
-  reason: "Unlock Ashnight",
-  cancelTitle: "Cancel",
-  allowDeviceCredential: true,
-  iosFallbackTitle: "Use passcode",
-  androidTitle: "Ashnight",
-  androidSubtitle: "Verify to continue",
-  androidConfirmationRequired: false,
-};
+const MISSING_PLUGIN_MESSAGE =
+  "This app build does not include biometric unlock. Run the mobile sync and install a fresh native build.";
 
 async function authenticateDevice(reason: string): Promise<void> {
-  const native = nativeBiometrics();
-  if (!native) {
-    throw new Error(
-      "This iPhone build does not contain the native biometric plugin. Sync the iOS project, then make a new Xcode build.",
-    );
-  }
+  if (!biometricPluginInstalled()) throw new Error(MISSING_PLUGIN_MESSAGE);
 
-  const options = { ...AUTH_OPTIONS, reason };
-  // Once the native header has been verified, the package proxy routes this
-  // through Capacitor's supported bridge and maps native errors correctly.
   biometricPromptActive = true;
   try {
-    await withTimeout(
-      native.authenticate(options),
-      BIOMETRY_AUTH_TIMEOUT_MS,
-      "The iPhone biometric bridge did not answer. The installed app does not have a working Face ID connection; sync iOS and rebuild the app.",
-    );
+    // No timeout wrapper here: Apple's prompt is modal and may legitimately
+    // stay open for as long as the person needs. The OS always settles it.
+    await NativeBiometric.verifyIdentity({
+      reason,
+      title: "Ashnight",
+      subtitle: reason,
+      description: "",
+      useFallback: true,
+      fallbackTitle: "Use passcode",
+      maxAttempts: 3,
+    });
   } finally {
     biometricPromptActive = false;
   }
@@ -97,15 +93,6 @@ async function authenticateDevice(reason: string): Promise<void> {
 /** Prevents a native prompt from being mistaken for the app going to sleep. */
 export function isBiometricPromptActive(): boolean {
   return biometricPromptActive;
-}
-
-/**
- * Synchronous native registration check for settings UI. Do not gate the
- * switch on checkBiometry(): some iOS WebViews can leave that optional
- * capability query unresolved even though authenticate() works normally.
- */
-export function biometricPluginInstalled(): boolean {
-  return nativeBiometricHeader() !== null;
 }
 
 async function withTimeout<T>(
@@ -118,10 +105,7 @@ async function withTimeout<T>(
     return await Promise.race([
       promise,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error(timeoutMessage)),
-          milliseconds,
-        );
+        timer = setTimeout(() => reject(new Error(timeoutMessage)), milliseconds);
       }),
     ]);
   } finally {
@@ -134,38 +118,40 @@ async function withTimeout<T>(
  * the toggle is off instead of just greying it out with no reason.
  */
 export async function biometryStatus(): Promise<BiometryStatus> {
-  const native = nativeBiometrics();
-  if (!native) {
+  if (!biometricPluginInstalled()) {
     return {
       usable: false,
       biometryAvailable: false,
       deviceIsSecure: false,
-      reason: "Biometric unlock is only available in the Ashnight mobile app.",
+      reason: isNativeApp()
+        ? MISSING_PLUGIN_MESSAGE
+        : "Biometric unlock is only available in the Ashnight mobile app.",
       pluginMissing: true,
       biometryType: "none",
     };
   }
   try {
     const info = await withTimeout(
-      native.checkBiometry(),
+      NativeBiometric.isAvailable({ useFallback: true }),
       BIOMETRY_CHECK_TIMEOUT_MS,
       "The device biometric check did not respond.",
     );
-    const biometryAvailable = Boolean(info.isAvailable);
+    const biometryAvailable = Boolean(info.strongBiometryIsAvailable);
     const deviceIsSecure = Boolean(info.deviceIsSecure);
     return {
-      usable: biometryAvailable || deviceIsSecure,
+      usable: Boolean(info.isAvailable) || biometryAvailable || deviceIsSecure,
       biometryAvailable,
       deviceIsSecure,
       reason:
-        info.reason ||
-        (biometryAvailable
-          ? ""
-          : deviceIsSecure
-            ? "No fingerprint or Face ID enrolled — your device passcode will be used instead."
-            : "Set a passcode and enrol Face ID or a fingerprint in your device settings first."),
+        info.errorCode && !info.isAvailable
+          ? String(info.errorCode)
+          : biometryAvailable
+            ? ""
+            : deviceIsSecure
+              ? "No Face ID or fingerprint enrolled — your device passcode will be used instead."
+              : "Set a passcode and enrol Face ID or a fingerprint in your device settings first.",
       pluginMissing: false,
-      biometryType: String(info.biometryType ?? "none"),
+      biometryType: TYPE_LABELS[info.biometryType as number] ?? "unknown",
     };
   } catch (error) {
     return {
@@ -192,11 +178,9 @@ export function biometricLockEnabled(): boolean {
 }
 
 /**
- * Enables the local lock for this installation.
- *
- * Face ID / Touch ID enrolment belongs to iOS. Before persisting this setting,
- * require one successful native authentication so the switch can never claim
- * to be enabled when the native bridge or device setup is not working.
+ * Enables the local lock for this installation. One successful OS evaluation is
+ * required first, so the switch can never claim to be on while the native
+ * bridge or the device setup is broken.
  */
 export async function enableBiometricLock(_userLabel: string): Promise<void> {
   await authenticateDevice("Enable biometric unlock for Ashnight");
