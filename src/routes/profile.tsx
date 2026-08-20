@@ -774,6 +774,8 @@ function ProfilePage() {
         <div className="mt-8">
           <BiometricCard userLabel={profile?.display_name ?? profile?.username ?? "Ashnight member"} />
         </div>
+        <DeleteAccountCard className="mt-8" />
+
 
       </div>
 
