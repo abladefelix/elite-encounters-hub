@@ -77,12 +77,13 @@ function verifyIosBiometricPlugin() {
     return;
   }
   const podfile = readFileSync(path, "utf8");
-  if (!podfile.includes("AparajitaCapacitorBiometricAuth")) {
+  if (!podfile.includes("CapgoCapacitorNativeBiometric")) {
     throw new Error(
       "iOS biometric plugin is missing from Podfile. Run `bunx cap sync ios` before building in Xcode.",
     );
   }
   console.log("✓ iOS biometric plugin — registered in Podfile");
+
 }
 
 function patchLaunchScreen() {
