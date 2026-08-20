@@ -18,6 +18,7 @@ import { IconContainer } from "@/components/ui/icon-container";
 import { TierBadge } from "@/components/tier-badge";
 import { TwoFactorCard } from "@/components/two-factor-card";
 import { BiometricCard } from "@/components/biometric-card";
+import { DeleteAccountCard } from "@/components/delete-account-card";
 import { PhoneCall } from "lucide-react";
 import {
   DEFAULT_CALL_PREFERENCES,
