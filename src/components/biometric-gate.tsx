@@ -7,6 +7,7 @@ import {
   biometricLockEnabled,
   disableBiometricLock,
   isBiometricPromptActive,
+  onBiometricLockChange,
   verifyBiometric,
 } from "@/lib/biometrics";
 
