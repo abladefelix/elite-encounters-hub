@@ -17,42 +17,6 @@ const checkoutBase = z.object({
   channel: z.enum(["mobile_money", "card"]).optional(),
 });
 
-/**
- * Unpaid payment requests go stale. Admin sets the window (Escrow → payment
- * request expires after); once it passes the request is cancelled server-side
- * so neither side can acknowledge or pay it.
- */
-async function assertRequestLive(
-  admin: { from: (table: string) => any },
-  booking: {
-    id: string;
-    thread_id: string | null;
-    ack_requested_at: string | null;
-    created_at: string;
-  },
-  expiryHours: number,
-) {
-  const hours = Math.max(1, Number(expiryHours) || 12);
-  const startedAt = booking.ack_requested_at ?? booking.created_at;
-  const started = new Date(startedAt).getTime();
-  if (!Number.isFinite(started)) return;
-  if (Date.now() - started < hours * 3600_000) return;
-
-  await admin.from("bookings").update({ status: "cancelled" }).eq("id", booking.id);
-  if (booking.thread_id) {
-    await admin.from("messages").insert({
-      thread_id: booking.thread_id,
-      author_id: null,
-      kind: "system",
-      booking_id: booking.id,
-      body: `This payment request expired after ${hours}h without payment. Nothing was charged — send a fresh request when you're ready.`,
-    });
-  }
-  throw new Error(
-    `This payment request expired after ${hours}h. Nothing was charged — please send a new request.`,
-  );
-}
-
 /** Client pays for a booking they already created in the thread. */
 export const startBookingCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -65,6 +29,7 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
       reference,
       serverSettings,
       split,
+      assertRequestLive,
     } = await import("./payments.server");
     const admin = await adminClient();
 
@@ -520,7 +485,9 @@ export const createSpecialistQuote = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { adminClient, addonsAmount, serverSettings } = await import("./payments.server");
+    const { adminClient, addonsAmount, serverSettings, assertRequestLive } = await import(
+      "./payments.server"
+    );
     const admin = await adminClient();
 
     const { data: thread, error: threadError } = await admin
@@ -819,7 +786,7 @@ export const acknowledgeBookingRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => z.object({ bookingId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { adminClient, serverSettings } = await import("./payments.server");
+    const { adminClient, serverSettings, assertRequestLive } = await import("./payments.server");
     const admin = await adminClient();
     const ackSettings = await serverSettings();
 
