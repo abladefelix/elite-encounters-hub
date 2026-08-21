@@ -722,7 +722,9 @@ export const requestBookingAcknowledgement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => z.object({ bookingId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { adminClient, addonsAmount, serverSettings } = await import("./payments.server");
+    const { adminClient, addonsAmount, serverSettings, assertRequestLive } = await import(
+      "./payments.server"
+    );
     const admin = await adminClient();
 
     const { data: booking, error } = await admin
