@@ -1948,6 +1948,7 @@ function MessagesInbox({
                                     : undefined
                                 }
                                 canPay={iAmClient && bookingsOpen}
+                                requestExpiryHours={escrow.requestExpiryHours ?? 12}
                                 isClient={iAmClient}
                                 ackBusy={
                                   !!message.booking_id && ackBookingId === message.booking_id
@@ -2491,6 +2492,7 @@ function MessageBubble({
   booking,
   canPay,
   isClient,
+  requestExpiryHours,
   ackBusy,
   onAskAcknowledgement,
   onAcknowledge,
@@ -2517,6 +2519,7 @@ function MessageBubble({
   booking?: BookingRow | undefined;
   canPay: boolean;
   isClient: boolean;
+  requestExpiryHours: number;
   ackBusy: boolean;
   onAskAcknowledgement: (id: string) => void;
   onAcknowledge: (id: string) => void;
@@ -2616,6 +2619,14 @@ function MessageBubble({
       (!booking || booking.status === "requested" || booking.status === "accepted");
     const ackRequested = Boolean(booking?.ack_requested_at);
     const acknowledged = Boolean(booking?.acknowledged_at);
+    // Unpaid requests go stale after the admin-set window (Escrow settings).
+    const requestStartedAt = booking?.ack_requested_at ?? booking?.created_at ?? null;
+    const expired =
+      !paid &&
+      !cancelled &&
+      Boolean(requestStartedAt) &&
+      Date.now() - new Date(requestStartedAt!).getTime() >=
+        Math.max(1, requestExpiryHours) * 3_600_000;
     const addons = booking?.addons ?? [];
     const due = booking ? Number(booking.hours) * booking.rate : 0;
     const dueWithFee = booking
@@ -2630,8 +2641,10 @@ function MessageBubble({
           <p className="eyebrow text-primary">
             {paid
               ? "Service confirmed · funds in escrow"
-              : cancelled
-                ? "Payment request · cancelled"
+              : expired
+                ? "Payment request · expired"
+                : cancelled
+                  ? "Payment request · cancelled"
                 : acknowledged
                   ? "Payment request · acknowledged"
                   : ackRequested
