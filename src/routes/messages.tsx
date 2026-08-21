@@ -2679,6 +2679,12 @@ function MessageBubble({
                 </p>
               ) : null}
             </>
+          ) : expired ? (
+            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <X className="size-3.5" /> This request expired after{" "}
+              {Math.max(1, requestExpiryHours)}h without payment. Nothing was charged — send a fresh
+              request when you're ready.
+            </p>
           ) : cancelled ? (
             <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <X className="size-3.5" /> This payment request was cancelled. No payment was taken.
