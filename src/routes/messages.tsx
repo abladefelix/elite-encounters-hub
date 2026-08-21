@@ -2613,20 +2613,21 @@ function MessageBubble({
   if (message.kind === "booking") {
     const cancelled = booking?.status === "cancelled";
     const paid = Boolean(escrow) || booking?.status === "paid" || booking?.status === "completed";
-    const unpaid =
-      !paid &&
-      !cancelled &&
-      (!booking || booking.status === "requested" || booking.status === "accepted");
-    const ackRequested = Boolean(booking?.ack_requested_at);
-    const acknowledged = Boolean(booking?.acknowledged_at);
     // Unpaid requests go stale after the admin-set window (Escrow settings).
     const requestStartedAt = booking?.ack_requested_at ?? booking?.created_at ?? null;
+    const requestStarted = requestStartedAt ? new Date(requestStartedAt).getTime() : NaN;
     const expired =
       !paid &&
       !cancelled &&
-      Boolean(requestStartedAt) &&
-      Date.now() - new Date(requestStartedAt!).getTime() >=
-        Math.max(1, requestExpiryHours) * 3_600_000;
+      Number.isFinite(requestStarted) &&
+      Date.now() - requestStarted >= Math.max(1, requestExpiryHours) * 3_600_000;
+    const unpaid =
+      !paid &&
+      !cancelled &&
+      !expired &&
+      (!booking || booking.status === "requested" || booking.status === "accepted");
+    const ackRequested = Boolean(booking?.ack_requested_at);
+    const acknowledged = Boolean(booking?.acknowledged_at);
     const addons = booking?.addons ?? [];
     const due = booking ? Number(booking.hours) * booking.rate : 0;
     const dueWithFee = booking
