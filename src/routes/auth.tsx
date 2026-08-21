@@ -881,10 +881,13 @@ export function AuthPage({
         </TabsContent>
       </Tabs>
 
-      <p className="mt-6 flex items-start gap-2 text-xs text-muted-foreground">
-        <ShieldCheck className="mt-0.5 size-4 shrink-0" />
-        <span>
-          Every member is vetted by hand before room access is granted.{" "}
+      <div className="mt-8 flex flex-col items-center gap-3 text-center">
+        <p className="flex items-center justify-center gap-2 text-xs leading-relaxed text-muted-foreground">
+          <ShieldCheck className="size-4 shrink-0" />
+          <span>Every member is vetted by hand before room access is granted.</span>
+        </p>
+
+        <p className="text-xs text-muted-foreground">
           <Link
             to="/auth"
             search={{ next: "/apply", role: "specialist" }}
@@ -892,16 +895,13 @@ export function AuthPage({
           >
             Apply as a specialist
           </Link>
-          .
-        </span>
-      </p>
+          <span className="px-2 text-muted-foreground/50">·</span>
+          <Link to="/welcome" className="underline underline-offset-4">
+            See how Ashnight works
+          </Link>
+        </p>
+      </div>
 
-      <p className="mt-3 text-center text-xs text-muted-foreground">
-        New here?{" "}
-        <Link to="/welcome" className="underline underline-offset-4">
-          See how Ashnight works
-        </Link>
-      </p>
     </main>
   );
 }
