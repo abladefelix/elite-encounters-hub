@@ -190,7 +190,12 @@ function RootComponent() {
                 <ConnectionWatcher />
                 {/* Device biometric lock (opt-in per device). No-op when off. */}
                 <BiometricGate />
-                <Toaster position="top-center" />
+                <Toaster
+                  position="top-center"
+                  offset={{ top: "calc(env(safe-area-inset-top) + 12px)" }}
+                  mobileOffset={{ top: "calc(env(safe-area-inset-top) + 8px)", left: "12px", right: "12px" }}
+                />
+
 
                 </PresenceProvider>
               </EscrowProvider>
