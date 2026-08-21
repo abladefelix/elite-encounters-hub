@@ -1948,6 +1948,7 @@ function MessagesInbox({
                                     : undefined
                                 }
                                 canPay={iAmClient && bookingsOpen}
+                                requestExpiryHours={escrow.requestExpiryHours ?? 12}
                                 isClient={iAmClient}
                                 ackBusy={
                                   !!message.booking_id && ackBookingId === message.booking_id
@@ -2491,6 +2492,7 @@ function MessageBubble({
   booking,
   canPay,
   isClient,
+  requestExpiryHours,
   ackBusy,
   onAskAcknowledgement,
   onAcknowledge,
@@ -2517,6 +2519,7 @@ function MessageBubble({
   booking?: BookingRow | undefined;
   canPay: boolean;
   isClient: boolean;
+  requestExpiryHours: number;
   ackBusy: boolean;
   onAskAcknowledgement: (id: string) => void;
   onAcknowledge: (id: string) => void;
@@ -2610,9 +2613,18 @@ function MessageBubble({
   if (message.kind === "booking") {
     const cancelled = booking?.status === "cancelled";
     const paid = Boolean(escrow) || booking?.status === "paid" || booking?.status === "completed";
+    // Unpaid requests go stale after the admin-set window (Escrow settings).
+    const requestStartedAt = booking?.ack_requested_at ?? booking?.created_at ?? null;
+    const requestStarted = requestStartedAt ? new Date(requestStartedAt).getTime() : NaN;
+    const expired =
+      !paid &&
+      !cancelled &&
+      Number.isFinite(requestStarted) &&
+      Date.now() - requestStarted >= Math.max(1, requestExpiryHours) * 3_600_000;
     const unpaid =
       !paid &&
       !cancelled &&
+      !expired &&
       (!booking || booking.status === "requested" || booking.status === "accepted");
     const ackRequested = Boolean(booking?.ack_requested_at);
     const acknowledged = Boolean(booking?.acknowledged_at);
@@ -2630,8 +2642,10 @@ function MessageBubble({
           <p className="eyebrow text-primary">
             {paid
               ? "Service confirmed · funds in escrow"
-              : cancelled
-                ? "Payment request · cancelled"
+              : expired
+                ? "Payment request · expired"
+                : cancelled
+                  ? "Payment request · cancelled"
                 : acknowledged
                   ? "Payment request · acknowledged"
                   : ackRequested
@@ -2665,6 +2679,12 @@ function MessageBubble({
                 </p>
               ) : null}
             </>
+          ) : expired ? (
+            <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <X className="size-3.5" /> This request expired after{" "}
+              {Math.max(1, requestExpiryHours)}h without payment. Nothing was charged — send a fresh
+              request when you're ready.
+            </p>
           ) : cancelled ? (
             <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <X className="size-3.5" /> This payment request was cancelled. No payment was taken.

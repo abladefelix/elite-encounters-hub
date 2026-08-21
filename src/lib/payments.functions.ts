@@ -29,6 +29,7 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
       reference,
       serverSettings,
       split,
+      assertRequestLive,
     } = await import("./payments.server");
     const admin = await adminClient();
 
@@ -53,6 +54,7 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
     }
 
     const settings = await serverSettings();
+    await assertRequestLive(admin, booking, settings.escrow.requestExpiryHours ?? 12);
     const feePct = booking.platform_fee_pct ?? settings.platform.platformFeePct ?? 12;
     const labour = Number(booking.hours) * booking.rate;
     // Add-on prices come from the admin catalogue, matched on the stored labels.
@@ -483,7 +485,9 @@ export const createSpecialistQuote = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { adminClient, addonsAmount, serverSettings } = await import("./payments.server");
+    const { adminClient, addonsAmount, serverSettings, assertRequestLive } = await import(
+      "./payments.server"
+    );
     const admin = await adminClient();
 
     const { data: thread, error: threadError } = await admin
@@ -718,7 +722,9 @@ export const requestBookingAcknowledgement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => z.object({ bookingId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { adminClient, addonsAmount, serverSettings } = await import("./payments.server");
+    const { adminClient, addonsAmount, serverSettings, assertRequestLive } = await import(
+      "./payments.server"
+    );
     const admin = await adminClient();
 
     const { data: booking, error } = await admin
@@ -738,6 +744,7 @@ export const requestBookingAcknowledgement = createServerFn({ method: "POST" })
     if (booking.acknowledged_at) throw new Error("Your specialist already acknowledged this request.");
 
     const settings = await serverSettings();
+    await assertRequestLive(admin, booking, settings.escrow.requestExpiryHours ?? 12);
     const addons = booking.addons ?? [];
     const subtotal = Number(booking.hours) * booking.rate + addonsAmount(settings, addons);
     const feePct = booking.platform_fee_pct ?? settings.platform.platformFeePct ?? 12;
@@ -781,8 +788,9 @@ export const acknowledgeBookingRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => z.object({ bookingId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { adminClient } = await import("./payments.server");
+    const { adminClient, serverSettings, assertRequestLive } = await import("./payments.server");
     const admin = await adminClient();
+    const ackSettings = await serverSettings();
 
     const { data: booking, error } = await admin
       .from("bookings")
@@ -799,6 +807,7 @@ export const acknowledgeBookingRequest = createServerFn({ method: "POST" })
       throw new Error("The member hasn't sent this request for acknowledgement yet.");
     }
     if (booking.acknowledged_at) return { ok: true, alreadyAcknowledged: true };
+    await assertRequestLive(admin, booking, ackSettings.escrow.requestExpiryHours ?? 12);
 
     const { error: updateError } = await admin
       .from("bookings")

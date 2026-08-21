@@ -316,6 +316,13 @@ function AdminEscrow() {
             </div>
 
             <NumberField
+              label="Payment request expires after (hours)"
+              hint="An unpaid service request goes stale after this long — acknowledgement and payment close automatically."
+              value={settings.requestExpiryHours ?? 12}
+              min={1}
+              onChange={(value) => void setSetting("requestExpiryHours", value)}
+            />
+            <NumberField
               label="Dispute window (hours)"
               hint="How long a member may raise an issue."
               value={settings.disputeWindowHours}

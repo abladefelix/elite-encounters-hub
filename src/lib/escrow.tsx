@@ -60,6 +60,12 @@ export interface EscrowSettings {
    */
   releaseOnConfirm: boolean;
 
+  /**
+   * Hours an unpaid payment request stays live before it expires. Covers both
+   * "awaiting acknowledgement" and "acknowledged, not yet paid".
+   */
+  requestExpiryHours: number;
+
   /** Hours after release during which a client may still raise an issue. */
   disputeWindowHours: number;
   /** Hours the trust team has to resolve a dispute (target, shown to admins). */
@@ -84,6 +90,7 @@ export const DEFAULT_ESCROW_SETTINGS: EscrowSettings = {
   autoConfirmHours: 24,
   autoConfirmAction: "release",
   releaseOnConfirm: true,
+  requestExpiryHours: 12,
 
   disputeWindowHours: 48,
   disputeSlaHours: 24,
