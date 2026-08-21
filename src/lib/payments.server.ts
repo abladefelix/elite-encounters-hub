@@ -130,6 +130,8 @@ export interface ServerSettings {
     autoConfirmHours?: number;
     autoConfirmAction?: "clearing" | "release";
     releaseOnConfirm?: boolean;
+    /** Hours an unpaid payment request stays live before it expires. */
+    requestExpiryHours?: number;
 
     autoReleaseEnabled?: boolean;
     tipsEnabled?: boolean;

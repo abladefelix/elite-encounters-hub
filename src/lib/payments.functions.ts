@@ -17,6 +17,42 @@ const checkoutBase = z.object({
   channel: z.enum(["mobile_money", "card"]).optional(),
 });
 
+/**
+ * Unpaid payment requests go stale. Admin sets the window (Escrow → payment
+ * request expires after); once it passes the request is cancelled server-side
+ * so neither side can acknowledge or pay it.
+ */
+async function assertRequestLive(
+  admin: { from: (table: string) => any },
+  booking: {
+    id: string;
+    thread_id: string | null;
+    ack_requested_at: string | null;
+    created_at: string;
+  },
+  expiryHours: number,
+) {
+  const hours = Math.max(1, Number(expiryHours) || 12);
+  const startedAt = booking.ack_requested_at ?? booking.created_at;
+  const started = new Date(startedAt).getTime();
+  if (!Number.isFinite(started)) return;
+  if (Date.now() - started < hours * 3600_000) return;
+
+  await admin.from("bookings").update({ status: "cancelled" }).eq("id", booking.id);
+  if (booking.thread_id) {
+    await admin.from("messages").insert({
+      thread_id: booking.thread_id,
+      author_id: null,
+      kind: "system",
+      booking_id: booking.id,
+      body: `This payment request expired after ${hours}h without payment. Nothing was charged — send a fresh request when you're ready.`,
+    });
+  }
+  throw new Error(
+    `This payment request expired after ${hours}h. Nothing was charged — please send a new request.`,
+  );
+}
+
 /** Client pays for a booking they already created in the thread. */
 export const startBookingCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -53,6 +89,7 @@ export const startBookingCheckout = createServerFn({ method: "POST" })
     }
 
     const settings = await serverSettings();
+    await assertRequestLive(admin, booking, settings.escrow.requestExpiryHours ?? 12);
     const feePct = booking.platform_fee_pct ?? settings.platform.platformFeePct ?? 12;
     const labour = Number(booking.hours) * booking.rate;
     // Add-on prices come from the admin catalogue, matched on the stored labels.
@@ -738,6 +775,7 @@ export const requestBookingAcknowledgement = createServerFn({ method: "POST" })
     if (booking.acknowledged_at) throw new Error("Your specialist already acknowledged this request.");
 
     const settings = await serverSettings();
+    await assertRequestLive(admin, booking, settings.escrow.requestExpiryHours ?? 12);
     const addons = booking.addons ?? [];
     const subtotal = Number(booking.hours) * booking.rate + addonsAmount(settings, addons);
     const feePct = booking.platform_fee_pct ?? settings.platform.platformFeePct ?? 12;
@@ -781,8 +819,9 @@ export const acknowledgeBookingRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => z.object({ bookingId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { adminClient } = await import("./payments.server");
+    const { adminClient, serverSettings } = await import("./payments.server");
     const admin = await adminClient();
+    const ackSettings = await serverSettings();
 
     const { data: booking, error } = await admin
       .from("bookings")
@@ -799,6 +838,7 @@ export const acknowledgeBookingRequest = createServerFn({ method: "POST" })
       throw new Error("The member hasn't sent this request for acknowledgement yet.");
     }
     if (booking.acknowledged_at) return { ok: true, alreadyAcknowledged: true };
+    await assertRequestLive(admin, booking, ackSettings.escrow.requestExpiryHours ?? 12);
 
     const { error: updateError } = await admin
       .from("bookings")
